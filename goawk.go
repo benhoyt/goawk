@@ -8,6 +8,11 @@ TODO:
 - have Execute and Evaluate return errors
 - add variables, assignment, etc
 
+OTHER:
+* support for assigning $0 and $1...
+* support for assigning RS (instead of newline)
+* ENVIRON built-in variable
+
 */
 
 import (
@@ -57,7 +62,9 @@ func Run(src string, input io.Reader) error {
     fmt.Println(prog)
     fmt.Println("-----")
 
-    Executes(prog.Begin)
+    for _, ss := range prog.Begin {
+        Executes(ss)
+    }
 
     scanner := bufio.NewScanner(input)
     NR := 1
@@ -83,20 +90,15 @@ func Run(src string, input io.Reader) error {
         return fmt.Errorf("reading lines from input: %s", err)
     }
 
-    Executes(prog.End)
+    for _, ss := range prog.End {
+        Executes(ss)
+    }
 
     return nil
 }
 
 func Parse(src string) (*Program, error) {
     program := &Program{
-        Begin: []Stmt{
-            &PrintStmt{
-                Args: []Expr{
-                    &StringExpr{"BEGINNING"},
-                },
-            },
-        },
         Actions: []Action{
             {
                 Pattern: &BinaryExpr{
@@ -107,18 +109,9 @@ func Parse(src string) (*Program, error) {
                 Stmts: []Stmt{
                     &PrintStmt{
                         Args: []Expr{
-                            &DollarExpr{&NumberExpr{3}},
-                            &DollarExpr{&NumberExpr{2}},
-                            &DollarExpr{&NumberExpr{1}},
+                            &DollarExpr{&NumberExpr{0}},
                         },
                     },
-                },
-            },
-        },
-        End: []Stmt{
-            &PrintStmt{
-                Args: []Expr{
-                    &StringExpr{"ENDING"},
                 },
             },
         },

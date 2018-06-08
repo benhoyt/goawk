@@ -6,21 +6,21 @@ import (
 )
 
 type Program struct {
-    Begin Stmts
+    Begin []Stmts
     Actions []Action
-    End Stmts
+    End []Stmts
 }
 
 func (p *Program) String() string {
     parts := []string{}
-    if len(p.Begin) > 0 {
-        parts = append(parts, "BEGIN {\n" + indent(p.Begin.String()) + "\n}")
+    for _, ss := range p.Begin {
+        parts = append(parts, "BEGIN {\n" + indent(ss.String()) + "\n}")
     }
     for _, a := range p.Actions {
         parts = append(parts, a.String())
     }
-    if len(p.End) > 0 {
-        parts = append(parts, "END {\n" + indent(p.End.String()) + "\n}")
+    for _, ss := range p.End {
+        parts = append(parts, "END {\n" + indent(ss.String()) + "\n}")
     }
     return strings.Join(parts, "\n\n")
 }
