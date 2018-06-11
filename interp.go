@@ -37,7 +37,7 @@ func Evaluate(expr Expr) Value {
         return e.Value
     case *StringExpr:
         return e.Value
-    case *DollarExpr:
+    case *FieldExpr:
         index := Evaluate(e.Index)
         if f, ok := index.(float64); ok {
             i := int(f)

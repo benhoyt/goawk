@@ -6,7 +6,23 @@ TODO:
 - figure out how to represent values (numbers, strings, interface{}?)
 - make Interp type an move LINE and FIELDS to members
 - have Execute and Evaluate return errors
-- add variables, assignment, etc
+- add other expressions:
+    post inc/dec
+    pre inc/dec
+    exponentiation
+    unary not, plus, minus
+    mul, div, mod
+    add, sub
+    string concat
+    equality and inequality
+    regex and regex not
+    "in" and multi-dimensional "in"
+    logical and
+    logical or
+    cond ?:
+    assignments
+- variables
+- statements
 
 OTHER:
 * support for assigning $0 and $1...
@@ -102,14 +118,14 @@ func Parse(src string) (*Program, error) {
         Actions: []Action{
             {
                 Pattern: &BinaryExpr{
-                    Left: &DollarExpr{&NumberExpr{0}},
+                    Left: &FieldExpr{&NumberExpr{0}},
                     Op: "!=",
                     Right: &StringExpr{""},
                 },
                 Stmts: []Stmt{
                     &PrintStmt{
                         Args: []Expr{
-                            &DollarExpr{&NumberExpr{0}},
+                            &FieldExpr{&NumberExpr{0}},
                         },
                     },
                 },

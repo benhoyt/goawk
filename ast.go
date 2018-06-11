@@ -58,13 +58,16 @@ type Expr interface {
     String() string
 }
 
-type DollarExpr struct {
+func (e *BinaryExpr) expr() {}
+func (e *FieldExpr) expr() {}
+func (e *NumberExpr) expr() {}
+func (e *StringExpr) expr() {}
+
+type FieldExpr struct {
     Index Expr
 }
 
-func (e *DollarExpr) expr() {}
-
-func (e *DollarExpr) String() string {
+func (e *FieldExpr) String() string {
     return "$" + e.Index.String()
 }
 
@@ -74,8 +77,6 @@ type BinaryExpr struct {
     Right Expr
 }
 
-func (e *BinaryExpr) expr() {}
-
 func (e *BinaryExpr) String() string {
     return "(" + e.Left.String() + " " + e.Op + " " + e.Right.String() + ")"
 }
@@ -84,8 +85,6 @@ type NumberExpr struct {
     Value float64
 }
 
-func (e *NumberExpr) expr() {}
-
 func (e *NumberExpr) String() string {
     return fmt.Sprintf("%v", e.Value)
 }
@@ -93,8 +92,6 @@ func (e *NumberExpr) String() string {
 type StringExpr struct {
     Value string
 }
-
-func (e *StringExpr) expr() {}
 
 func (e *StringExpr) String() string {
     return fmt.Sprintf("%q", e.Value)
@@ -105,11 +102,11 @@ type Stmt interface {
     String() string
 }
 
+func (s *PrintStmt) stmt() {}
+
 type PrintStmt struct {
     Args []Expr
 }
-
-func (s *PrintStmt) stmt() {}
 
 func (s *PrintStmt) String() string {
     parts := make([]string, len(s.Args))
