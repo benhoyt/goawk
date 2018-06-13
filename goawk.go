@@ -26,95 +26,95 @@ OTHER:
 */
 
 import (
-    "bufio"
-    "fmt"
-    "io"
-    "os"
+	"bufio"
+	"fmt"
+	"io"
+	"os"
 )
 
 func main() {
-    if len(os.Args) <= 1 {
-        fmt.Fprintf(os.Stderr, "usage: goawk src [filename]\n")
-        os.Exit(3)
-    }
-    src := os.Args[1]
+	if len(os.Args) <= 1 {
+		fmt.Fprintf(os.Stderr, "usage: goawk src [filename]\n")
+		os.Exit(3)
+	}
+	src := os.Args[1]
 
-    var err error
-    if len(os.Args) <= 2 {
-        err = Run(src, os.Stdin)
-    } else {
-        filename := os.Args[2]
-        f, errOpen := os.Open(filename)
-        if errOpen != nil {
-            fmt.Fprintf(os.Stderr, "can't open file %q\n", filename)
-            os.Exit(2)
-        }
-        defer f.Close()
-        err = Run(src, f)
-    }
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "execute error: %s\n", err)
-        os.Exit(1)
-    }
+	var err error
+	if len(os.Args) <= 2 {
+		err = Run(src, os.Stdin)
+	} else {
+		filename := os.Args[2]
+		f, errOpen := os.Open(filename)
+		if errOpen != nil {
+			fmt.Fprintf(os.Stderr, "can't open file %q\n", filename)
+			os.Exit(2)
+		}
+		defer f.Close()
+		err = Run(src, f)
+	}
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "execute error: %s\n", err)
+		os.Exit(1)
+	}
 }
 
 func Run(src string, input io.Reader) error {
-    prog, err := Parse(src)
-    if err != nil {
-        return err
-    }
-    fmt.Println(prog)
-    fmt.Println("-----")
+	prog, err := Parse(src)
+	if err != nil {
+		return err
+	}
+	fmt.Println(prog)
+	fmt.Println("-----")
 
-    interp := Interp{}
-    for _, ss := range prog.Begin {
-        interp.Executes(ss)
-    }
+	interp := Interp{}
+	for _, ss := range prog.Begin {
+		interp.Executes(ss)
+	}
 
-    scanner := bufio.NewScanner(input)
-    for scanner.Scan() {
-        interp.NextLine(scanner.Text())
-        for _, a := range prog.Actions {
-            pattern := interp.Evaluate(a.Pattern)
-            if ToBool(pattern) {
-                interp.Executes(a.Stmts)
-            }
-        }
-    }
-    if err := scanner.Err(); err != nil {
-        return fmt.Errorf("reading lines from input: %s", err)
-    }
+	scanner := bufio.NewScanner(input)
+	for scanner.Scan() {
+		interp.NextLine(scanner.Text())
+		for _, a := range prog.Actions {
+			pattern := interp.Evaluate(a.Pattern)
+			if ToBool(pattern) {
+				interp.Executes(a.Stmts)
+			}
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("reading lines from input: %s", err)
+	}
 
-    for _, ss := range prog.End {
-        interp.Executes(ss)
-    }
+	for _, ss := range prog.End {
+		interp.Executes(ss)
+	}
 
-    return nil
+	return nil
 }
 
 func Parse(src string) (*Program, error) {
-    program := &Program{
-        Actions: []Action{
-            {
-                Pattern: &BinaryExpr{
-                    Left: &FieldExpr{&ConstExpr{0.0}},
-                    Op: "!=",
-                    Right: &ConstExpr{""},
-                },
-                Stmts: []Stmt{
-                    &PrintStmt{
-                        Args: []Expr{
-                            &FieldExpr{&ConstExpr{1.0}},
-                            &BinaryExpr{
-                                Left: &FieldExpr{&ConstExpr{1.0}},
-                                Op: "",
-                                Right: &FieldExpr{&ConstExpr{2.0}},
-                            },
-                        },
-                    },
-                },
-            },
-        },
-    }
-    return program, nil
+	program := &Program{
+		Actions: []Action{
+			{
+				Pattern: &BinaryExpr{
+					Left:  &FieldExpr{&ConstExpr{0.0}},
+					Op:    "!=",
+					Right: &ConstExpr{""},
+				},
+				Stmts: []Stmt{
+					&PrintStmt{
+						Args: []Expr{
+							&FieldExpr{&ConstExpr{1.0}},
+							&BinaryExpr{
+								Left:  &FieldExpr{&ConstExpr{1.0}},
+								Op:    "",
+								Right: &FieldExpr{&ConstExpr{2.0}},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	return program, nil
 }
