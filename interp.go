@@ -4,6 +4,7 @@ import (
     "fmt"
     "math"
     "strconv"
+    "strings"
 )
 
 type Value interface{}
@@ -55,6 +56,18 @@ func ToString(v Value) string {
     default:
         panic(fmt.Sprintf("unexpected type converting to string: %T", v))
     }
+}
+
+type Interp struct {
+    line string
+    fields []string
+    lineNum int
+}
+
+func (p *Interp) NextLine(line string) {
+    p.line = line
+    p.fields = strings.Fields(line)
+    p.lineNum++
 }
 
 type binaryFunc func(l, r Value) Value
@@ -121,28 +134,25 @@ func not(v Value) Value {
     return BoolValue(!ToBool(v))
 }
 
-func Evaluate(expr Expr) Value {
+func (p *Interp) Evaluate(expr Expr) Value {
     switch e := expr.(type) {
     case *BinaryExpr:
-        left := Evaluate(e.Left)
-        right := Evaluate(e.Right)
+        left := p.Evaluate(e.Left)
+        right := p.Evaluate(e.Right)
         return binaryFuncs[e.Op](left, right)
     case *ConstExpr:
         return e.Value
     case *FieldExpr:
-        index := Evaluate(e.Index)
+        index := p.Evaluate(e.Index)
         if f, ok := index.(float64); ok {
             i := int(f)
-            if float64(i) != f {
-                panic(fmt.Sprintf("field index not an integer: %v", f))
-            }
             if i == 0 {
-                return LINE
+                return p.line
             }
-            if i < 0 || i > len(FIELDS) {
-                panic(fmt.Sprintf("field index out of range: %d (%d)", i, len(FIELDS)))
+            if i < 0 || i > len(p.fields) {
+                panic(fmt.Sprintf("field index out of range: %d (%d)", i, len(p.fields)))
             }
-            return FIELDS[i-1]
+            return p.fields[i-1]
         }
         panic(fmt.Sprintf("field index not a number: %q", index))
     default:
@@ -150,14 +160,14 @@ func Evaluate(expr Expr) Value {
     }
 }
 
-func Execute(stmt Stmt) {
+func (p *Interp) Execute(stmt Stmt) {
     switch s := stmt.(type) {
     case *PrintStmt:
         // TODO: convert to string properly, respecting output format
         // TODO: handle nil (undefined)
         args := make([]interface{}, len(s.Args))
         for i, a := range s.Args {
-            args[i] = Evaluate(a)
+            args[i] = p.Evaluate(a)
         }
         fmt.Println(args...)
     default:
@@ -165,8 +175,8 @@ func Execute(stmt Stmt) {
     }
 }
 
-func Executes(stmts Stmts) {
+func (p *Interp) Executes(stmts Stmts) {
     for _, s := range stmts {
-        Execute(s)
+        p.Execute(s)
     }
 }

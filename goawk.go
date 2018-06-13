@@ -3,26 +3,20 @@ package main
 
 /*
 TODO:
-- figure out how to represent values (numbers, strings, interface{}?)
-- make Interp type an move LINE and FIELDS to members
-- have Execute and Evaluate return errors
+- error handling: InterpError and catch in Evaluate and Execute
+- variables, assignments
 - add other expressions:
     post inc/dec
     pre inc/dec
-    exponentiation
     unary not, plus, minus
-    mul, div, mod
-    add, sub
-    string concat
     equality and inequality
     regex and regex not
     "in" and multi-dimensional "in"
     logical and
     logical or
     cond ?:
-    assignments
-- variables
-- statements
+- lexing
+- parsing
 
 OTHER:
 * support for assigning $0 and $1...
@@ -36,12 +30,6 @@ import (
     "fmt"
     "io"
     "os"
-    "strings"
-)
-
-var (
-    LINE string
-    FIELDS []string
 )
 
 func main() {
@@ -78,36 +66,27 @@ func Run(src string, input io.Reader) error {
     fmt.Println(prog)
     fmt.Println("-----")
 
+    interp := Interp{}
     for _, ss := range prog.Begin {
-        Executes(ss)
+        interp.Executes(ss)
     }
 
     scanner := bufio.NewScanner(input)
-    NR := 1
     for scanner.Scan() {
-        line := scanner.Text()
-        fields := strings.Fields(line)
-        //NF := len(fields)
-        //fmt.Println("LINE:", NR, NF, fields)
-
-        LINE = line
-        FIELDS = fields
-
+        interp.NextLine(scanner.Text())
         for _, a := range prog.Actions {
-            pattern := Evaluate(a.Pattern)
+            pattern := interp.Evaluate(a.Pattern)
             if ToBool(pattern) {
-                Executes(a.Stmts)
+                interp.Executes(a.Stmts)
             }
         }
-
-        NR++
     }
     if err := scanner.Err(); err != nil {
         return fmt.Errorf("reading lines from input: %s", err)
     }
 
     for _, ss := range prog.End {
-        Executes(ss)
+        interp.Executes(ss)
     }
 
     return nil
