@@ -60,8 +60,7 @@ type Expr interface {
 
 func (e *BinaryExpr) expr() {}
 func (e *FieldExpr) expr() {}
-func (e *NumberExpr) expr() {}
-func (e *StringExpr) expr() {}
+func (e *ConstExpr) expr() {}
 
 type FieldExpr struct {
     Index Expr
@@ -78,23 +77,29 @@ type BinaryExpr struct {
 }
 
 func (e *BinaryExpr) String() string {
-    return "(" + e.Left.String() + " " + e.Op + " " + e.Right.String() + ")"
+    var opStr string
+    if e.Op == "" {
+        opStr = " "
+    } else {
+        opStr = " " + e.Op + " "
+    }
+    return "(" + e.Left.String() + opStr + e.Right.String() + ")"
 }
 
-type NumberExpr struct {
-    Value float64
+type ConstExpr struct {
+    Value Value
 }
 
-func (e *NumberExpr) String() string {
-    return fmt.Sprintf("%v", e.Value)
-}
-
-type StringExpr struct {
-    Value string
-}
-
-func (e *StringExpr) String() string {
-    return fmt.Sprintf("%q", e.Value)
+func (e *ConstExpr) String() string {
+    switch v := e.Value.(type) {
+    case string:
+        return fmt.Sprintf("%q", v)
+    case float64:
+        return fmt.Sprintf("%v", v)
+    case nil:
+        return "<undefined>"
+    }
+    panic(fmt.Sprintf("unexpected type: %T", e.Value))
 }
 
 type Stmt interface {

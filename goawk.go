@@ -95,7 +95,7 @@ func Run(src string, input io.Reader) error {
 
         for _, a := range prog.Actions {
             pattern := Evaluate(a.Pattern)
-            if Truthy(pattern) {
+            if ToBool(pattern) {
                 Executes(a.Stmts)
             }
         }
@@ -118,14 +118,19 @@ func Parse(src string) (*Program, error) {
         Actions: []Action{
             {
                 Pattern: &BinaryExpr{
-                    Left: &FieldExpr{&NumberExpr{0}},
+                    Left: &FieldExpr{&ConstExpr{0.0}},
                     Op: "!=",
-                    Right: &StringExpr{""},
+                    Right: &ConstExpr{""},
                 },
                 Stmts: []Stmt{
                     &PrintStmt{
                         Args: []Expr{
-                            &FieldExpr{&NumberExpr{0}},
+                            &FieldExpr{&ConstExpr{1.0}},
+                            &BinaryExpr{
+                                Left: &FieldExpr{&ConstExpr{1.0}},
+                                Op: "",
+                                Right: &FieldExpr{&ConstExpr{2.0}},
+                            },
                         },
                     },
                 },
