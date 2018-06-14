@@ -62,12 +62,28 @@ type Interp struct {
 	line    string
 	fields  []string
 	lineNum int
+	vars    map[string]Value
+}
+
+func NewInterp() *Interp {
+	p := &Interp{}
+	p.vars = make(map[string]Value)
+	return p
 }
 
 func (p *Interp) NextLine(line string) {
 	p.line = line
 	p.fields = strings.Fields(line)
 	p.lineNum++
+}
+
+func (p *Interp) Var(name string) Value {
+	// TODO: built-in vars
+	return p.vars[name]
+}
+
+func (p *Interp) SetVar(name string, value Value) {
+	p.vars[name] = value
 }
 
 type binaryFunc func(l, r Value) Value
@@ -155,6 +171,8 @@ func (p *Interp) Evaluate(expr Expr) Value {
 			return p.fields[i-1]
 		}
 		panic(fmt.Sprintf("field index not a number: %q", index))
+	case *VarExpr:
+		return p.Var(e.Name)
 	default:
 		panic(fmt.Sprintf("unexpected expr type: %T", expr))
 	}

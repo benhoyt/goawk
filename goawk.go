@@ -3,8 +3,9 @@ package main
 
 /*
 TODO:
-- error handling: InterpError and catch in Evaluate and Execute
 - variables, assignments
+- built-in variables (and assignments)
+- built-in function calls
 - add other expressions:
     post inc/dec
     pre inc/dec
@@ -15,6 +16,7 @@ TODO:
     logical and
     logical or
     cond ?:
+- error handling: InterpError and catch in Evaluate and Execute
 - lexing
 - parsing
 
@@ -66,7 +68,9 @@ func Run(src string, input io.Reader) error {
 	fmt.Println(prog)
 	fmt.Println("-----")
 
-	interp := Interp{}
+	interp := NewInterp()
+	interp.SetVar("x", 1.0)
+	interp.SetVar("y", 2.5)
 	for _, ss := range prog.Begin {
 		interp.Executes(ss)
 	}
@@ -106,9 +110,9 @@ func Parse(src string) (*Program, error) {
 						Args: []Expr{
 							&FieldExpr{&ConstExpr{1.0}},
 							&BinaryExpr{
-								Left:  &FieldExpr{&ConstExpr{1.0}},
-								Op:    "",
-								Right: &FieldExpr{&ConstExpr{2.0}},
+								Left:  &VarExpr{"x"},
+								Op:    "+",
+								Right: &VarExpr{"y"},
 							},
 						},
 					},

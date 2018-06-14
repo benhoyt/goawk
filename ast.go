@@ -61,6 +61,7 @@ type Expr interface {
 func (e *BinaryExpr) expr() {}
 func (e *FieldExpr) expr()  {}
 func (e *ConstExpr) expr()  {}
+func (e *VarExpr) expr()    {}
 
 type FieldExpr struct {
 	Index Expr
@@ -100,6 +101,14 @@ func (e *ConstExpr) String() string {
 		return "<undefined>"
 	}
 	panic(fmt.Sprintf("unexpected type: %T", e.Value))
+}
+
+type VarExpr struct {
+	Name string
+}
+
+func (e *VarExpr) String() string {
+	return e.Name
 }
 
 type Stmt interface {
