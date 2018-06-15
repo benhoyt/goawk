@@ -3,7 +3,6 @@ package main
 
 /*
 TODO:
-- variables, assignments
 - built-in variables (and assignments)
 - built-in function calls
 - add other expressions:
@@ -69,8 +68,6 @@ func Run(src string, input io.Reader) error {
 	fmt.Println("-----")
 
 	interp := NewInterp()
-	interp.SetVar("x", 1.0)
-	interp.SetVar("y", 2.5)
 	for _, ss := range prog.Begin {
 		interp.Executes(ss)
 	}
@@ -98,6 +95,16 @@ func Run(src string, input io.Reader) error {
 
 func Parse(src string) (*Program, error) {
 	program := &Program{
+		// Begin: []Stmts{
+		//     {
+		//         &ExprStmt{
+		//             &AssignExpr{&FieldExpr{&ConstExpr{"x"}}, &ConstExpr{1.0}},
+		//         },
+		//         &ExprStmt{
+		//             &AssignExpr{&FieldExpr{&ConstExpr{2.0}}, &ConstExpr{2.5}},
+		//         },
+		//     },
+		// },
 		Actions: []Action{
 			{
 				Pattern: &BinaryExpr{
@@ -106,13 +113,16 @@ func Parse(src string) (*Program, error) {
 					Right: &ConstExpr{""},
 				},
 				Stmts: []Stmt{
+					&ExprStmt{
+						&AssignExpr{&FieldExpr{&ConstExpr{0.0}}, &ConstExpr{"HELLO 2 3"}},
+					},
 					&PrintStmt{
 						Args: []Expr{
 							&FieldExpr{&ConstExpr{1.0}},
 							&BinaryExpr{
-								Left:  &VarExpr{"x"},
-								Op:    "+",
-								Right: &VarExpr{"y"},
+								Left:  &FieldExpr{&ConstExpr{2.0}},
+								Op:    "*",
+								Right: &FieldExpr{&ConstExpr{3.0}},
 							},
 						},
 					},

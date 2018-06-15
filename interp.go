@@ -63,27 +63,71 @@ type Interp struct {
 	fields  []string
 	lineNum int
 	vars    map[string]Value
+	arrays  map[string]map[string]Value
 }
 
 func NewInterp() *Interp {
 	p := &Interp{}
 	p.vars = make(map[string]Value)
+	p.arrays = make(map[string]map[string]Value)
 	return p
 }
 
-func (p *Interp) NextLine(line string) {
+func (p *Interp) SetLine(line string) {
 	p.line = line
 	p.fields = strings.Fields(line)
+}
+
+func (p *Interp) NextLine(line string) {
+	p.SetLine(line)
 	p.lineNum++
 }
 
-func (p *Interp) Var(name string) Value {
+func (p *Interp) GetVar(name string) Value {
 	// TODO: built-in vars
 	return p.vars[name]
 }
 
 func (p *Interp) SetVar(name string, value Value) {
 	p.vars[name] = value
+}
+
+func (p *Interp) GetArray(name, index string) Value {
+	return p.arrays[name][index]
+}
+
+func (p *Interp) SetArray(name, index string, value Value) {
+	array, ok := p.arrays[name]
+	if !ok {
+		array = make(map[string]Value)
+		p.arrays[name] = array
+	}
+	array[index] = value
+}
+
+func (p *Interp) GetField(index int) Value {
+	if index == 0 {
+		return p.line
+	}
+	if index < 0 || index > len(p.fields) {
+		panic(fmt.Sprintf("field index out of range: %d (%d)", index, len(p.fields)))
+	}
+	return p.fields[index-1]
+}
+
+func (p *Interp) SetField(index int, value string) {
+	if index == 0 {
+		// TODO: update p.line and re-set fields
+		p.SetLine(value)
+		return
+	}
+	if index < 0 {
+		panic(fmt.Sprintf("field index negative: %d", index))
+	}
+	if index > len(p.fields) {
+		// TODO: append "" fields as needed
+	}
+	p.fields[index-1] = value
 }
 
 type binaryFunc func(l, r Value) Value
@@ -161,18 +205,34 @@ func (p *Interp) Evaluate(expr Expr) Value {
 	case *FieldExpr:
 		index := p.Evaluate(e.Index)
 		if f, ok := index.(float64); ok {
-			i := int(f)
-			if i == 0 {
-				return p.line
-			}
-			if i < 0 || i > len(p.fields) {
-				panic(fmt.Sprintf("field index out of range: %d (%d)", i, len(p.fields)))
-			}
-			return p.fields[i-1]
+			return p.GetField(int(f))
 		}
 		panic(fmt.Sprintf("field index not a number: %q", index))
 	case *VarExpr:
-		return p.Var(e.Name)
+		return p.GetVar(e.Name)
+	case *ArrayExpr:
+		index := p.Evaluate(e.Index)
+		return p.GetArray(e.Name, ToString(index))
+	case *AssignExpr:
+		rvalue := p.Evaluate(e.Right)
+		switch left := e.Left.(type) {
+		case *VarExpr:
+			p.SetVar(left.Name, rvalue)
+			return rvalue
+		case *ArrayExpr:
+			index := p.Evaluate(left.Index)
+			p.SetArray(left.Name, ToString(index), rvalue)
+			return rvalue
+		case *FieldExpr:
+			index := p.Evaluate(left.Index)
+			if f, ok := index.(float64); ok {
+				p.SetField(int(f), ToString(rvalue))
+				return rvalue
+			}
+			panic(fmt.Sprintf("field index not a number: %q", index))
+		default:
+			panic(fmt.Sprintf("unexpected lvalue type: %T", e.Left))
+		}
 	default:
 		panic(fmt.Sprintf("unexpected expr type: %T", expr))
 	}
@@ -188,6 +248,8 @@ func (p *Interp) Execute(stmt Stmt) {
 			args[i] = p.Evaluate(a)
 		}
 		fmt.Println(args...)
+	case *ExprStmt:
+		p.Evaluate(s.Expr)
 	default:
 		panic(fmt.Sprintf("unexpected stmt type: %T", stmt))
 	}

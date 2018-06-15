@@ -62,6 +62,8 @@ func (e *BinaryExpr) expr() {}
 func (e *FieldExpr) expr()  {}
 func (e *ConstExpr) expr()  {}
 func (e *VarExpr) expr()    {}
+func (e *ArrayExpr) expr()  {}
+func (e *AssignExpr) expr() {}
 
 type FieldExpr struct {
 	Index Expr
@@ -111,12 +113,31 @@ func (e *VarExpr) String() string {
 	return e.Name
 }
 
+type ArrayExpr struct {
+	Name  string
+	Index Expr
+}
+
+func (e *ArrayExpr) String() string {
+	return e.Name + "[" + e.Index.String() + "]"
+}
+
+type AssignExpr struct {
+	Left  Expr // can be one of: var, array[x], $n
+	Right Expr
+}
+
+func (e *AssignExpr) String() string {
+	return e.Left.String() + " = " + e.Right.String()
+}
+
 type Stmt interface {
 	stmt()
 	String() string
 }
 
 func (s *PrintStmt) stmt() {}
+func (s *ExprStmt) stmt()  {}
 
 type PrintStmt struct {
 	Args []Expr
@@ -128,4 +149,12 @@ func (s *PrintStmt) String() string {
 		parts[i] = a.String()
 	}
 	return "print " + strings.Join(parts, ", ")
+}
+
+type ExprStmt struct {
+	Expr Expr
+}
+
+func (s *ExprStmt) String() string {
+	return s.Expr.String()
 }
