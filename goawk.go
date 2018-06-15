@@ -35,14 +35,14 @@ import (
 
 func main() {
 	if len(os.Args) <= 1 {
-		fmt.Fprintf(os.Stderr, "usage: goawk src [filename]\n")
+		fmt.Fprintf(os.Stderr, "usage: goawk src [filename] ...\n")
 		os.Exit(3)
 	}
 	src := os.Args[1]
 
 	var err error
 	if len(os.Args) <= 2 {
-		err = Run(src, os.Stdin)
+		err = Run("", src, os.Stdin)
 	} else {
 		filename := os.Args[2]
 		f, errOpen := os.Open(filename)
@@ -51,7 +51,7 @@ func main() {
 			os.Exit(2)
 		}
 		defer f.Close()
-		err = Run(src, f)
+		err = Run(filename, src, f)
 	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "execute error: %s\n", err)
@@ -59,7 +59,7 @@ func main() {
 	}
 }
 
-func Run(src string, input io.Reader) error {
+func Run(filename, src string, input io.Reader) error {
 	prog, err := Parse(src)
 	if err != nil {
 		return err
@@ -68,9 +68,12 @@ func Run(src string, input io.Reader) error {
 	fmt.Println("-----")
 
 	interp := NewInterp()
+
 	for _, ss := range prog.Begin {
 		interp.Executes(ss)
 	}
+
+	interp.SetFile(filename)
 
 	scanner := bufio.NewScanner(input)
 	for scanner.Scan() {
@@ -95,16 +98,13 @@ func Run(src string, input io.Reader) error {
 
 func Parse(src string) (*Program, error) {
 	program := &Program{
-		// Begin: []Stmts{
-		//     {
-		//         &ExprStmt{
-		//             &AssignExpr{&FieldExpr{&ConstExpr{"x"}}, &ConstExpr{1.0}},
-		//         },
-		//         &ExprStmt{
-		//             &AssignExpr{&FieldExpr{&ConstExpr{2.0}}, &ConstExpr{2.5}},
-		//         },
-		//     },
-		// },
+		Begin: []Stmts{
+			{
+				&ExprStmt{
+					&AssignExpr{&VarExpr{"FILENAME"}, &ConstExpr{"FooFile"}},
+				},
+			},
+		},
 		Actions: []Action{
 			{
 				Pattern: &BinaryExpr{
@@ -118,6 +118,7 @@ func Parse(src string) (*Program, error) {
 					},
 					&PrintStmt{
 						Args: []Expr{
+							&VarExpr{"FILENAME"},
 							&FieldExpr{&ConstExpr{1.0}},
 							&BinaryExpr{
 								Left:  &FieldExpr{&ConstExpr{2.0}},

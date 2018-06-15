@@ -59,37 +59,120 @@ func ToString(v Value) string {
 }
 
 type Interp struct {
-	line    string
-	fields  []string
-	lineNum int
-	vars    map[string]Value
-	arrays  map[string]map[string]Value
+	line        string
+	fields      []string
+	numFields   float64
+	lineNum     float64
+	filename    string
+	fileLineNum float64
+
+	vars   map[string]Value
+	arrays map[string]map[string]Value
+
+	convertFormat   string
+	outputFormat    string
+	fieldSep        string
+	outputFieldSep  string
+	outputRecordSep string
+	subscriptSep    string
+	matchLength     float64
+	matchStart      float64
 }
 
 func NewInterp() *Interp {
 	p := &Interp{}
 	p.vars = make(map[string]Value)
 	p.arrays = make(map[string]map[string]Value)
+	p.convertFormat = "%.6g"
+	p.outputFormat = "%.6g"
+	p.fieldSep = " "
+	p.outputFieldSep = " "
+	p.outputRecordSep = "\n"
+	p.subscriptSep = "\x1c"
 	return p
+}
+
+func (p *Interp) SetFile(filename string) {
+	p.filename = filename
+	p.fileLineNum = 0
 }
 
 func (p *Interp) SetLine(line string) {
 	p.line = line
 	p.fields = strings.Fields(line)
+	p.numFields = float64(len(p.fields))
 }
 
 func (p *Interp) NextLine(line string) {
 	p.SetLine(line)
 	p.lineNum++
+	p.fileLineNum++
 }
 
 func (p *Interp) GetVar(name string) Value {
-	// TODO: built-in vars
-	return p.vars[name]
+	switch name {
+	case "CONVFMT":
+		return p.convertFormat
+	case "FILENAME":
+		return p.filename
+	case "FNR":
+		return p.fileLineNum
+	case "FS":
+		return p.fieldSep
+	case "NF":
+		return p.numFields
+	case "NR":
+		return p.lineNum
+	case "OFMT":
+		return p.outputFormat
+	case "OFS":
+		return p.outputFieldSep
+	case "ORS":
+		return p.outputRecordSep
+	case "RLENGTH":
+		return p.matchLength
+	case "RS":
+		return "\n"
+	case "RSTART":
+		return p.matchStart
+	case "SUBSEP":
+		return p.subscriptSep
+	default:
+		return p.vars[name]
+	}
 }
 
 func (p *Interp) SetVar(name string, value Value) {
-	p.vars[name] = value
+	switch name {
+	case "CONVFMT":
+		p.convertFormat = ToString(value)
+	case "FILENAME":
+		p.filename = ToString(value)
+	case "FNR":
+		p.fileLineNum = ToFloat(value)
+	case "FS":
+		p.fieldSep = ToString(value)
+	case "NF":
+		p.numFields = ToFloat(value)
+	case "NR":
+		p.lineNum = ToFloat(value)
+	case "OFMT":
+		p.outputFormat = ToString(value)
+	case "OFS":
+		p.outputFieldSep = ToString(value)
+	case "ORS":
+		p.outputRecordSep = ToString(value)
+	case "RLENGTH":
+		p.matchLength = ToFloat(value)
+	case "RS":
+		panic("assigning RS not supported")
+	case "RSTART":
+		p.matchStart = ToFloat(value)
+	case "SUBSEP":
+		p.subscriptSep = ToString(value)
+	default:
+		p.vars[name] = value
+	}
 }
 
 func (p *Interp) GetArray(name, index string) Value {
@@ -106,23 +189,26 @@ func (p *Interp) SetArray(name, index string, value Value) {
 }
 
 func (p *Interp) GetField(index int) Value {
+	if index < 0 {
+		panic(fmt.Sprintf("field index negative: %d", index))
+	}
 	if index == 0 {
 		return p.line
 	}
-	if index < 0 || index > len(p.fields) {
-		panic(fmt.Sprintf("field index out of range: %d (%d)", index, len(p.fields)))
+	if index > len(p.fields) {
+		return ""
 	}
 	return p.fields[index-1]
 }
 
 func (p *Interp) SetField(index int, value string) {
+	if index < 0 {
+		panic(fmt.Sprintf("field index negative: %d", index))
+	}
 	if index == 0 {
 		// TODO: update p.line and re-set fields
 		p.SetLine(value)
 		return
-	}
-	if index < 0 {
-		panic(fmt.Sprintf("field index negative: %d", index))
 	}
 	if index > len(p.fields) {
 		// TODO: append "" fields as needed
