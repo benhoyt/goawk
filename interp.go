@@ -18,50 +18,9 @@ func BoolValue(b bool) Value {
 	return 0.0
 }
 
-func ToBool(v Value) bool {
-	switch v := v.(type) {
-	case float64:
-		return v != 0
-	case string:
-		return v != ""
-	case nil:
-		return false
-	default:
-		panic(fmt.Sprintf("unexpected type converting to bool: %T", v))
-	}
-}
-
-func ToFloat(v Value) float64 {
-	switch v := v.(type) {
-	case float64:
-		return v
-	case string:
-		// TODO: handle cases like "3x"
-		f, _ := strconv.ParseFloat(v, 64)
-		return f
-	case nil:
-		return 0.0
-	default:
-		panic(fmt.Sprintf("unexpected type converting to float: %T", v))
-	}
-}
-
-func ToString(v Value) string {
-	switch v := v.(type) {
-	case float64:
-		// TODO: take output format into account
-		return fmt.Sprintf("%v", v)
-	case string:
-		return v
-	case nil:
-		return ""
-	default:
-		panic(fmt.Sprintf("unexpected type converting to string: %T", v))
-	}
-}
-
 type Interp struct {
 	program *Program
+	output  io.Writer
 	vars    map[string]Value
 	arrays  map[string]map[string]Value
 
@@ -82,9 +41,10 @@ type Interp struct {
 	matchStart      float64
 }
 
-func NewInterp(program *Program) *Interp {
+func NewInterp(program *Program, output io.Writer) *Interp {
 	p := &Interp{}
 	p.program = program
+	p.output = output
 	p.vars = make(map[string]Value)
 	p.arrays = make(map[string]map[string]Value)
 	p.convertFormat = "%.6g"
@@ -115,7 +75,7 @@ func (p *Interp) ExecuteFile(filename string, input io.Reader) error {
 		p.NextLine(scanner.Text())
 		for _, action := range p.program.Actions {
 			pattern := p.Evaluate(action.Pattern)
-			if ToBool(pattern) {
+			if p.ToBool(pattern) {
 				p.Executes(action.Stmts)
 			}
 		}
@@ -146,13 +106,12 @@ func (p *Interp) Executes(stmts Stmts) {
 func (p *Interp) Execute(stmt Stmt) {
 	switch s := stmt.(type) {
 	case *PrintStmt:
-		// TODO: convert to string properly, respecting output format
-		// TODO: handle nil (undefined)
-		args := make([]interface{}, len(s.Args))
+		strs := make([]string, len(s.Args))
 		for i, a := range s.Args {
-			args[i] = p.Evaluate(a)
+			strs[i] = p.ToOutputString(p.Evaluate(a))
 		}
-		fmt.Println(args...)
+		line := strings.Join(strs, p.outputFieldSep)
+		io.WriteString(p.output, line+p.outputRecordSep)
 	case *ExprStmt:
 		p.Evaluate(s.Expr)
 	default:
@@ -165,7 +124,7 @@ func (p *Interp) Evaluate(expr Expr) Value {
 	case *BinaryExpr:
 		left := p.Evaluate(e.Left)
 		right := p.Evaluate(e.Right)
-		return binaryFuncs[e.Op](left, right)
+		return binaryFuncs[e.Op](p, left, right)
 	case *ConstExpr:
 		return e.Value
 	case *FieldExpr:
@@ -178,7 +137,7 @@ func (p *Interp) Evaluate(expr Expr) Value {
 		return p.GetVar(e.Name)
 	case *ArrayExpr:
 		index := p.Evaluate(e.Index)
-		return p.GetArray(e.Name, ToString(index))
+		return p.GetArray(e.Name, p.ToString(index))
 	case *AssignExpr:
 		rvalue := p.Evaluate(e.Right)
 		switch left := e.Left.(type) {
@@ -187,12 +146,12 @@ func (p *Interp) Evaluate(expr Expr) Value {
 			return rvalue
 		case *ArrayExpr:
 			index := p.Evaluate(left.Index)
-			p.SetArray(left.Name, ToString(index), rvalue)
+			p.SetArray(left.Name, p.ToString(index), rvalue)
 			return rvalue
 		case *FieldExpr:
 			index := p.Evaluate(left.Index)
 			if f, ok := index.(float64); ok {
-				p.SetField(int(f), ToString(rvalue))
+				p.SetField(int(f), p.ToString(rvalue))
 				return rvalue
 			}
 			panic(fmt.Sprintf("field index not a number: %q", index))
@@ -257,31 +216,31 @@ func (p *Interp) GetVar(name string) Value {
 func (p *Interp) SetVar(name string, value Value) {
 	switch name {
 	case "CONVFMT":
-		p.convertFormat = ToString(value)
+		p.convertFormat = p.ToString(value)
 	case "FILENAME":
-		p.filename = ToString(value)
+		p.filename = p.ToString(value)
 	case "FNR":
-		p.fileLineNum = ToFloat(value)
+		p.fileLineNum = p.ToFloat(value)
 	case "FS":
-		p.fieldSep = ToString(value)
+		p.fieldSep = p.ToString(value)
 	case "NF":
-		p.numFields = ToFloat(value)
+		p.numFields = p.ToFloat(value)
 	case "NR":
-		p.lineNum = ToFloat(value)
+		p.lineNum = p.ToFloat(value)
 	case "OFMT":
-		p.outputFormat = ToString(value)
+		p.outputFormat = p.ToString(value)
 	case "OFS":
-		p.outputFieldSep = ToString(value)
+		p.outputFieldSep = p.ToString(value)
 	case "ORS":
-		p.outputRecordSep = ToString(value)
+		p.outputRecordSep = p.ToString(value)
 	case "RLENGTH":
-		p.matchLength = ToFloat(value)
+		p.matchLength = p.ToFloat(value)
 	case "RS":
 		panic("assigning RS not supported")
 	case "RSTART":
-		p.matchStart = ToFloat(value)
+		p.matchStart = p.ToFloat(value)
 	case "SUBSEP":
-		p.subscriptSep = ToString(value)
+		p.subscriptSep = p.ToString(value)
 	default:
 		p.vars[name] = value
 	}
@@ -328,66 +287,129 @@ func (p *Interp) SetField(index int, value string) {
 	p.fields[index-1] = value
 }
 
-type binaryFunc func(l, r Value) Value
+func (p *Interp) ToBool(v Value) bool {
+	switch v := v.(type) {
+	case float64:
+		return v != 0
+	case string:
+		return v != ""
+	case nil:
+		return false
+	default:
+		panic(fmt.Sprintf("unexpected type converting to bool: %T", v))
+	}
+}
+
+func (p *Interp) ToFloat(v Value) float64 {
+	switch v := v.(type) {
+	case float64:
+		return v
+	case string:
+		// TODO: handle cases like "3x"
+		f, _ := strconv.ParseFloat(v, 64)
+		return f
+	case nil:
+		return 0.0
+	default:
+		panic(fmt.Sprintf("unexpected type converting to float: %T", v))
+	}
+}
+
+func (p *Interp) ToString(v Value) string {
+	switch v := v.(type) {
+	case float64:
+		if v == float64(int(v)) {
+			return fmt.Sprintf("%d", v)
+		} else {
+			return fmt.Sprintf(p.convertFormat, v)
+		}
+	case string:
+		return v
+	case nil:
+		return ""
+	default:
+		panic(fmt.Sprintf("unexpected type converting to string: %T", v))
+	}
+}
+
+func (p *Interp) ToOutputString(v Value) string {
+	switch v := v.(type) {
+	case float64:
+		i := int(v)
+		if v == float64(i) {
+			return fmt.Sprintf("%d", i)
+		} else {
+			return fmt.Sprintf(p.outputFormat, v)
+		}
+	case string:
+		return v
+	case nil:
+		return ""
+	default:
+		panic(fmt.Sprintf("unexpected type converting to string: %T", v))
+	}
+}
+
+type binaryFunc func(p *Interp, l, r Value) Value
 
 var binaryFuncs = map[string]binaryFunc{
-	"==": equal,
-	"!=": func(l, r Value) Value {
-		return not(equal(l, r))
+	"==": (*Interp).equal,
+	"!=": func(p *Interp, l, r Value) Value {
+		return p.not(p.equal(l, r))
 	},
-	"+": func(l, r Value) Value {
-		return ToFloat(l) + ToFloat(r)
+	"+": func(p *Interp, l, r Value) Value {
+		return p.ToFloat(l) + p.ToFloat(r)
 	},
-	"-": func(l, r Value) Value {
-		return ToFloat(l) + ToFloat(r)
+	"-": func(p *Interp, l, r Value) Value {
+		return p.ToFloat(l) + p.ToFloat(r)
 	},
-	"*": func(l, r Value) Value {
-		return ToFloat(l) * ToFloat(r)
+	"*": func(p *Interp, l, r Value) Value {
+		return p.ToFloat(l) * p.ToFloat(r)
 	},
-	"^": func(l, r Value) Value {
-		return math.Pow(ToFloat(l), ToFloat(r))
+	"^": func(p *Interp, l, r Value) Value {
+		return math.Pow(p.ToFloat(l), p.ToFloat(r))
 	},
-	"/": func(l, r Value) Value {
-		rf := ToFloat(r)
+	"/": func(p *Interp, l, r Value) Value {
+		rf := p.ToFloat(r)
 		if rf == 0.0 {
 			panic("division by zero")
 		}
-		return ToFloat(l) / rf
+		return p.ToFloat(l) / rf
 	},
-	"%": func(l, r Value) Value {
-		rf := ToFloat(r)
+	"%": func(p *Interp, l, r Value) Value {
+		rf := p.ToFloat(r)
 		if rf == 0.0 {
 			panic("division by zero in mod")
 		}
 		// TODO: integer/float handling?
-		return int(ToFloat(l)) % int(rf)
+		return int(p.ToFloat(l)) % int(rf)
 	},
-	"": func(l, r Value) Value {
-		return ToString(l) + ToString(r)
+	"": func(p *Interp, l, r Value) Value {
+		return p.ToString(l) + p.ToString(r)
 	},
 }
 
-func equal(l, r Value) Value {
+func (p *Interp) equal(l, r Value) Value {
 	switch l := l.(type) {
 	case float64:
 		switch r := r.(type) {
 		case float64:
 			return BoolValue(l == r)
 		case string:
-			return BoolValue(l == ToFloat(r))
+			return BoolValue(l == p.ToFloat(r))
 		}
 	case string:
 		switch r := r.(type) {
 		case string:
 			return BoolValue(l == r)
 		case float64:
-			return BoolValue(ToFloat(l) == r)
+			return BoolValue(p.ToFloat(l) == r)
 		}
 	}
 	// TODO: uninitialized value (nil)
 	return 0.0
 }
 
-func not(v Value) Value {
-	return BoolValue(!ToBool(v))
+func (p *Interp) not(v Value) Value {
+	return BoolValue(!p.ToBool(v))
 }

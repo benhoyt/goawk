@@ -38,7 +38,7 @@ func main() {
 		os.Exit(3)
 	}
 
-	interp := NewInterp(prog)
+	interp := NewInterp(prog, os.Stdout)
 	err = interp.ExecuteBegin()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "execute error: %s\n", err)
@@ -75,13 +75,13 @@ func main() {
 
 func Parse(src string) (*Program, error) {
 	program := &Program{
-		// Begin: []Stmts{
-		//     {
-		//         &ExprStmt{
-		//             &AssignExpr{&VarExpr{"FILENAME"}, &ConstExpr{"FooFile"}},
-		//         },
-		//     },
-		// },
+		Begin: []Stmts{
+			{
+				&ExprStmt{
+					&AssignExpr{&VarExpr{"OFS"}, &ConstExpr{"|"}},
+				},
+			},
+		},
 		Actions: []Action{
 			{
 				Pattern: &BinaryExpr{
@@ -96,6 +96,9 @@ func Parse(src string) (*Program, error) {
 					&PrintStmt{
 						Args: []Expr{
 							&VarExpr{"FILENAME"},
+							&VarExpr{"NR"},
+							&VarExpr{"FNR"},
+							&VarExpr{"NF"},
 							&FieldExpr{&ConstExpr{1.0}},
 							&BinaryExpr{
 								Left:  &FieldExpr{&ConstExpr{2.0}},
