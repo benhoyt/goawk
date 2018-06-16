@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"math"
 	"strconv"
 	"strings"
@@ -59,15 +61,16 @@ func ToString(v Value) string {
 }
 
 type Interp struct {
+	program *Program
+	vars    map[string]Value
+	arrays  map[string]map[string]Value
+
 	line        string
 	fields      []string
 	numFields   float64
 	lineNum     float64
 	filename    string
 	fileLineNum float64
-
-	vars   map[string]Value
-	arrays map[string]map[string]Value
 
 	convertFormat   string
 	outputFormat    string
@@ -79,8 +82,9 @@ type Interp struct {
 	matchStart      float64
 }
 
-func NewInterp() *Interp {
+func NewInterp(program *Program) *Interp {
 	p := &Interp{}
+	p.program = program
 	p.vars = make(map[string]Value)
 	p.arrays = make(map[string]map[string]Value)
 	p.convertFormat = "%.6g"
@@ -90,6 +94,114 @@ func NewInterp() *Interp {
 	p.outputRecordSep = "\n"
 	p.subscriptSep = "\x1c"
 	return p
+}
+
+func (p *Interp) ExecuteBegin() error {
+	for _, statements := range p.program.Begin {
+		p.Executes(statements)
+		// TODO: error handling
+		// if err != nil {
+		//     return err
+		// }
+	}
+	return nil
+}
+
+func (p *Interp) ExecuteFile(filename string, input io.Reader) error {
+	// TODO: error handling
+	p.SetFile(filename)
+	scanner := bufio.NewScanner(input)
+	for scanner.Scan() {
+		p.NextLine(scanner.Text())
+		for _, action := range p.program.Actions {
+			pattern := p.Evaluate(action.Pattern)
+			if ToBool(pattern) {
+				p.Executes(action.Stmts)
+			}
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("reading lines from input: %s", err)
+	}
+	return nil
+}
+
+func (p *Interp) ExecuteEnd() error {
+	for _, statements := range p.program.End {
+		p.Executes(statements)
+		// TODO: error handling
+		// if err != nil {
+		//     return err
+		// }
+	}
+	return nil
+}
+
+func (p *Interp) Executes(stmts Stmts) {
+	for _, s := range stmts {
+		p.Execute(s)
+	}
+}
+
+func (p *Interp) Execute(stmt Stmt) {
+	switch s := stmt.(type) {
+	case *PrintStmt:
+		// TODO: convert to string properly, respecting output format
+		// TODO: handle nil (undefined)
+		args := make([]interface{}, len(s.Args))
+		for i, a := range s.Args {
+			args[i] = p.Evaluate(a)
+		}
+		fmt.Println(args...)
+	case *ExprStmt:
+		p.Evaluate(s.Expr)
+	default:
+		panic(fmt.Sprintf("unexpected stmt type: %T", stmt))
+	}
+}
+
+func (p *Interp) Evaluate(expr Expr) Value {
+	switch e := expr.(type) {
+	case *BinaryExpr:
+		left := p.Evaluate(e.Left)
+		right := p.Evaluate(e.Right)
+		return binaryFuncs[e.Op](left, right)
+	case *ConstExpr:
+		return e.Value
+	case *FieldExpr:
+		index := p.Evaluate(e.Index)
+		if f, ok := index.(float64); ok {
+			return p.GetField(int(f))
+		}
+		panic(fmt.Sprintf("field index not a number: %q", index))
+	case *VarExpr:
+		return p.GetVar(e.Name)
+	case *ArrayExpr:
+		index := p.Evaluate(e.Index)
+		return p.GetArray(e.Name, ToString(index))
+	case *AssignExpr:
+		rvalue := p.Evaluate(e.Right)
+		switch left := e.Left.(type) {
+		case *VarExpr:
+			p.SetVar(left.Name, rvalue)
+			return rvalue
+		case *ArrayExpr:
+			index := p.Evaluate(left.Index)
+			p.SetArray(left.Name, ToString(index), rvalue)
+			return rvalue
+		case *FieldExpr:
+			index := p.Evaluate(left.Index)
+			if f, ok := index.(float64); ok {
+				p.SetField(int(f), ToString(rvalue))
+				return rvalue
+			}
+			panic(fmt.Sprintf("field index not a number: %q", index))
+		default:
+			panic(fmt.Sprintf("unexpected lvalue type: %T", e.Left))
+		}
+	default:
+		panic(fmt.Sprintf("unexpected expr type: %T", expr))
+	}
 }
 
 func (p *Interp) SetFile(filename string) {
@@ -278,71 +390,4 @@ func equal(l, r Value) Value {
 
 func not(v Value) Value {
 	return BoolValue(!ToBool(v))
-}
-
-func (p *Interp) Evaluate(expr Expr) Value {
-	switch e := expr.(type) {
-	case *BinaryExpr:
-		left := p.Evaluate(e.Left)
-		right := p.Evaluate(e.Right)
-		return binaryFuncs[e.Op](left, right)
-	case *ConstExpr:
-		return e.Value
-	case *FieldExpr:
-		index := p.Evaluate(e.Index)
-		if f, ok := index.(float64); ok {
-			return p.GetField(int(f))
-		}
-		panic(fmt.Sprintf("field index not a number: %q", index))
-	case *VarExpr:
-		return p.GetVar(e.Name)
-	case *ArrayExpr:
-		index := p.Evaluate(e.Index)
-		return p.GetArray(e.Name, ToString(index))
-	case *AssignExpr:
-		rvalue := p.Evaluate(e.Right)
-		switch left := e.Left.(type) {
-		case *VarExpr:
-			p.SetVar(left.Name, rvalue)
-			return rvalue
-		case *ArrayExpr:
-			index := p.Evaluate(left.Index)
-			p.SetArray(left.Name, ToString(index), rvalue)
-			return rvalue
-		case *FieldExpr:
-			index := p.Evaluate(left.Index)
-			if f, ok := index.(float64); ok {
-				p.SetField(int(f), ToString(rvalue))
-				return rvalue
-			}
-			panic(fmt.Sprintf("field index not a number: %q", index))
-		default:
-			panic(fmt.Sprintf("unexpected lvalue type: %T", e.Left))
-		}
-	default:
-		panic(fmt.Sprintf("unexpected expr type: %T", expr))
-	}
-}
-
-func (p *Interp) Execute(stmt Stmt) {
-	switch s := stmt.(type) {
-	case *PrintStmt:
-		// TODO: convert to string properly, respecting output format
-		// TODO: handle nil (undefined)
-		args := make([]interface{}, len(s.Args))
-		for i, a := range s.Args {
-			args[i] = p.Evaluate(a)
-		}
-		fmt.Println(args...)
-	case *ExprStmt:
-		p.Evaluate(s.Expr)
-	default:
-		panic(fmt.Sprintf("unexpected stmt type: %T", stmt))
-	}
-}
-
-func (p *Interp) Executes(stmts Stmts) {
-	for _, s := range stmts {
-		p.Execute(s)
-	}
 }
