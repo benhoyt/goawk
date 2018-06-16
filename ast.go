@@ -64,6 +64,7 @@ func (e *ConstExpr) expr()  {}
 func (e *VarExpr) expr()    {}
 func (e *ArrayExpr) expr()  {}
 func (e *AssignExpr) expr() {}
+func (e *CallExpr) expr()   {}
 
 type FieldExpr struct {
 	Index Expr
@@ -129,6 +130,19 @@ type AssignExpr struct {
 
 func (e *AssignExpr) String() string {
 	return e.Left.String() + " = " + e.Right.String()
+}
+
+type CallExpr struct {
+	Name string
+	Args []Expr
+}
+
+func (e *CallExpr) String() string {
+	args := make([]string, len(e.Args))
+	for i, a := range e.Args {
+		args[i] = a.String()
+	}
+	return e.Name + "(" + strings.Join(args, ", ") + ")"
 }
 
 type Stmt interface {

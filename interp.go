@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"math/rand"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Value interface{}
@@ -23,6 +25,7 @@ type Interp struct {
 	output  io.Writer
 	vars    map[string]Value
 	arrays  map[string]map[string]Value
+	random  *rand.Rand
 
 	line        string
 	fields      []string
@@ -47,6 +50,7 @@ func NewInterp(program *Program, output io.Writer) *Interp {
 	p.output = output
 	p.vars = make(map[string]Value)
 	p.arrays = make(map[string]map[string]Value)
+	p.random = rand.New(rand.NewSource(0))
 	p.convertFormat = "%.6g"
 	p.outputFormat = "%.6g"
 	p.fieldSep = " "
@@ -158,6 +162,12 @@ func (p *Interp) Evaluate(expr Expr) Value {
 		default:
 			panic(fmt.Sprintf("unexpected lvalue type: %T", e.Left))
 		}
+	case *CallExpr:
+		args := make([]Value, len(e.Args))
+		for i, a := range e.Args {
+			args[i] = p.Evaluate(a)
+		}
+		return p.call(e.Name, args)
 	default:
 		panic(fmt.Sprintf("unexpected expr type: %T", expr))
 	}
@@ -412,4 +422,63 @@ func (p *Interp) equal(l, r Value) Value {
 
 func (p *Interp) not(v Value) Value {
 	return BoolValue(!p.ToBool(v))
+}
+
+func (p *Interp) checkNumArgs(name string, actual, expected int) {
+	if actual != expected {
+		panic(fmt.Sprintf("%s() expects %d args, got %d", name, expected, actual))
+	}
+}
+
+func (p *Interp) call(name string, args []Value) Value {
+	switch name {
+	case "atan2":
+		p.checkNumArgs("atan2", len(args), 2)
+		return math.Atan2(p.ToFloat(args[0]), p.ToFloat(args[1]))
+	case "cos":
+		p.checkNumArgs("cos", len(args), 1)
+		return math.Cos(p.ToFloat(args[0]))
+	case "exp":
+		p.checkNumArgs("exp", len(args), 1)
+		return math.Exp(p.ToFloat(args[0]))
+	case "index":
+		p.checkNumArgs("index", len(args), 2)
+		s := p.ToString(args[0])
+		substr := p.ToString(args[1])
+		return float64(strings.Index(s, substr) + 1)
+	case "int":
+		p.checkNumArgs("int", len(args), 1)
+		return float64(int(p.ToFloat(args[0])))
+	case "log":
+		p.checkNumArgs("log", len(args), 1)
+		return math.Log(p.ToFloat(args[0]))
+	case "sqrt":
+		p.checkNumArgs("sqrt", len(args), 1)
+		return math.Sqrt(p.ToFloat(args[0]))
+	case "rand":
+		p.checkNumArgs("rand", len(args), 0)
+		return p.random.Float64()
+	case "sin":
+		p.checkNumArgs("sin", len(args), 1)
+		return math.Sin(p.ToFloat(args[0]))
+	case "srand":
+		switch len(args) {
+		case 0:
+			p.random.Seed(time.Now().UnixNano())
+		case 1:
+			// TODO: truncating the fraction part here, is that okay?
+			p.random.Seed(int64(p.ToFloat(args[0])))
+		default:
+			panic(fmt.Sprintf("srand() expects 0 or 1 arg, got %d", len(args)))
+		}
+		return nil
+	case "tolower":
+		p.checkNumArgs("tolower", len(args), 1)
+		return strings.ToLower(p.ToString(args[0]))
+	case "toupper":
+		p.checkNumArgs("toupper", len(args), 1)
+		return strings.ToUpper(p.ToString(args[0]))
+	default:
+		panic(fmt.Sprintf("unexpected function name: %q", name))
+	}
 }

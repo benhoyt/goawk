@@ -14,6 +14,7 @@ TODO:
     logical and
     logical or
     cond ?:
+- multi-dimensional arrays and SUBSEP
 - error handling: InterpError and catch in Evaluate and Execute
 - lexing
 - parsing
@@ -77,8 +78,11 @@ func Parse(src string) (*Program, error) {
 	program := &Program{
 		Begin: []Stmts{
 			{
+				// &ExprStmt{
+				// 	&AssignExpr{&VarExpr{"OFS"}, &ConstExpr{"|"}},
+				// },
 				&ExprStmt{
-					&AssignExpr{&VarExpr{"OFS"}, &ConstExpr{"|"}},
+					&CallExpr{"srand", []Expr{&ConstExpr{1.2}}},
 				},
 			},
 		},
@@ -105,6 +109,8 @@ func Parse(src string) (*Program, error) {
 								Op:    "*",
 								Right: &FieldExpr{&ConstExpr{3.0}},
 							},
+							&CallExpr{"index", []Expr{&ConstExpr{"chicken"}, &ConstExpr{"ken"}}},
+							&CallExpr{"index", []Expr{&ConstExpr{"chicken"}, &ConstExpr{"dmr"}}},
 						},
 					},
 				},
