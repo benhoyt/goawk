@@ -104,14 +104,14 @@ func Parse(src string) (*Program, error) {
 							&VarExpr{"NF"},
 							&FieldExpr{&ConstExpr{1.0}},
 							&BinaryExpr{
-								Left:  &FieldExpr{&ConstExpr{2.0}},
-								Op:    "*",
-								Right: &FieldExpr{&ConstExpr{3.0}},
+								Left:  &ConstExpr{0.0},
+								Op:    "||",
+								Right: &ConstExpr{1.5},
 							},
-							&UnaryExpr{
-								Op:    "-",
-								Value: &ConstExpr{"5"},
-							},
+							// &UnaryExpr{
+							// 	Op:    "-",
+							// 	Value: &ConstExpr{"5"},
+							// },
 						},
 					},
 				},

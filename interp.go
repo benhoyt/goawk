@@ -130,8 +130,23 @@ func (p *Interp) Evaluate(expr Expr) Value {
 		return unaryFuncs[e.Op](p, value)
 	case *BinaryExpr:
 		left := p.Evaluate(e.Left)
-		right := p.Evaluate(e.Right)
-		return binaryFuncs[e.Op](p, left, right)
+		switch e.Op {
+		case "&&":
+			if !p.ToBool(left) {
+				return 0.0
+			}
+			right := p.Evaluate(e.Right)
+			return BoolValue(p.ToBool(right))
+		case "||":
+			if p.ToBool(left) {
+				return 1.0
+			}
+			right := p.Evaluate(e.Right)
+			return BoolValue(p.ToBool(right))
+		default:
+			right := p.Evaluate(e.Right)
+			return binaryFuncs[e.Op](p, left, right)
+		}
 	case *ConstExpr:
 		return e.Value
 	case *FieldExpr:
