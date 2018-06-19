@@ -147,6 +147,13 @@ func (p *Interp) Evaluate(expr Expr) Value {
 			right := p.Evaluate(e.Right)
 			return binaryFuncs[e.Op](p, left, right)
 		}
+	case *CondExpr:
+		cond := p.Evaluate(e.Cond)
+		if p.ToBool(cond) {
+			return p.Evaluate(e.True)
+		} else {
+			return p.Evaluate(e.False)
+		}
 	case *ConstExpr:
 		return e.Value
 	case *FieldExpr:

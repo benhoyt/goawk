@@ -61,6 +61,7 @@ type Expr interface {
 func (e *FieldExpr) expr()  {}
 func (e *UnaryExpr) expr()  {}
 func (e *BinaryExpr) expr() {}
+func (e *CondExpr) expr()   {}
 func (e *ConstExpr) expr()  {}
 func (e *VarExpr) expr()    {}
 func (e *ArrayExpr) expr()  {}
@@ -98,6 +99,16 @@ func (e *BinaryExpr) String() string {
 		opStr = " " + e.Op + " "
 	}
 	return "(" + e.Left.String() + opStr + e.Right.String() + ")"
+}
+
+type CondExpr struct {
+	Cond  Expr
+	True  Expr
+	False Expr
+}
+
+func (e *CondExpr) String() string {
+	return e.Cond.String() + " ? " + e.True.String() + " : " + e.False.String()
 }
 
 type ConstExpr struct {

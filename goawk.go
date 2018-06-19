@@ -9,14 +9,12 @@ TODO:
     equality and inequality
     regex and regex not
     "in" and multi-dimensional "in"
-    logical and
-    logical or
-    cond ?:
 - regex (ERE) functions
 - multi-dimensional arrays and SUBSEP
 - error handling: InterpError and catch in Evaluate and Execute
 - lexing
 - parsing
+- testing
 
 */
 
@@ -37,6 +35,8 @@ func main() {
 		fmt.Fprintf(os.Stderr, "parse error: %s\n", err)
 		os.Exit(3)
 	}
+	fmt.Println(prog)
+	fmt.Println("-----") // TODO
 
 	interp := NewInterp(prog, os.Stdout)
 	err = interp.ExecuteBegin()
@@ -103,10 +103,10 @@ func Parse(src string) (*Program, error) {
 							&VarExpr{"FNR"},
 							&VarExpr{"NF"},
 							&FieldExpr{&ConstExpr{1.0}},
-							&BinaryExpr{
-								Left:  &ConstExpr{0.0},
-								Op:    "||",
-								Right: &ConstExpr{1.5},
+							&CondExpr{
+								Cond:  &ConstExpr{0.5},
+								True:  &ConstExpr{"true"},
+								False: &ConstExpr{"false"},
 							},
 							// &UnaryExpr{
 							// 	Op:    "-",
