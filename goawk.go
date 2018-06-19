@@ -93,9 +93,6 @@ func Parse(src string) (*Program, error) {
 					Right: &ConstExpr{""},
 				},
 				Stmts: []Stmt{
-					// &ExprStmt{
-					// 	&AssignExpr{&FieldExpr{&ConstExpr{0.0}}, &ConstExpr{"HELLO 2 3"}},
-					// },
 					&PrintStmt{
 						Args: []Expr{
 							&VarExpr{"FILENAME"},
@@ -103,15 +100,7 @@ func Parse(src string) (*Program, error) {
 							&VarExpr{"FNR"},
 							&VarExpr{"NF"},
 							&FieldExpr{&ConstExpr{1.0}},
-							&CondExpr{
-								Cond:  &ConstExpr{0.5},
-								True:  &ConstExpr{"true"},
-								False: &ConstExpr{"false"},
-							},
-							// &UnaryExpr{
-							// 	Op:    "-",
-							// 	Value: &ConstExpr{"5"},
-							// },
+							&AssignExpr{&VarExpr{"x"}, "+", &ConstExpr{2.0}},
 						},
 					},
 				},

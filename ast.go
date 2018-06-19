@@ -146,11 +146,12 @@ func (e *ArrayExpr) String() string {
 
 type AssignExpr struct {
 	Left  Expr // can be one of: var, array[x], $n
+	Op    string
 	Right Expr
 }
 
 func (e *AssignExpr) String() string {
-	return e.Left.String() + " = " + e.Right.String()
+	return e.Left.String() + " " + e.Op + "= " + e.Right.String()
 }
 
 type CallExpr struct {

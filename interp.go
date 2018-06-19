@@ -168,20 +168,24 @@ func (p *Interp) Evaluate(expr Expr) Value {
 		index := p.Evaluate(e.Index)
 		return p.GetArray(e.Name, p.ToString(index))
 	case *AssignExpr:
-		rvalue := p.Evaluate(e.Right)
+		right := p.Evaluate(e.Right)
+		if e.Op != "" {
+			left := p.Evaluate(e.Left)
+			right = binaryFuncs[e.Op](p, left, right)
+		}
 		switch left := e.Left.(type) {
 		case *VarExpr:
-			p.SetVar(left.Name, rvalue)
-			return rvalue
+			p.SetVar(left.Name, right)
+			return right
 		case *ArrayExpr:
 			index := p.Evaluate(left.Index)
-			p.SetArray(left.Name, p.ToString(index), rvalue)
-			return rvalue
+			p.SetArray(left.Name, p.ToString(index), right)
+			return right
 		case *FieldExpr:
 			index := p.Evaluate(left.Index)
 			if f, ok := index.(float64); ok {
-				p.SetField(int(f), p.ToString(rvalue))
-				return rvalue
+				p.SetField(int(f), p.ToString(right))
+				return right
 			}
 			panic(fmt.Sprintf("field index not a number: %q", index))
 		default:
