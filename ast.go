@@ -58,8 +58,9 @@ type Expr interface {
 	String() string
 }
 
-func (e *BinaryExpr) expr() {}
 func (e *FieldExpr) expr()  {}
+func (e *UnaryExpr) expr()  {}
+func (e *BinaryExpr) expr() {}
 func (e *ConstExpr) expr()  {}
 func (e *VarExpr) expr()    {}
 func (e *ArrayExpr) expr()  {}
@@ -72,6 +73,15 @@ type FieldExpr struct {
 
 func (e *FieldExpr) String() string {
 	return "$" + e.Index.String()
+}
+
+type UnaryExpr struct {
+	Op    string
+	Value Expr
+}
+
+func (e *UnaryExpr) String() string {
+	return e.Op + e.Value.String()
 }
 
 type BinaryExpr struct {

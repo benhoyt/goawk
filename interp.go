@@ -125,6 +125,9 @@ func (p *Interp) Execute(stmt Stmt) {
 
 func (p *Interp) Evaluate(expr Expr) Value {
 	switch e := expr.(type) {
+	case *UnaryExpr:
+		value := p.Evaluate(e.Value)
+		return unaryFuncs[e.Op](p, value)
 	case *BinaryExpr:
 		left := p.Evaluate(e.Left)
 		right := p.Evaluate(e.Right)
@@ -420,6 +423,18 @@ func (p *Interp) equal(l, r Value) Value {
 	return 0.0
 }
 
+type unaryFunc func(p *Interp, v Value) Value
+
+var unaryFuncs = map[string]unaryFunc{
+	"!": (*Interp).not,
+	"+": func(p *Interp, v Value) Value {
+		return p.ToFloat(v)
+	},
+	"-": func(p *Interp, v Value) Value {
+		return -p.ToFloat(v)
+	},
+}
+
 func (p *Interp) not(v Value) Value {
 	return BoolValue(!p.ToBool(v))
 }
@@ -449,9 +464,27 @@ func (p *Interp) call(name string, args []Value) Value {
 	case "int":
 		p.checkNumArgs("int", len(args), 1)
 		return float64(int(p.ToFloat(args[0])))
+	case "length":
+		switch len(args) {
+		case 0:
+			return len(p.line)
+		case 1:
+			return len(p.ToString(args[0]))
+		default:
+			panic(fmt.Sprintf("length() expects 0 or 1 arg, got %d", len(args)))
+		}
 	case "log":
 		p.checkNumArgs("log", len(args), 1)
 		return math.Log(p.ToFloat(args[0]))
+	case "sprintf":
+		if len(args) < 1 {
+			panic(fmt.Sprintf("sprintf() expects 1 or more args, got %d", len(args)))
+		}
+		vals := make([]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			vals[i] = interface{}(a)
+		}
+		return fmt.Sprintf(p.ToString(args[0]), vals...)
 	case "sqrt":
 		p.checkNumArgs("sqrt", len(args), 1)
 		return math.Sqrt(p.ToFloat(args[0]))
@@ -472,6 +505,31 @@ func (p *Interp) call(name string, args []Value) Value {
 			panic(fmt.Sprintf("srand() expects 0 or 1 arg, got %d", len(args)))
 		}
 		return nil
+	case "substr":
+		// TODO: untested
+		if len(args) != 2 && len(args) != 3 {
+			panic(fmt.Sprintf("substr() expects 2 or 3 args, got %d", len(args)))
+		}
+		str := p.ToString(args[0])
+		pos := int(p.ToFloat(args[1]))
+		if pos < 1 {
+			pos = 1
+		}
+		if pos > len(str) {
+			pos = len(str)
+		}
+		maxLength := len(str) - pos + 1
+		length := maxLength
+		if len(args) == 3 {
+			length = int(p.ToFloat(args[2]))
+			if length < 0 {
+				length = 0
+			}
+			if length > maxLength {
+				length = maxLength
+			}
+		}
+		return str[pos-1 : pos-1+length]
 	case "tolower":
 		p.checkNumArgs("tolower", len(args), 1)
 		return strings.ToLower(p.ToString(args[0]))

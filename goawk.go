@@ -3,17 +3,16 @@ package main
 
 /*
 TODO:
-- built-in function calls
 - add other expressions:
     post inc/dec
     pre inc/dec
-    unary not, plus, minus
     equality and inequality
     regex and regex not
     "in" and multi-dimensional "in"
     logical and
     logical or
     cond ?:
+- regex (ERE) functions
 - multi-dimensional arrays and SUBSEP
 - error handling: InterpError and catch in Evaluate and Execute
 - lexing
@@ -109,8 +108,10 @@ func Parse(src string) (*Program, error) {
 								Op:    "*",
 								Right: &FieldExpr{&ConstExpr{3.0}},
 							},
-							&CallExpr{"index", []Expr{&ConstExpr{"chicken"}, &ConstExpr{"ken"}}},
-							&CallExpr{"index", []Expr{&ConstExpr{"chicken"}, &ConstExpr{"dmr"}}},
+							&UnaryExpr{
+								Op:    "-",
+								Value: &ConstExpr{"5"},
+							},
 						},
 					},
 				},
