@@ -173,23 +173,22 @@ func (p *Interp) Evaluate(expr Expr) Value {
 			left := p.Evaluate(e.Left)
 			right = binaryFuncs[e.Op](p, left, right)
 		}
-		switch left := e.Left.(type) {
-		case *VarExpr:
-			p.SetVar(left.Name, right)
+		p.assign(e.Left, right)
+		return right
+	case *IncrExpr:
+		left := p.ToFloat(p.Evaluate(e.Left))
+		var right float64
+		switch e.Op {
+		case "++":
+			right = left + 1
+		case "--":
+			right = left - 1
+		}
+		p.assign(e.Left, right)
+		if e.Pre {
 			return right
-		case *ArrayExpr:
-			index := p.Evaluate(left.Index)
-			p.SetArray(left.Name, p.ToString(index), right)
-			return right
-		case *FieldExpr:
-			index := p.Evaluate(left.Index)
-			if f, ok := index.(float64); ok {
-				p.SetField(int(f), p.ToString(right))
-				return right
-			}
-			panic(fmt.Sprintf("field index not a number: %q", index))
-		default:
-			panic(fmt.Sprintf("unexpected lvalue type: %T", e.Left))
+		} else {
+			return left
 		}
 	case *CallExpr:
 		args := make([]Value, len(e.Args))
@@ -209,7 +208,11 @@ func (p *Interp) SetFile(filename string) {
 
 func (p *Interp) SetLine(line string) {
 	p.line = line
-	p.fields = strings.Fields(line)
+	if p.fieldSep == " " {
+		p.fields = strings.Fields(line)
+	} else {
+		// TODO: use regex field separator
+	}
 	p.numFields = float64(len(p.fields))
 }
 
@@ -316,7 +319,6 @@ func (p *Interp) SetField(index int, value string) {
 		panic(fmt.Sprintf("field index negative: %d", index))
 	}
 	if index == 0 {
-		// TODO: update p.line and re-set fields
 		p.SetLine(value)
 		return
 	}
@@ -400,7 +402,7 @@ var binaryFuncs = map[string]binaryFunc{
 		return p.ToFloat(l) + p.ToFloat(r)
 	},
 	"-": func(p *Interp, l, r Value) Value {
-		return p.ToFloat(l) + p.ToFloat(r)
+		return p.ToFloat(l) - p.ToFloat(r)
 	},
 	"*": func(p *Interp, l, r Value) Value {
 		return p.ToFloat(l) * p.ToFloat(r)
@@ -421,7 +423,7 @@ var binaryFuncs = map[string]binaryFunc{
 			panic("division by zero in mod")
 		}
 		// TODO: integer/float handling?
-		return int(p.ToFloat(l)) % int(rf)
+		return float64(int(p.ToFloat(l)) % int(rf))
 	},
 	"": func(p *Interp, l, r Value) Value {
 		return p.ToString(l) + p.ToString(r)
@@ -564,5 +566,24 @@ func (p *Interp) call(name string, args []Value) Value {
 		return strings.ToUpper(p.ToString(args[0]))
 	default:
 		panic(fmt.Sprintf("unexpected function name: %q", name))
+	}
+}
+
+func (p *Interp) assign(left Expr, right Value) {
+	switch left := left.(type) {
+	case *VarExpr:
+		p.SetVar(left.Name, right)
+	case *ArrayExpr:
+		index := p.Evaluate(left.Index)
+		p.SetArray(left.Name, p.ToString(index), right)
+	case *FieldExpr:
+		index := p.Evaluate(left.Index)
+		f, ok := index.(float64)
+		if !ok {
+			panic(fmt.Sprintf("field index not a number: %q", index))
+		}
+		p.SetField(int(f), p.ToString(right))
+	default:
+		panic(fmt.Sprintf("unexpected lvalue type: %T", left))
 	}
 }

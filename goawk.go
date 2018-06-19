@@ -4,8 +4,6 @@ package main
 /*
 TODO:
 - add other expressions:
-    post inc/dec
-    pre inc/dec
     equality and inequality
     regex and regex not
     "in" and multi-dimensional "in"
@@ -100,7 +98,7 @@ func Parse(src string) (*Program, error) {
 							&VarExpr{"FNR"},
 							&VarExpr{"NF"},
 							&FieldExpr{&ConstExpr{1.0}},
-							&AssignExpr{&VarExpr{"x"}, "+", &ConstExpr{2.0}},
+							&IncrExpr{&VarExpr{"x"}, "++", true},
 						},
 					},
 				},

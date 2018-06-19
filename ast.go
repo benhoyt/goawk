@@ -66,6 +66,7 @@ func (e *ConstExpr) expr()  {}
 func (e *VarExpr) expr()    {}
 func (e *ArrayExpr) expr()  {}
 func (e *AssignExpr) expr() {}
+func (e *IncrExpr) expr()   {}
 func (e *CallExpr) expr()   {}
 
 type FieldExpr struct {
@@ -152,6 +153,20 @@ type AssignExpr struct {
 
 func (e *AssignExpr) String() string {
 	return e.Left.String() + " " + e.Op + "= " + e.Right.String()
+}
+
+type IncrExpr struct {
+	Left Expr
+	Op   string
+	Pre  bool
+}
+
+func (e *IncrExpr) String() string {
+	if e.Pre {
+		return e.Op + e.Left.String()
+	} else {
+		return e.Left.String() + e.Op
+	}
 }
 
 type CallExpr struct {
