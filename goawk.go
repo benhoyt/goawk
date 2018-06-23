@@ -4,7 +4,6 @@ package main
 /*
 TODO:
 - add other expressions:
-    equality and inequality
     regex and regex not
     "in" and multi-dimensional "in"
 - regex (ERE) functions
@@ -13,6 +12,7 @@ TODO:
 - lexing
 - parsing
 - testing
+- performance testing: I/O, allocations, CPU
 
 */
 
@@ -71,24 +71,32 @@ func main() {
 	}
 }
 
+func NumExpr(n float64) *ConstExpr {
+	return &ConstExpr{Num(n)}
+}
+
+func StrExpr(s string) *ConstExpr {
+	return &ConstExpr{Str(s)}
+}
+
 func Parse(src string) (*Program, error) {
 	program := &Program{
 		Begin: []Stmts{
 			{
 				// &ExprStmt{
-				// 	&AssignExpr{&VarExpr{"OFS"}, &ConstExpr{"|"}},
+				// 	&AssignExpr{&VarExpr{"OFS"}, StrExpr("|")},
 				// },
 				&ExprStmt{
-					&CallExpr{"srand", []Expr{&ConstExpr{1.2}}},
+					&CallExpr{"srand", []Expr{NumExpr(1.2)}},
 				},
 			},
 		},
 		Actions: []Action{
 			{
 				Pattern: &BinaryExpr{
-					Left:  &FieldExpr{&ConstExpr{0.0}},
+					Left:  &FieldExpr{NumExpr(0)},
 					Op:    "!=",
-					Right: &ConstExpr{""},
+					Right: StrExpr(""),
 				},
 				Stmts: []Stmt{
 					&PrintStmt{
@@ -97,8 +105,12 @@ func Parse(src string) (*Program, error) {
 							&VarExpr{"NR"},
 							&VarExpr{"FNR"},
 							&VarExpr{"NF"},
-							&FieldExpr{&ConstExpr{1.0}},
-							&IncrExpr{&VarExpr{"x"}, "++", true},
+							&FieldExpr{NumExpr(1)},
+							&BinaryExpr{
+								Left:  &FieldExpr{NumExpr(2)},
+								Op:    "==",
+								Right: NumExpr(1.0),
+							},
 						},
 					},
 				},

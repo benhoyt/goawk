@@ -11,13 +11,93 @@ import (
 	"time"
 )
 
-type Value interface{}
+type Type int
 
-func BoolValue(b bool) Value {
+const (
+	TypeNil Type = iota
+	TypeStr
+	TypeNum
+)
+
+type Value struct {
+	typ      Type
+	isNumStr bool
+	str      string
+	num      float64
+}
+
+func Num(n float64) Value {
+	return Value{typ: TypeNum, num: n}
+}
+
+func Str(s string) Value {
+	return Value{typ: TypeStr, str: s}
+}
+
+func NumStr(s string) Value {
+	n, err := strconv.ParseFloat(s, 64)
+	return Value{typ: TypeStr, isNumStr: err == nil, str: s, num: n}
+}
+
+func Bool(b bool) Value {
 	if b {
-		return 1.0
+		return Num(1)
 	}
-	return 0.0
+	return Num(0)
+}
+
+func (v Value) isTrueStr() bool {
+	return v.typ == TypeStr && !v.isNumStr
+}
+
+func (v Value) Bool() bool {
+	switch v.typ {
+	case TypeNum:
+		return v.num != 0
+	case TypeStr:
+		return v.str != ""
+	default:
+		return false
+	}
+}
+
+func (v Value) String(floatFormat string) string {
+	switch v.typ {
+	case TypeNum:
+		if v.num == float64(int(v.num)) {
+			return strconv.Itoa(int(v.num))
+		} else {
+			return fmt.Sprintf(floatFormat, v.num)
+		}
+	case TypeStr:
+		return v.str
+	default:
+		return ""
+	}
+}
+
+func (v Value) AWKString() string {
+	switch v.typ {
+	case TypeNum:
+		return v.String("%.6g")
+	case TypeStr:
+		return strconv.Quote(v.str)
+	default:
+		return "<undefined>"
+	}
+}
+
+func (v Value) Float() float64 {
+	switch v.typ {
+	case TypeNum:
+		return v.num
+	case TypeStr:
+		// TODO: handle cases like "3x"
+		f, _ := strconv.ParseFloat(v.str, 64)
+		return f
+	default:
+		return 0
+	}
 }
 
 type Interp struct {
@@ -79,7 +159,7 @@ func (p *Interp) ExecuteFile(filename string, input io.Reader) error {
 		p.NextLine(scanner.Text())
 		for _, action := range p.program.Actions {
 			pattern := p.Evaluate(action.Pattern)
-			if p.ToBool(pattern) {
+			if pattern.Bool() {
 				p.Executes(action.Stmts)
 			}
 		}
@@ -112,7 +192,8 @@ func (p *Interp) Execute(stmt Stmt) {
 	case *PrintStmt:
 		strs := make([]string, len(s.Args))
 		for i, a := range s.Args {
-			strs[i] = p.ToOutputString(p.Evaluate(a))
+			value := p.Evaluate(a)
+			strs[i] = value.String(p.outputFormat)
 		}
 		line := strings.Join(strs, p.outputFieldSep)
 		io.WriteString(p.output, line+p.outputRecordSep)
@@ -132,24 +213,24 @@ func (p *Interp) Evaluate(expr Expr) Value {
 		left := p.Evaluate(e.Left)
 		switch e.Op {
 		case "&&":
-			if !p.ToBool(left) {
-				return 0.0
+			if !left.Bool() {
+				return Num(0)
 			}
 			right := p.Evaluate(e.Right)
-			return BoolValue(p.ToBool(right))
+			return Bool(right.Bool())
 		case "||":
-			if p.ToBool(left) {
-				return 1.0
+			if left.Bool() {
+				return Num(1)
 			}
 			right := p.Evaluate(e.Right)
-			return BoolValue(p.ToBool(right))
+			return Bool(right.Bool())
 		default:
 			right := p.Evaluate(e.Right)
 			return binaryFuncs[e.Op](p, left, right)
 		}
 	case *CondExpr:
 		cond := p.Evaluate(e.Cond)
-		if p.ToBool(cond) {
+		if cond.Bool() {
 			return p.Evaluate(e.True)
 		} else {
 			return p.Evaluate(e.False)
@@ -158,10 +239,8 @@ func (p *Interp) Evaluate(expr Expr) Value {
 		return e.Value
 	case *FieldExpr:
 		index := p.Evaluate(e.Index)
-		if f, ok := index.(float64); ok {
-			return p.GetField(int(f))
-		}
-		panic(fmt.Sprintf("field index not a number: %q", index))
+		// TODO: should error if index is a non-number string
+		return p.GetField(int(index.Float()))
 	case *VarExpr:
 		return p.GetVar(e.Name)
 	case *ArrayExpr:
@@ -176,7 +255,8 @@ func (p *Interp) Evaluate(expr Expr) Value {
 		p.assign(e.Left, right)
 		return right
 	case *IncrExpr:
-		left := p.ToFloat(p.Evaluate(e.Left))
+		leftValue := p.Evaluate(e.Left)
+		left := leftValue.Float()
 		var right float64
 		switch e.Op {
 		case "++":
@@ -184,11 +264,12 @@ func (p *Interp) Evaluate(expr Expr) Value {
 		case "--":
 			right = left - 1
 		}
-		p.assign(e.Left, right)
+		rightValue := Num(right)
+		p.assign(e.Left, rightValue)
 		if e.Pre {
-			return right
+			return rightValue
 		} else {
-			return left
+			return Num(left)
 		}
 	case *CallExpr:
 		args := make([]Value, len(e.Args))
@@ -225,31 +306,31 @@ func (p *Interp) NextLine(line string) {
 func (p *Interp) GetVar(name string) Value {
 	switch name {
 	case "CONVFMT":
-		return p.convertFormat
+		return Str(p.convertFormat)
 	case "FILENAME":
-		return p.filename
+		return NumStr(p.filename)
 	case "FNR":
-		return p.fileLineNum
+		return Num(p.fileLineNum)
 	case "FS":
-		return p.fieldSep
+		return Str(p.fieldSep)
 	case "NF":
-		return p.numFields
+		return Num(p.numFields)
 	case "NR":
-		return p.lineNum
+		return Num(p.lineNum)
 	case "OFMT":
-		return p.outputFormat
+		return Str(p.outputFormat)
 	case "OFS":
-		return p.outputFieldSep
+		return Str(p.outputFieldSep)
 	case "ORS":
-		return p.outputRecordSep
+		return Str(p.outputRecordSep)
 	case "RLENGTH":
-		return p.matchLength
+		return Num(p.matchLength)
 	case "RS":
-		return "\n"
+		return Str("\n")
 	case "RSTART":
-		return p.matchStart
+		return Num(p.matchStart)
 	case "SUBSEP":
-		return p.subscriptSep
+		return Str(p.subscriptSep)
 	default:
 		return p.vars[name]
 	}
@@ -262,13 +343,13 @@ func (p *Interp) SetVar(name string, value Value) {
 	case "FILENAME":
 		p.filename = p.ToString(value)
 	case "FNR":
-		p.fileLineNum = p.ToFloat(value)
+		p.fileLineNum = value.Float()
 	case "FS":
 		p.fieldSep = p.ToString(value)
 	case "NF":
-		p.numFields = p.ToFloat(value)
+		p.numFields = value.Float()
 	case "NR":
-		p.lineNum = p.ToFloat(value)
+		p.lineNum = value.Float()
 	case "OFMT":
 		p.outputFormat = p.ToString(value)
 	case "OFS":
@@ -276,11 +357,11 @@ func (p *Interp) SetVar(name string, value Value) {
 	case "ORS":
 		p.outputRecordSep = p.ToString(value)
 	case "RLENGTH":
-		p.matchLength = p.ToFloat(value)
+		p.matchLength = value.Float()
 	case "RS":
 		panic("assigning RS not supported")
 	case "RSTART":
-		p.matchStart = p.ToFloat(value)
+		p.matchStart = value.Float()
 	case "SUBSEP":
 		p.subscriptSep = p.ToString(value)
 	default:
@@ -306,12 +387,12 @@ func (p *Interp) GetField(index int) Value {
 		panic(fmt.Sprintf("field index negative: %d", index))
 	}
 	if index == 0 {
-		return p.line
+		return NumStr(p.line)
 	}
 	if index > len(p.fields) {
-		return ""
+		return NumStr("")
 	}
-	return p.fields[index-1]
+	return NumStr(p.fields[index-1])
 }
 
 func (p *Interp) SetField(index int, value string) {
@@ -328,67 +409,8 @@ func (p *Interp) SetField(index int, value string) {
 	p.fields[index-1] = value
 }
 
-func (p *Interp) ToBool(v Value) bool {
-	switch v := v.(type) {
-	case float64:
-		return v != 0
-	case string:
-		return v != ""
-	case nil:
-		return false
-	default:
-		panic(fmt.Sprintf("unexpected type converting to bool: %T", v))
-	}
-}
-
-func (p *Interp) ToFloat(v Value) float64 {
-	switch v := v.(type) {
-	case float64:
-		return v
-	case string:
-		// TODO: handle cases like "3x"
-		f, _ := strconv.ParseFloat(v, 64)
-		return f
-	case nil:
-		return 0.0
-	default:
-		panic(fmt.Sprintf("unexpected type converting to float: %T", v))
-	}
-}
-
 func (p *Interp) ToString(v Value) string {
-	switch v := v.(type) {
-	case float64:
-		if v == float64(int(v)) {
-			return fmt.Sprintf("%d", v)
-		} else {
-			return fmt.Sprintf(p.convertFormat, v)
-		}
-	case string:
-		return v
-	case nil:
-		return ""
-	default:
-		panic(fmt.Sprintf("unexpected type converting to string: %T", v))
-	}
-}
-
-func (p *Interp) ToOutputString(v Value) string {
-	switch v := v.(type) {
-	case float64:
-		i := int(v)
-		if v == float64(i) {
-			return fmt.Sprintf("%d", i)
-		} else {
-			return fmt.Sprintf(p.outputFormat, v)
-		}
-	case string:
-		return v
-	case nil:
-		return ""
-	default:
-		panic(fmt.Sprintf("unexpected type converting to string: %T", v))
-	}
+	return v.String(p.convertFormat)
 }
 
 type binaryFunc func(p *Interp, l, r Value) Value
@@ -398,57 +420,62 @@ var binaryFuncs = map[string]binaryFunc{
 	"!=": func(p *Interp, l, r Value) Value {
 		return p.not(p.equal(l, r))
 	},
+	"<": (*Interp).lessThan,
+	">=": func(p *Interp, l, r Value) Value {
+		return p.not(p.lessThan(l, r))
+	},
+	">": func(p *Interp, l, r Value) Value {
+		return p.lessThan(r, l)
+	},
+	"<=": func(p *Interp, l, r Value) Value {
+		return p.not(p.lessThan(r, l))
+	},
 	"+": func(p *Interp, l, r Value) Value {
-		return p.ToFloat(l) + p.ToFloat(r)
+		return Num(l.Float() + r.Float())
 	},
 	"-": func(p *Interp, l, r Value) Value {
-		return p.ToFloat(l) - p.ToFloat(r)
+		return Num(l.Float() - r.Float())
 	},
 	"*": func(p *Interp, l, r Value) Value {
-		return p.ToFloat(l) * p.ToFloat(r)
+		return Num(l.Float() * r.Float())
 	},
 	"^": func(p *Interp, l, r Value) Value {
-		return math.Pow(p.ToFloat(l), p.ToFloat(r))
+		return Num(math.Pow(l.Float(), r.Float()))
 	},
 	"/": func(p *Interp, l, r Value) Value {
-		rf := p.ToFloat(r)
+		rf := r.Float()
 		if rf == 0.0 {
 			panic("division by zero")
 		}
-		return p.ToFloat(l) / rf
+		return Num(l.Float() / rf)
 	},
 	"%": func(p *Interp, l, r Value) Value {
-		rf := p.ToFloat(r)
+		rf := r.Float()
 		if rf == 0.0 {
 			panic("division by zero in mod")
 		}
 		// TODO: integer/float handling?
-		return float64(int(p.ToFloat(l)) % int(rf))
+		return Num(float64(int(l.Float()) % int(rf)))
 	},
 	"": func(p *Interp, l, r Value) Value {
-		return p.ToString(l) + p.ToString(r)
+		return Str(p.ToString(l) + p.ToString(r))
 	},
 }
 
 func (p *Interp) equal(l, r Value) Value {
-	switch l := l.(type) {
-	case float64:
-		switch r := r.(type) {
-		case float64:
-			return BoolValue(l == r)
-		case string:
-			return BoolValue(l == p.ToFloat(r))
-		}
-	case string:
-		switch r := r.(type) {
-		case string:
-			return BoolValue(l == r)
-		case float64:
-			return BoolValue(p.ToFloat(l) == r)
-		}
+	if l.isTrueStr() || r.isTrueStr() {
+		return Bool(p.ToString(l) == p.ToString(r))
+	} else {
+		return Bool(l.num == r.num)
 	}
-	// TODO: uninitialized value (nil)
-	return 0.0
+}
+
+func (p *Interp) lessThan(l, r Value) Value {
+	if l.isTrueStr() || r.isTrueStr() {
+		return Bool(p.ToString(l) < p.ToString(r))
+	} else {
+		return Bool(l.num < r.num)
+	}
 }
 
 type unaryFunc func(p *Interp, v Value) Value
@@ -456,15 +483,15 @@ type unaryFunc func(p *Interp, v Value) Value
 var unaryFuncs = map[string]unaryFunc{
 	"!": (*Interp).not,
 	"+": func(p *Interp, v Value) Value {
-		return p.ToFloat(v)
+		return Num(v.Float())
 	},
 	"-": func(p *Interp, v Value) Value {
-		return -p.ToFloat(v)
+		return Num(-v.Float())
 	},
 }
 
 func (p *Interp) not(v Value) Value {
-	return BoolValue(!p.ToBool(v))
+	return Bool(!v.Bool())
 }
 
 func (p *Interp) checkNumArgs(name string, actual, expected int) {
@@ -477,33 +504,33 @@ func (p *Interp) call(name string, args []Value) Value {
 	switch name {
 	case "atan2":
 		p.checkNumArgs("atan2", len(args), 2)
-		return math.Atan2(p.ToFloat(args[0]), p.ToFloat(args[1]))
+		return Num(math.Atan2(args[0].Float(), args[1].Float()))
 	case "cos":
 		p.checkNumArgs("cos", len(args), 1)
-		return math.Cos(p.ToFloat(args[0]))
+		return Num(math.Cos(args[0].Float()))
 	case "exp":
 		p.checkNumArgs("exp", len(args), 1)
-		return math.Exp(p.ToFloat(args[0]))
+		return Num(math.Exp(args[0].Float()))
 	case "index":
 		p.checkNumArgs("index", len(args), 2)
 		s := p.ToString(args[0])
 		substr := p.ToString(args[1])
-		return float64(strings.Index(s, substr) + 1)
+		return Num(float64(strings.Index(s, substr) + 1))
 	case "int":
 		p.checkNumArgs("int", len(args), 1)
-		return float64(int(p.ToFloat(args[0])))
+		return Num(float64(int(args[0].Float())))
 	case "length":
 		switch len(args) {
 		case 0:
-			return len(p.line)
+			return Num(float64(len(p.line)))
 		case 1:
-			return len(p.ToString(args[0]))
+			return Num(float64(len(p.ToString(args[0]))))
 		default:
 			panic(fmt.Sprintf("length() expects 0 or 1 arg, got %d", len(args)))
 		}
 	case "log":
 		p.checkNumArgs("log", len(args), 1)
-		return math.Log(p.ToFloat(args[0]))
+		return Num(math.Log(args[0].Float()))
 	case "sprintf":
 		if len(args) < 1 {
 			panic(fmt.Sprintf("sprintf() expects 1 or more args, got %d", len(args)))
@@ -512,34 +539,35 @@ func (p *Interp) call(name string, args []Value) Value {
 		for i, a := range args[1:] {
 			vals[i] = interface{}(a)
 		}
-		return fmt.Sprintf(p.ToString(args[0]), vals...)
+		return Str(fmt.Sprintf(p.ToString(args[0]), vals...))
 	case "sqrt":
 		p.checkNumArgs("sqrt", len(args), 1)
-		return math.Sqrt(p.ToFloat(args[0]))
+		return Num(math.Sqrt(args[0].Float()))
 	case "rand":
 		p.checkNumArgs("rand", len(args), 0)
-		return p.random.Float64()
+		return Num(p.random.Float64())
 	case "sin":
 		p.checkNumArgs("sin", len(args), 1)
-		return math.Sin(p.ToFloat(args[0]))
+		return Num(math.Sin(args[0].Float()))
 	case "srand":
 		switch len(args) {
 		case 0:
 			p.random.Seed(time.Now().UnixNano())
 		case 1:
 			// TODO: truncating the fraction part here, is that okay?
-			p.random.Seed(int64(p.ToFloat(args[0])))
+			p.random.Seed(int64(args[0].Float()))
 		default:
 			panic(fmt.Sprintf("srand() expects 0 or 1 arg, got %d", len(args)))
 		}
-		return nil
+		// TODO: previous seed value should be returned
+		return Num(0)
 	case "substr":
 		// TODO: untested
 		if len(args) != 2 && len(args) != 3 {
 			panic(fmt.Sprintf("substr() expects 2 or 3 args, got %d", len(args)))
 		}
 		str := p.ToString(args[0])
-		pos := int(p.ToFloat(args[1]))
+		pos := int(args[1].Float())
 		if pos < 1 {
 			pos = 1
 		}
@@ -549,7 +577,7 @@ func (p *Interp) call(name string, args []Value) Value {
 		maxLength := len(str) - pos + 1
 		length := maxLength
 		if len(args) == 3 {
-			length = int(p.ToFloat(args[2]))
+			length = int(args[2].Float())
 			if length < 0 {
 				length = 0
 			}
@@ -557,13 +585,13 @@ func (p *Interp) call(name string, args []Value) Value {
 				length = maxLength
 			}
 		}
-		return str[pos-1 : pos-1+length]
+		return Str(str[pos-1 : pos-1+length])
 	case "tolower":
 		p.checkNumArgs("tolower", len(args), 1)
-		return strings.ToLower(p.ToString(args[0]))
+		return Str(strings.ToLower(p.ToString(args[0])))
 	case "toupper":
 		p.checkNumArgs("toupper", len(args), 1)
-		return strings.ToUpper(p.ToString(args[0]))
+		return Str(strings.ToUpper(p.ToString(args[0])))
 	default:
 		panic(fmt.Sprintf("unexpected function name: %q", name))
 	}
@@ -578,11 +606,8 @@ func (p *Interp) assign(left Expr, right Value) {
 		p.SetArray(left.Name, p.ToString(index), right)
 	case *FieldExpr:
 		index := p.Evaluate(left.Index)
-		f, ok := index.(float64)
-		if !ok {
-			panic(fmt.Sprintf("field index not a number: %q", index))
-		}
-		p.SetField(int(f), p.ToString(right))
+		// TODO: should error if index is a non-number string
+		p.SetField(int(index.Float()), p.ToString(right))
 	default:
 		panic(fmt.Sprintf("unexpected lvalue type: %T", left))
 	}

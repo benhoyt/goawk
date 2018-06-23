@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -117,15 +116,7 @@ type ConstExpr struct {
 }
 
 func (e *ConstExpr) String() string {
-	switch v := e.Value.(type) {
-	case string:
-		return fmt.Sprintf("%q", v)
-	case float64:
-		return fmt.Sprintf("%v", v)
-	case nil:
-		return "<undefined>"
-	}
-	panic(fmt.Sprintf("unexpected type: %T", e.Value))
+	return e.Value.AWKString()
 }
 
 type VarExpr struct {
