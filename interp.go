@@ -6,6 +6,7 @@ import (
 	"io"
 	"math"
 	"math/rand"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -109,10 +110,10 @@ type Interp struct {
 
 	line        string
 	fields      []string
-	numFields   float64
-	lineNum     float64
+	numFields   int
+	lineNum     int
 	filename    string
-	fileLineNum float64
+	fileLineNum int
 
 	convertFormat   string
 	outputFormat    string
@@ -120,8 +121,8 @@ type Interp struct {
 	outputFieldSep  string
 	outputRecordSep string
 	subscriptSep    string
-	matchLength     float64
-	matchStart      float64
+	matchLength     int
+	matchStart      int
 }
 
 func NewInterp(program *Program, output io.Writer) *Interp {
@@ -294,7 +295,7 @@ func (p *Interp) SetLine(line string) {
 	} else {
 		// TODO: use regex field separator
 	}
-	p.numFields = float64(len(p.fields))
+	p.numFields = len(p.fields)
 }
 
 func (p *Interp) NextLine(line string) {
@@ -310,13 +311,13 @@ func (p *Interp) GetVar(name string) Value {
 	case "FILENAME":
 		return NumStr(p.filename)
 	case "FNR":
-		return Num(p.fileLineNum)
+		return Num(float64(p.fileLineNum))
 	case "FS":
 		return Str(p.fieldSep)
 	case "NF":
-		return Num(p.numFields)
+		return Num(float64(p.numFields))
 	case "NR":
-		return Num(p.lineNum)
+		return Num(float64(p.lineNum))
 	case "OFMT":
 		return Str(p.outputFormat)
 	case "OFS":
@@ -324,11 +325,11 @@ func (p *Interp) GetVar(name string) Value {
 	case "ORS":
 		return Str(p.outputRecordSep)
 	case "RLENGTH":
-		return Num(p.matchLength)
+		return Num(float64(p.matchLength))
 	case "RS":
 		return Str("\n")
 	case "RSTART":
-		return Num(p.matchStart)
+		return Num(float64(p.matchStart))
 	case "SUBSEP":
 		return Str(p.subscriptSep)
 	default:
@@ -343,13 +344,13 @@ func (p *Interp) SetVar(name string, value Value) {
 	case "FILENAME":
 		p.filename = p.ToString(value)
 	case "FNR":
-		p.fileLineNum = value.Float()
+		p.fileLineNum = int(value.Float())
 	case "FS":
 		p.fieldSep = p.ToString(value)
 	case "NF":
-		p.numFields = value.Float()
+		p.numFields = int(value.Float())
 	case "NR":
-		p.lineNum = value.Float()
+		p.lineNum = int(value.Float())
 	case "OFMT":
 		p.outputFormat = p.ToString(value)
 	case "OFS":
@@ -357,11 +358,11 @@ func (p *Interp) SetVar(name string, value Value) {
 	case "ORS":
 		p.outputRecordSep = p.ToString(value)
 	case "RLENGTH":
-		p.matchLength = value.Float()
+		p.matchLength = int(value.Float())
 	case "RS":
 		panic("assigning RS not supported")
 	case "RSTART":
-		p.matchStart = value.Float()
+		p.matchStart = int(value.Float())
 	case "SUBSEP":
 		p.subscriptSep = p.ToString(value)
 	default:
@@ -460,6 +461,10 @@ var binaryFuncs = map[string]binaryFunc{
 	"": func(p *Interp, l, r Value) Value {
 		return Str(p.ToString(l) + p.ToString(r))
 	},
+	"~": (*Interp).regexMatch,
+	"!~": func(p *Interp, l, r Value) Value {
+		return p.not(p.regexMatch(l, r))
+	},
 }
 
 func (p *Interp) equal(l, r Value) Value {
@@ -476,6 +481,14 @@ func (p *Interp) lessThan(l, r Value) Value {
 	} else {
 		return Bool(l.num < r.num)
 	}
+}
+
+func (p *Interp) regexMatch(l, r Value) Value {
+	matched, err := regexp.MatchString(p.ToString(r), p.ToString(l))
+	if err != nil {
+		panic(fmt.Sprintf("invalid regex %q", p.ToString(r)))
+	}
+	return Bool(matched)
 }
 
 type unaryFunc func(p *Interp, v Value) Value
@@ -531,6 +544,22 @@ func (p *Interp) call(name string, args []Value) Value {
 	case "log":
 		p.checkNumArgs("log", len(args), 1)
 		return Num(math.Log(args[0].Float()))
+	case "match":
+		p.checkNumArgs("match", len(args), 2)
+		// TODO: regexen are probably fixed, cache
+		re, err := regexp.Compile(p.ToString(args[1]))
+		if err != nil {
+			panic(fmt.Sprintf("invalid regex %q", p.ToString(args[1])))
+		}
+		loc := re.FindStringIndex(p.ToString(args[0]))
+		if loc == nil {
+			p.matchStart = 0
+			p.matchLength = -1
+			return Num(0)
+		}
+		p.matchStart = loc[0] + 1
+		p.matchLength = loc[1] - loc[0]
+		return Num(float64(p.matchStart))
 	case "sprintf":
 		if len(args) < 1 {
 			panic(fmt.Sprintf("sprintf() expects 1 or more args, got %d", len(args)))
@@ -561,6 +590,34 @@ func (p *Interp) call(name string, args []Value) Value {
 		}
 		// TODO: previous seed value should be returned
 		return Num(0)
+	case "sub", "gsub":
+		// TODO: ampersand handling
+		var input string
+		switch len(args) {
+		case 2:
+			input = p.line
+		case 3:
+			input = p.ToString(args[2])
+		default:
+			panic(fmt.Sprintf("sub/gsub() expects 2 or 3 args, got %d", len(args)))
+		}
+		re, err := regexp.Compile(p.ToString(args[0]))
+		if err != nil {
+			panic(fmt.Sprintf("invalid regex %q", p.ToString(args[0])))
+		}
+		repl := p.ToString(args[1])
+		count := 0
+		output := re.ReplaceAllStringFunc(input, func(s string) string {
+			if name == "sub" && count > 0 {
+				// TODO: kind of a hacky way to do it
+				return s
+			}
+			count++
+			return repl
+		})
+		// TODO: fix for when input is specific (sub/gsub are actually assignments!)
+		p.SetLine(output)
+		return Num(float64(count))
 	case "substr":
 		// TODO: untested
 		if len(args) != 2 && len(args) != 3 {

@@ -101,16 +101,11 @@ func Parse(src string) (*Program, error) {
 				Stmts: []Stmt{
 					&PrintStmt{
 						Args: []Expr{
-							&VarExpr{"FILENAME"},
-							&VarExpr{"NR"},
-							&VarExpr{"FNR"},
-							&VarExpr{"NF"},
-							&FieldExpr{NumExpr(1)},
-							&BinaryExpr{
-								Left:  &FieldExpr{NumExpr(2)},
-								Op:    "==",
-								Right: NumExpr(1.0),
-							},
+							&CallExpr{"sub", []Expr{
+								StrExpr(`[0-9]+`),
+								StrExpr("NNN"),
+							}},
+							&FieldExpr{NumExpr(0)},
 						},
 					},
 				},
