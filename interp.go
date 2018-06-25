@@ -455,8 +455,7 @@ var binaryFuncs = map[string]binaryFunc{
 		if rf == 0.0 {
 			panic("division by zero in mod")
 		}
-		// TODO: integer/float handling?
-		return Num(float64(int(l.Float()) % int(rf)))
+		return Num(math.Mod(l.Float(), rf))
 	},
 	"": func(p *Interp, l, r Value) Value {
 		return Str(p.ToString(l) + p.ToString(r))

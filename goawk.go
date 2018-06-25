@@ -4,9 +4,12 @@ package main
 /*
 TODO:
 - add other expressions:
-    regex and regex not
     "in" and multi-dimensional "in"
-- regex (ERE) functions
+- other regex (ERE) functions
+- other statements:
+  output: print, printf
+  control: if, while, do... while, for, break, continue, next, exit
+  other: delete
 - multi-dimensional arrays and SUBSEP
 - error handling: InterpError and catch in Evaluate and Execute
 - lexing
@@ -101,11 +104,12 @@ func Parse(src string) (*Program, error) {
 				Stmts: []Stmt{
 					&PrintStmt{
 						Args: []Expr{
-							&CallExpr{"sub", []Expr{
-								StrExpr(`[0-9]+`),
-								StrExpr("NNN"),
-							}},
 							&FieldExpr{NumExpr(0)},
+							&BinaryExpr{
+								Left:  &FieldExpr{NumExpr(2)},
+								Op:    "%",
+								Right: NumExpr(3),
+							},
 						},
 					},
 				},
