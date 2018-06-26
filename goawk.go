@@ -3,19 +3,16 @@ package main
 
 /*
 TODO:
-- add other expressions:
-    "in" and multi-dimensional "in"
+- error handling: InterpError and catch in top-level Evaluate and Execute
 - other regex (ERE) functions
-- other statements:
-  output: print, printf
-  control: do...while, for...in, break, continue, next, exit
-  other: delete
-- multi-dimensional arrays and SUBSEP
-- error handling: InterpError and catch in Evaluate and Execute
 - lexing
 - parsing
-- testing
+- testing (against other implementations?)
 - performance testing: I/O, allocations, CPU
+
+NICE TO HAVE:
+- implement printf / sprintf (probably have to do this by hand)
+- multi-dimensional "in", multi-dimensional ArrayExpr and SUBSEP
 
 */
 
@@ -62,12 +59,15 @@ func main() {
 			}
 		}
 	}
-	if err != nil {
+	if err != nil && err != ErrExit {
 		fmt.Fprintf(os.Stderr, "execute error: %s\n", err)
 		os.Exit(1)
 	}
 
 	err = interp.ExecuteEnd()
+	if err == ErrExit {
+		return
+	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "execute error: %s\n", err)
 		os.Exit(1)
@@ -113,24 +113,27 @@ func Parse(src string) (*Program, error) {
 						},
 					},
 					&ExprStmt{
-						&AssignExpr{&VarExpr{"i"}, "", NumExpr(0)},
+						&AssignExpr{&ArrayExpr{"a", NumExpr(0)}, "", StrExpr("a")},
 					},
-					&DoWhileStmt{
+					&ExprStmt{
+						&AssignExpr{&ArrayExpr{"a", NumExpr(2)}, "", StrExpr("c")},
+					},
+					&ExprStmt{
+						&AssignExpr{&ArrayExpr{"a", NumExpr(4)}, "", StrExpr("c")},
+					},
+					&DeleteStmt{"a", StrExpr("2")},
+					&ForInStmt{
+						Var:   "x",
+						Array: "a",
 						Body: []Stmt{
 							&PrintStmt{
 								Args: []Expr{
-									StrExpr("LOOP"),
-									&VarExpr{"i"},
+									&VarExpr{"x"},
+									&ArrayExpr{"a", &VarExpr{"x"}},
+									&InExpr{NumExpr(0), "a"},
+									&InExpr{StrExpr("1"), "a"},
 								},
 							},
-							&ExprStmt{
-								&IncrExpr{&VarExpr{"i"}, "++", false},
-							},
-						},
-						Cond: &BinaryExpr{
-							Left:  &VarExpr{"i"},
-							Op:    "<",
-							Right: NumExpr(3),
 						},
 					},
 				},

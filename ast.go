@@ -60,6 +60,7 @@ type Expr interface {
 func (e *FieldExpr) expr()  {}
 func (e *UnaryExpr) expr()  {}
 func (e *BinaryExpr) expr() {}
+func (e *InExpr) expr()     {}
 func (e *CondExpr) expr()   {}
 func (e *ConstExpr) expr()  {}
 func (e *VarExpr) expr()    {}
@@ -99,6 +100,15 @@ func (e *BinaryExpr) String() string {
 		opStr = " " + e.Op + " "
 	}
 	return "(" + e.Left.String() + opStr + e.Right.String() + ")"
+}
+
+type InExpr struct {
+	Index Expr
+	Array string
+}
+
+func (e *InExpr) String() string {
+	return "(" + e.Index.String() + " in " + e.Array + ")"
 }
 
 type CondExpr struct {
@@ -178,12 +188,19 @@ type Stmt interface {
 	String() string
 }
 
-func (s *PrintStmt) stmt()   {}
-func (s *ExprStmt) stmt()    {}
-func (s *IfStmt) stmt()      {}
-func (s *ForStmt) stmt()     {}
-func (s *WhileStmt) stmt()   {}
-func (s *DoWhileStmt) stmt() {}
+func (s *PrintStmt) stmt()    {}
+func (s *PrintfStmt) stmt()   {}
+func (s *ExprStmt) stmt()     {}
+func (s *IfStmt) stmt()       {}
+func (s *ForStmt) stmt()      {}
+func (s *ForInStmt) stmt()    {}
+func (s *WhileStmt) stmt()    {}
+func (s *DoWhileStmt) stmt()  {}
+func (s *BreakStmt) stmt()    {}
+func (s *ContinueStmt) stmt() {}
+func (s *NextStmt) stmt()     {}
+func (s *ExitStmt) stmt()     {}
+func (s *DeleteStmt) stmt()   {}
 
 type PrintStmt struct {
 	Args []Expr
@@ -195,6 +212,18 @@ func (s *PrintStmt) String() string {
 		parts[i] = a.String()
 	}
 	return "print " + strings.Join(parts, ", ")
+}
+
+type PrintfStmt struct {
+	Args []Expr
+}
+
+func (s *PrintfStmt) String() string {
+	parts := make([]string, len(s.Args))
+	for i, a := range s.Args {
+		parts[i] = a.String()
+	}
+	return "printf " + strings.Join(parts, ", ")
 }
 
 type ExprStmt struct {
@@ -233,6 +262,16 @@ func (s *ForStmt) String() string {
 		indent(s.Body.String()) + "\n}"
 }
 
+type ForInStmt struct {
+	Var   string
+	Array string
+	Body  Stmts
+}
+
+func (s *ForInStmt) String() string {
+	return "for (" + s.Var + " in " + s.Array + ") {\n" + indent(s.Body.String()) + "\n}"
+}
+
 type WhileStmt struct {
 	Cond Expr
 	Body Stmts
@@ -249,4 +288,37 @@ type DoWhileStmt struct {
 
 func (s *DoWhileStmt) String() string {
 	return "do {\n" + indent(s.Body.String()) + "\n} while (" + s.Cond.String() + ")"
+}
+
+type BreakStmt struct{}
+
+func (s *BreakStmt) String() string {
+	return "break"
+}
+
+type ContinueStmt struct{}
+
+func (s *ContinueStmt) String() string {
+	return "continue"
+}
+
+type NextStmt struct{}
+
+func (s *NextStmt) String() string {
+	return "next"
+}
+
+type ExitStmt struct{}
+
+func (s *ExitStmt) String() string {
+	return "exit"
+}
+
+type DeleteStmt struct {
+	Array string
+	Index Expr
+}
+
+func (s *DeleteStmt) String() string {
+	return "delete " + s.Array + "[" + s.Index.String() + "]"
 }

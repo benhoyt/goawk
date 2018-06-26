@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -98,6 +99,13 @@ func (v Value) Float() float64 {
 	}
 }
 
+var (
+	errBreak    = errors.New("break")
+	errContinue = errors.New("continue")
+	errNext     = errors.New("next")
+	ErrExit     = errors.New("exit")
+)
+
 type Interp struct {
 	program *Program
 	output  io.Writer
@@ -140,25 +148,30 @@ func NewInterp(program *Program, output io.Writer) *Interp {
 
 func (p *Interp) ExecuteBegin() error {
 	for _, statements := range p.program.Begin {
-		p.Executes(statements)
-		// TODO: error handling
-		// if err != nil {
-		//     return err
-		// }
+		err := p.Executes(statements)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func (p *Interp) ExecuteFile(filename string, input io.Reader) error {
-	// TODO: error handling
 	p.SetFile(filename)
 	scanner := bufio.NewScanner(input)
+lineLoop:
 	for scanner.Scan() {
 		p.NextLine(scanner.Text())
 		for _, action := range p.program.Actions {
 			pattern := p.Evaluate(action.Pattern)
 			if pattern.Bool() {
-				p.Executes(action.Stmts)
+				err := p.Executes(action.Stmts)
+				if err == errNext {
+					continue lineLoop
+				}
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -170,22 +183,25 @@ func (p *Interp) ExecuteFile(filename string, input io.Reader) error {
 
 func (p *Interp) ExecuteEnd() error {
 	for _, statements := range p.program.End {
-		p.Executes(statements)
-		// TODO: error handling
-		// if err != nil {
-		//     return err
-		// }
+		err := p.Executes(statements)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-func (p *Interp) Executes(stmts Stmts) {
+func (p *Interp) Executes(stmts Stmts) error {
 	for _, s := range stmts {
-		p.Execute(s)
+		err := p.Execute(s)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
-func (p *Interp) Execute(stmt Stmt) {
+func (p *Interp) Execute(stmt Stmt) error {
 	switch s := stmt.(type) {
 	case *PrintStmt:
 		strs := make([]string, len(s.Args))
@@ -195,34 +211,95 @@ func (p *Interp) Execute(stmt Stmt) {
 		}
 		line := strings.Join(strs, p.outputFieldSep)
 		io.WriteString(p.output, line+p.outputRecordSep)
+	case *PrintfStmt:
+		panic("TODO: printf is not yet implemented")
 	case *IfStmt:
 		if p.Evaluate(s.Cond).Bool() {
-			p.Executes(s.Body)
+			return p.Executes(s.Body)
 		} else {
-			p.Executes(s.Else)
+			return p.Executes(s.Else)
 		}
 	case *ForStmt:
-		p.Execute(s.Pre)
+		err := p.Execute(s.Pre)
+		if err != nil {
+			return err
+		}
 		for p.Evaluate(s.Cond).Bool() {
-			p.Executes(s.Body)
-			p.Execute(s.Post)
+			err = p.Executes(s.Body)
+			if err == errBreak {
+				break
+			}
+			if err == errContinue {
+				continue
+			}
+			if err != nil {
+				return err
+			}
+			err = p.Execute(s.Post)
+			if err != nil {
+				return err
+			}
+		}
+	case *ForInStmt:
+		for index := range p.arrays[s.Array] {
+			p.SetVar(s.Var, Str(index))
+			err := p.Executes(s.Body)
+			if err == errBreak {
+				break
+			}
+			if err == errContinue {
+				continue
+			}
+			if err != nil {
+				return err
+			}
 		}
 	case *WhileStmt:
 		for p.Evaluate(s.Cond).Bool() {
-			p.Executes(s.Body)
+			err := p.Executes(s.Body)
+			if err == errBreak {
+				break
+			}
+			if err == errContinue {
+				continue
+			}
+			if err != nil {
+				return err
+			}
 		}
 	case *DoWhileStmt:
 		for {
-			p.Executes(s.Body)
+			err := p.Executes(s.Body)
+			if err == errBreak {
+				break
+			}
+			if err == errContinue {
+				continue
+			}
+			if err != nil {
+				return err
+			}
 			if !p.Evaluate(s.Cond).Bool() {
 				break
 			}
 		}
+	case *BreakStmt:
+		return errBreak
+	case *ContinueStmt:
+		return errContinue
+	case *NextStmt:
+		return errNext
+	case *ExitStmt:
+		return ErrExit
+	case *DeleteStmt:
+		index := p.Evaluate(s.Index)
+		delete(p.arrays[s.Array], p.ToString(index))
 	case *ExprStmt:
 		p.Evaluate(s.Expr)
 	default:
 		panic(fmt.Sprintf("unexpected stmt type: %T", stmt))
 	}
+	return nil
 }
 
 func (p *Interp) Evaluate(expr Expr) Value {
@@ -249,6 +326,10 @@ func (p *Interp) Evaluate(expr Expr) Value {
 			right := p.Evaluate(e.Right)
 			return binaryFuncs[e.Op](p, left, right)
 		}
+	case *InExpr:
+		index := p.Evaluate(e.Index)
+		_, ok := p.arrays[e.Array][p.ToString(index)]
+		return Bool(ok)
 	case *CondExpr:
 		cond := p.Evaluate(e.Cond)
 		if cond.Bool() {
@@ -580,6 +661,7 @@ func (p *Interp) call(name string, args []Value) Value {
 		p.matchLength = loc[1] - loc[0]
 		return Num(float64(p.matchStart))
 	case "sprintf":
+		// TODO: I don't think this works anymore
 		if len(args) < 1 {
 			panic(fmt.Sprintf("sprintf() expects 1 or more args, got %d", len(args)))
 		}
