@@ -8,7 +8,7 @@ TODO:
 - other regex (ERE) functions
 - other statements:
   output: print, printf
-  control: if, while, do... while, for, break, continue, next, exit
+  control: do...while, for...in, break, continue, next, exit
   other: delete
 - multi-dimensional arrays and SUBSEP
 - error handling: InterpError and catch in Evaluate and Execute
@@ -87,7 +87,7 @@ func Parse(src string) (*Program, error) {
 		Begin: []Stmts{
 			{
 				// &ExprStmt{
-				// 	&AssignExpr{&VarExpr{"OFS"}, StrExpr("|")},
+				// 	&AssignExpr{&VarExpr{"OFS"}, "", StrExpr("|")},
 				// },
 				&ExprStmt{
 					&CallExpr{"srand", []Expr{NumExpr(1.2)}},
@@ -110,6 +110,27 @@ func Parse(src string) (*Program, error) {
 								Op:    "%",
 								Right: NumExpr(3),
 							},
+						},
+					},
+					&ExprStmt{
+						&AssignExpr{&VarExpr{"i"}, "", NumExpr(0)},
+					},
+					&DoWhileStmt{
+						Body: []Stmt{
+							&PrintStmt{
+								Args: []Expr{
+									StrExpr("LOOP"),
+									&VarExpr{"i"},
+								},
+							},
+							&ExprStmt{
+								&IncrExpr{&VarExpr{"i"}, "++", false},
+							},
+						},
+						Cond: &BinaryExpr{
+							Left:  &VarExpr{"i"},
+							Op:    "<",
+							Right: NumExpr(3),
 						},
 					},
 				},

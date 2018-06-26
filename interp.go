@@ -52,13 +52,10 @@ func (v Value) isTrueStr() bool {
 }
 
 func (v Value) Bool() bool {
-	switch v.typ {
-	case TypeNum:
-		return v.num != 0
-	case TypeStr:
+	if v.isTrueStr() {
 		return v.str != ""
-	default:
-		return false
+	} else {
+		return v.num != 0
 	}
 }
 
@@ -198,6 +195,29 @@ func (p *Interp) Execute(stmt Stmt) {
 		}
 		line := strings.Join(strs, p.outputFieldSep)
 		io.WriteString(p.output, line+p.outputRecordSep)
+	case *IfStmt:
+		if p.Evaluate(s.Cond).Bool() {
+			p.Executes(s.Body)
+		} else {
+			p.Executes(s.Else)
+		}
+	case *ForStmt:
+		p.Execute(s.Pre)
+		for p.Evaluate(s.Cond).Bool() {
+			p.Executes(s.Body)
+			p.Execute(s.Post)
+		}
+	case *WhileStmt:
+		for p.Evaluate(s.Cond).Bool() {
+			p.Executes(s.Body)
+		}
+	case *DoWhileStmt:
+		for {
+			p.Executes(s.Body)
+			if !p.Evaluate(s.Cond).Bool() {
+				break
+			}
+		}
 	case *ExprStmt:
 		p.Evaluate(s.Expr)
 	default:

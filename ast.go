@@ -178,8 +178,12 @@ type Stmt interface {
 	String() string
 }
 
-func (s *PrintStmt) stmt() {}
-func (s *ExprStmt) stmt()  {}
+func (s *PrintStmt) stmt()   {}
+func (s *ExprStmt) stmt()    {}
+func (s *IfStmt) stmt()      {}
+func (s *ForStmt) stmt()     {}
+func (s *WhileStmt) stmt()   {}
+func (s *DoWhileStmt) stmt() {}
 
 type PrintStmt struct {
 	Args []Expr
@@ -199,4 +203,50 @@ type ExprStmt struct {
 
 func (s *ExprStmt) String() string {
 	return s.Expr.String()
+}
+
+type IfStmt struct {
+	Cond Expr
+	Body Stmts
+	Else Stmts
+}
+
+func (s *IfStmt) String() string {
+	str := "if (" + s.Cond.String() + ") {\n" + indent(s.Body.String()) + "\n}"
+	if len(s.Else) > 0 {
+		str += " else {\n" + indent(s.Else.String()) + "\n}"
+	}
+	return str
+}
+
+type ForStmt struct {
+	Pre  Stmt
+	Cond Expr
+	Post Stmt
+	Body Stmts
+}
+
+func (s *ForStmt) String() string {
+	return "for (" + s.Pre.String() +
+		"; " + s.Cond.String() +
+		"; " + s.Post.String() + ") {\n" +
+		indent(s.Body.String()) + "\n}"
+}
+
+type WhileStmt struct {
+	Cond Expr
+	Body Stmts
+}
+
+func (s *WhileStmt) String() string {
+	return "while (" + s.Cond.String() + ") {\n" + indent(s.Body.String()) + "\n}"
+}
+
+type DoWhileStmt struct {
+	Body Stmts
+	Cond Expr
+}
+
+func (s *DoWhileStmt) String() string {
+	return "do {\n" + indent(s.Body.String()) + "\n} while (" + s.Cond.String() + ")"
 }
