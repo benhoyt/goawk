@@ -12,7 +12,7 @@ TODO:
 
 NICE TO HAVE:
 - implement printf / sprintf (probably have to do this by hand)
-- multi-dimensional "in", multi-dimensional ArrayExpr and SUBSEP
+- multi-dimensional "in", multi-dimensional IndexExpr and SUBSEP
 
 */
 
@@ -104,24 +104,9 @@ func Parse(src string) (*Program, error) {
 				Stmts: []Stmt{
 					&PrintStmt{
 						Args: []Expr{
-							&FieldExpr{NumExpr(0)},
-							&BinaryExpr{
-								Left:  &FieldExpr{NumExpr(2)},
-								Op:    "%",
-								Right: NumExpr(3),
-							},
+							&SplitExpr{&FieldExpr{NumExpr(0)}, "a", StrExpr(`\.`)},
 						},
 					},
-					&ExprStmt{
-						&AssignExpr{&ArrayExpr{"a", NumExpr(0)}, "", StrExpr("a")},
-					},
-					&ExprStmt{
-						&AssignExpr{&ArrayExpr{"a", NumExpr(2)}, "", StrExpr("c")},
-					},
-					&ExprStmt{
-						&AssignExpr{&ArrayExpr{"a", NumExpr(4)}, "", StrExpr("c")},
-					},
-					&DeleteStmt{"a", StrExpr("2")},
 					&ForInStmt{
 						Var:   "x",
 						Array: "a",
@@ -129,9 +114,7 @@ func Parse(src string) (*Program, error) {
 							&PrintStmt{
 								Args: []Expr{
 									&VarExpr{"x"},
-									&ArrayExpr{"a", &VarExpr{"x"}},
-									&InExpr{NumExpr(0), "a"},
-									&InExpr{StrExpr("1"), "a"},
+									&IndexExpr{"a", &VarExpr{"x"}},
 								},
 							},
 						},

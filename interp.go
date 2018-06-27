@@ -345,7 +345,7 @@ func (p *Interp) Evaluate(expr Expr) Value {
 		return p.GetField(int(index.Float()))
 	case *VarExpr:
 		return p.GetVar(e.Name)
-	case *ArrayExpr:
+	case *IndexExpr:
 		index := p.Evaluate(e.Index)
 		return p.GetArray(e.Name, p.ToString(index))
 	case *AssignExpr:
@@ -379,6 +379,15 @@ func (p *Interp) Evaluate(expr Expr) Value {
 			args[i] = p.Evaluate(a)
 		}
 		return p.call(e.Name, args)
+	case *SplitExpr:
+		s := p.ToString(p.Evaluate(e.Str))
+		var fs string
+		if e.FieldSep != nil {
+			fs = p.ToString(p.Evaluate(e.FieldSep))
+		} else {
+			fs = p.fieldSep
+		}
+		return Num(float64(p.split(s, e.Array, fs)))
 	default:
 		panic(fmt.Sprintf("unexpected expr type: %T", expr))
 	}
@@ -755,11 +764,30 @@ func (p *Interp) call(name string, args []Value) Value {
 	}
 }
 
+func (p *Interp) split(s, arrayName, fs string) int {
+	var parts []string
+	if fs == " " {
+		parts = strings.Fields(s)
+	} else {
+		re, err := regexp.Compile(fs)
+		if err != nil {
+			panic(fmt.Sprintf("invalid regex %q", fs))
+		}
+		parts = re.Split(s, -1)
+	}
+	array := make(map[string]Value)
+	for i, part := range parts {
+		array[strconv.Itoa(i)] = Str(part)
+	}
+	p.arrays[arrayName] = array
+	return len(array)
+}
+
 func (p *Interp) assign(left Expr, right Value) {
 	switch left := left.(type) {
 	case *VarExpr:
 		p.SetVar(left.Name, right)
-	case *ArrayExpr:
+	case *IndexExpr:
 		index := p.Evaluate(left.Index)
 		p.SetArray(left.Name, p.ToString(index), right)
 	case *FieldExpr:

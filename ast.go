@@ -64,10 +64,11 @@ func (e *InExpr) expr()     {}
 func (e *CondExpr) expr()   {}
 func (e *ConstExpr) expr()  {}
 func (e *VarExpr) expr()    {}
-func (e *ArrayExpr) expr()  {}
+func (e *IndexExpr) expr()  {}
 func (e *AssignExpr) expr() {}
 func (e *IncrExpr) expr()   {}
 func (e *CallExpr) expr()   {}
+func (e *SplitExpr) expr()  {}
 
 type FieldExpr struct {
 	Index Expr
@@ -137,12 +138,12 @@ func (e *VarExpr) String() string {
 	return e.Name
 }
 
-type ArrayExpr struct {
+type IndexExpr struct {
 	Name  string
 	Index Expr
 }
 
-func (e *ArrayExpr) String() string {
+func (e *IndexExpr) String() string {
 	return e.Name + "[" + e.Index.String() + "]"
 }
 
@@ -181,6 +182,20 @@ func (e *CallExpr) String() string {
 		args[i] = a.String()
 	}
 	return e.Name + "(" + strings.Join(args, ", ") + ")"
+}
+
+type SplitExpr struct {
+	Str      Expr
+	Array    string
+	FieldSep Expr
+}
+
+func (e *SplitExpr) String() string {
+	fs := ""
+	if e.FieldSep != nil {
+		fs = ", " + e.FieldSep.String()
+	}
+	return "split(" + e.Str.String() + ", " + e.Array + fs + ")"
 }
 
 type Stmt interface {
