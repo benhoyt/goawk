@@ -123,6 +123,7 @@ type Interp struct {
 	convertFormat   string
 	outputFormat    string
 	fieldSep        string
+	fieldSepRegex   *regexp.Regexp
 	outputFieldSep  string
 	outputRecordSep string
 	subscriptSep    string
@@ -379,7 +380,7 @@ func (p *Interp) Evaluate(expr Expr) Value {
 			args[i] = p.Evaluate(a)
 		}
 		return p.call(e.Name, args)
-	case *SplitExpr:
+	case *CallSplitExpr:
 		s := p.ToString(p.Evaluate(e.Str))
 		var fs string
 		if e.FieldSep != nil {
@@ -387,7 +388,23 @@ func (p *Interp) Evaluate(expr Expr) Value {
 		} else {
 			fs = p.fieldSep
 		}
-		return Num(float64(p.split(s, e.Array, fs)))
+		return Num(float64(p.callSplit(s, e.Array, fs)))
+	case *CallSubExpr:
+		regex := p.ToString(p.Evaluate(e.Regex))
+		repl := p.ToString(p.Evaluate(e.Repl))
+		var in string
+		if e.In != nil {
+			in = p.ToString(p.Evaluate(e.In))
+		} else {
+			in = p.line
+		}
+		out, n := p.callSub(regex, repl, in, e.Global)
+		if e.In != nil {
+			p.assign(e.In, Str(out))
+		} else {
+			p.SetLine(out)
+		}
+		return Num(float64(n))
 	default:
 		panic(fmt.Sprintf("unexpected expr type: %T", expr))
 	}
@@ -403,7 +420,7 @@ func (p *Interp) SetLine(line string) {
 	if p.fieldSep == " " {
 		p.fields = strings.Fields(line)
 	} else {
-		// TODO: use regex field separator
+		p.fields = p.fieldSepRegex.Split(line, -1)
 	}
 	p.numFields = len(p.fields)
 }
@@ -457,6 +474,13 @@ func (p *Interp) SetVar(name string, value Value) {
 		p.fileLineNum = int(value.Float())
 	case "FS":
 		p.fieldSep = p.ToString(value)
+		if p.fieldSep != " " {
+			var err error
+			p.fieldSepRegex, err = regexp.Compile(p.fieldSep)
+			if err != nil {
+				panic(fmt.Sprintf("invalid regex %q", p.fieldSep))
+			}
+		}
 	case "NF":
 		p.numFields = int(value.Float())
 	case "NR":
@@ -700,34 +724,6 @@ func (p *Interp) call(name string, args []Value) Value {
 		}
 		// TODO: previous seed value should be returned
 		return Num(0)
-	case "sub", "gsub":
-		// TODO: ampersand handling
-		var input string
-		switch len(args) {
-		case 2:
-			input = p.line
-		case 3:
-			input = p.ToString(args[2])
-		default:
-			panic(fmt.Sprintf("sub/gsub() expects 2 or 3 args, got %d", len(args)))
-		}
-		re, err := regexp.Compile(p.ToString(args[0]))
-		if err != nil {
-			panic(fmt.Sprintf("invalid regex %q", p.ToString(args[0])))
-		}
-		repl := p.ToString(args[1])
-		count := 0
-		output := re.ReplaceAllStringFunc(input, func(s string) string {
-			if name == "sub" && count > 0 {
-				// TODO: kind of a hacky way to do it
-				return s
-			}
-			count++
-			return repl
-		})
-		// TODO: fix for when input is specific (sub/gsub are actually assignments!)
-		p.SetLine(output)
-		return Num(float64(count))
 	case "substr":
 		// TODO: untested
 		if len(args) != 2 && len(args) != 3 {
@@ -764,7 +760,7 @@ func (p *Interp) call(name string, args []Value) Value {
 	}
 }
 
-func (p *Interp) split(s, arrayName, fs string) int {
+func (p *Interp) callSplit(s, arrayName, fs string) int {
 	var parts []string
 	if fs == " " {
 		parts = strings.Fields(s)
@@ -781,6 +777,23 @@ func (p *Interp) split(s, arrayName, fs string) int {
 	}
 	p.arrays[arrayName] = array
 	return len(array)
+}
+
+func (p *Interp) callSub(regex, repl, in string, global bool) (out string, num int) {
+	// TODO: ampersand handling
+	re, err := regexp.Compile(regex)
+	if err != nil {
+		panic(fmt.Sprintf("invalid regex %q", regex))
+	}
+	count := 0
+	out = re.ReplaceAllStringFunc(in, func(s string) string {
+		if !global && count > 0 {
+			return s
+		}
+		count++
+		return repl
+	})
+	return out, count
 }
 
 func (p *Interp) assign(left Expr, right Value) {

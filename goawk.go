@@ -4,13 +4,13 @@ package main
 /*
 TODO:
 - error handling: InterpError and catch in top-level Evaluate and Execute
-- other regex (ERE) functions
 - lexing
 - parsing
 - testing (against other implementations?)
 - performance testing: I/O, allocations, CPU
 
 NICE TO HAVE:
+- regex caching for user regexes
 - implement printf / sprintf (probably have to do this by hand)
 - multi-dimensional "in", multi-dimensional IndexExpr and SUBSEP
 
@@ -104,21 +104,22 @@ func Parse(src string) (*Program, error) {
 				Stmts: []Stmt{
 					&PrintStmt{
 						Args: []Expr{
-							&SplitExpr{&FieldExpr{NumExpr(0)}, "a", StrExpr(`\.`)},
+							&CallSubExpr{StrExpr(`\.`), StrExpr(","), &FieldExpr{NumExpr(0)}, true},
+							&FieldExpr{NumExpr(0)},
 						},
 					},
-					&ForInStmt{
-						Var:   "x",
-						Array: "a",
-						Body: []Stmt{
-							&PrintStmt{
-								Args: []Expr{
-									&VarExpr{"x"},
-									&IndexExpr{"a", &VarExpr{"x"}},
-								},
-							},
-						},
-					},
+					// &ForInStmt{
+					// 	Var:   "x",
+					// 	Array: "a",
+					// 	Body: []Stmt{
+					// 		&PrintStmt{
+					// 			Args: []Expr{
+					// 				&VarExpr{"x"},
+					// 				&IndexExpr{"a", &VarExpr{"x"}},
+					// 			},
+					// 		},
+					// 	},
+					// },
 				},
 			},
 		},
