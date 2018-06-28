@@ -106,6 +106,18 @@ var (
 	ErrExit     = errors.New("exit")
 )
 
+type Error struct {
+	message string
+}
+
+func (e *Error) Error() string {
+	return e.message
+}
+
+func interpError(format string, args ...interface{}) {
+	panic(&Error{fmt.Sprintf(format, args...)})
+}
+
 type Interp struct {
 	program *Program
 	output  io.Writer
@@ -164,7 +176,7 @@ lineLoop:
 	for scanner.Scan() {
 		p.NextLine(scanner.Text())
 		for _, action := range p.program.Actions {
-			pattern := p.Evaluate(action.Pattern)
+			pattern := p.evaluate(action.Pattern)
 			if pattern.Bool() {
 				err := p.Executes(action.Stmts)
 				if err == errNext {
@@ -202,12 +214,19 @@ func (p *Interp) Executes(stmts Stmts) error {
 	return nil
 }
 
-func (p *Interp) Execute(stmt Stmt) error {
+func (p *Interp) Execute(stmt Stmt) (execErr error) {
+	defer func() {
+		if r := recover(); r != nil {
+			// Convert to interpreter Error or re-panic
+			execErr = r.(*Error)
+		}
+	}()
+
 	switch s := stmt.(type) {
 	case *PrintStmt:
 		strs := make([]string, len(s.Args))
 		for i, a := range s.Args {
-			value := p.Evaluate(a)
+			value := p.evaluate(a)
 			strs[i] = value.String(p.outputFormat)
 		}
 		line := strings.Join(strs, p.outputFieldSep)
@@ -215,7 +234,7 @@ func (p *Interp) Execute(stmt Stmt) error {
 	case *PrintfStmt:
 		panic("TODO: printf is not yet implemented")
 	case *IfStmt:
-		if p.Evaluate(s.Cond).Bool() {
+		if p.evaluate(s.Cond).Bool() {
 			return p.Executes(s.Body)
 		} else {
 			return p.Executes(s.Else)
@@ -225,7 +244,7 @@ func (p *Interp) Execute(stmt Stmt) error {
 		if err != nil {
 			return err
 		}
-		for p.Evaluate(s.Cond).Bool() {
+		for p.evaluate(s.Cond).Bool() {
 			err = p.Executes(s.Body)
 			if err == errBreak {
 				break
@@ -256,7 +275,7 @@ func (p *Interp) Execute(stmt Stmt) error {
 			}
 		}
 	case *WhileStmt:
-		for p.Evaluate(s.Cond).Bool() {
+		for p.evaluate(s.Cond).Bool() {
 			err := p.Executes(s.Body)
 			if err == errBreak {
 				break
@@ -280,7 +299,7 @@ func (p *Interp) Execute(stmt Stmt) error {
 			if err != nil {
 				return err
 			}
-			if !p.Evaluate(s.Cond).Bool() {
+			if !p.evaluate(s.Cond).Bool() {
 				break
 			}
 		}
@@ -293,72 +312,72 @@ func (p *Interp) Execute(stmt Stmt) error {
 	case *ExitStmt:
 		return ErrExit
 	case *DeleteStmt:
-		index := p.Evaluate(s.Index)
+		index := p.evaluate(s.Index)
 		delete(p.arrays[s.Array], p.ToString(index))
 	case *ExprStmt:
-		p.Evaluate(s.Expr)
+		p.evaluate(s.Expr)
 	default:
 		panic(fmt.Sprintf("unexpected stmt type: %T", stmt))
 	}
 	return nil
 }
 
-func (p *Interp) Evaluate(expr Expr) Value {
+func (p *Interp) evaluate(expr Expr) Value {
 	switch e := expr.(type) {
 	case *UnaryExpr:
-		value := p.Evaluate(e.Value)
+		value := p.evaluate(e.Value)
 		return unaryFuncs[e.Op](p, value)
 	case *BinaryExpr:
-		left := p.Evaluate(e.Left)
+		left := p.evaluate(e.Left)
 		switch e.Op {
 		case "&&":
 			if !left.Bool() {
 				return Num(0)
 			}
-			right := p.Evaluate(e.Right)
+			right := p.evaluate(e.Right)
 			return Bool(right.Bool())
 		case "||":
 			if left.Bool() {
 				return Num(1)
 			}
-			right := p.Evaluate(e.Right)
+			right := p.evaluate(e.Right)
 			return Bool(right.Bool())
 		default:
-			right := p.Evaluate(e.Right)
+			right := p.evaluate(e.Right)
 			return binaryFuncs[e.Op](p, left, right)
 		}
 	case *InExpr:
-		index := p.Evaluate(e.Index)
+		index := p.evaluate(e.Index)
 		_, ok := p.arrays[e.Array][p.ToString(index)]
 		return Bool(ok)
 	case *CondExpr:
-		cond := p.Evaluate(e.Cond)
+		cond := p.evaluate(e.Cond)
 		if cond.Bool() {
-			return p.Evaluate(e.True)
+			return p.evaluate(e.True)
 		} else {
-			return p.Evaluate(e.False)
+			return p.evaluate(e.False)
 		}
 	case *ConstExpr:
 		return e.Value
 	case *FieldExpr:
-		index := p.Evaluate(e.Index)
+		index := p.evaluate(e.Index)
 		// TODO: should error if index is a non-number string
 		return p.GetField(int(index.Float()))
 	case *VarExpr:
 		return p.GetVar(e.Name)
 	case *IndexExpr:
-		index := p.Evaluate(e.Index)
+		index := p.evaluate(e.Index)
 		return p.GetArray(e.Name, p.ToString(index))
 	case *AssignExpr:
-		right := p.Evaluate(e.Right)
+		right := p.evaluate(e.Right)
 		if e.Op != "" {
-			left := p.Evaluate(e.Left)
+			left := p.evaluate(e.Left)
 			right = binaryFuncs[e.Op](p, left, right)
 		}
 		p.assign(e.Left, right)
 		return right
 	case *IncrExpr:
-		leftValue := p.Evaluate(e.Left)
+		leftValue := p.evaluate(e.Left)
 		left := leftValue.Float()
 		var right float64
 		switch e.Op {
@@ -377,24 +396,24 @@ func (p *Interp) Evaluate(expr Expr) Value {
 	case *CallExpr:
 		args := make([]Value, len(e.Args))
 		for i, a := range e.Args {
-			args[i] = p.Evaluate(a)
+			args[i] = p.evaluate(a)
 		}
 		return p.call(e.Name, args)
 	case *CallSplitExpr:
-		s := p.ToString(p.Evaluate(e.Str))
+		s := p.ToString(p.evaluate(e.Str))
 		var fs string
 		if e.FieldSep != nil {
-			fs = p.ToString(p.Evaluate(e.FieldSep))
+			fs = p.ToString(p.evaluate(e.FieldSep))
 		} else {
 			fs = p.fieldSep
 		}
 		return Num(float64(p.callSplit(s, e.Array, fs)))
 	case *CallSubExpr:
-		regex := p.ToString(p.Evaluate(e.Regex))
-		repl := p.ToString(p.Evaluate(e.Repl))
+		regex := p.ToString(p.evaluate(e.Regex))
+		repl := p.ToString(p.evaluate(e.Repl))
 		var in string
 		if e.In != nil {
-			in = p.ToString(p.Evaluate(e.In))
+			in = p.ToString(p.evaluate(e.In))
 		} else {
 			in = p.line
 		}
@@ -475,11 +494,8 @@ func (p *Interp) SetVar(name string, value Value) {
 	case "FS":
 		p.fieldSep = p.ToString(value)
 		if p.fieldSep != " " {
-			var err error
-			p.fieldSepRegex, err = regexp.Compile(p.fieldSep)
-			if err != nil {
-				panic(fmt.Sprintf("invalid regex %q", p.fieldSep))
-			}
+			// TODO: this can panic in an exported function
+			p.fieldSepRegex = p.mustCompile(p.fieldSep)
 		}
 	case "NF":
 		p.numFields = int(value.Float())
@@ -494,7 +510,7 @@ func (p *Interp) SetVar(name string, value Value) {
 	case "RLENGTH":
 		p.matchLength = int(value.Float())
 	case "RS":
-		panic("assigning RS not supported")
+		interpError("assigning RS not supported")
 	case "RSTART":
 		p.matchStart = int(value.Float())
 	case "SUBSEP":
@@ -519,7 +535,7 @@ func (p *Interp) SetArray(name, index string, value Value) {
 
 func (p *Interp) GetField(index int) Value {
 	if index < 0 {
-		panic(fmt.Sprintf("field index negative: %d", index))
+		interpError("field index negative: %d", index)
 	}
 	if index == 0 {
 		return NumStr(p.line)
@@ -532,20 +548,31 @@ func (p *Interp) GetField(index int) Value {
 
 func (p *Interp) SetField(index int, value string) {
 	if index < 0 {
-		panic(fmt.Sprintf("field index negative: %d", index))
+		interpError("field index negative: %d", index)
 	}
 	if index == 0 {
 		p.SetLine(value)
 		return
 	}
 	if index > len(p.fields) {
-		// TODO: append "" fields as needed
+		for i := len(p.fields); i < index; i++ {
+			p.fields = append(p.fields, "")
+		}
 	}
 	p.fields[index-1] = value
 }
 
 func (p *Interp) ToString(v Value) string {
 	return v.String(p.convertFormat)
+}
+
+func (p *Interp) mustCompile(regex string) *regexp.Regexp {
+	// TODO: cache
+	re, err := regexp.Compile(regex)
+	if err != nil {
+		interpError("invalid regex: %q", regex)
+	}
+	return re
 }
 
 type binaryFunc func(p *Interp, l, r Value) Value
@@ -580,14 +607,14 @@ var binaryFuncs = map[string]binaryFunc{
 	"/": func(p *Interp, l, r Value) Value {
 		rf := r.Float()
 		if rf == 0.0 {
-			panic("division by zero")
+			interpError("division by zero")
 		}
 		return Num(l.Float() / rf)
 	},
 	"%": func(p *Interp, l, r Value) Value {
 		rf := r.Float()
 		if rf == 0.0 {
-			panic("division by zero in mod")
+			interpError("division by zero in mod")
 		}
 		return Num(math.Mod(l.Float(), rf))
 	},
@@ -617,10 +644,8 @@ func (p *Interp) lessThan(l, r Value) Value {
 }
 
 func (p *Interp) regexMatch(l, r Value) Value {
-	matched, err := regexp.MatchString(p.ToString(r), p.ToString(l))
-	if err != nil {
-		panic(fmt.Sprintf("invalid regex %q", p.ToString(r)))
-	}
+	re := p.mustCompile(p.ToString(r))
+	matched := re.MatchString(p.ToString(l))
 	return Bool(matched)
 }
 
@@ -642,7 +667,7 @@ func (p *Interp) not(v Value) Value {
 
 func (p *Interp) checkNumArgs(name string, actual, expected int) {
 	if actual != expected {
-		panic(fmt.Sprintf("%s() expects %d args, got %d", name, expected, actual))
+		interpError("%s() expects %d args, got %d", name, expected, actual)
 	}
 }
 
@@ -672,18 +697,15 @@ func (p *Interp) call(name string, args []Value) Value {
 		case 1:
 			return Num(float64(len(p.ToString(args[0]))))
 		default:
-			panic(fmt.Sprintf("length() expects 0 or 1 arg, got %d", len(args)))
+			interpError("length() expects 0 or 1 arg, got %d", len(args))
+			return Num(0) // satisfy compiler (will never happen)
 		}
 	case "log":
 		p.checkNumArgs("log", len(args), 1)
 		return Num(math.Log(args[0].Float()))
 	case "match":
 		p.checkNumArgs("match", len(args), 2)
-		// TODO: regexen are probably fixed, cache
-		re, err := regexp.Compile(p.ToString(args[1]))
-		if err != nil {
-			panic(fmt.Sprintf("invalid regex %q", p.ToString(args[1])))
-		}
+		re := p.mustCompile(p.ToString(args[1]))
 		loc := re.FindStringIndex(p.ToString(args[0]))
 		if loc == nil {
 			p.matchStart = 0
@@ -696,7 +718,7 @@ func (p *Interp) call(name string, args []Value) Value {
 	case "sprintf":
 		// TODO: I don't think this works anymore
 		if len(args) < 1 {
-			panic(fmt.Sprintf("sprintf() expects 1 or more args, got %d", len(args)))
+			interpError("sprintf() expects 1 or more args, got %d", len(args))
 		}
 		vals := make([]interface{}, len(args)-1)
 		for i, a := range args[1:] {
@@ -720,14 +742,14 @@ func (p *Interp) call(name string, args []Value) Value {
 			// TODO: truncating the fraction part here, is that okay?
 			p.random.Seed(int64(args[0].Float()))
 		default:
-			panic(fmt.Sprintf("srand() expects 0 or 1 arg, got %d", len(args)))
+			interpError("srand() expects 0 or 1 arg, got %d", len(args))
 		}
 		// TODO: previous seed value should be returned
 		return Num(0)
 	case "substr":
 		// TODO: untested
 		if len(args) != 2 && len(args) != 3 {
-			panic(fmt.Sprintf("substr() expects 2 or 3 args, got %d", len(args)))
+			interpError("substr() expects 2 or 3 args, got %d", len(args))
 		}
 		str := p.ToString(args[0])
 		pos := int(args[1].Float())
@@ -765,10 +787,7 @@ func (p *Interp) callSplit(s, arrayName, fs string) int {
 	if fs == " " {
 		parts = strings.Fields(s)
 	} else {
-		re, err := regexp.Compile(fs)
-		if err != nil {
-			panic(fmt.Sprintf("invalid regex %q", fs))
-		}
+		re := p.mustCompile(fs)
 		parts = re.Split(s, -1)
 	}
 	array := make(map[string]Value)
@@ -781,10 +800,7 @@ func (p *Interp) callSplit(s, arrayName, fs string) int {
 
 func (p *Interp) callSub(regex, repl, in string, global bool) (out string, num int) {
 	// TODO: ampersand handling
-	re, err := regexp.Compile(regex)
-	if err != nil {
-		panic(fmt.Sprintf("invalid regex %q", regex))
-	}
+	re := p.mustCompile(regex)
 	count := 0
 	out = re.ReplaceAllStringFunc(in, func(s string) string {
 		if !global && count > 0 {
@@ -801,10 +817,10 @@ func (p *Interp) assign(left Expr, right Value) {
 	case *VarExpr:
 		p.SetVar(left.Name, right)
 	case *IndexExpr:
-		index := p.Evaluate(left.Index)
+		index := p.evaluate(left.Index)
 		p.SetArray(left.Name, p.ToString(index), right)
 	case *FieldExpr:
-		index := p.Evaluate(left.Index)
+		index := p.evaluate(left.Index)
 		// TODO: should error if index is a non-number string
 		p.SetField(int(index.Float()), p.ToString(right))
 	default:

@@ -3,7 +3,7 @@ package main
 
 /*
 TODO:
-- error handling: InterpError and catch in top-level Evaluate and Execute
+- API surface: what should be exported?
 - lexing
 - parsing
 - testing (against other implementations?)
@@ -87,7 +87,7 @@ func Parse(src string) (*Program, error) {
 		Begin: []Stmts{
 			{
 				// &ExprStmt{
-				// 	&AssignExpr{&VarExpr{"OFS"}, "", StrExpr("|")},
+				// 	&AssignExpr{&VarExpr{"RS"}, "", StrExpr("|")},
 				// },
 				&ExprStmt{
 					&CallExpr{"srand", []Expr{NumExpr(1.2)}},
