@@ -13,6 +13,7 @@ NICE TO HAVE:
 - regex caching for user regexes
 - implement printf / sprintf (probably have to do this by hand)
 - multi-dimensional "in", multi-dimensional IndexExpr and SUBSEP
+- I don't think interp.SetArray is concurrency-safe
 
 */
 
@@ -49,7 +50,7 @@ func main() {
 		for _, filename := range os.Args[2:] {
 			f, errOpen := os.Open(filename)
 			if errOpen != nil {
-				fmt.Fprintf(os.Stderr, "can't open file %q\n", filename)
+				fmt.Fprintf(os.Stderr, "can't open %q: %v\n", filename, errOpen)
 				os.Exit(2)
 			}
 			err = interp.ExecuteFile(filename, f)
