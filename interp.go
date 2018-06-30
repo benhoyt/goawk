@@ -37,6 +37,7 @@ func Str(s string) Value {
 }
 
 func NumStr(s string) Value {
+	// TODO: should use same logic as Value.Float()?
 	n, err := strconv.ParseFloat(s, 64)
 	return Value{typ: TypeStr, isNumStr: err == nil, str: s, num: n}
 }
@@ -484,6 +485,10 @@ func (p *Interp) GetVar(name string) Value {
 }
 
 func (p *Interp) SetVar(name string, value Value) {
+	// TODO: should the types of the built-in variables roundtrip?
+	// i.e., if you set NF to a string should it read back as a string?
+	// $ awk 'BEGIN { NF = "3.0"; print (NF == "3.0"); }'
+	// 1
 	switch name {
 	case "CONVFMT":
 		p.convertFormat = p.ToString(value)
@@ -792,7 +797,7 @@ func (p *Interp) callSplit(s, arrayName, fs string) int {
 	}
 	array := make(map[string]Value)
 	for i, part := range parts {
-		array[strconv.Itoa(i)] = Str(part)
+		array[strconv.Itoa(i)] = NumStr(part)
 	}
 	p.arrays[arrayName] = array
 	return len(array)

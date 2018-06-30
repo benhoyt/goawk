@@ -4,6 +4,28 @@ package main
 /*
 TODO:
 - API surface: what should be exported?
+  lexer:
+    Lexer
+    NewLexer(input []byte) *Lexer
+    .Scan() (Token, string)
+    PLUS, MINUS, DOT, ...
+    // can be imported into parser with "."
+  parser:
+    ParseProgram(input []byte) (*Program, error)
+    ParseExpr(input []byte) (Expr, error)
+    Expr, BinaryExpr, Stmt, PrintStmt, ...
+    // can be imported into interp with "."
+  interp:
+    Interp
+    New(output io.Writer) *Interp
+    .SetVar(name, value string) error
+    .SetField(index int, value string)
+    .ExecBegin(p *Program) error
+    .ExecFile(p *Program, filename string, input io.Reader) error
+    .ExecEnd(p *Program) error
+    .ExecExpr(expr Expr) (string, error) // need to return more than string?
+    ExecExpr(expr string) (string, error)
+    ExecExprLine(expr, line string) (string, error) // maybe not?
 - lexing
 - parsing
 - testing (against other implementations?)
