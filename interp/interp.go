@@ -1,5 +1,4 @@
-// GoAWK interpreter
-
+// GoAWK interpreter.
 package interp
 
 import (
@@ -18,12 +17,17 @@ import (
 )
 
 var (
+	// ErrExit is returned by Exec functions when an "exit" statement
+	// is encountered.
+	ErrExit = errors.New("exit")
+
 	errBreak    = errors.New("break")
 	errContinue = errors.New("continue")
 	errNext     = errors.New("next")
-	ErrExit     = errors.New("exit")
 )
 
+// *Error is returned by Exec and Eval functions on interpreter error,
+// for example a negative field index.
 type Error struct {
 	message string
 }
@@ -32,15 +36,16 @@ func (e *Error) Error() string {
 	return e.message
 }
 
-func interpError(format string, args ...interface{}) {
-	panic(&Error{fmt.Sprintf(format, args...)})
+func newError(format string, args ...interface{}) error {
+	return &Error{fmt.Sprintf(format, args...)}
 }
 
+// Interp holds the state of the interpreter
 type Interp struct {
 	program *Program
 	output  io.Writer
-	vars    map[string]Value
-	arrays  map[string]map[string]Value
+	vars    map[string]value
+	arrays  map[string]map[string]value
 	random  *rand.Rand
 
 	line        string
@@ -61,12 +66,11 @@ type Interp struct {
 	matchStart      int
 }
 
-func NewInterp(program *Program, output io.Writer) *Interp {
+func New(output io.Writer) *Interp {
 	p := &Interp{}
-	p.program = program
 	p.output = output
-	p.vars = make(map[string]Value)
-	p.arrays = make(map[string]map[string]Value)
+	p.vars = make(map[string]value)
+	p.arrays = make(map[string]map[string]value)
 	p.random = rand.New(rand.NewSource(0))
 	p.convertFormat = "%.6g"
 	p.outputFormat = "%.6g"
@@ -77,9 +81,9 @@ func NewInterp(program *Program, output io.Writer) *Interp {
 	return p
 }
 
-func (p *Interp) ExecuteBegin() error {
-	for _, statements := range p.program.Begin {
-		err := p.Executes(statements)
+func (p *Interp) ExecBegin(program *Program) error {
+	for _, statements := range program.Begin {
+		err := p.executes(statements)
 		if err != nil {
 			return err
 		}
@@ -87,16 +91,16 @@ func (p *Interp) ExecuteBegin() error {
 	return nil
 }
 
-func (p *Interp) ExecuteFile(filename string, input io.Reader) error {
-	p.SetFile(filename)
+func (p *Interp) ExecFile(program *Program, filename string, input io.Reader) error {
+	p.setFile(filename)
 	scanner := bufio.NewScanner(input)
 lineLoop:
 	for scanner.Scan() {
-		p.NextLine(scanner.Text())
-		for _, action := range p.program.Actions {
-			pattern := p.evaluate(action.Pattern)
-			if pattern.Bool() {
-				err := p.Executes(action.Stmts)
+		p.nextLine(scanner.Text())
+		for _, action := range program.Actions {
+			pattern := p.eval(action.Pattern)
+			if pattern.boolean() {
+				err := p.executes(action.Stmts)
 				if err == errNext {
 					continue lineLoop
 				}
@@ -112,9 +116,9 @@ lineLoop:
 	return nil
 }
 
-func (p *Interp) ExecuteEnd() error {
-	for _, statements := range p.program.End {
-		err := p.Executes(statements)
+func (p *Interp) ExecEnd(program *Program) error {
+	for _, statements := range program.End {
+		err := p.executes(statements)
 		if err != nil {
 			return err
 		}
@@ -122,9 +126,9 @@ func (p *Interp) ExecuteEnd() error {
 	return nil
 }
 
-func (p *Interp) Executes(stmts Stmts) error {
+func (p *Interp) executes(stmts Stmts) error {
 	for _, s := range stmts {
-		err := p.Execute(s)
+		err := p.execute(s)
 		if err != nil {
 			return err
 		}
@@ -132,7 +136,7 @@ func (p *Interp) Executes(stmts Stmts) error {
 	return nil
 }
 
-func (p *Interp) Execute(stmt Stmt) (execErr error) {
+func (p *Interp) execute(stmt Stmt) (execErr error) {
 	defer func() {
 		if r := recover(); r != nil {
 			// Convert to interpreter Error or re-panic
@@ -144,26 +148,26 @@ func (p *Interp) Execute(stmt Stmt) (execErr error) {
 	case *PrintStmt:
 		strs := make([]string, len(s.Args))
 		for i, a := range s.Args {
-			value := p.evaluate(a)
-			strs[i] = value.String(p.outputFormat)
+			value := p.eval(a)
+			strs[i] = value.str(p.outputFormat)
 		}
 		line := strings.Join(strs, p.outputFieldSep)
 		io.WriteString(p.output, line+p.outputRecordSep)
 	case *PrintfStmt:
 		panic("TODO: printf is not yet implemented")
 	case *IfStmt:
-		if p.evaluate(s.Cond).Bool() {
-			return p.Executes(s.Body)
+		if p.eval(s.Cond).boolean() {
+			return p.executes(s.Body)
 		} else {
-			return p.Executes(s.Else)
+			return p.executes(s.Else)
 		}
 	case *ForStmt:
-		err := p.Execute(s.Pre)
+		err := p.execute(s.Pre)
 		if err != nil {
 			return err
 		}
-		for p.evaluate(s.Cond).Bool() {
-			err = p.Executes(s.Body)
+		for p.eval(s.Cond).boolean() {
+			err = p.executes(s.Body)
 			if err == errBreak {
 				break
 			}
@@ -173,15 +177,15 @@ func (p *Interp) Execute(stmt Stmt) (execErr error) {
 			if err != nil {
 				return err
 			}
-			err = p.Execute(s.Post)
+			err = p.execute(s.Post)
 			if err != nil {
 				return err
 			}
 		}
 	case *ForInStmt:
 		for index := range p.arrays[s.Array] {
-			p.SetVar(s.Var, Str(index))
-			err := p.Executes(s.Body)
+			p.setVar(s.Var, str(index))
+			err := p.executes(s.Body)
 			if err == errBreak {
 				break
 			}
@@ -193,8 +197,8 @@ func (p *Interp) Execute(stmt Stmt) (execErr error) {
 			}
 		}
 	case *WhileStmt:
-		for p.evaluate(s.Cond).Bool() {
-			err := p.Executes(s.Body)
+		for p.eval(s.Cond).boolean() {
+			err := p.executes(s.Body)
 			if err == errBreak {
 				break
 			}
@@ -207,7 +211,7 @@ func (p *Interp) Execute(stmt Stmt) (execErr error) {
 		}
 	case *DoWhileStmt:
 		for {
-			err := p.Executes(s.Body)
+			err := p.executes(s.Body)
 			if err == errBreak {
 				break
 			}
@@ -217,7 +221,7 @@ func (p *Interp) Execute(stmt Stmt) (execErr error) {
 			if err != nil {
 				return err
 			}
-			if !p.evaluate(s.Cond).Bool() {
+			if !p.eval(s.Cond).boolean() {
 				break
 			}
 		}
@@ -230,75 +234,100 @@ func (p *Interp) Execute(stmt Stmt) (execErr error) {
 	case *ExitStmt:
 		return ErrExit
 	case *DeleteStmt:
-		index := p.evaluate(s.Index)
-		delete(p.arrays[s.Array], p.ToString(index))
+		index := p.eval(s.Index)
+		delete(p.arrays[s.Array], p.toString(index))
 	case *ExprStmt:
-		p.evaluate(s.Expr)
+		p.eval(s.Expr)
 	default:
 		panic(fmt.Sprintf("unexpected stmt type: %T", stmt))
 	}
 	return nil
 }
 
-func (p *Interp) evaluate(expr Expr) Value {
+func (p *Interp) Eval(expr Expr) (s string, n float64, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			// Convert to interpreter Error or re-panic
+			err = r.(*Error)
+		}
+	}()
+	v := p.eval(expr)
+	return p.toString(v), v.num(), nil
+}
+
+func EvalLine(src, line string) (s string, n float64, err error) {
+	expr, err := ParseExpr([]byte(src))
+	if err != nil {
+		return "", 0, err
+	}
+	interp := New(nil) // expressions can't write to output
+	interp.setLine(line)
+	return interp.Eval(expr)
+}
+
+func Eval(src string) (s string, n float64, err error) {
+	return EvalLine(src, "")
+}
+
+func (p *Interp) eval(expr Expr) value {
 	switch e := expr.(type) {
 	case *UnaryExpr:
-		value := p.evaluate(e.Value)
+		value := p.eval(e.Value)
 		return unaryFuncs[e.Op](p, value)
 	case *BinaryExpr:
-		left := p.evaluate(e.Left)
+		left := p.eval(e.Left)
 		switch e.Op {
 		case "&&":
-			if !left.Bool() {
-				return Num(0)
+			if !left.boolean() {
+				return num(0)
 			}
-			right := p.evaluate(e.Right)
-			return Bool(right.Bool())
+			right := p.eval(e.Right)
+			return boolean(right.boolean())
 		case "||":
-			if left.Bool() {
-				return Num(1)
+			if left.boolean() {
+				return num(1)
 			}
-			right := p.evaluate(e.Right)
-			return Bool(right.Bool())
+			right := p.eval(e.Right)
+			return boolean(right.boolean())
 		default:
-			right := p.evaluate(e.Right)
+			right := p.eval(e.Right)
 			return binaryFuncs[e.Op](p, left, right)
 		}
 	case *InExpr:
-		index := p.evaluate(e.Index)
-		_, ok := p.arrays[e.Array][p.ToString(index)]
-		return Bool(ok)
+		index := p.eval(e.Index)
+		_, ok := p.arrays[e.Array][p.toString(index)]
+		return boolean(ok)
 	case *CondExpr:
-		cond := p.evaluate(e.Cond)
-		if cond.Bool() {
-			return p.evaluate(e.True)
+		cond := p.eval(e.Cond)
+		if cond.boolean() {
+			return p.eval(e.True)
 		} else {
-			return p.evaluate(e.False)
+			return p.eval(e.False)
 		}
 	case *NumExpr:
-		return Num(e.Value)
+		return num(e.Value)
 	case *StrExpr:
-		return Str(e.Value)
+		return str(e.Value)
 	case *FieldExpr:
-		index := p.evaluate(e.Index)
+		index := p.eval(e.Index)
 		// TODO: should error if index is a non-number string
-		return p.GetField(int(index.Float()))
+		return p.getField(int(index.num()))
 	case *VarExpr:
-		return p.GetVar(e.Name)
+		return p.getVar(e.Name)
 	case *IndexExpr:
-		index := p.evaluate(e.Index)
-		return p.GetArray(e.Name, p.ToString(index))
+		index := p.eval(e.Index)
+		return p.getArray(e.Name, p.toString(index))
 	case *AssignExpr:
-		right := p.evaluate(e.Right)
+		right := p.eval(e.Right)
 		if e.Op != "" {
-			left := p.evaluate(e.Left)
+			left := p.eval(e.Left)
 			right = binaryFuncs[e.Op](p, left, right)
 		}
 		p.assign(e.Left, right)
 		return right
 	case *IncrExpr:
-		leftValue := p.evaluate(e.Left)
-		left := leftValue.Float()
+		leftValue := p.eval(e.Left)
+		left := leftValue.num()
 		var right float64
 		switch e.Op {
 		case "++":
@@ -306,55 +335,55 @@ func (p *Interp) evaluate(expr Expr) Value {
 		case "--":
 			right = left - 1
 		}
-		rightValue := Num(right)
+		rightValue := num(right)
 		p.assign(e.Left, rightValue)
 		if e.Pre {
 			return rightValue
 		} else {
-			return Num(left)
+			return num(left)
 		}
 	case *CallExpr:
-		args := make([]Value, len(e.Args))
+		args := make([]value, len(e.Args))
 		for i, a := range e.Args {
-			args[i] = p.evaluate(a)
+			args[i] = p.eval(a)
 		}
 		return p.call(e.Name, args)
 	case *CallSplitExpr:
-		s := p.ToString(p.evaluate(e.Str))
+		s := p.toString(p.eval(e.Str))
 		var fs string
 		if e.FieldSep != nil {
-			fs = p.ToString(p.evaluate(e.FieldSep))
+			fs = p.toString(p.eval(e.FieldSep))
 		} else {
 			fs = p.fieldSep
 		}
-		return Num(float64(p.callSplit(s, e.Array, fs)))
+		return num(float64(p.callSplit(s, e.Array, fs)))
 	case *CallSubExpr:
-		regex := p.ToString(p.evaluate(e.Regex))
-		repl := p.ToString(p.evaluate(e.Repl))
+		regex := p.toString(p.eval(e.Regex))
+		repl := p.toString(p.eval(e.Repl))
 		var in string
 		if e.In != nil {
-			in = p.ToString(p.evaluate(e.In))
+			in = p.toString(p.eval(e.In))
 		} else {
 			in = p.line
 		}
 		out, n := p.callSub(regex, repl, in, e.Global)
 		if e.In != nil {
-			p.assign(e.In, Str(out))
+			p.assign(e.In, str(out))
 		} else {
-			p.SetLine(out)
+			p.setLine(out)
 		}
-		return Num(float64(n))
+		return num(float64(n))
 	default:
 		panic(fmt.Sprintf("unexpected expr type: %T", expr))
 	}
 }
 
-func (p *Interp) SetFile(filename string) {
+func (p *Interp) setFile(filename string) {
 	p.filename = filename
 	p.fileLineNum = 0
 }
 
-func (p *Interp) SetLine(line string) {
+func (p *Interp) setLine(line string) {
 	p.line = line
 	if p.fieldSep == " " {
 		p.fields = strings.Fields(line)
@@ -364,118 +393,133 @@ func (p *Interp) SetLine(line string) {
 	p.numFields = len(p.fields)
 }
 
-func (p *Interp) NextLine(line string) {
-	p.SetLine(line)
+func (p *Interp) nextLine(line string) {
+	p.setLine(line)
 	p.lineNum++
 	p.fileLineNum++
 }
 
-func (p *Interp) GetVar(name string) Value {
+func (p *Interp) getVar(name string) value {
 	switch name {
 	case "CONVFMT":
-		return Str(p.convertFormat)
+		return str(p.convertFormat)
 	case "FILENAME":
-		return NumStr(p.filename)
+		return numStr(p.filename)
 	case "FNR":
-		return Num(float64(p.fileLineNum))
+		return num(float64(p.fileLineNum))
 	case "FS":
-		return Str(p.fieldSep)
+		return str(p.fieldSep)
 	case "NF":
-		return Num(float64(p.numFields))
+		return num(float64(p.numFields))
 	case "NR":
-		return Num(float64(p.lineNum))
+		return num(float64(p.lineNum))
 	case "OFMT":
-		return Str(p.outputFormat)
+		return str(p.outputFormat)
 	case "OFS":
-		return Str(p.outputFieldSep)
+		return str(p.outputFieldSep)
 	case "ORS":
-		return Str(p.outputRecordSep)
+		return str(p.outputRecordSep)
 	case "RLENGTH":
-		return Num(float64(p.matchLength))
+		return num(float64(p.matchLength))
 	case "RS":
-		return Str("\n")
+		return str("\n")
 	case "RSTART":
-		return Num(float64(p.matchStart))
+		return num(float64(p.matchStart))
 	case "SUBSEP":
-		return Str(p.subscriptSep)
+		return str(p.subscriptSep)
 	default:
 		return p.vars[name]
 	}
 }
 
-func (p *Interp) SetVar(name string, value Value) {
+func (p *Interp) SetVar(name string, value string) error {
+	return p.setVarError(name, str(value))
+}
+
+func (p *Interp) setVarError(name string, v value) error {
 	// TODO: should the types of the built-in variables roundtrip?
 	// i.e., if you set NF to a string should it read back as a string?
 	// $ awk 'BEGIN { NF = "3.0"; print (NF == "3.0"); }'
 	// 1
 	switch name {
 	case "CONVFMT":
-		p.convertFormat = p.ToString(value)
+		p.convertFormat = p.toString(v)
 	case "FILENAME":
-		p.filename = p.ToString(value)
+		p.filename = p.toString(v)
 	case "FNR":
-		p.fileLineNum = int(value.Float())
+		p.fileLineNum = int(v.num())
 	case "FS":
-		p.fieldSep = p.ToString(value)
+		p.fieldSep = p.toString(v)
 		if p.fieldSep != " " {
-			// TODO: this can panic in an exported function
-			p.fieldSepRegex = p.mustCompile(p.fieldSep)
+			re, err := regexp.Compile(p.fieldSep)
+			if err != nil {
+				return newError("invalid regex %q: %s", p.fieldSep, err)
+			}
+			p.fieldSepRegex = re
 		}
 	case "NF":
-		p.numFields = int(value.Float())
+		p.numFields = int(v.num())
 	case "NR":
-		p.lineNum = int(value.Float())
+		p.lineNum = int(v.num())
 	case "OFMT":
-		p.outputFormat = p.ToString(value)
+		p.outputFormat = p.toString(v)
 	case "OFS":
-		p.outputFieldSep = p.ToString(value)
+		p.outputFieldSep = p.toString(v)
 	case "ORS":
-		p.outputRecordSep = p.ToString(value)
+		p.outputRecordSep = p.toString(v)
 	case "RLENGTH":
-		p.matchLength = int(value.Float())
+		p.matchLength = int(v.num())
 	case "RS":
-		interpError("assigning RS not supported")
+		panic(newError("assigning RS not supported"))
 	case "RSTART":
-		p.matchStart = int(value.Float())
+		p.matchStart = int(v.num())
 	case "SUBSEP":
-		p.subscriptSep = p.ToString(value)
+		p.subscriptSep = p.toString(v)
 	default:
-		p.vars[name] = value
+		p.vars[name] = v
+	}
+	return nil
+}
+
+func (p *Interp) setVar(name string, v value) {
+	err := p.setVarError(name, v)
+	if err != nil {
+		panic(err)
 	}
 }
 
-func (p *Interp) GetArray(name, index string) Value {
+func (p *Interp) getArray(name, index string) value {
 	return p.arrays[name][index]
 }
 
-func (p *Interp) SetArray(name, index string, value Value) {
+func (p *Interp) setArray(name, index string, v value) {
 	array, ok := p.arrays[name]
 	if !ok {
-		array = make(map[string]Value)
+		array = make(map[string]value)
 		p.arrays[name] = array
 	}
-	array[index] = value
+	array[index] = v
 }
 
-func (p *Interp) GetField(index int) Value {
+func (p *Interp) getField(index int) value {
 	if index < 0 {
-		interpError("field index negative: %d", index)
+		panic(newError("field index negative: %d", index))
 	}
 	if index == 0 {
-		return NumStr(p.line)
+		return numStr(p.line)
 	}
 	if index > len(p.fields) {
-		return NumStr("")
+		return numStr("")
 	}
-	return NumStr(p.fields[index-1])
+	return numStr(p.fields[index-1])
 }
 
 func (p *Interp) SetField(index int, value string) {
 	if index < 0 {
-		interpError("field index negative: %d", index)
+		panic(newError("field index negative: %d", index))
 	}
 	if index == 0 {
-		p.SetLine(value)
+		p.setLine(value)
 		return
 	}
 	if index > len(p.fields) {
@@ -486,207 +530,206 @@ func (p *Interp) SetField(index int, value string) {
 	p.fields[index-1] = value
 }
 
-func (p *Interp) ToString(v Value) string {
-	return v.String(p.convertFormat)
+func (p *Interp) toString(v value) string {
+	return v.str(p.convertFormat)
 }
 
 func (p *Interp) mustCompile(regex string) *regexp.Regexp {
 	// TODO: cache
 	re, err := regexp.Compile(regex)
 	if err != nil {
-		interpError("invalid regex: %q", regex)
+		panic(newError("invalid regex %q: %s", regex, err))
 	}
 	return re
 }
 
-type binaryFunc func(p *Interp, l, r Value) Value
+type binaryFunc func(p *Interp, l, r value) value
 
 var binaryFuncs = map[string]binaryFunc{
 	"==": (*Interp).equal,
-	"!=": func(p *Interp, l, r Value) Value {
+	"!=": func(p *Interp, l, r value) value {
 		return p.not(p.equal(l, r))
 	},
 	"<": (*Interp).lessThan,
-	">=": func(p *Interp, l, r Value) Value {
+	">=": func(p *Interp, l, r value) value {
 		return p.not(p.lessThan(l, r))
 	},
-	">": func(p *Interp, l, r Value) Value {
+	">": func(p *Interp, l, r value) value {
 		return p.lessThan(r, l)
 	},
-	"<=": func(p *Interp, l, r Value) Value {
+	"<=": func(p *Interp, l, r value) value {
 		return p.not(p.lessThan(r, l))
 	},
-	"+": func(p *Interp, l, r Value) Value {
-		return Num(l.Float() + r.Float())
+	"+": func(p *Interp, l, r value) value {
+		return num(l.num() + r.num())
 	},
-	"-": func(p *Interp, l, r Value) Value {
-		return Num(l.Float() - r.Float())
+	"-": func(p *Interp, l, r value) value {
+		return num(l.num() - r.num())
 	},
-	"*": func(p *Interp, l, r Value) Value {
-		return Num(l.Float() * r.Float())
+	"*": func(p *Interp, l, r value) value {
+		return num(l.num() * r.num())
 	},
-	"^": func(p *Interp, l, r Value) Value {
-		return Num(math.Pow(l.Float(), r.Float()))
+	"^": func(p *Interp, l, r value) value {
+		return num(math.Pow(l.num(), r.num()))
 	},
-	"/": func(p *Interp, l, r Value) Value {
-		rf := r.Float()
+	"/": func(p *Interp, l, r value) value {
+		rf := r.num()
 		if rf == 0.0 {
-			interpError("division by zero")
+			panic(newError("division by zero"))
 		}
-		return Num(l.Float() / rf)
+		return num(l.num() / rf)
 	},
-	"%": func(p *Interp, l, r Value) Value {
-		rf := r.Float()
+	"%": func(p *Interp, l, r value) value {
+		rf := r.num()
 		if rf == 0.0 {
-			interpError("division by zero in mod")
+			panic(newError("division by zero in mod"))
 		}
-		return Num(math.Mod(l.Float(), rf))
+		return num(math.Mod(l.num(), rf))
 	},
-	"": func(p *Interp, l, r Value) Value {
-		return Str(p.ToString(l) + p.ToString(r))
+	"": func(p *Interp, l, r value) value {
+		return str(p.toString(l) + p.toString(r))
 	},
 	"~": (*Interp).regexMatch,
-	"!~": func(p *Interp, l, r Value) Value {
+	"!~": func(p *Interp, l, r value) value {
 		return p.not(p.regexMatch(l, r))
 	},
 }
 
-func (p *Interp) equal(l, r Value) Value {
+func (p *Interp) equal(l, r value) value {
 	if l.isTrueStr() || r.isTrueStr() {
-		return Bool(p.ToString(l) == p.ToString(r))
+		return boolean(p.toString(l) == p.toString(r))
 	} else {
-		return Bool(l.num == r.num)
+		return boolean(l.n == r.n)
 	}
 }
 
-func (p *Interp) lessThan(l, r Value) Value {
+func (p *Interp) lessThan(l, r value) value {
 	if l.isTrueStr() || r.isTrueStr() {
-		return Bool(p.ToString(l) < p.ToString(r))
+		return boolean(p.toString(l) < p.toString(r))
 	} else {
-		return Bool(l.num < r.num)
+		return boolean(l.n < r.n)
 	}
 }
 
-func (p *Interp) regexMatch(l, r Value) Value {
-	re := p.mustCompile(p.ToString(r))
-	matched := re.MatchString(p.ToString(l))
-	return Bool(matched)
+func (p *Interp) regexMatch(l, r value) value {
+	re := p.mustCompile(p.toString(r))
+	matched := re.MatchString(p.toString(l))
+	return boolean(matched)
 }
 
-type unaryFunc func(p *Interp, v Value) Value
+type unaryFunc func(p *Interp, v value) value
 
 var unaryFuncs = map[string]unaryFunc{
 	"!": (*Interp).not,
-	"+": func(p *Interp, v Value) Value {
-		return Num(v.Float())
+	"+": func(p *Interp, v value) value {
+		return num(v.num())
 	},
-	"-": func(p *Interp, v Value) Value {
-		return Num(-v.Float())
+	"-": func(p *Interp, v value) value {
+		return num(-v.num())
 	},
 }
 
-func (p *Interp) not(v Value) Value {
-	return Bool(!v.Bool())
+func (p *Interp) not(v value) value {
+	return boolean(!v.boolean())
 }
 
 func (p *Interp) checkNumArgs(name string, actual, expected int) {
 	if actual != expected {
-		interpError("%s() expects %d args, got %d", name, expected, actual)
+		panic(newError("%s() expects %d args, got %d", name, expected, actual))
 	}
 }
 
-func (p *Interp) call(name string, args []Value) Value {
+func (p *Interp) call(name string, args []value) value {
 	switch name {
 	case "atan2":
 		p.checkNumArgs("atan2", len(args), 2)
-		return Num(math.Atan2(args[0].Float(), args[1].Float()))
+		return num(math.Atan2(args[0].num(), args[1].num()))
 	case "cos":
 		p.checkNumArgs("cos", len(args), 1)
-		return Num(math.Cos(args[0].Float()))
+		return num(math.Cos(args[0].num()))
 	case "exp":
 		p.checkNumArgs("exp", len(args), 1)
-		return Num(math.Exp(args[0].Float()))
+		return num(math.Exp(args[0].num()))
 	case "index":
 		p.checkNumArgs("index", len(args), 2)
-		s := p.ToString(args[0])
-		substr := p.ToString(args[1])
-		return Num(float64(strings.Index(s, substr) + 1))
+		s := p.toString(args[0])
+		substr := p.toString(args[1])
+		return num(float64(strings.Index(s, substr) + 1))
 	case "int":
 		p.checkNumArgs("int", len(args), 1)
-		return Num(float64(int(args[0].Float())))
+		return num(float64(int(args[0].num())))
 	case "length":
 		switch len(args) {
 		case 0:
-			return Num(float64(len(p.line)))
+			return num(float64(len(p.line)))
 		case 1:
-			return Num(float64(len(p.ToString(args[0]))))
+			return num(float64(len(p.toString(args[0]))))
 		default:
-			interpError("length() expects 0 or 1 arg, got %d", len(args))
-			return Num(0) // satisfy compiler (will never happen)
+			panic(newError("length() expects 0 or 1 arg, got %d", len(args)))
 		}
 	case "log":
 		p.checkNumArgs("log", len(args), 1)
-		return Num(math.Log(args[0].Float()))
+		return num(math.Log(args[0].num()))
 	case "match":
 		p.checkNumArgs("match", len(args), 2)
-		re := p.mustCompile(p.ToString(args[1]))
-		loc := re.FindStringIndex(p.ToString(args[0]))
+		re := p.mustCompile(p.toString(args[1]))
+		loc := re.FindStringIndex(p.toString(args[0]))
 		if loc == nil {
 			p.matchStart = 0
 			p.matchLength = -1
-			return Num(0)
+			return num(0)
 		}
 		p.matchStart = loc[0] + 1
 		p.matchLength = loc[1] - loc[0]
-		return Num(float64(p.matchStart))
+		return num(float64(p.matchStart))
 	case "sprintf":
 		// TODO: I don't think this works anymore
 		if len(args) < 1 {
-			interpError("sprintf() expects 1 or more args, got %d", len(args))
+			panic(newError("sprintf() expects 1 or more args, got %d", len(args)))
 		}
 		vals := make([]interface{}, len(args)-1)
 		for i, a := range args[1:] {
 			vals[i] = interface{}(a)
 		}
-		return Str(fmt.Sprintf(p.ToString(args[0]), vals...))
+		return str(fmt.Sprintf(p.toString(args[0]), vals...))
 	case "sqrt":
 		p.checkNumArgs("sqrt", len(args), 1)
-		return Num(math.Sqrt(args[0].Float()))
+		return num(math.Sqrt(args[0].num()))
 	case "rand":
 		p.checkNumArgs("rand", len(args), 0)
-		return Num(p.random.Float64())
+		return num(p.random.Float64())
 	case "sin":
 		p.checkNumArgs("sin", len(args), 1)
-		return Num(math.Sin(args[0].Float()))
+		return num(math.Sin(args[0].num()))
 	case "srand":
 		switch len(args) {
 		case 0:
 			p.random.Seed(time.Now().UnixNano())
 		case 1:
 			// TODO: truncating the fraction part here, is that okay?
-			p.random.Seed(int64(args[0].Float()))
+			p.random.Seed(int64(args[0].num()))
 		default:
-			interpError("srand() expects 0 or 1 arg, got %d", len(args))
+			panic(newError("srand() expects 0 or 1 arg, got %d", len(args)))
 		}
 		// TODO: previous seed value should be returned
-		return Num(0)
+		return num(0)
 	case "substr":
 		// TODO: untested
 		if len(args) != 2 && len(args) != 3 {
-			interpError("substr() expects 2 or 3 args, got %d", len(args))
+			panic(newError("substr() expects 2 or 3 args, got %d", len(args)))
 		}
-		str := p.ToString(args[0])
-		pos := int(args[1].Float())
+		s := p.toString(args[0])
+		pos := int(args[1].num())
 		if pos < 1 {
 			pos = 1
 		}
-		if pos > len(str) {
-			pos = len(str)
+		if pos > len(s) {
+			pos = len(s)
 		}
-		maxLength := len(str) - pos + 1
+		maxLength := len(s) - pos + 1
 		length := maxLength
 		if len(args) == 3 {
-			length = int(args[2].Float())
+			length = int(args[2].num())
 			if length < 0 {
 				length = 0
 			}
@@ -694,13 +737,13 @@ func (p *Interp) call(name string, args []Value) Value {
 				length = maxLength
 			}
 		}
-		return Str(str[pos-1 : pos-1+length])
+		return str(s[pos-1 : pos-1+length])
 	case "tolower":
 		p.checkNumArgs("tolower", len(args), 1)
-		return Str(strings.ToLower(p.ToString(args[0])))
+		return str(strings.ToLower(p.toString(args[0])))
 	case "toupper":
 		p.checkNumArgs("toupper", len(args), 1)
-		return Str(strings.ToUpper(p.ToString(args[0])))
+		return str(strings.ToUpper(p.toString(args[0])))
 	default:
 		panic(fmt.Sprintf("unexpected function name: %q", name))
 	}
@@ -714,9 +757,9 @@ func (p *Interp) callSplit(s, arrayName, fs string) int {
 		re := p.mustCompile(fs)
 		parts = re.Split(s, -1)
 	}
-	array := make(map[string]Value)
+	array := make(map[string]value)
 	for i, part := range parts {
-		array[strconv.Itoa(i)] = NumStr(part)
+		array[strconv.Itoa(i)] = numStr(part)
 	}
 	p.arrays[arrayName] = array
 	return len(array)
@@ -736,17 +779,17 @@ func (p *Interp) callSub(regex, repl, in string, global bool) (out string, num i
 	return out, count
 }
 
-func (p *Interp) assign(left Expr, right Value) {
+func (p *Interp) assign(left Expr, right value) {
 	switch left := left.(type) {
 	case *VarExpr:
-		p.SetVar(left.Name, right)
+		p.setVar(left.Name, right)
 	case *IndexExpr:
-		index := p.evaluate(left.Index)
-		p.SetArray(left.Name, p.ToString(index), right)
+		index := p.eval(left.Index)
+		p.setArray(left.Name, p.toString(index), right)
 	case *FieldExpr:
-		index := p.evaluate(left.Index)
+		index := p.eval(left.Index)
 		// TODO: should error if index is a non-number string
-		p.SetField(int(index.Float()), p.ToString(right))
+		p.SetField(int(index.num()), p.toString(right))
 	default:
 		panic(fmt.Sprintf("unexpected lvalue type: %T", left))
 	}

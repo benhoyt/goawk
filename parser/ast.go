@@ -66,8 +66,8 @@ func (e *UnaryExpr) expr()     {}
 func (e *BinaryExpr) expr()    {}
 func (e *InExpr) expr()        {}
 func (e *CondExpr) expr()      {}
-func (e *NumExpr) expr()     {}
-func (e *StrExpr) expr()     {}
+func (e *NumExpr) expr()       {}
+func (e *StrExpr) expr()       {}
 func (e *VarExpr) expr()       {}
 func (e *IndexExpr) expr()     {}
 func (e *AssignExpr) expr()    {}
@@ -141,7 +141,7 @@ type StrExpr struct {
 }
 
 func (e *StrExpr) String() string {
-    return strconv.Quote(e.Value)
+	return strconv.Quote(e.Value)
 }
 
 type VarExpr struct {
