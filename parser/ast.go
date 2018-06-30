@@ -1,6 +1,10 @@
-package main
+// GoAWK parser - abstract syntax tree structs
+
+package parser
 
 import (
+	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -62,7 +66,8 @@ func (e *UnaryExpr) expr()     {}
 func (e *BinaryExpr) expr()    {}
 func (e *InExpr) expr()        {}
 func (e *CondExpr) expr()      {}
-func (e *ConstExpr) expr()     {}
+func (e *NumExpr) expr()     {}
+func (e *StrExpr) expr()     {}
 func (e *VarExpr) expr()       {}
 func (e *IndexExpr) expr()     {}
 func (e *AssignExpr) expr()    {}
@@ -123,12 +128,20 @@ func (e *CondExpr) String() string {
 	return e.Cond.String() + " ? " + e.True.String() + " : " + e.False.String()
 }
 
-type ConstExpr struct {
-	Value Value
+type NumExpr struct {
+	Value float64
 }
 
-func (e *ConstExpr) String() string {
-	return e.Value.AWKString()
+func (e *NumExpr) String() string {
+	return fmt.Sprintf("%.6g", e.Value)
+}
+
+type StrExpr struct {
+	Value string
+}
+
+func (e *StrExpr) String() string {
+    return strconv.Quote(e.Value)
 }
 
 type VarExpr struct {

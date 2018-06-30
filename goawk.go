@@ -42,6 +42,9 @@ NICE TO HAVE:
 import (
 	"fmt"
 	"os"
+
+	"github.com/benhoyt/goawk/interp"
+	"github.com/benhoyt/goawk/parser"
 )
 
 func main() {
@@ -51,7 +54,7 @@ func main() {
 	}
 
 	src := os.Args[1]
-	prog, err := Parse(src)
+	prog, err := parser.Parse(src)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "parse error: %s\n", err)
 		os.Exit(3)
@@ -59,15 +62,15 @@ func main() {
 	fmt.Println(prog)
 	fmt.Println("-----") // TODO
 
-	interp := NewInterp(prog, os.Stdout)
-	err = interp.ExecuteBegin()
+	p := interp.NewInterp(prog, os.Stdout)
+	err = p.ExecuteBegin()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "execute error: %s\n", err)
 		os.Exit(1)
 	}
 
 	if len(os.Args) <= 2 {
-		err = interp.ExecuteFile("", os.Stdin)
+		err = p.ExecuteFile("", os.Stdin)
 	} else {
 		for _, filename := range os.Args[2:] {
 			f, errOpen := os.Open(filename)
@@ -75,77 +78,24 @@ func main() {
 				fmt.Fprintf(os.Stderr, "can't open %q: %v\n", filename, errOpen)
 				os.Exit(2)
 			}
-			err = interp.ExecuteFile(filename, f)
+			err = p.ExecuteFile(filename, f)
 			f.Close()
 			if err != nil {
 				break
 			}
 		}
 	}
-	if err != nil && err != ErrExit {
+	if err != nil && err != interp.ErrExit {
 		fmt.Fprintf(os.Stderr, "execute error: %s\n", err)
 		os.Exit(1)
 	}
 
-	err = interp.ExecuteEnd()
-	if err == ErrExit {
+	err = p.ExecuteEnd()
+	if err == interp.ErrExit {
 		return
 	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "execute error: %s\n", err)
 		os.Exit(1)
 	}
-}
-
-func NumExpr(n float64) *ConstExpr {
-	return &ConstExpr{Num(n)}
-}
-
-func StrExpr(s string) *ConstExpr {
-	return &ConstExpr{Str(s)}
-}
-
-func Parse(src string) (*Program, error) {
-	program := &Program{
-		Begin: []Stmts{
-			{
-				// &ExprStmt{
-				// 	&AssignExpr{&VarExpr{"RS"}, "", StrExpr("|")},
-				// },
-				&ExprStmt{
-					&CallExpr{"srand", []Expr{NumExpr(1.2)}},
-				},
-			},
-		},
-		Actions: []Action{
-			{
-				Pattern: &BinaryExpr{
-					Left:  &FieldExpr{NumExpr(0)},
-					Op:    "!=",
-					Right: StrExpr(""),
-				},
-				Stmts: []Stmt{
-					&PrintStmt{
-						Args: []Expr{
-							&CallSubExpr{StrExpr(`\.`), StrExpr(","), &FieldExpr{NumExpr(0)}, true},
-							&FieldExpr{NumExpr(0)},
-						},
-					},
-					// &ForInStmt{
-					// 	Var:   "x",
-					// 	Array: "a",
-					// 	Body: []Stmt{
-					// 		&PrintStmt{
-					// 			Args: []Expr{
-					// 				&VarExpr{"x"},
-					// 				&IndexExpr{"a", &VarExpr{"x"}},
-					// 			},
-					// 		},
-					// 	},
-					// },
-				},
-			},
-		},
-	}
-	return program, nil
 }
