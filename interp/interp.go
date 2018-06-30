@@ -98,8 +98,13 @@ lineLoop:
 	for scanner.Scan() {
 		p.nextLine(scanner.Text())
 		for _, action := range program.Actions {
-			pattern := p.eval(action.Pattern)
-			if pattern.boolean() {
+			// No pattern is equivalent to pattern evaluating to true
+			if action.Pattern == nil || p.eval(action.Pattern).boolean() {
+				// No action is equivalent to { print $0 }
+				if action.Stmts == nil {
+					io.WriteString(p.output, p.line+p.outputRecordSep)
+					continue
+				}
 				err := p.executes(action.Stmts)
 				if err == errNext {
 					continue lineLoop
