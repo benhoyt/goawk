@@ -2,7 +2,7 @@
 package parser
 
 import (
-	. "github.com/benhoyt/goawk/lexer"
+//	. "github.com/benhoyt/goawk/lexer"
 )
 
 /*

@@ -11,6 +11,7 @@ type Token int
 const (
 	ILLEGAL Token = iota
 	EOF
+	NEWLINE
 
 	// Symbols
 	ADD
@@ -94,6 +95,8 @@ const (
 	NAME
 	NUMBER
 	STRING
+
+	LAST = STRING
 )
 
 var keywordTokens = map[string]Token{
@@ -138,6 +141,7 @@ var keywordTokens = map[string]Token{
 var tokenNames = map[Token]string{
 	ILLEGAL: "<illegal>",
 	EOF:     "<eof>",
+	NEWLINE: "<newline>",
 
 	ADD:        "+",
 	ADD_ASSIGN: "+=",
@@ -186,6 +190,7 @@ var tokenNames = map[Token]string{
 	END:      "END",
 	EXIT:     "exit",
 	FOR:      "for",
+	IF:       "if",
 	IN:       "in",
 	NEXT:     "next",
 	PRINT:    "print",
@@ -267,7 +272,7 @@ func (l *Lexer) next() {
 }
 
 func (l *Lexer) skipWhite() {
-	for l.ch == ' ' || l.ch == '\t' || l.ch == '\r' || l.ch == '\n' {
+	for l.ch == ' ' || l.ch == '\t' || l.ch == '\r' {
 		l.next()
 	}
 }
@@ -317,6 +322,8 @@ func (l *Lexer) Scan() (Position, Token, string) {
 	}
 
 	switch ch {
+	case '\n':
+		tok = NEWLINE
 	case ':':
 		tok = COLON
 	case ',':
@@ -324,6 +331,7 @@ func (l *Lexer) Scan() (Position, Token, string) {
 	case '/':
 		switch l.ch {
 		case '=':
+			l.next()
 			tok = DIV_ASSIGN
 		case ' ', '\t':
 			tok = DIV
@@ -339,11 +347,29 @@ func (l *Lexer) Scan() (Position, Token, string) {
 	case '(':
 		tok = LPAREN
 	case '-':
-		tok = l.twoSymbol('=', SUB, SUB_ASSIGN)
+		switch l.ch {
+		case '-':
+			l.next()
+			tok = DECR
+		case '=':
+			l.next()
+			tok = SUB_ASSIGN
+		default:
+			tok = SUB
+		}
 	case '%':
 		tok = l.twoSymbol('=', MOD, MOD_ASSIGN)
 	case '+':
-		tok = l.twoSymbol('=', ADD, ADD_ASSIGN)
+		switch l.ch {
+		case '+':
+			l.next()
+			tok = INCR
+		case '=':
+			l.next()
+			tok = ADD_ASSIGN
+		default:
+			tok = ADD
+		}
 	case '}':
 		tok = RBRACE
 	case ']':
@@ -354,11 +380,15 @@ func (l *Lexer) Scan() (Position, Token, string) {
 		tok = l.twoSymbol('=', MUL, MUL_ASSIGN)
 	case '=':
 		tok = l.twoSymbol('=', ASSIGN, EQUALS)
+	case '^':
+		tok = l.twoSymbol('=', POW, POW_ASSIGN)
 	case '!':
 		switch l.ch {
 		case '=':
+			l.next()
 			tok = NOT_EQUALS
 		case '~':
+			l.next()
 			tok = NOT_MATCH
 		default:
 			tok = NOT
@@ -367,6 +397,32 @@ func (l *Lexer) Scan() (Position, Token, string) {
 		tok = l.twoSymbol('=', LESS, LTE)
 	case '>':
 		tok = l.twoSymbol('=', GREATER, GTE)
+	case '~':
+		tok = MATCH
+	case '?':
+		tok = QUESTION
+	case ';':
+		tok = SEMICOLON
+	case '$':
+		tok = DOLLAR
+	case '&':
+		switch l.ch {
+		case '&':
+			l.next()
+			tok = AND
+		default:
+			tok = ILLEGAL
+			val = fmt.Sprintf("unexpected %c after &", ch)
+		}
+	case '|':
+		switch l.ch {
+		case '|':
+			l.next()
+			tok = OR
+		default:
+			tok = ILLEGAL
+			val = fmt.Sprintf("unexpected %c after |", ch)
+		}
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 		// TODO: handle floats
 		runes := []rune{ch}
