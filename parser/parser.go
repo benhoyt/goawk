@@ -1,6 +1,31 @@
 // GoAWK parser.
 package parser
 
+import (
+	. "github.com/benhoyt/goawk/lexer"
+)
+
+/*
+type parser struct {
+	lexer *Lexer
+	pos Position
+	tok Token
+	val string
+}
+
+func (p *parser) next() {
+	p.pos, p.tok, p.val = p.lexer.Next()
+	if p.tok == ILLEGAL {
+		p.error("%s", p.val)
+	}
+}
+
+func (p *parser) error(format string, args ...interface{}) {
+	message := fmt.Sprintf(format, args...)
+	panic(Error{p.pos, message})
+}
+*/
+
 func ParseProgram(src []byte) (*Program, error) {
 	// TODO
 	program := &Program{
