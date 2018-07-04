@@ -356,7 +356,9 @@ func (s *NextStmt) String() string {
 	return "next"
 }
 
-type ExitStmt struct{}
+type ExitStmt struct {
+	Status Expr
+}
 
 func (s *ExitStmt) String() string {
 	return "exit"
@@ -364,9 +366,10 @@ func (s *ExitStmt) String() string {
 
 type DeleteStmt struct {
 	Array string
-	Index Expr
+	Index []Expr
 }
 
 func (s *DeleteStmt) String() string {
-	return "delete " + s.Array + "[" + s.Index.String() + "]"
+	// TODO: fix s.Index[0] for multi subscripts
+	return "delete " + s.Array + "[" + s.Index[0].String() + "]"
 }

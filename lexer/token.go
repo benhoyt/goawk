@@ -136,8 +136,8 @@ var keywordTokens = map[string]Token{
 
 var tokenNames = map[Token]string{
 	ILLEGAL: "<illegal>",
-	EOF:     "<eof>",
-	NEWLINE: "<newline>",
+	EOF:     "EOF",
+	NEWLINE: "newline",
 
 	ADD:        "+",
 	ADD_ASSIGN: "+=",
@@ -214,9 +214,9 @@ var tokenNames = map[Token]string{
 	F_TOLOWER: "tolower",
 	F_TOUPPER: "toupper",
 
-	NAME:   "<name>",
-	NUMBER: "<number>",
-	STRING: "<string>",
+	NAME:   "name",
+	NUMBER: "number",
+	STRING: "string",
 }
 
 func (t Token) String() string {

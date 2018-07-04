@@ -40,8 +40,8 @@ func TestString(t *testing.T) {
 		"for if in next print printf return while " +
 		"atan2 cos exp gsub index int length log match rand " +
 		"sin split sprintf sqrt srand sub substr tolower toupper " +
-		"<name> <string> <number> <newline> " +
-		"<illegal> <illegal> <eof>"
+		"name string number newline " +
+		"<illegal> <illegal> EOF"
 	if output != expected {
 		t.Errorf("expected %q, got %q", expected, output)
 	}

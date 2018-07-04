@@ -151,12 +151,17 @@ func (p *Interp) execute(stmt Stmt) (execErr error) {
 
 	switch s := stmt.(type) {
 	case *PrintStmt:
-		strs := make([]string, len(s.Args))
-		for i, a := range s.Args {
-			value := p.eval(a)
-			strs[i] = value.str(p.outputFormat)
+		var line string
+		if len(s.Args) > 0 {
+			strs := make([]string, len(s.Args))
+			for i, a := range s.Args {
+				value := p.eval(a)
+				strs[i] = value.str(p.outputFormat)
+			}
+			line = strings.Join(strs, p.outputFieldSep)
+		} else {
+			line = p.line
 		}
-		line := strings.Join(strs, p.outputFieldSep)
 		io.WriteString(p.output, line+p.outputRecordSep)
 	case *PrintfStmt:
 		panic("TODO: printf is not yet implemented")
@@ -237,9 +242,10 @@ func (p *Interp) execute(stmt Stmt) (execErr error) {
 	case *NextStmt:
 		return errNext
 	case *ExitStmt:
+		// TODO: update to handle s.Status (exit status code)
 		return ErrExit
 	case *DeleteStmt:
-		index := p.eval(s.Index)
+		index := p.eval(s.Index)[0] // TODO: handle multi index
 		delete(p.arrays[s.Array], p.toString(index))
 	case *ExprStmt:
 		p.eval(s.Expr)

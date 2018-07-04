@@ -3,12 +3,6 @@ package main
 
 /*
 TODO:
-- lexing
-    Lexer
-    NewLexer(input []byte) *Lexer
-    .Scan() (Token, string)
-    PLUS, MINUS, DOT, ...
-    // can be imported into parser with "."
 - parsing
 - testing (against other implementations?)
 - performance testing: I/O, allocations, CPU
@@ -22,10 +16,13 @@ NICE TO HAVE:
 */
 
 import (
+	"bytes"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/benhoyt/goawk/interp"
+	"github.com/benhoyt/goawk/lexer"
 	"github.com/benhoyt/goawk/parser"
 )
 
@@ -35,10 +32,14 @@ func main() {
 		os.Exit(4)
 	}
 
-	src := os.Args[1]
-	prog, err := parser.ParseProgram([]byte(src))
+	src := []byte(os.Args[1])
+	prog, err := parser.ParseProgram(src)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "parse error: %s\n", err)
+		errMsg := fmt.Sprintf("%s", err)
+		if err, ok := err.(*parser.ParseError); ok {
+			showSourceLine(src, err.Position, len(errMsg))
+		}
+		fmt.Fprintln(os.Stderr, errMsg)
 		os.Exit(3)
 	}
 	fmt.Println(prog)
@@ -47,7 +48,7 @@ func main() {
 	p := interp.New(os.Stdout)
 	err = p.ExecBegin(prog)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "execute error: %s\n", err)
+		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)
 	}
 
@@ -68,7 +69,7 @@ func main() {
 		}
 	}
 	if err != nil && err != interp.ErrExit {
-		fmt.Fprintf(os.Stderr, "execute error: %s\n", err)
+		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)
 	}
 
@@ -77,7 +78,22 @@ func main() {
 		return
 	}
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "execute error: %s\n", err)
+		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)
+	}
+}
+
+func showSourceLine(src []byte, pos lexer.Position, dividerLen int) {
+	divider := strings.Repeat("-", dividerLen)
+	if divider != "" {
+		fmt.Println(divider)
+	}
+	lines := bytes.Split(src, []byte{'\n'})
+	srcLine := string(lines[pos.Line-1])
+	numTabs := strings.Count(srcLine[:pos.Column-1], "\t")
+	fmt.Println(strings.Replace(srcLine, "\t", "    ", -1))
+	fmt.Println(strings.Repeat(" ", pos.Column-1) + strings.Repeat("   ", numTabs) + "^")
+	if divider != "" {
+		fmt.Println(divider)
 	}
 }
