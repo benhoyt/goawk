@@ -35,8 +35,16 @@ func (p *parser) program() *Program {
 			p.next()
 			prog.End = append(prog.End, p.stmtsBrace())
 		default:
-			pattern := p.expr()
-			action := Action{pattern, p.stmtsBrace()}
+			// Can have an empty pattern (always true)
+			var pattern Expr
+			if p.tok != LBRACE {
+				pattern = p.expr()
+			}
+			// Or an empty action (equivalent to { print $0 })
+			action := Action{pattern, nil}
+			if p.tok == LBRACE {
+				action.Stmts = p.stmtsBrace()
+			}
 			prog.Actions = append(prog.Actions, action)
 		}
 	}
@@ -53,14 +61,12 @@ func (p *parser) stmts() Stmts {
 
 func (p *parser) stmtsBrace() Stmts {
 	p.expect(LBRACE)
+	p.optionalNewlines()
 	ss := []Stmt{}
-	for p.tok != RBRACE {
-		if p.tok == EOF {
-			panic(p.error("unexpected EOF while parsing statments"))
-		}
+	for p.tok != RBRACE && p.tok != EOF {
 		ss = append(ss, p.stmt())
 	}
-	p.next()
+	p.expect(RBRACE)
 	return ss
 }
 
@@ -81,39 +87,41 @@ func (p *parser) stmt() Stmt {
 		p.expect(LPAREN)
 		cond := p.expr()
 		p.expect(RPAREN)
-		p.optional(NEWLINE)
+		p.optionalNewlines()
 		body := p.stmts()
 		var elseBody Stmts
 		if p.tok == ELSE {
 			p.next()
-			p.optional(NEWLINE)
+			p.optionalNewlines()
 			elseBody = p.stmts()
 		}
 		s = &IfStmt{cond, body, elseBody}
 	case FOR:
 		p.next()
 		p.expect(LPAREN)
-		pre := p.optionalSimpleStmt()
+		pre := p.stmt() // TODO: p.optionalSimpleStmt()
 		if p.tok == RPAREN {
+			// Match: for (var in array) body
 			exprStmt, ok := pre.(*ExprStmt)
 			if !ok {
-				panic(p.error("expected 'for (x in a) ...'"))
+				panic(p.error("expected 'for (var in array) ...'"))
 			}
-			inExpr, ok := exprStmt.(*InExpr)
+			inExpr, ok := (exprStmt.Expr).(*InExpr)
 			if !ok {
-				panic(p.error("expected 'for (x in a) ...'"))
+				panic(p.error("expected 'for (var in array) ...'"))
 			}
 			varExpr, ok := (inExpr.Index).(*VarExpr)
 			if !ok {
-				panic(p.error("expected 'for (x in a) ...'"))
+				panic(p.error("expected 'for (var in array) ...'"))
 			}
 			body := p.stmts()
 			s = &ForInStmt{varExpr.Name, inExpr.Array, body}
 		} else {
+			// Match: for (pre; cond; post) body
 			p.expect(SEMICOLON)
 			cond := p.optionalExpr()
 			p.expect(SEMICOLON)
-			post := p.optionalSimpleStmt()
+			post := p.stmt() // TODO: p.optionalSimpleStmt()
 			p.expect(RPAREN)
 			body := p.stmts()
 			s = &ForStmt{pre, cond, post, body}
@@ -127,7 +135,7 @@ func (p *parser) stmt() Stmt {
 		s = &WhileStmt{cond, body}
 	case DO:
 		p.next()
-		p.optional(NEWLINE)
+		p.optionalNewlines()
 		body := p.stmts()
 		p.expect(WHILE)
 		p.expect(LPAREN)
@@ -164,6 +172,13 @@ func (p *parser) stmt() Stmt {
 	return s
 }
 
+func (p *parser) optionalExpr() Expr {
+	if p.matches(NEWLINE, SEMICOLON) {
+		return nil
+	}
+	return p.expr()
+}
+
 func (p *parser) exprList() []Expr {
 	exprs := []Expr{}
 	first := true
@@ -195,8 +210,8 @@ func (p *parser) expr() Expr {
 	}
 }
 
-func (p *parser) optional(tok Token) {
-	if p.tok == tok {
+func (p *parser) optionalNewlines() {
+	for p.tok == NEWLINE {
 		p.next()
 	}
 }

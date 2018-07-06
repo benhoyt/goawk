@@ -11,6 +11,7 @@ NICE TO HAVE:
 - regex caching for user regexes
 - implement printf / sprintf (probably have to do this by hand)
 - multi-dimensional "in", multi-dimensional IndexExpr and SUBSEP
+- range patterns
 - I don't think interp.SetArray is concurrency-safe
 
 */

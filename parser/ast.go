@@ -17,24 +17,15 @@ type Program struct {
 func (p *Program) String() string {
 	parts := []string{}
 	for _, ss := range p.Begin {
-		parts = append(parts, "BEGIN {\n"+indent(ss.String())+"\n}")
+		parts = append(parts, "BEGIN {\n"+ss.String()+"}")
 	}
 	for _, a := range p.Actions {
 		parts = append(parts, a.String())
 	}
 	for _, ss := range p.End {
-		parts = append(parts, "END {\n"+indent(ss.String())+"\n}")
+		parts = append(parts, "END {\n"+ss.String()+"}")
 	}
 	return strings.Join(parts, "\n\n")
-}
-
-func indent(s string) string {
-	input := strings.Split(s, "\n")
-	output := make([]string, len(input))
-	for i, s := range input {
-		output[i] = "    " + s
-	}
-	return strings.Join(output, "\n")
 }
 
 type Stmts []Stmt
@@ -42,9 +33,9 @@ type Stmts []Stmt
 func (ss Stmts) String() string {
 	lines := make([]string, len(ss))
 	for i, s := range ss {
-		lines[i] = s.String()
+		lines[i] = "    " + s.String() + "\n"
 	}
-	return strings.Join(lines, "\n")
+	return strings.Join(lines, "")
 }
 
 type Action struct {
@@ -53,7 +44,7 @@ type Action struct {
 }
 
 func (a *Action) String() string {
-	return a.Pattern.String() + " {\n" + indent(a.Stmts.String()) + "\n}"
+	return a.Pattern.String() + " {\n" + a.Stmts.String() + "}"
 }
 
 type Expr interface {
@@ -289,9 +280,9 @@ type IfStmt struct {
 }
 
 func (s *IfStmt) String() string {
-	str := "if (" + s.Cond.String() + ") {\n" + indent(s.Body.String()) + "\n}"
+	str := "if (" + s.Cond.String() + ") {\n" + s.Body.String() + "}"
 	if len(s.Else) > 0 {
-		str += " else {\n" + indent(s.Else.String()) + "\n}"
+		str += " else {\n" + s.Else.String() + "}"
 	}
 	return str
 }
@@ -307,7 +298,7 @@ func (s *ForStmt) String() string {
 	return "for (" + s.Pre.String() +
 		"; " + s.Cond.String() +
 		"; " + s.Post.String() + ") {\n" +
-		indent(s.Body.String()) + "\n}"
+		s.Body.String() + "}"
 }
 
 type ForInStmt struct {
@@ -317,7 +308,7 @@ type ForInStmt struct {
 }
 
 func (s *ForInStmt) String() string {
-	return "for (" + s.Var + " in " + s.Array + ") {\n" + indent(s.Body.String()) + "\n}"
+	return "for (" + s.Var + " in " + s.Array + ") {\n" + s.Body.String() + "}"
 }
 
 type WhileStmt struct {
@@ -326,7 +317,7 @@ type WhileStmt struct {
 }
 
 func (s *WhileStmt) String() string {
-	return "while (" + s.Cond.String() + ") {\n" + indent(s.Body.String()) + "\n}"
+	return "while (" + s.Cond.String() + ") {\n" + s.Body.String() + "}"
 }
 
 type DoWhileStmt struct {
@@ -335,7 +326,7 @@ type DoWhileStmt struct {
 }
 
 func (s *DoWhileStmt) String() string {
-	return "do {\n" + indent(s.Body.String()) + "\n} while (" + s.Cond.String() + ")"
+	return "do {\n" + s.Body.String() + "} while (" + s.Cond.String() + ")"
 }
 
 type BreakStmt struct{}

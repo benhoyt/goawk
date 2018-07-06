@@ -245,7 +245,7 @@ func (p *Interp) execute(stmt Stmt) (execErr error) {
 		// TODO: update to handle s.Status (exit status code)
 		return ErrExit
 	case *DeleteStmt:
-		index := p.eval(s.Index)[0] // TODO: handle multi index
+		index := p.eval(s.Index[0]) // TODO: handle multi index
 		delete(p.arrays[s.Array], p.toString(index))
 	case *ExprStmt:
 		p.eval(s.Expr)
