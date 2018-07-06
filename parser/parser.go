@@ -70,18 +70,35 @@ func (p *parser) stmtsBrace() Stmts {
 	return ss
 }
 
-func (p *parser) stmt() Stmt {
-	var s Stmt
+func (p *parser) simpleStmt() Stmt {
 	switch p.tok {
 	case PRINT, PRINTF:
 		tok := p.tok
 		p.next()
 		args := p.exprList()
 		if tok == PRINT {
-			s = &PrintStmt{args}
+			return &PrintStmt{args}
 		} else {
-			s = &PrintfStmt{args}
+			return &PrintfStmt{args}
 		}
+	case DELETE:
+		p.next()
+		array := p.val
+		p.expect(NAME)
+		p.expect(LBRACKET)
+		index := p.exprList()
+		p.expect(RBRACKET)
+		return &DeleteStmt{array, index}
+	case IF, FOR, WHILE, DO, BREAK, CONTINUE, NEXT, EXIT:
+		panic(p.error("expected print/printf, delete, or expression"))
+	default:
+		return &ExprStmt{p.expr()}
+	}
+}
+
+func (p *parser) stmt() Stmt {
+	var s Stmt
+	switch p.tok {
 	case IF:
 		p.next()
 		p.expect(LPAREN)
@@ -99,9 +116,13 @@ func (p *parser) stmt() Stmt {
 	case FOR:
 		p.next()
 		p.expect(LPAREN)
-		pre := p.stmt() // TODO: p.optionalSimpleStmt()
-		if p.tok == RPAREN {
+		var pre Stmt
+		if p.tok != SEMICOLON {
+			pre = p.simpleStmt()
+		}
+		if pre != nil && p.tok == RPAREN {
 			// Match: for (var in array) body
+			p.next()
 			exprStmt, ok := pre.(*ExprStmt)
 			if !ok {
 				panic(p.error("expected 'for (var in array) ...'"))
@@ -117,11 +138,17 @@ func (p *parser) stmt() Stmt {
 			body := p.stmts()
 			s = &ForInStmt{varExpr.Name, inExpr.Array, body}
 		} else {
-			// Match: for (pre; cond; post) body
+			// Match: for ([pre]; [cond]; [post]) body
 			p.expect(SEMICOLON)
-			cond := p.optionalExpr()
+			var cond Expr
+			if p.tok != SEMICOLON {
+				cond = p.expr()
+			}
 			p.expect(SEMICOLON)
-			post := p.stmt() // TODO: p.optionalSimpleStmt()
+			var post Stmt
+			if p.tok != SEMICOLON {
+				post = p.simpleStmt()
+			}
 			p.expect(RPAREN)
 			body := p.stmts()
 			s = &ForStmt{pre, cond, post, body}
@@ -153,30 +180,18 @@ func (p *parser) stmt() Stmt {
 		s = &NextStmt{}
 	case EXIT:
 		p.next()
-		status := p.optionalExpr()
+		var status Expr
+		if !p.matches(NEWLINE, SEMICOLON) {
+			status = p.expr()
+		}
 		s = &ExitStmt{status}
-	case DELETE:
-		p.next()
-		array := p.val
-		p.expect(NAME)
-		p.expect(LBRACKET)
-		index := p.exprList()
-		p.expect(RBRACKET)
-		s = &DeleteStmt{array, index}
 	default:
-		s = &ExprStmt{p.expr()}
+		s = p.simpleStmt()
 	}
 	if p.matches(NEWLINE, SEMICOLON) {
 		p.next()
 	}
 	return s
-}
-
-func (p *parser) optionalExpr() Expr {
-	if p.matches(NEWLINE, SEMICOLON) {
-		return nil
-	}
-	return p.expr()
 }
 
 func (p *parser) exprList() []Expr {
@@ -205,6 +220,14 @@ func (p *parser) expr() Expr {
 	case DOLLAR:
 		p.next()
 		return &FieldExpr{p.expr()}
+	case NAME:
+		// TODO: totally incorrect, just for testing
+		name := p.val
+		p.next()
+		p.expect(IN)
+		array := p.val
+		p.expect(NAME)
+		return &InExpr{&VarExpr{name}, array}
 	default:
 		panic(p.error("expected expression"))
 	}

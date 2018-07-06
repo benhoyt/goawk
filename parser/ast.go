@@ -31,9 +31,12 @@ func (p *Program) String() string {
 type Stmts []Stmt
 
 func (ss Stmts) String() string {
-	lines := make([]string, len(ss))
-	for i, s := range ss {
-		lines[i] = "    " + s.String() + "\n"
+	lines := []string{}
+	for _, s := range ss {
+		subLines := strings.Split(s.String(), "\n")
+		for _, sl := range subLines {
+			lines = append(lines, "    "+sl+"\n")
+		}
 	}
 	return strings.Join(lines, "")
 }
