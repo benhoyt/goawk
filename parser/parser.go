@@ -215,9 +215,9 @@ func (p *parser) expr() Expr {
 }
 
 func (p *parser) assign() Expr {
-	// TODO: is this right-associative?
 	expr := p.cond()
-	if IsLValue(expr) && p.matches(ASSIGN) {
+	if IsLValue(expr) && p.matches(ASSIGN, ADD_ASSIGN, DIV_ASSIGN,
+		MOD_ASSIGN, MUL_ASSIGN, POW_ASSIGN, SUB_ASSIGN) {
 		op := p.tok
 		p.next()
 		right := p.assign()
@@ -240,31 +240,44 @@ func (p *parser) cond() Expr {
 }
 
 func (p *parser) or() Expr {
-	return p.binary(p.and, OR)
+	return p.binaryLeft(p.and, OR)
 }
 
 func (p *parser) and() Expr {
-	return p.binary(p.in, AND)
+	return p.binaryLeft(p.in, AND)
 }
 
 func (p *parser) in() Expr {
-	// TODO: multi-dimensional "in"
 	expr := p.match()
-	if p.tok == IN {
+	for p.tok == IN {
 		p.next()
 		array := p.val
 		p.expect(NAME)
-		return &InExpr{expr, array}
+		expr = &InExpr{expr, array}
 	}
 	return expr
 }
 
 func (p *parser) match() Expr {
-	return p.binary(p.compare, MATCH, NOT_MATCH)
+	expr := p.compare()
+	if p.matches(MATCH, NOT_MATCH) {
+		op := p.tok
+		p.next()
+		right := p.compare() // Not match() as these aren't associative
+		return &BinaryExpr{expr, op, right}
+	}
+	return expr
 }
 
 func (p *parser) compare() Expr {
-	return p.binary(p.concat, EQUALS, NOT_EQUALS, LESS, LTE, GREATER, GTE)
+	expr := p.concat()
+	if p.matches(EQUALS, NOT_EQUALS, LESS, LTE, GREATER, GTE) {
+		op := p.tok
+		p.next()
+		right := p.concat() // Not compare() as these aren't associative
+		return &BinaryExpr{expr, op, right}
+	}
+	return expr
 }
 
 func (p *parser) concat() Expr {
@@ -272,11 +285,11 @@ func (p *parser) concat() Expr {
 }
 
 func (p *parser) add() Expr {
-	return p.binary(p.mul, ADD, SUB)
+	return p.binaryLeft(p.mul, ADD, SUB)
 }
 
 func (p *parser) mul() Expr {
-	return p.binary(p.unary, MUL, DIV, MOD)
+	return p.binaryLeft(p.unary, MUL, DIV, MOD)
 }
 
 func (p *parser) unary() Expr {
@@ -291,17 +304,12 @@ func (p *parser) unary() Expr {
 }
 
 func (p *parser) pow() Expr {
-	// TODO: is this right-associative?
-	return p.binary(p.preIncr, POW)
-}
-
-func (p *parser) binary(parse func() Expr, ops ...Token) Expr {
-	expr := parse()
-	for p.matches(ops...) {
-		op := p.tok
+	// Note that pow (expr ^ expr) is right-associative
+	expr := p.preIncr()
+	if p.tok == POW {
 		p.next()
-		right := p.binary(parse, ops...)
-		return &BinaryExpr{expr, op, right}
+		right := p.pow()
+		return &BinaryExpr{expr, POW, right}
 	}
 	return expr
 }
@@ -363,6 +371,17 @@ func (p *parser) primary() Expr {
 	default:
 		panic(p.error("expected expression"))
 	}
+}
+
+func (p *parser) binaryLeft(parse func() Expr, ops ...Token) Expr {
+	expr := parse()
+	for p.matches(ops...) {
+		op := p.tok
+		p.next()
+		right := parse()
+		expr = &BinaryExpr{expr, op, right}
+	}
+	return expr
 }
 
 func (p *parser) optionalNewlines() {

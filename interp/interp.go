@@ -333,7 +333,24 @@ func (p *Interp) eval(expr Expr) value {
 		right := p.eval(e.Right)
 		if e.Op != ASSIGN {
 			left := p.eval(e.Left)
-			right = binaryFuncs[e.Op](p, left, right)
+			var op Token
+			switch e.Op {
+			case ADD_ASSIGN:
+				op = ADD
+			case SUB_ASSIGN:
+				op = SUB
+			case DIV_ASSIGN:
+				op = DIV
+			case MOD_ASSIGN:
+				op = MOD
+			case MUL_ASSIGN:
+				op = MUL
+			case POW_ASSIGN:
+				op = POW
+			default:
+				panic(fmt.Sprintf("unexpected assignment operator: %s", e.Op))
+			}
+			right = binaryFuncs[op](p, left, right)
 		}
 		p.assign(e.Left, right)
 		return right
