@@ -220,7 +220,7 @@ func (p *parser) assign() Expr {
 	if IsLValue(expr) && p.matches(ASSIGN) {
 		op := p.tok
 		p.next()
-		right := p.expr()
+		right := p.assign()
 		return &AssignExpr{expr, op, right}
 	}
 	return expr
@@ -231,9 +231,9 @@ func (p *parser) cond() Expr {
 	expr := p.or()
 	if p.tok == QUESTION {
 		p.next()
-		t := p.expr()
+		t := p.cond()
 		p.expect(COLON)
-		f := p.expr()
+		f := p.cond()
 		return &CondExpr{expr, t, f}
 	}
 	return expr
@@ -284,11 +284,12 @@ func (p *parser) unary() Expr {
 	case NOT, ADD, SUB:
 		op := p.tok
 		p.next()
-		return &UnaryExpr{op, p.pow()}
+		return &UnaryExpr{op, p.unary()}
 	default:
 		return p.pow()
 	}
 }
+
 func (p *parser) pow() Expr {
 	// TODO: is this right-associative?
 	return p.binary(p.preIncr, POW)
@@ -299,7 +300,7 @@ func (p *parser) binary(parse func() Expr, ops ...Token) Expr {
 	for p.matches(ops...) {
 		op := p.tok
 		p.next()
-		right := p.expr()
+		right := p.binary(parse, ops...)
 		return &BinaryExpr{expr, op, right}
 	}
 	return expr
@@ -309,7 +310,7 @@ func (p *parser) preIncr() Expr {
 	if p.tok == INCR || p.tok == DECR {
 		op := p.tok
 		p.next()
-		expr := p.expr()
+		expr := p.preIncr()
 		if !IsLValue(expr) {
 			panic(p.error("expected lvalue after ++ or --"))
 		}
@@ -343,7 +344,7 @@ func (p *parser) primary() Expr {
 		return &StrExpr{s}
 	case DOLLAR:
 		p.next()
-		return &FieldExpr{p.expr()}
+		return &FieldExpr{p.primary()}
 	case NAME:
 		name := p.val
 		p.next()

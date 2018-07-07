@@ -49,7 +49,11 @@ type Action struct {
 }
 
 func (a *Action) String() string {
-	return a.Pattern.String() + " {\n" + a.Stmts.String() + "}"
+	var patternStr string
+	if a.Pattern != nil {
+		patternStr = a.Pattern.String() + " "
+	}
+	return patternStr + "{\n" + a.Stmts.String() + "}"
 }
 
 type Expr interface {
@@ -171,7 +175,7 @@ func (e *AssignExpr) String() string {
 type IncrExpr struct {
 	Left Expr
 	Op   Token
-	Pre  bool
+	Pre  bool // TODO: consider making PreIncrExpr and PostIncrExpr
 }
 
 func (e *IncrExpr) String() string {
@@ -213,7 +217,7 @@ type CallSubExpr struct {
 	Regex  Expr
 	Repl   Expr
 	In     Expr
-	Global bool
+	Global bool // TODO: consider making CallSubExpr and CallGsubExpr
 }
 
 func (e *CallSubExpr) String() string {
