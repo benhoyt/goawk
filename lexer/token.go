@@ -93,7 +93,9 @@ const (
 	NUMBER
 	STRING
 
-	LAST = STRING
+	LAST       = STRING
+	FIRST_FUNC = F_ATAN2
+	LAST_FUNC  = F_TOUPPER
 )
 
 var keywordTokens = map[string]Token{

@@ -125,7 +125,7 @@ type CondExpr struct {
 }
 
 func (e *CondExpr) String() string {
-	return e.Cond.String() + " ? " + e.True.String() + " : " + e.False.String()
+	return "(" + e.Cond.String() + " ? " + e.True.String() + " : " + e.False.String() + ")"
 }
 
 type NumExpr struct {

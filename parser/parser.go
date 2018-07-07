@@ -227,7 +227,6 @@ func (p *parser) assign() Expr {
 }
 
 func (p *parser) cond() Expr {
-	// TODO: is this right-associative?
 	expr := p.or()
 	if p.tok == QUESTION {
 		p.next()
@@ -281,7 +280,13 @@ func (p *parser) compare() Expr {
 }
 
 func (p *parser) concat() Expr {
-	return p.add() // TODO: how to do concatenation?
+	expr := p.add()
+	for p.matches(DOLLAR, NOT, NAME, NUMBER, STRING, LPAREN) ||
+		(p.tok >= FIRST_FUNC && p.tok <= LAST_FUNC) {
+		right := p.add()
+		expr = &BinaryExpr{expr, CONCAT, right}
+	}
+	return expr
 }
 
 func (p *parser) add() Expr {
