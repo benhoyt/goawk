@@ -8,6 +8,7 @@ const (
 	ILLEGAL Token = iota
 	EOF
 	NEWLINE
+	CONCAT
 
 	// Symbols
 	ADD
@@ -138,6 +139,7 @@ var tokenNames = map[Token]string{
 	ILLEGAL: "<illegal>",
 	EOF:     "EOF",
 	NEWLINE: "newline",
+	CONCAT:  "<concat>",
 
 	ADD:        "+",
 	ADD_ASSIGN: "+=",

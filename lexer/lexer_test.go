@@ -47,7 +47,7 @@ func TestString(t *testing.T) {
 	}
 
 	for i, s := range seen {
-		if !s {
+		if !s && Token(i) != CONCAT {
 			t.Errorf("token %s (%d) not seen", Token(i), i)
 		}
 	}

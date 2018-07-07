@@ -170,18 +170,21 @@ func (p *parser) stmt() Stmt {
 		p.expect(RPAREN)
 		s = &DoWhileStmt{body, cond}
 	case BREAK:
+		// TODO: must be in a loop
 		p.next()
 		s = &BreakStmt{}
 	case CONTINUE:
+		// TODO: must be in a loop
 		p.next()
 		s = &ContinueStmt{}
 	case NEXT:
+		// TODO: must not be in BEGIN or END
 		p.next()
 		s = &NextStmt{}
 	case EXIT:
 		p.next()
 		var status Expr
-		if !p.matches(NEWLINE, SEMICOLON) {
+		if !p.matches(NEWLINE, SEMICOLON, RBRACE) {
 			status = p.expr()
 		}
 		s = &ExitStmt{status}
@@ -208,6 +211,127 @@ func (p *parser) exprList() []Expr {
 }
 
 func (p *parser) expr() Expr {
+	return p.assign()
+}
+
+func (p *parser) assign() Expr {
+	// TODO: is this right-associative?
+	expr := p.cond()
+	if IsLValue(expr) && p.matches(ASSIGN) {
+		op := p.tok
+		p.next()
+		right := p.expr()
+		return &AssignExpr{expr, op, right}
+	}
+	return expr
+}
+
+func (p *parser) cond() Expr {
+	// TODO: is this right-associative?
+	expr := p.or()
+	if p.tok == QUESTION {
+		p.next()
+		t := p.expr()
+		p.expect(COLON)
+		f := p.expr()
+		return &CondExpr{expr, t, f}
+	}
+	return expr
+}
+
+func (p *parser) or() Expr {
+	return p.binary(p.and, OR)
+}
+
+func (p *parser) and() Expr {
+	return p.binary(p.in, AND)
+}
+
+func (p *parser) in() Expr {
+	// TODO: multi-dimensional "in"
+	expr := p.match()
+	if p.tok == IN {
+		p.next()
+		array := p.val
+		p.expect(NAME)
+		return &InExpr{expr, array}
+	}
+	return expr
+}
+
+func (p *parser) match() Expr {
+	return p.binary(p.compare, MATCH, NOT_MATCH)
+}
+
+func (p *parser) compare() Expr {
+	return p.binary(p.concat, EQUALS, NOT_EQUALS, LESS, LTE, GREATER, GTE)
+}
+
+func (p *parser) concat() Expr {
+	return p.add() // TODO: how to do concatenation?
+}
+
+func (p *parser) add() Expr {
+	return p.binary(p.mul, ADD, SUB)
+}
+
+func (p *parser) mul() Expr {
+	return p.binary(p.unary, MUL, DIV, MOD)
+}
+
+func (p *parser) unary() Expr {
+	switch p.tok {
+	case NOT, ADD, SUB:
+		op := p.tok
+		p.next()
+		return &UnaryExpr{op, p.pow()}
+	default:
+		return p.pow()
+	}
+}
+func (p *parser) pow() Expr {
+	// TODO: is this right-associative?
+	return p.binary(p.preIncr, POW)
+}
+
+func (p *parser) binary(parse func() Expr, ops ...Token) Expr {
+	expr := parse()
+	for p.matches(ops...) {
+		op := p.tok
+		p.next()
+		right := p.expr()
+		return &BinaryExpr{expr, op, right}
+	}
+	return expr
+}
+
+func (p *parser) preIncr() Expr {
+	if p.tok == INCR || p.tok == DECR {
+		op := p.tok
+		p.next()
+		expr := p.expr()
+		if !IsLValue(expr) {
+			panic(p.error("expected lvalue after ++ or --"))
+		}
+		return &IncrExpr{expr, op, true}
+	}
+	return p.postIncr()
+}
+
+func (p *parser) postIncr() Expr {
+	expr := p.primary()
+	if p.tok == INCR || p.tok == DECR {
+		if !IsLValue(expr) {
+			panic(p.error("expected lvalue before ++ or --"))
+		}
+		op := p.tok
+		p.next()
+		return &IncrExpr{expr, op, false}
+	}
+	return expr
+}
+
+func (p *parser) primary() Expr {
 	switch p.tok {
 	case NUMBER:
 		n, _ := strconv.ParseFloat(p.val, 64)
@@ -221,13 +345,20 @@ func (p *parser) expr() Expr {
 		p.next()
 		return &FieldExpr{p.expr()}
 	case NAME:
-		// TODO: totally incorrect, just for testing
 		name := p.val
 		p.next()
-		p.expect(IN)
-		array := p.val
-		p.expect(NAME)
-		return &InExpr{&VarExpr{name}, array}
+		if p.tok == LBRACKET {
+			p.next()
+			index := p.exprList()
+			p.expect(RBRACKET)
+			return &IndexExpr{name, index}
+		}
+		return &VarExpr{name}
+	case LPAREN:
+		p.next()
+		expr := p.expr()
+		p.expect(RPAREN)
+		return expr
 	default:
 		panic(p.error("expected expression"))
 	}
@@ -291,50 +422,4 @@ func ParseExpr(src []byte) (expr Expr, err error) {
 	p := parser{lexer: lexer}
 	p.next()
 	return p.expr(), nil
-}
-
-func ParseProgram_TEST(src []byte) (*Program, error) {
-	// TODO
-	program := &Program{
-		Begin: []Stmts{
-			{
-				// &ExprStmt{
-				//  &AssignExpr{&VarExpr{"RS"}, "", StrExpr("|")},
-				// },
-				&ExprStmt{
-					&CallExpr{"srand", []Expr{&NumExpr{1.2}}},
-				},
-			},
-		},
-		Actions: []Action{
-			{
-				Pattern: &BinaryExpr{
-					Left:  &FieldExpr{&NumExpr{0}},
-					Op:    "!=",
-					Right: &StrExpr{""},
-				},
-				Stmts: []Stmt{
-					&PrintStmt{
-						Args: []Expr{
-							&CallSubExpr{&StrExpr{`\.`}, &StrExpr{","}, &FieldExpr{&NumExpr{0}}, true},
-							&FieldExpr{&NumExpr{0}},
-						},
-					},
-					// &ForInStmt{
-					//  Var:   "x",
-					//  Array: "a",
-					//  Body: []Stmt{
-					//      &PrintStmt{
-					//          Args: []Expr{
-					//              &VarExpr{"x"},
-					//              &IndexExpr{"a", &VarExpr{"x"}},
-					//          },
-					//      },
-					//  },
-					// },
-				},
-			},
-		},
-	}
-	return program, nil
 }

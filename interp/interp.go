@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	. "github.com/benhoyt/goawk/lexer"
 	. "github.com/benhoyt/goawk/parser"
 )
 
@@ -288,13 +289,13 @@ func (p *Interp) eval(expr Expr) value {
 	case *BinaryExpr:
 		left := p.eval(e.Left)
 		switch e.Op {
-		case "&&":
+		case AND:
 			if !left.boolean() {
 				return num(0)
 			}
 			right := p.eval(e.Right)
 			return boolean(right.boolean())
-		case "||":
+		case OR:
 			if left.boolean() {
 				return num(1)
 			}
@@ -326,11 +327,11 @@ func (p *Interp) eval(expr Expr) value {
 	case *VarExpr:
 		return p.getVar(e.Name)
 	case *IndexExpr:
-		index := p.eval(e.Index)
+		index := p.eval(e.Index[0]) // TODO: handle multi index
 		return p.getArray(e.Name, p.toString(index))
 	case *AssignExpr:
 		right := p.eval(e.Right)
-		if e.Op != "" {
+		if e.Op != ASSIGN {
 			left := p.eval(e.Left)
 			right = binaryFuncs[e.Op](p, left, right)
 		}
@@ -341,9 +342,9 @@ func (p *Interp) eval(expr Expr) value {
 		left := leftValue.num()
 		var right float64
 		switch e.Op {
-		case "++":
+		case INCR:
 			right = left + 1
-		case "--":
+		case DECR:
 			right = left - 1
 		}
 		rightValue := num(right)
@@ -556,52 +557,52 @@ func (p *Interp) mustCompile(regex string) *regexp.Regexp {
 
 type binaryFunc func(p *Interp, l, r value) value
 
-var binaryFuncs = map[string]binaryFunc{
-	"==": (*Interp).equal,
-	"!=": func(p *Interp, l, r value) value {
+var binaryFuncs = map[Token]binaryFunc{
+	EQUALS: (*Interp).equal,
+	NOT_EQUALS: func(p *Interp, l, r value) value {
 		return p.not(p.equal(l, r))
 	},
-	"<": (*Interp).lessThan,
-	">=": func(p *Interp, l, r value) value {
+	LESS: (*Interp).lessThan,
+	LTE: func(p *Interp, l, r value) value {
 		return p.not(p.lessThan(l, r))
 	},
-	">": func(p *Interp, l, r value) value {
+	GREATER: func(p *Interp, l, r value) value {
 		return p.lessThan(r, l)
 	},
-	"<=": func(p *Interp, l, r value) value {
+	GTE: func(p *Interp, l, r value) value {
 		return p.not(p.lessThan(r, l))
 	},
-	"+": func(p *Interp, l, r value) value {
+	ADD: func(p *Interp, l, r value) value {
 		return num(l.num() + r.num())
 	},
-	"-": func(p *Interp, l, r value) value {
+	SUB: func(p *Interp, l, r value) value {
 		return num(l.num() - r.num())
 	},
-	"*": func(p *Interp, l, r value) value {
+	MUL: func(p *Interp, l, r value) value {
 		return num(l.num() * r.num())
 	},
-	"^": func(p *Interp, l, r value) value {
+	POW: func(p *Interp, l, r value) value {
 		return num(math.Pow(l.num(), r.num()))
 	},
-	"/": func(p *Interp, l, r value) value {
+	DIV: func(p *Interp, l, r value) value {
 		rf := r.num()
 		if rf == 0.0 {
 			panic(newError("division by zero"))
 		}
 		return num(l.num() / rf)
 	},
-	"%": func(p *Interp, l, r value) value {
+	MOD: func(p *Interp, l, r value) value {
 		rf := r.num()
 		if rf == 0.0 {
 			panic(newError("division by zero in mod"))
 		}
 		return num(math.Mod(l.num(), rf))
 	},
-	"": func(p *Interp, l, r value) value {
+	CONCAT: func(p *Interp, l, r value) value {
 		return str(p.toString(l) + p.toString(r))
 	},
-	"~": (*Interp).regexMatch,
-	"!~": func(p *Interp, l, r value) value {
+	MATCH: (*Interp).regexMatch,
+	NOT_MATCH: func(p *Interp, l, r value) value {
 		return p.not(p.regexMatch(l, r))
 	},
 }
@@ -630,12 +631,12 @@ func (p *Interp) regexMatch(l, r value) value {
 
 type unaryFunc func(p *Interp, v value) value
 
-var unaryFuncs = map[string]unaryFunc{
-	"!": (*Interp).not,
-	"+": func(p *Interp, v value) value {
+var unaryFuncs = map[Token]unaryFunc{
+	NOT: (*Interp).not,
+	ADD: func(p *Interp, v value) value {
 		return num(v.num())
 	},
-	"-": func(p *Interp, v value) value {
+	SUB: func(p *Interp, v value) value {
 		return num(-v.num())
 	},
 }
@@ -795,7 +796,7 @@ func (p *Interp) assign(left Expr, right value) {
 	case *VarExpr:
 		p.setVar(left.Name, right)
 	case *IndexExpr:
-		index := p.eval(left.Index)
+		index := p.eval(left.Index[0]) // TODO: handle multi index
 		p.setArray(left.Name, p.toString(index), right)
 	case *FieldExpr:
 		index := p.eval(left.Index)

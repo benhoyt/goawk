@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	. "github.com/benhoyt/goawk/lexer"
 )
 
 type Program struct {
@@ -79,26 +81,26 @@ func (e *FieldExpr) String() string {
 }
 
 type UnaryExpr struct {
-	Op    string
+	Op    Token
 	Value Expr
 }
 
 func (e *UnaryExpr) String() string {
-	return e.Op + e.Value.String()
+	return e.Op.String() + e.Value.String()
 }
 
 type BinaryExpr struct {
 	Left  Expr
-	Op    string
+	Op    Token
 	Right Expr
 }
 
 func (e *BinaryExpr) String() string {
 	var opStr string
-	if e.Op == "" {
+	if e.Op == CONCAT {
 		opStr = " "
 	} else {
-		opStr = " " + e.Op + " "
+		opStr = " " + e.Op.String() + " "
 	}
 	return "(" + e.Left.String() + opStr + e.Right.String() + ")"
 }
@@ -148,34 +150,35 @@ func (e *VarExpr) String() string {
 
 type IndexExpr struct {
 	Name  string
-	Index Expr
+	Index []Expr
 }
 
 func (e *IndexExpr) String() string {
-	return e.Name + "[" + e.Index.String() + "]"
+	// TODO: fix for multi index
+	return e.Name + "[" + e.Index[0].String() + "]"
 }
 
 type AssignExpr struct {
 	Left  Expr // can be one of: var, array[x], $n
-	Op    string
+	Op    Token
 	Right Expr
 }
 
 func (e *AssignExpr) String() string {
-	return e.Left.String() + " " + e.Op + "= " + e.Right.String()
+	return e.Left.String() + " " + e.Op.String() + " " + e.Right.String()
 }
 
 type IncrExpr struct {
 	Left Expr
-	Op   string
+	Op   Token
 	Pre  bool
 }
 
 func (e *IncrExpr) String() string {
 	if e.Pre {
-		return e.Op + e.Left.String()
+		return e.Op.String() + e.Left.String()
 	} else {
-		return e.Left.String() + e.Op
+		return e.Left.String() + e.Op.String()
 	}
 }
 
@@ -223,6 +226,15 @@ func (e *CallSubExpr) String() string {
 		in = ", " + e.In.String()
 	}
 	return name + "(" + e.Regex.String() + ", " + e.Repl.String() + in + ")"
+}
+
+func IsLValue(expr Expr) bool {
+	switch expr.(type) {
+	case *VarExpr, *IndexExpr, *FieldExpr:
+		return true
+	default:
+		return false
+	}
 }
 
 type Stmt interface {
@@ -355,7 +367,11 @@ type ExitStmt struct {
 }
 
 func (s *ExitStmt) String() string {
-	return "exit"
+	var statusStr string
+	if s.Status != nil {
+		statusStr = " " + s.Status.String()
+	}
+	return "exit" + statusStr
 }
 
 type DeleteStmt struct {

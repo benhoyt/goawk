@@ -8,6 +8,7 @@ TODO:
 - performance testing: I/O, allocations, CPU
 
 NICE TO HAVE:
+- parser: ensure vars aren't used in array context and vice-versa
 - regex caching for user regexes
 - implement printf / sprintf (probably have to do this by hand)
 - multi-dimensional "in", multi-dimensional IndexExpr and SUBSEP
