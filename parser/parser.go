@@ -18,11 +18,21 @@ func (e *ParseError) Error() string {
 }
 
 type parser struct {
-	lexer *Lexer
-	pos   Position
-	tok   Token
-	val   string
+	lexer     *Lexer
+	pos       Position
+	tok       Token
+	val       string
+	progState progState
+	inLoop    bool
 }
+
+type progState int
+
+const (
+	beginState progState = iota
+	endState
+	actionState
+)
 
 func (p *parser) program() *Program {
 	prog := &Program{}
@@ -30,11 +40,14 @@ func (p *parser) program() *Program {
 		switch p.tok {
 		case BEGIN:
 			p.next()
+			p.progState = beginState
 			prog.Begin = append(prog.Begin, p.stmtsBrace())
 		case END:
 			p.next()
+			p.progState = endState
 			prog.End = append(prog.End, p.stmtsBrace())
 		default:
+			p.progState = actionState
 			// Can have an empty pattern (always true)
 			var pattern Expr
 			if p.tok != LBRACE {
@@ -135,7 +148,7 @@ func (p *parser) stmt() Stmt {
 			if !ok {
 				panic(p.error("expected 'for (var in array) ...'"))
 			}
-			body := p.stmts()
+			body := p.loopStmts()
 			s = &ForInStmt{varExpr.Name, inExpr.Array, body}
 		} else {
 			// Match: for ([pre]; [cond]; [post]) body
@@ -150,7 +163,7 @@ func (p *parser) stmt() Stmt {
 				post = p.simpleStmt()
 			}
 			p.expect(RPAREN)
-			body := p.stmts()
+			body := p.loopStmts()
 			s = &ForStmt{pre, cond, post, body}
 		}
 	case WHILE:
@@ -158,27 +171,33 @@ func (p *parser) stmt() Stmt {
 		p.expect(LPAREN)
 		cond := p.expr()
 		p.expect(RPAREN)
-		body := p.stmts()
+		body := p.loopStmts()
 		s = &WhileStmt{cond, body}
 	case DO:
 		p.next()
 		p.optionalNewlines()
-		body := p.stmts()
+		body := p.loopStmts()
 		p.expect(WHILE)
 		p.expect(LPAREN)
 		cond := p.expr()
 		p.expect(RPAREN)
 		s = &DoWhileStmt{body, cond}
 	case BREAK:
-		// TODO: must be in a loop
+		if !p.inLoop {
+			panic(p.error("break must be inside a loop body"))
+		}
 		p.next()
 		s = &BreakStmt{}
 	case CONTINUE:
-		// TODO: must be in a loop
+		if !p.inLoop {
+			panic(p.error("continue must be inside a loop body"))
+		}
 		p.next()
 		s = &ContinueStmt{}
 	case NEXT:
-		// TODO: must not be in BEGIN or END
+		if p.progState != actionState {
+			panic(p.error("next can't be in BEGIN or END"))
+		}
 		p.next()
 		s = &NextStmt{}
 	case EXIT:
@@ -195,6 +214,13 @@ func (p *parser) stmt() Stmt {
 		p.next()
 	}
 	return s
+}
+
+func (p *parser) loopStmts() Stmts {
+	p.inLoop = true
+	ss := p.stmts()
+	p.inLoop = false
+	return ss
 }
 
 func (p *parser) exprList() []Expr {

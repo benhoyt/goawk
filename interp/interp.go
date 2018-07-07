@@ -182,10 +182,7 @@ func (p *Interp) execute(stmt Stmt) (execErr error) {
 			if err == errBreak {
 				break
 			}
-			if err == errContinue {
-				continue
-			}
-			if err != nil {
+			if err != nil && err != errContinue {
 				return err
 			}
 			err = p.execute(s.Post)
