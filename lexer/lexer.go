@@ -68,6 +68,7 @@ func (l *Lexer) Scan() (Position, Token, string) {
 	case ',':
 		tok = COMMA
 	case '/':
+		// TODO: this isn't correct handling of ERE parsing (see spec)
 		switch l.ch {
 		case '=':
 			l.next()
@@ -75,9 +76,35 @@ func (l *Lexer) Scan() (Position, Token, string) {
 		case ' ', '\t':
 			tok = DIV
 		default:
-			// TODO: this isn't really correct handling of ERE parsing (see spec)
-			// tok, val := l.parseString('/')
-			return pos, STRING, "TODO"
+			runes := []rune{}
+			for l.ch != '/' {
+				c := l.ch
+				if c < 0 {
+					return pos, ILLEGAL, "didn't find end slash in regex"
+				}
+				if c == '\r' || c == '\n' {
+					return pos, ILLEGAL, "can't have newline in regex"
+				}
+				if c == '\\' {
+					l.next()
+					switch l.ch {
+					case '"', '\\', '/':
+						c = l.ch
+					case 't':
+						c = '\t'
+					case 'r':
+						c = '\r'
+					case 'n':
+						c = '\n'
+					default:
+						return pos, ILLEGAL, fmt.Sprintf("invalid regex escape \\%c", l.ch)
+					}
+				}
+				runes = append(runes, c)
+				l.next()
+			}
+			l.next()
+			return pos, REGEX, string(runes)
 		}
 	case '{':
 		tok = LBRACE

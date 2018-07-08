@@ -317,6 +317,10 @@ func (p *Interp) eval(expr Expr) value {
 		return num(e.Value)
 	case *StrExpr:
 		return str(e.Value)
+	case *RegExpr:
+		// Stand-alone /regex/ is equivalent to: $0 ~ /regex/
+		re := p.mustCompile(e.Regex)
+		return boolean(re.MatchString(p.line))
 	case *FieldExpr:
 		index := p.eval(e.Index)
 		// TODO: should error if index is a non-number string
@@ -373,7 +377,7 @@ func (p *Interp) eval(expr Expr) value {
 		for i, a := range e.Args {
 			args[i] = p.eval(a)
 		}
-		return p.call(e.Name, args)
+		return p.call(e.Func, args)
 	case *CallSplitExpr:
 		s := p.toString(p.eval(e.Str))
 		var fs string
@@ -659,45 +663,30 @@ func (p *Interp) not(v value) value {
 	return boolean(!v.boolean())
 }
 
-func (p *Interp) checkNumArgs(name string, actual, expected int) {
-	if actual != expected {
-		panic(newError("%s() expects %d args, got %d", name, expected, actual))
-	}
-}
-
-func (p *Interp) call(name string, args []value) value {
-	switch name {
-	case "atan2":
-		p.checkNumArgs("atan2", len(args), 2)
+func (p *Interp) call(op Token, args []value) value {
+	switch op {
+	case F_ATAN2:
 		return num(math.Atan2(args[0].num(), args[1].num()))
-	case "cos":
-		p.checkNumArgs("cos", len(args), 1)
+	case F_COS:
 		return num(math.Cos(args[0].num()))
-	case "exp":
-		p.checkNumArgs("exp", len(args), 1)
+	case F_EXP:
 		return num(math.Exp(args[0].num()))
-	case "index":
-		p.checkNumArgs("index", len(args), 2)
+	case F_INDEX:
 		s := p.toString(args[0])
 		substr := p.toString(args[1])
 		return num(float64(strings.Index(s, substr) + 1))
-	case "int":
-		p.checkNumArgs("int", len(args), 1)
+	case F_INT:
 		return num(float64(int(args[0].num())))
-	case "length":
+	case F_LENGTH:
 		switch len(args) {
 		case 0:
 			return num(float64(len(p.line)))
-		case 1:
-			return num(float64(len(p.toString(args[0]))))
 		default:
-			panic(newError("length() expects 0 or 1 arg, got %d", len(args)))
+			return num(float64(len(p.toString(args[0]))))
 		}
-	case "log":
-		p.checkNumArgs("log", len(args), 1)
+	case F_LOG:
 		return num(math.Log(args[0].num()))
-	case "match":
-		p.checkNumArgs("match", len(args), 2)
+	case F_MATCH:
 		re := p.mustCompile(p.toString(args[1]))
 		loc := re.FindStringIndex(p.toString(args[0]))
 		if loc == nil {
@@ -708,42 +697,31 @@ func (p *Interp) call(name string, args []value) value {
 		p.matchStart = loc[0] + 1
 		p.matchLength = loc[1] - loc[0]
 		return num(float64(p.matchStart))
-	case "sprintf":
+	case F_SPRINTF:
 		// TODO: I don't think this works anymore
-		if len(args) < 1 {
-			panic(newError("sprintf() expects 1 or more args, got %d", len(args)))
-		}
 		vals := make([]interface{}, len(args)-1)
 		for i, a := range args[1:] {
 			vals[i] = interface{}(a)
 		}
 		return str(fmt.Sprintf(p.toString(args[0]), vals...))
-	case "sqrt":
-		p.checkNumArgs("sqrt", len(args), 1)
+	case F_SQRT:
 		return num(math.Sqrt(args[0].num()))
-	case "rand":
-		p.checkNumArgs("rand", len(args), 0)
+	case F_RAND:
 		return num(p.random.Float64())
-	case "sin":
-		p.checkNumArgs("sin", len(args), 1)
+	case F_SIN:
 		return num(math.Sin(args[0].num()))
-	case "srand":
+	case F_SRAND:
 		switch len(args) {
 		case 0:
 			p.random.Seed(time.Now().UnixNano())
 		case 1:
 			// TODO: truncating the fraction part here, is that okay?
 			p.random.Seed(int64(args[0].num()))
-		default:
-			panic(newError("srand() expects 0 or 1 arg, got %d", len(args)))
 		}
 		// TODO: previous seed value should be returned
 		return num(0)
-	case "substr":
+	case F_SUBSTR:
 		// TODO: untested
-		if len(args) != 2 && len(args) != 3 {
-			panic(newError("substr() expects 2 or 3 args, got %d", len(args)))
-		}
 		s := p.toString(args[0])
 		pos := int(args[1].num())
 		if pos < 1 {
@@ -764,14 +742,12 @@ func (p *Interp) call(name string, args []value) value {
 			}
 		}
 		return str(s[pos-1 : pos-1+length])
-	case "tolower":
-		p.checkNumArgs("tolower", len(args), 1)
+	case F_TOLOWER:
 		return str(strings.ToLower(p.toString(args[0])))
-	case "toupper":
-		p.checkNumArgs("toupper", len(args), 1)
+	case F_TOUPPER:
 		return str(strings.ToUpper(p.toString(args[0])))
 	default:
-		panic(fmt.Sprintf("unexpected function name: %q", name))
+		panic(fmt.Sprintf("unexpected function: %s", op))
 	}
 }
 

@@ -68,6 +68,7 @@ func (e *InExpr) expr()        {}
 func (e *CondExpr) expr()      {}
 func (e *NumExpr) expr()       {}
 func (e *StrExpr) expr()       {}
+func (e *RegExpr) expr()       {}
 func (e *VarExpr) expr()       {}
 func (e *IndexExpr) expr()     {}
 func (e *AssignExpr) expr()    {}
@@ -144,6 +145,14 @@ func (e *StrExpr) String() string {
 	return strconv.Quote(e.Value)
 }
 
+type RegExpr struct {
+	Regex string
+}
+
+func (e *RegExpr) String() string {
+	return "/" + e.Regex + "/" // TODO: backslash escaping?
+}
+
 type VarExpr struct {
 	Name string
 }
@@ -175,7 +184,7 @@ func (e *AssignExpr) String() string {
 type IncrExpr struct {
 	Left Expr
 	Op   Token
-	Pre  bool // TODO: consider making PreIncrExpr and PostIncrExpr
+	Pre  bool
 }
 
 func (e *IncrExpr) String() string {
@@ -187,7 +196,7 @@ func (e *IncrExpr) String() string {
 }
 
 type CallExpr struct {
-	Name string
+	Func Token
 	Args []Expr
 }
 
@@ -196,9 +205,10 @@ func (e *CallExpr) String() string {
 	for i, a := range e.Args {
 		args[i] = a.String()
 	}
-	return e.Name + "(" + strings.Join(args, ", ") + ")"
+	return e.Func.String() + "(" + strings.Join(args, ", ") + ")"
 }
 
+// TODO: consider merging into just CallExpr (Array = VarExpr)
 type CallSplitExpr struct {
 	Str      Expr
 	Array    string
@@ -217,7 +227,7 @@ type CallSubExpr struct {
 	Regex  Expr
 	Repl   Expr
 	In     Expr
-	Global bool // TODO: consider making CallSubExpr and CallGsubExpr
+	Global bool
 }
 
 func (e *CallSubExpr) String() string {

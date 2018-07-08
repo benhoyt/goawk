@@ -3,6 +3,7 @@ package main
 
 /*
 TODO:
+- TODOs
 - parsing
 - testing (against other implementations?)
 - performance testing: I/O, allocations, CPU

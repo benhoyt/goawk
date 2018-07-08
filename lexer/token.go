@@ -92,6 +92,7 @@ const (
 	NAME
 	NUMBER
 	STRING
+	REGEX
 
 	LAST       = STRING
 	FIRST_FUNC = F_ATAN2

@@ -381,6 +381,10 @@ func (p *parser) primary() Expr {
 		s := p.val
 		p.next()
 		return &StrExpr{s}
+	case REGEX:
+		regex := p.val
+		p.next()
+		return &RegExpr{regex}
 	case DOLLAR:
 		p.next()
 		return &FieldExpr{p.primary()}
@@ -399,9 +403,113 @@ func (p *parser) primary() Expr {
 		expr := p.expr()
 		p.expect(RPAREN)
 		return expr
+	case F_SUB, F_GSUB:
+		global := p.tok == F_GSUB
+		p.next()
+		p.expect(LPAREN)
+		regex := p.regex()
+		p.expect(COMMA)
+		repl := p.expr()
+		var in Expr
+		if p.tok == COMMA {
+			p.next()
+			in = p.expr()
+			if !IsLValue(in) {
+				panic(p.error("3rd arg to sub/gsub must be lvalue"))
+			}
+		}
+		p.expect(RPAREN)
+		return &CallSubExpr{regex, repl, in, global}
+	case F_SPLIT:
+		p.next()
+		p.expect(LPAREN)
+		str := p.expr()
+		p.expect(COMMA)
+		array := p.val
+		p.expect(NAME)
+		var fieldSep Expr
+		if p.tok == COMMA {
+			p.next()
+			fieldSep = p.regex()
+		}
+		p.expect(RPAREN)
+		return &CallSplitExpr{str, array, fieldSep}
+	case F_MATCH:
+		p.next()
+		p.expect(LPAREN)
+		str := p.expr()
+		p.expect(COMMA)
+		regex := p.regex()
+		p.expect(RPAREN)
+		return &CallExpr{F_MATCH, []Expr{str, regex}}
+	case F_RAND:
+		p.next()
+		p.expect(LPAREN)
+		p.expect(RPAREN)
+		return &CallExpr{F_RAND, nil}
+	case F_SRAND, F_LENGTH:
+		op := p.tok
+		p.next()
+		p.expect(LPAREN)
+		var args []Expr
+		if p.tok != RPAREN {
+			args = append(args, p.expr())
+		}
+		p.expect(RPAREN)
+		return &CallExpr{op, args}
+	case F_SUBSTR:
+		p.next()
+		p.expect(LPAREN)
+		str := p.expr()
+		p.expect(COMMA)
+		start := p.expr()
+		args := []Expr{str, start}
+		if p.tok == COMMA {
+			p.next()
+			args = append(args, p.expr())
+		}
+		p.expect(RPAREN)
+		return &CallExpr{F_SUBSTR, args}
+	case F_SPRINTF:
+		p.next()
+		p.expect(LPAREN)
+		args := []Expr{p.expr()}
+		for p.tok == COMMA {
+			p.next()
+			args = append(args, p.expr())
+		}
+		p.expect(RPAREN)
+		return &CallExpr{F_SPRINTF, args}
+	case F_COS, F_SIN, F_EXP, F_LOG, F_SQRT, F_INT, F_TOLOWER, F_TOUPPER:
+		// 1-argument functions
+		op := p.tok
+		p.next()
+		p.expect(LPAREN)
+		arg := p.expr()
+		p.expect(RPAREN)
+		return &CallExpr{op, []Expr{arg}}
+	case F_ATAN2, F_INDEX:
+		// 2-argument functions
+		op := p.tok
+		p.next()
+		p.expect(LPAREN)
+		arg1 := p.expr()
+		p.expect(COMMA)
+		arg2 := p.expr()
+		p.expect(RPAREN)
+		return &CallExpr{op, []Expr{arg1, arg2}}
 	default:
 		panic(p.error("expected expression"))
 	}
+}
+
+func (p *parser) regex() Expr {
+	if p.tok == REGEX {
+		regex := p.val
+		p.next()
+		return &StrExpr{regex}
+	}
+	return p.expr()
 }
 
 func (p *parser) binaryLeft(parse func() Expr, ops ...Token) Expr {
