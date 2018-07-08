@@ -60,6 +60,7 @@ func (p *parser) program() *Program {
 			}
 			prog.Actions = append(prog.Actions, action)
 		}
+		p.optionalNewlines()
 	}
 	return prog
 }

@@ -20,7 +20,9 @@ NICE TO HAVE:
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 
@@ -30,39 +32,49 @@ import (
 )
 
 func main() {
-	if len(os.Args) <= 1 {
-		fmt.Fprintf(os.Stderr, "usage: goawk src [filename] ...\n")
-		os.Exit(4)
+	progFile := flag.String("f", "", "load AWK source from `filename`")
+	flag.Parse()
+	args := flag.Args()
+
+	var src []byte
+	if *progFile != "" {
+		var err error
+		src, err = ioutil.ReadFile(*progFile)
+		if err != nil {
+			errorExit("%s", err)
+		}
+	} else {
+		if len(args) < 1 {
+			errorExit("usage: goawk (src | -f path) [filename] ...")
+		}
+		src = []byte(args[0])
+		args = args[1:]
 	}
 
-	src := []byte(os.Args[1])
 	prog, err := parser.ParseProgram(src)
 	if err != nil {
 		errMsg := fmt.Sprintf("%s", err)
 		if err, ok := err.(*parser.ParseError); ok {
 			showSourceLine(src, err.Position, len(errMsg))
 		}
-		fmt.Fprintln(os.Stderr, errMsg)
-		os.Exit(3)
+		errorExit(errMsg)
 	}
-	fmt.Println(prog)
-	fmt.Println("-----") // TODO
+	//	fmt.Println(prog)
+	//	fmt.Println("-----") // TODO
 
 	p := interp.New(os.Stdout)
 	err = p.ExecBegin(prog)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
-		os.Exit(1)
+		errorExit("%s", err)
 	}
 
-	if len(os.Args) <= 2 {
+	if len(args) < 1 {
 		err = p.ExecFile(prog, "", os.Stdin)
 	} else {
-		for _, filename := range os.Args[2:] {
+		for _, filename := range args {
 			f, errOpen := os.Open(filename)
 			if errOpen != nil {
-				fmt.Fprintf(os.Stderr, "can't open %q: %v\n", filename, errOpen)
-				os.Exit(2)
+				errorExit("%s", errOpen)
 			}
 			err = p.ExecFile(prog, filename, f)
 			f.Close()
@@ -72,8 +84,7 @@ func main() {
 		}
 	}
 	if err != nil && err != interp.ErrExit {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
-		os.Exit(1)
+		errorExit("%s", err)
 	}
 
 	err = p.ExecEnd(prog)
@@ -81,8 +92,7 @@ func main() {
 		return
 	}
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
-		os.Exit(1)
+		errorExit("%s", err)
 	}
 }
 
@@ -99,4 +109,9 @@ func showSourceLine(src []byte, pos lexer.Position, dividerLen int) {
 	if divider != "" {
 		fmt.Println(divider)
 	}
+}
+
+func errorExit(format string, args ...interface{}) {
+	fmt.Fprintf(os.Stderr, format+"\n", args...)
+	os.Exit(1)
 }

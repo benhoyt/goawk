@@ -69,6 +69,7 @@ func (l *Lexer) Scan() (Position, Token, string) {
 		tok = COMMA
 	case '/':
 		// TODO: this isn't correct handling of ERE parsing (see spec)
+		// TODO: also, this doesn't handle \. etc
 		switch l.ch {
 		case '=':
 			l.next()
