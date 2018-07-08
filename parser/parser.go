@@ -404,22 +404,23 @@ func (p *parser) primary() Expr {
 		p.expect(RPAREN)
 		return expr
 	case F_SUB, F_GSUB:
-		global := p.tok == F_GSUB
+		op := p.tok
 		p.next()
 		p.expect(LPAREN)
 		regex := p.regex()
 		p.expect(COMMA)
 		repl := p.expr()
-		var in Expr
+		args := []Expr{regex, repl}
 		if p.tok == COMMA {
 			p.next()
-			in = p.expr()
+			in := p.expr()
 			if !IsLValue(in) {
 				panic(p.error("3rd arg to sub/gsub must be lvalue"))
 			}
+			args = append(args, in)
 		}
 		p.expect(RPAREN)
-		return &CallSubExpr{regex, repl, in, global}
+		return &CallExpr{op, args}
 	case F_SPLIT:
 		p.next()
 		p.expect(LPAREN)
@@ -427,13 +428,13 @@ func (p *parser) primary() Expr {
 		p.expect(COMMA)
 		array := p.val
 		p.expect(NAME)
-		var fieldSep Expr
+		args := []Expr{str, &VarExpr{array}}
 		if p.tok == COMMA {
 			p.next()
-			fieldSep = p.regex()
+			args = append(args, p.regex())
 		}
 		p.expect(RPAREN)
-		return &CallSplitExpr{str, array, fieldSep}
+		return &CallExpr{F_SPLIT, args}
 	case F_MATCH:
 		p.next()
 		p.expect(LPAREN)

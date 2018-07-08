@@ -373,36 +373,40 @@ func (p *Interp) eval(expr Expr) value {
 			return num(left)
 		}
 	case *CallExpr:
-		args := make([]value, len(e.Args))
-		for i, a := range e.Args {
-			args[i] = p.eval(a)
+		switch e.Func {
+		case F_SPLIT:
+			str := p.toString(p.eval(e.Args[0]))
+			var fieldSep string
+			if len(e.Args) == 3 {
+				fieldSep = p.toString(p.eval(e.Args[2]))
+			} else {
+				fieldSep = p.fieldSep
+			}
+			array := e.Args[1].(*VarExpr).Name
+			return num(float64(p.callSplit(str, array, fieldSep)))
+		case F_SUB, F_GSUB:
+			regex := p.toString(p.eval(e.Args[0]))
+			repl := p.toString(p.eval(e.Args[1]))
+			var in string
+			if len(e.Args) == 3 {
+				in = p.toString(p.eval(e.Args[2]))
+			} else {
+				in = p.line
+			}
+			out, n := p.callSub(regex, repl, in, e.Func == F_GSUB)
+			if len(e.Args) == 3 {
+				p.assign(e.Args[2], str(out))
+			} else {
+				p.setLine(out)
+			}
+			return num(float64(n))
+		default:
+			args := make([]value, len(e.Args))
+			for i, a := range e.Args {
+				args[i] = p.eval(a)
+			}
+			return p.call(e.Func, args)
 		}
-		return p.call(e.Func, args)
-	case *CallSplitExpr:
-		s := p.toString(p.eval(e.Str))
-		var fs string
-		if e.FieldSep != nil {
-			fs = p.toString(p.eval(e.FieldSep))
-		} else {
-			fs = p.fieldSep
-		}
-		return num(float64(p.callSplit(s, e.Array, fs)))
-	case *CallSubExpr:
-		regex := p.toString(p.eval(e.Regex))
-		repl := p.toString(p.eval(e.Repl))
-		var in string
-		if e.In != nil {
-			in = p.toString(p.eval(e.In))
-		} else {
-			in = p.line
-		}
-		out, n := p.callSub(regex, repl, in, e.Global)
-		if e.In != nil {
-			p.assign(e.In, str(out))
-		} else {
-			p.setLine(out)
-		}
-		return num(float64(n))
 	default:
 		panic(fmt.Sprintf("unexpected expr type: %T", expr))
 	}
@@ -582,13 +586,13 @@ var binaryFuncs = map[Token]binaryFunc{
 	},
 	LESS: (*Interp).lessThan,
 	LTE: func(p *Interp, l, r value) value {
-		return p.not(p.lessThan(l, r))
+		return p.not(p.lessThan(r, l))
 	},
 	GREATER: func(p *Interp, l, r value) value {
 		return p.lessThan(r, l)
 	},
 	GTE: func(p *Interp, l, r value) value {
-		return p.not(p.lessThan(r, l))
+		return p.not(p.lessThan(l, r))
 	},
 	ADD: func(p *Interp, l, r value) value {
 		return num(l.num() + r.num())
@@ -761,7 +765,7 @@ func (p *Interp) callSplit(s, arrayName, fs string) int {
 	}
 	array := make(map[string]value)
 	for i, part := range parts {
-		array[strconv.Itoa(i)] = numStr(part)
+		array[strconv.Itoa(i+1)] = numStr(part)
 	}
 	p.arrays[arrayName] = array
 	return len(array)

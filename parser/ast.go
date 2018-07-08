@@ -61,21 +61,19 @@ type Expr interface {
 	String() string
 }
 
-func (e *FieldExpr) expr()     {}
-func (e *UnaryExpr) expr()     {}
-func (e *BinaryExpr) expr()    {}
-func (e *InExpr) expr()        {}
-func (e *CondExpr) expr()      {}
-func (e *NumExpr) expr()       {}
-func (e *StrExpr) expr()       {}
-func (e *RegExpr) expr()       {}
-func (e *VarExpr) expr()       {}
-func (e *IndexExpr) expr()     {}
-func (e *AssignExpr) expr()    {}
-func (e *IncrExpr) expr()      {}
-func (e *CallExpr) expr()      {}
-func (e *CallSplitExpr) expr() {}
-func (e *CallSubExpr) expr()   {}
+func (e *FieldExpr) expr()  {}
+func (e *UnaryExpr) expr()  {}
+func (e *BinaryExpr) expr() {}
+func (e *InExpr) expr()     {}
+func (e *CondExpr) expr()   {}
+func (e *NumExpr) expr()    {}
+func (e *StrExpr) expr()    {}
+func (e *RegExpr) expr()    {}
+func (e *VarExpr) expr()    {}
+func (e *IndexExpr) expr()  {}
+func (e *AssignExpr) expr() {}
+func (e *IncrExpr) expr()   {}
+func (e *CallExpr) expr()   {}
 
 type FieldExpr struct {
 	Index Expr
@@ -206,40 +204,6 @@ func (e *CallExpr) String() string {
 		args[i] = a.String()
 	}
 	return e.Func.String() + "(" + strings.Join(args, ", ") + ")"
-}
-
-// TODO: consider merging into just CallExpr (Array = VarExpr)
-type CallSplitExpr struct {
-	Str      Expr
-	Array    string
-	FieldSep Expr
-}
-
-func (e *CallSplitExpr) String() string {
-	fs := ""
-	if e.FieldSep != nil {
-		fs = ", " + e.FieldSep.String()
-	}
-	return "split(" + e.Str.String() + ", " + e.Array + fs + ")"
-}
-
-type CallSubExpr struct {
-	Regex  Expr
-	Repl   Expr
-	In     Expr
-	Global bool
-}
-
-func (e *CallSubExpr) String() string {
-	name := "sub"
-	if e.Global {
-		name = "gsub"
-	}
-	in := ""
-	if e.In != nil {
-		in = ", " + e.In.String()
-	}
-	return name + "(" + e.Regex.String() + ", " + e.Repl.String() + in + ")"
 }
 
 func IsLValue(expr Expr) bool {
