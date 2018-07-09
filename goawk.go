@@ -9,6 +9,7 @@ TODO:
     - fix regex parsing
     - implement printf / sprintf (probably have to do this by hand)
     - range patterns
+    - shouldn't allow syntax: { $1 = substr($1, 1, 3) print $1 }
 - performance testing: I/O, allocations, CPU
 
 NICE TO HAVE:

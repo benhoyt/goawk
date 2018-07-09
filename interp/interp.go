@@ -589,6 +589,8 @@ func (p *Interp) SetField(index int, value string) {
 		}
 	}
 	p.fields[index-1] = value
+	p.numFields = len(p.fields)
+	p.line = strings.Join(p.fields, p.outputFieldSep)
 }
 
 func (p *Interp) toString(v value) string {
