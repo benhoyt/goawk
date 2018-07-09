@@ -3,17 +3,23 @@ package main
 
 /*
 TODO:
-- TODOs
-- parsing
 - testing (against other implementations?)
+    - support bare "length" without parens
+    - parsing of comments
+    - proper parsing of div (instead of regex), eg: k/n (p.48b)
+    - \ line continuation (p.26, p.26a)
+    - fix regex parsing
+    - implement printf / sprintf (probably have to do this by hand)
+    - range patterns
 - performance testing: I/O, allocations, CPU
 
 NICE TO HAVE:
 - parser: ensure vars aren't used in array context and vice-versa
 - regex caching for user regexes
-- implement printf / sprintf (probably have to do this by hand)
 - multi-dimensional "in", multi-dimensional IndexExpr and SUBSEP
-- range patterns
+- print redirection, eg: { print >"tempbig" }
+- print piping, eg: print c ":" pop[c] | "sort"
+- user-defined functions
 - I don't think interp.SetArray is concurrency-safe
 
 */
@@ -59,8 +65,8 @@ func main() {
 		}
 		errorExit(errMsg)
 	}
-	//	fmt.Println(prog)
-	//	fmt.Println("-----") // TODO
+	fmt.Println(prog)
+	fmt.Println("-----") // TODO
 
 	p := interp.New(os.Stdout)
 	err = p.ExecBegin(prog)

@@ -100,19 +100,28 @@ lineLoop:
 		p.nextLine(scanner.Text())
 		for _, action := range program.Actions {
 			// No pattern is equivalent to pattern evaluating to true
-			if action.Pattern == nil || p.eval(action.Pattern).boolean() {
-				// No action is equivalent to { print $0 }
-				if action.Stmts == nil {
-					io.WriteString(p.output, p.line+p.outputRecordSep)
-					continue
-				}
-				err := p.executes(action.Stmts)
-				if err == errNext {
-					continue lineLoop
-				}
+			matched := true
+			if action.Pattern != nil {
+				v, err := p.evalSafe(action.Pattern)
 				if err != nil {
 					return err
 				}
+				matched = v.boolean()
+			}
+			if !matched {
+				continue
+			}
+			// No action is equivalent to { print $0 }
+			if action.Stmts == nil {
+				io.WriteString(p.output, p.line+p.outputRecordSep)
+				continue
+			}
+			err := p.executes(action.Stmts)
+			if err == errNext {
+				continue lineLoop
+			}
+			if err != nil {
+				return err
 			}
 		}
 	}
@@ -165,7 +174,7 @@ func (p *Interp) execute(stmt Stmt) (execErr error) {
 		}
 		io.WriteString(p.output, line+p.outputRecordSep)
 	case *PrintfStmt:
-		panic("TODO: printf is not yet implemented")
+		panic(newError("printf is not yet implemented"))
 	case *IfStmt:
 		if p.eval(s.Cond).boolean() {
 			return p.executes(s.Body)
@@ -253,14 +262,21 @@ func (p *Interp) execute(stmt Stmt) (execErr error) {
 	return nil
 }
 
-func (p *Interp) Eval(expr Expr) (s string, n float64, err error) {
+func (p *Interp) evalSafe(expr Expr) (v value, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			// Convert to interpreter Error or re-panic
 			err = r.(*Error)
 		}
 	}()
-	v := p.eval(expr)
+	return p.eval(expr), nil
+}
+
+func (p *Interp) Eval(expr Expr) (s string, n float64, err error) {
+	v, err := p.evalSafe(expr)
+	if err != nil {
+		return "", 0, err
+	}
 	return p.toString(v), v.num(), nil
 }
 
@@ -298,6 +314,17 @@ func (p *Interp) eval(expr Expr) value {
 			}
 			right := p.eval(e.Right)
 			return boolean(right.boolean())
+		case MATCH, NOT_MATCH:
+			if regExpr, ok := e.Right.(*RegExpr); ok {
+				re := p.mustCompile(regExpr.Regex)
+				matched := re.MatchString(p.toString(left))
+				if e.Op == MATCH {
+					return boolean(matched)
+				} else {
+					return boolean(!matched)
+				}
+			}
+			fallthrough
 		default:
 			right := p.eval(e.Right)
 			return binaryFuncs[e.Op](p, left, right)

@@ -111,6 +111,9 @@ func (p *parser) simpleStmt() Stmt {
 }
 
 func (p *parser) stmt() Stmt {
+	for p.matches(SEMICOLON, NEWLINE) {
+		p.next()
+	}
 	var s Stmt
 	switch p.tok {
 	case IF:
@@ -137,6 +140,7 @@ func (p *parser) stmt() Stmt {
 		if pre != nil && p.tok == RPAREN {
 			// Match: for (var in array) body
 			p.next()
+			p.optionalNewlines()
 			exprStmt, ok := pre.(*ExprStmt)
 			if !ok {
 				panic(p.error("expected 'for (var in array) ...'"))
@@ -164,6 +168,7 @@ func (p *parser) stmt() Stmt {
 				post = p.simpleStmt()
 			}
 			p.expect(RPAREN)
+			p.optionalNewlines()
 			body := p.loopStmts()
 			s = &ForStmt{pre, cond, post, body}
 		}
@@ -172,6 +177,7 @@ func (p *parser) stmt() Stmt {
 		p.expect(LPAREN)
 		cond := p.expr()
 		p.expect(RPAREN)
+		p.optionalNewlines()
 		body := p.loopStmts()
 		s = &WhileStmt{cond, body}
 	case DO:
