@@ -182,21 +182,25 @@ func (p *Interp) execute(stmt Stmt) (execErr error) {
 			return p.executes(s.Else)
 		}
 	case *ForStmt:
-		err := p.execute(s.Pre)
-		if err != nil {
-			return err
+		if s.Pre != nil {
+			err := p.execute(s.Pre)
+			if err != nil {
+				return err
+			}
 		}
-		for p.eval(s.Cond).boolean() {
-			err = p.executes(s.Body)
+		for s.Cond == nil || p.eval(s.Cond).boolean() {
+			err := p.executes(s.Body)
 			if err == errBreak {
 				break
 			}
 			if err != nil && err != errContinue {
 				return err
 			}
-			err = p.execute(s.Post)
-			if err != nil {
-				return err
+			if s.Post != nil {
+				err := p.execute(s.Post)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	case *ForInStmt:
@@ -757,11 +761,11 @@ func (p *Interp) call(op Token, args []value) value {
 		// TODO: untested
 		s := p.toString(args[0])
 		pos := int(args[1].num())
-		if pos < 1 {
-			pos = 1
-		}
 		if pos > len(s) {
 			pos = len(s)
+		}
+		if pos < 1 {
+			pos = 1
 		}
 		maxLength := len(s) - pos + 1
 		length := maxLength

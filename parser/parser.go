@@ -165,7 +165,7 @@ func (p *parser) stmt() Stmt {
 			}
 			p.expect(SEMICOLON)
 			var post Stmt
-			if p.tok != SEMICOLON {
+			if p.tok != RPAREN {
 				post = p.simpleStmt()
 			}
 			p.expect(RPAREN)

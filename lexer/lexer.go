@@ -78,7 +78,6 @@ func (l *Lexer) Scan() (Position, Token, string) {
 		tok = COMMA
 	case '/':
 		// TODO: this isn't correct handling of ERE parsing (see spec)
-		// TODO: also, this doesn't handle \. etc
 		switch l.ch {
 		case '=':
 			l.next()
@@ -86,6 +85,7 @@ func (l *Lexer) Scan() (Position, Token, string) {
 		case ' ', '\t':
 			tok = DIV
 		default:
+            // TODO: doesn't handle /\// properly
 			runes := []rune{}
 			for l.ch != '/' {
 				c := l.ch
@@ -94,21 +94,6 @@ func (l *Lexer) Scan() (Position, Token, string) {
 				}
 				if c == '\r' || c == '\n' {
 					return pos, ILLEGAL, "can't have newline in regex"
-				}
-				if c == '\\' {
-					l.next()
-					switch l.ch {
-					case '"', '\\', '/':
-						c = l.ch
-					case 't':
-						c = '\t'
-					case 'r':
-						c = '\r'
-					case 'n':
-						c = '\n'
-					default:
-						return pos, ILLEGAL, fmt.Sprintf("invalid regex escape \\%c", l.ch)
-					}
 				}
 				runes = append(runes, c)
 				l.next()

@@ -288,10 +288,19 @@ type ForStmt struct {
 }
 
 func (s *ForStmt) String() string {
-	return "for (" + s.Pre.String() +
-		"; " + s.Cond.String() +
-		"; " + s.Post.String() + ") {\n" +
-		s.Body.String() + "}"
+	preStr := ""
+	if s.Pre != nil {
+		preStr = s.Pre.String()
+	}
+	condStr := ""
+	if s.Cond != nil {
+		condStr = " " + s.Cond.String()
+	}
+	postStr := ""
+	if s.Post != nil {
+		postStr = " " + s.Post.String()
+	}
+	return "for (" + preStr + ";" + condStr + ";" + postStr + ") {\n" + s.Body.String() + "}"
 }
 
 type ForInStmt struct {

@@ -28,19 +28,7 @@ func TestP(t *testing.T) {
 		inputPath := "/Users/ben.hoyt/Home/awk/regdir/test.countries"
 		t.Run(info.Name(), func(t *testing.T) {
 			cmd := exec.Command("awk", "-f", srcPath, inputPath)
-			stdout, err := cmd.StdoutPipe()
-			if err != nil {
-				t.Error(err)
-			}
-			err = cmd.Start()
-			if err != nil {
-				t.Error(err)
-			}
-			expected, err := ioutil.ReadAll(stdout)
-			if err != nil {
-				t.Error(err)
-			}
-			err = cmd.Wait()
+			expected, err := cmd.Output()
 			if err != nil {
 				t.Error(err)
 			}
@@ -49,7 +37,8 @@ func TestP(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			} else if string(output) != string(expected) {
-				t.Errorf("got:\n%s--- expected:\n%s", output, expected)
+				t.Errorf("output incorrect")
+//				t.Errorf("got first block instead of second (expected):\n%s---\n%s", output, expected)
 			}
 		})
 	}
