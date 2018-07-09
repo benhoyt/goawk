@@ -36,6 +36,7 @@ const (
 
 func (p *parser) program() *Program {
 	prog := &Program{}
+	p.optionalNewlines()
 	for p.tok != EOF {
 		switch p.tok {
 		case BEGIN:
@@ -455,8 +456,7 @@ func (p *parser) primary() Expr {
 		p.expect(LPAREN)
 		p.expect(RPAREN)
 		return &CallExpr{F_RAND, nil}
-	case F_SRAND, F_LENGTH:
-		op := p.tok
+	case F_SRAND:
 		p.next()
 		p.expect(LPAREN)
 		var args []Expr
@@ -464,7 +464,19 @@ func (p *parser) primary() Expr {
 			args = append(args, p.expr())
 		}
 		p.expect(RPAREN)
-		return &CallExpr{op, args}
+		return &CallExpr{F_SRAND, args}
+	case F_LENGTH:
+		p.next()
+		var args []Expr
+		// AWK quirk: "length" is allowed to be called without parens
+		if p.tok == LPAREN {
+			p.next()
+			if p.tok != RPAREN {
+				args = append(args, p.expr())
+			}
+			p.expect(RPAREN)
+		}
+		return &CallExpr{F_LENGTH, args}
 	case F_SUBSTR:
 		p.next()
 		p.expect(LPAREN)
