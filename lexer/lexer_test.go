@@ -12,7 +12,8 @@ import (
 // TODO: add other lexer tests
 
 func TestString(t *testing.T) {
-	input := "+ += && = : , -- / /= $ == >= > ++ { [ < ( " +
+	input := "# comment line\n" +
+		"+ += && = : , -- / /= $ == >= > ++ { [ < ( #\n" +
 		"<= ~ % %= * *= !~ ! != || ^ ^= ? } ] ) ; - -= " +
 		"BEGIN break continue delete do else END exit " +
 		"for if in next print printf return while " +
@@ -34,7 +35,8 @@ func TestString(t *testing.T) {
 	}
 	output := strings.Join(strs, " ")
 
-	expected := "+ += && = : , -- / /= $ == >= > ++ { [ < ( " +
+	expected := "newline " +
+		"+ += && = : , -- / /= $ == >= > ++ { [ < ( newline " +
 		"<= ~ % %= * *= !~ ! != || ^ ^= ? } ] ) ; - -= " +
 		"BEGIN break continue delete do else END exit " +
 		"for if in next print printf return while " +

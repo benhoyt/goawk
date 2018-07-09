@@ -29,7 +29,16 @@ func NewLexer(src []byte) *Lexer {
 }
 
 func (l *Lexer) Scan() (Position, Token, string) {
-	l.skipWhite()
+	for l.ch == ' ' || l.ch == '\t' || l.ch == '\r' {
+		l.next()
+	}
+	if l.ch == '#' {
+		// Skip comment till end of line
+		l.next()
+		for l.ch != '\n' && l.ch >= 0 {
+			l.next()
+		}
+	}
 	if l.ch < 0 {
 		if l.errorMsg != "" {
 			return l.pos, ILLEGAL, l.errorMsg
@@ -105,7 +114,8 @@ func (l *Lexer) Scan() (Position, Token, string) {
 				l.next()
 			}
 			l.next()
-			return pos, REGEX, string(runes)
+			tok = REGEX
+			val = string(runes)
 		}
 	case '{':
 		tok = LBRACE
@@ -249,12 +259,6 @@ func (l *Lexer) next() {
 	}
 	l.ch = ch
 	l.offset += size
-}
-
-func (l *Lexer) skipWhite() {
-	for l.ch == ' ' || l.ch == '\t' || l.ch == '\r' {
-		l.next()
-	}
 }
 
 func isNameStart(ch rune) bool {
