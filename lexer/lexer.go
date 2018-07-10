@@ -89,10 +89,10 @@ func (l *Lexer) Scan() (Position, Token, string) {
 			for l.ch != '/' {
 				c := l.ch
 				if c < 0 {
-					return pos, ILLEGAL, "didn't find end slash in regex"
+					return l.pos, ILLEGAL, "didn't find end slash in regex"
 				}
 				if c == '\r' || c == '\n' {
-					return pos, ILLEGAL, "can't have newline in regex"
+					return l.pos, ILLEGAL, "can't have newline in regex"
 				}
 				if c == '\\' {
 					l.next()
@@ -176,12 +176,12 @@ func (l *Lexer) Scan() (Position, Token, string) {
 	case '&':
 		tok = l.choice('&', ILLEGAL, AND)
 		if tok == ILLEGAL {
-			val = fmt.Sprintf("unexpected %c after &", ch)
+			return l.pos, ILLEGAL, fmt.Sprintf("unexpected %c after &", l.ch)
 		}
 	case '|':
 		tok = l.choice('|', ILLEGAL, OR)
 		if tok == ILLEGAL {
-			val = fmt.Sprintf("unexpected %c after |", ch)
+			return l.pos, ILLEGAL, fmt.Sprintf("unexpected %c after |", l.ch)
 		}
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 		// TODO: handle floats
@@ -197,10 +197,10 @@ func (l *Lexer) Scan() (Position, Token, string) {
 		for l.ch != '"' {
 			c := l.ch
 			if c < 0 {
-				return pos, ILLEGAL, "didn't find end quote in string"
+				return l.pos, ILLEGAL, "didn't find end quote in string"
 			}
 			if c == '\r' || c == '\n' {
-				return pos, ILLEGAL, "can't have newline in string"
+				return l.pos, ILLEGAL, "can't have newline in string"
 			}
 			if c == '\\' {
 				l.next()
@@ -214,7 +214,7 @@ func (l *Lexer) Scan() (Position, Token, string) {
 				case 'n':
 					c = '\n'
 				default:
-					return pos, ILLEGAL, fmt.Sprintf("invalid string escape \\%c", l.ch)
+					return l.pos, ILLEGAL, fmt.Sprintf("invalid string escape \\%c", l.ch)
 				}
 			}
 			runes = append(runes, c)
