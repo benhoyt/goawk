@@ -49,10 +49,15 @@ func (p *parser) program() *Program {
 			prog.End = append(prog.End, p.stmtsBrace())
 		default:
 			p.progState = actionState
-			// Can have an empty pattern (always true)
-			var pattern Expr
-			if p.tok != LBRACE {
-				pattern = p.expr()
+			// Allow empty pattern, normal pattern, or range pattern
+			pattern := []Expr{}
+			if !p.matches(LBRACE, EOF) {
+				pattern = append(pattern, p.expr())
+			}
+			if !p.matches(LBRACE, EOF, NEWLINE) {
+				p.expect(COMMA)
+				p.optionalNewlines()
+				pattern = append(pattern, p.expr())
 			}
 			// Or an empty action (equivalent to { print $0 })
 			action := Action{pattern, nil}

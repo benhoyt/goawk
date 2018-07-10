@@ -8,9 +8,14 @@ TODO:
     - proper parsing of div (instead of regex), eg: k/n (p.48b)
     - \ line continuation (p.26, p.26a)
     - fix regex parsing
+      add exprOrRegex() which uses:
+        if lexer.PeekRune() == '/': p.regex()
+        else p.expr()
     - implement printf / sprintf (probably have to do this by hand)
     - range patterns
     - shouldn't allow syntax: { $1 = substr($1, 1, 3) print $1 }
+    - should allow: NR==1, NR==2 { print "A", $0 };  NR==4, NR==6 { print "B", $0 }
+      needs to look for semicolon after statement block?
 - performance testing: I/O, allocations, CPU
 
 NICE TO HAVE:

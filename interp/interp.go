@@ -95,18 +95,40 @@ func (p *Interp) ExecBegin(program *Program) error {
 func (p *Interp) ExecFile(program *Program, filename string, input io.Reader) error {
 	p.setFile(filename)
 	scanner := bufio.NewScanner(input)
+	inRange := make([]bool, len(program.Actions))
 lineLoop:
 	for scanner.Scan() {
 		p.nextLine(scanner.Text())
-		for _, action := range program.Actions {
-			// No pattern is equivalent to pattern evaluating to true
-			matched := true
-			if action.Pattern != nil {
-				v, err := p.evalSafe(action.Pattern)
+		for i, action := range program.Actions {
+			matched := false
+			switch len(action.Pattern) {
+			case 0:
+				// No pattern is equivalent to pattern evaluating to true
+				matched = true
+			case 1:
+				// Single boolean pattern
+				v, err := p.evalSafe(action.Pattern[0])
 				if err != nil {
 					return err
 				}
 				matched = v.boolean()
+			case 2:
+				// Range pattern (matches between start and stop lines)
+				if !inRange[i] {
+					v, err := p.evalSafe(action.Pattern[0])
+					if err != nil {
+						return err
+					}
+					inRange[i] = v.boolean()
+				}
+				matched = inRange[i]
+				if inRange[i] {
+					v, err := p.evalSafe(action.Pattern[1])
+					if err != nil {
+						return err
+					}
+					inRange[i] = !v.boolean()
+				}
 			}
 			if !matched {
 				continue

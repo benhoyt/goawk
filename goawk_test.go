@@ -37,8 +37,8 @@ func TestP(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			} else if string(output) != string(expected) {
-				t.Errorf("output incorrect")
-				//				t.Errorf("got first block instead of second (expected):\n%s---\n%s", output, expected)
+				//t.Errorf("output incorrect")
+				t.Errorf("got first block instead of second (expected):\n%s---\n%s", output, expected)
 			}
 		})
 	}
@@ -64,7 +64,7 @@ func execute(srcPath, inputPath string) ([]byte, error) {
 	if errOpen != nil {
 		return nil, errOpen
 	}
-	err = p.ExecFile(prog, srcPath, f)
+	err = p.ExecFile(prog, inputPath, f)
 	f.Close()
 	if err != nil && err != interp.ErrExit {
 		return nil, err

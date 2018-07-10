@@ -44,16 +44,24 @@ func (ss Stmts) String() string {
 }
 
 type Action struct {
-	Pattern Expr
+	Pattern []Expr
 	Stmts   Stmts
 }
 
 func (a *Action) String() string {
-	var patternStr string
-	if a.Pattern != nil {
-		patternStr = a.Pattern.String() + " "
+	patterns := make([]string, len(a.Pattern))
+	for i, p := range a.Pattern {
+		patterns[i] = p.String()
 	}
-	return patternStr + "{\n" + a.Stmts.String() + "}"
+	sep := ""
+	if len(patterns) > 0 {
+		sep = " "
+	}
+	stmtsStr := ""
+	if a.Stmts != nil {
+		stmtsStr = "{\n" + a.Stmts.String() + "}"
+	}
+	return strings.Join(patterns, ", ") + sep + stmtsStr
 }
 
 type Expr interface {
