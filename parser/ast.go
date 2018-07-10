@@ -148,7 +148,8 @@ type RegExpr struct {
 }
 
 func (e *RegExpr) String() string {
-	return "/" + e.Regex + "/" // TODO: backslash escaping?
+	escaped := strings.Replace(e.Regex, "/", `\/`, -1)
+	return "/" + escaped + "/"
 }
 
 type VarExpr struct {

@@ -85,7 +85,6 @@ func (l *Lexer) Scan() (Position, Token, string) {
 		case ' ', '\t':
 			tok = DIV
 		default:
-            // TODO: doesn't handle /\// properly
 			runes := []rune{}
 			for l.ch != '/' {
 				c := l.ch
@@ -94,6 +93,13 @@ func (l *Lexer) Scan() (Position, Token, string) {
 				}
 				if c == '\r' || c == '\n' {
 					return pos, ILLEGAL, "can't have newline in regex"
+				}
+				if c == '\\' {
+					l.next()
+					if l.ch != '/' {
+						runes = append(runes, '\\')
+					}
+					c = l.ch
 				}
 				runes = append(runes, c)
 				l.next()

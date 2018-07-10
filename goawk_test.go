@@ -38,7 +38,7 @@ func TestP(t *testing.T) {
 				t.Error(err)
 			} else if string(output) != string(expected) {
 				t.Errorf("output incorrect")
-//				t.Errorf("got first block instead of second (expected):\n%s---\n%s", output, expected)
+				//				t.Errorf("got first block instead of second (expected):\n%s---\n%s", output, expected)
 			}
 		})
 	}
