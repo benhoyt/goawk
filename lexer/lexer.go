@@ -183,12 +183,39 @@ func (l *Lexer) Scan() (Position, Token, string) {
 		if tok == ILLEGAL {
 			return l.pos, ILLEGAL, fmt.Sprintf("unexpected %c after |", l.ch)
 		}
-	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-		// TODO: handle floats
+	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.':
 		runes := []rune{ch}
+		gotDigit := false
+		if ch != '.' {
+			gotDigit = true
+			for l.ch >= '0' && l.ch <= '9' {
+				runes = append(runes, l.ch)
+				l.next()
+			}
+			if l.ch == '.' {
+				runes = append(runes, l.ch)
+				l.next()
+			}
+		}
 		for l.ch >= '0' && l.ch <= '9' {
+			gotDigit = true
 			runes = append(runes, l.ch)
 			l.next()
+		}
+		if !gotDigit {
+			return l.pos, ILLEGAL, "expected digits"
+		}
+		if l.ch == 'e' || l.ch == 'E' {
+			runes = append(runes, l.ch)
+			l.next()
+			if l.ch == '+' || l.ch == '-' {
+				runes = append(runes, l.ch)
+				l.next()
+			}
+			for l.ch >= '0' && l.ch <= '9' {
+				runes = append(runes, l.ch)
+				l.next()
+			}
 		}
 		tok = NUMBER
 		val = string(runes)

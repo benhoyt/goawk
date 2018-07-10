@@ -5,6 +5,7 @@ package main
 TODO:
 - testing (against other implementations?)
     - float parsing support
+      also ParseFloat in interp.go/value.go
     - proper parsing of div (instead of regex), eg: k/n (p.48b)
     - \ line continuation (p.26, p.26a)
     - fix regex parsing

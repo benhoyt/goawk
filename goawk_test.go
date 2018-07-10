@@ -21,12 +21,13 @@ func TestP(t *testing.T) {
 		t.Fatalf("couldn't read test files: %v", err)
 	}
 	for _, info := range infos {
-		if !strings.HasPrefix(info.Name(), "p.") {
+		if !strings.HasPrefix(info.Name(), "t.") {
 			continue
 		}
 		srcPath := "/Users/ben.hoyt/Home/awk/regdir/" + info.Name()
-		inputPath := "/Users/ben.hoyt/Home/awk/regdir/test.countries"
+		inputPath := "/Users/ben.hoyt/Home/awk/regdir/test.data"
 		t.Run(info.Name(), func(t *testing.T) {
+			// TODO: should these t.Error be t.Fatal?
 			cmd := exec.Command("awk", "-f", srcPath, inputPath)
 			expected, err := cmd.Output()
 			if err != nil {
@@ -37,8 +38,8 @@ func TestP(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			} else if string(output) != string(expected) {
-				//t.Errorf("output incorrect")
-				t.Errorf("got first block instead of second (expected):\n%s---\n%s", output, expected)
+				t.Errorf("output incorrect")
+				//t.Errorf("got first block instead of second (expected):\n%s---\n%s", output, expected)
 			}
 		})
 	}
