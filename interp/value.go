@@ -29,9 +29,9 @@ func str(s string) value {
 }
 
 func numStr(s string) value {
-	// TODO: should use same logic as value.Float()?
-	n, err := strconv.ParseFloat(s, 64)
-	return value{typ: typeStr, isNumStr: err == nil, s: s, n: n}
+	var f float64
+	_, err := fmt.Sscanf(s, "%f", &f)
+	return value{typ: typeStr, isNumStr: err == nil, s: s, n: f}
 }
 
 func boolean(b bool) value {
@@ -73,8 +73,8 @@ func (v value) num() float64 {
 	case typeNum:
 		return v.n
 	case typeStr:
-		// TODO: handle cases like "3x"
-		f, _ := strconv.ParseFloat(v.s, 64)
+		var f float64
+		_, _ = fmt.Sscanf(v.s, "%f", &f)
 		return f
 	default:
 		return 0

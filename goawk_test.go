@@ -100,6 +100,7 @@ func TestAgainstOneTrueAWK(t *testing.T) {
 	_ = os.Remove("tempsmall")
 }
 
+// TODO: move (parts) of this to interp, and reuse in goawk.go?
 func executeGoAWK(srcPath, inputPath string) ([]byte, error) {
 	src, err := ioutil.ReadFile(srcPath)
 	if err != nil {
@@ -113,17 +114,19 @@ func executeGoAWK(srcPath, inputPath string) ([]byte, error) {
 	buf := &bytes.Buffer{}
 	p := interp.New(buf)
 	err = p.ExecBegin(prog)
-	if err != nil {
-		return nil, err
-	}
-	f, errOpen := os.Open(inputPath)
-	if errOpen != nil {
-		return nil, errOpen
-	}
-	err = p.ExecFile(prog, inputPath, f)
-	f.Close()
 	if err != nil && err != interp.ErrExit {
 		return nil, err
+	}
+	if err != interp.ErrExit {
+		f, errOpen := os.Open(inputPath)
+		if errOpen != nil {
+			return nil, errOpen
+		}
+		err = p.ExecFile(prog, inputPath, f)
+		f.Close()
+		if err != nil && err != interp.ErrExit {
+			return nil, err
+		}
 	}
 	err = p.ExecEnd(prog)
 	if err != nil && err != interp.ErrExit {

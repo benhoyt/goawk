@@ -4,16 +4,18 @@ package main
 /*
 TODO:
 - testing (against other implementations?)
-    - float parsing support
-      also ParseFloat in interp.go/value.go
+    - support ** and **= (equivalent to ^ and ^=)
+    - support syntax: '{ print (1, 2) }'
+      both print and printf support optional parens
+    - add unsupported functions/keywords to lexer so errors are obvious
+      function, getline, etc
+    - if only BEGIN, don't wait for input or exec files
     - proper parsing of div (instead of regex), eg: k/n (p.48b)
-    - \ line continuation (p.26, p.26a)
-    - fix regex parsing
       add exprOrRegex() which uses:
         if lexer.PeekRune() == '/': p.regex()
         else p.expr()
-    - implement printf / sprintf (probably have to do this by hand)
-    - range patterns
+    - \ line continuation (p.26, p.26a)
+    - implement printf / sprintf (scan to determine types, then call Sprintf?)
     - shouldn't allow syntax: { $1 = substr($1, 1, 3) print $1 }
     - should allow: NR==1, NR==2 { print "A", $0 };  NR==4, NR==6 { print "B", $0 }
       needs to look for semicolon after statement block?
@@ -76,34 +78,33 @@ func main() {
 
 	p := interp.New(os.Stdout)
 	err = p.ExecBegin(prog)
-	if err != nil {
-		errorExit("%s", err)
-	}
-
-	if len(args) < 1 {
-		err = p.ExecFile(prog, "", os.Stdin)
-	} else {
-		for _, filename := range args {
-			f, errOpen := os.Open(filename)
-			if errOpen != nil {
-				errorExit("%s", errOpen)
-			}
-			err = p.ExecFile(prog, filename, f)
-			f.Close()
-			if err != nil {
-				break
-			}
-		}
-	}
 	if err != nil && err != interp.ErrExit {
 		errorExit("%s", err)
 	}
 
-	err = p.ExecEnd(prog)
-	if err == interp.ErrExit {
-		return
+	if err != interp.ErrExit {
+		if len(args) < 1 {
+			err = p.ExecFile(prog, "", os.Stdin)
+		} else {
+			for _, filename := range args {
+				f, errOpen := os.Open(filename)
+				if errOpen != nil {
+					errorExit("%s", errOpen)
+				}
+				err = p.ExecFile(prog, filename, f)
+				f.Close()
+				if err != nil {
+					break
+				}
+			}
+		}
+		if err != nil && err != interp.ErrExit {
+			errorExit("%s", err)
+		}
 	}
-	if err != nil {
+
+	err = p.ExecEnd(prog)
+	if err != nil && err != interp.ErrExit {
 		errorExit("%s", err)
 	}
 }
