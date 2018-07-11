@@ -17,13 +17,17 @@ import (
 )
 
 var (
-	testsDir  string
-	outputDir string
+	testsDir   string
+	outputDir  string
+	writeAWK   bool
+	writeGoAWK bool
 )
 
 func TestMain(m *testing.M) {
 	flag.StringVar(&testsDir, "testsdir", "./tests", "directory with one-true-awk tests")
 	flag.StringVar(&outputDir, "outputdir", "./tests/output", "directory for test output")
+	flag.BoolVar(&writeAWK, "writeawk", false, "write expected output")
+	flag.BoolVar(&writeGoAWK, "writegoawk", true, "write Go AWK output")
 	flag.Parse()
 	os.Exit(m.Run())
 }
@@ -50,21 +54,31 @@ func TestAgainstOneTrueAWK(t *testing.T) {
 			srcPath := filepath.Join(testsDir, info.Name())
 			inputPath := filepath.Join(testsDir, inputByPrefix[info.Name()[:1]])
 			outputPath := filepath.Join(outputDir, info.Name())
+
 			cmd := exec.Command("awk", "-f", srcPath, inputPath)
 			expected, err := cmd.Output()
 			if err != nil && !nonzeroExits[info.Name()] {
 				t.Fatalf("error running awk: %v", err)
 			}
-			err = ioutil.WriteFile(outputPath, expected, 0644)
-			if err != nil {
-				t.Fatalf("error writing awk output: %v", err)
+			if writeAWK {
+				err := ioutil.WriteFile(outputPath, expected, 0644)
+				if err != nil {
+					t.Fatalf("error writing awk output: %v", err)
+				}
 			}
-			// output, err := executeGoAWK(srcPath, inputPath)
-			// if err != nil {
-			// 	t.Fatal(err)
-			// } else if string(output) != string(expected) {
-			// 	t.Fatalf("got first block instead of second (expected):\n%s---\n%s", output, expected)
-			// }
+
+			output, err := executeGoAWK(srcPath, inputPath)
+			if err != nil {
+				t.Fatal(err)
+			} else if string(output) != string(expected) {
+				t.Fatalf("output differs, run: git diff %s", outputPath)
+				if writeGoAWK {
+					err := ioutil.WriteFile(outputPath, expected, 0644)
+					if err != nil {
+						t.Fatalf("error writing goawk output: %v", err)
+					}
+				}
+			}
 		})
 	}
 
