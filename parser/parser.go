@@ -107,8 +107,7 @@ func (p *parser) simpleStmt() Stmt {
 		if op == PRINT {
 			return &PrintStmt{args}
 		} else {
-			panic(p.error("printf is not yet implemented"))
-			// TODO: return &PrintfStmt{args}
+			return &PrintfStmt{args}
 		}
 	case DELETE:
 		p.next()

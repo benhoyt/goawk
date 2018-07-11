@@ -4,8 +4,6 @@ package main
 /*
 TODO:
 - testing (against other implementations?)
-    - add unsupported functions/keywords to lexer so errors are obvious
-      function, getline, etc
     - if only BEGIN, don't wait for input or exec files
     - rename ExecFile to ExecActions and add ExecStream and ExecFiles
       use in both goawk.go and goawk_test.go

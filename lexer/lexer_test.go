@@ -69,9 +69,9 @@ func TestStringMethod(t *testing.T) {
 		"+ += && = : , -- / /= $ == >= > ++ { [ < ( #\n" +
 		"<= ~ % %= * *= !~ ! != || ^ ^= ** **= ? } ] ) ; - -= " +
 		"BEGIN break continue delete do else END exit " +
-		"for if in next print printf return while " +
+		"for if in next print return while " +
 		"atan2 cos exp gsub index int length log match rand " +
-		"sin split sprintf sqrt srand sub substr tolower toupper " +
+		"sin split sqrt srand sub substr tolower toupper " +
 		"x \"str\\n\" 1234\n " +
 		"@ ."
 
@@ -92,9 +92,9 @@ func TestStringMethod(t *testing.T) {
 		"+ += && = : , -- / /= $ == >= > ++ { [ < ( newline " +
 		"<= ~ % %= * *= !~ ! != || ^ ^= ^ ^= ? } ] ) ; - -= " +
 		"BEGIN break continue delete do else END exit " +
-		"for if in next print printf return while " +
+		"for if in next print return while " +
 		"atan2 cos exp gsub index int length log match rand " +
-		"sin split sprintf sqrt srand sub substr tolower toupper " +
+		"sin split sqrt srand sub substr tolower toupper " +
 		"name string number newline " +
 		"<illegal> <illegal> EOF"
 	if output != expected {
@@ -102,7 +102,8 @@ func TestStringMethod(t *testing.T) {
 	}
 
 	for i, s := range seen {
-		if !s && Token(i) != CONCAT {
+		// TODO: update below when support for printf/sprintf is added
+		if !s && Token(i) != CONCAT && Token(i) != PRINTF && Token(i) != F_SPRINTF {
 			t.Errorf("token %s (%d) not seen", Token(i), i)
 		}
 	}
