@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 
@@ -41,6 +42,11 @@ func TestAgainstOneTrueAWK(t *testing.T) {
 		"t.exit":  true,
 		"t.exit1": true,
 	}
+	// These tests use "for (x in a)", which iterates in an undefined
+	// order (according to the spec), so sort lines before comparing.
+	sortLines := map[string]bool{
+		"p.43": true,
+	}
 
 	infos, err := ioutil.ReadDir(testsDir)
 	if err != nil {
@@ -60,6 +66,9 @@ func TestAgainstOneTrueAWK(t *testing.T) {
 			if err != nil && !nonzeroExits[info.Name()] {
 				t.Fatalf("error running awk: %v", err)
 			}
+			if sortLines[info.Name()] {
+				expected = sortedLines(expected)
+			}
 			if writeAWK {
 				err := ioutil.WriteFile(outputPath, expected, 0644)
 				if err != nil {
@@ -70,14 +79,19 @@ func TestAgainstOneTrueAWK(t *testing.T) {
 			output, err := executeGoAWK(srcPath, inputPath)
 			if err != nil {
 				t.Fatal(err)
-			} else if string(output) != string(expected) {
+			} else {
+				if sortLines[info.Name()] {
+					output = sortedLines(output)
+				}
 				if writeGoAWK {
 					err := ioutil.WriteFile(outputPath, output, 0644)
 					if err != nil {
 						t.Fatalf("error writing goawk output: %v", err)
 					}
 				}
-				t.Fatalf("output differs, run: git diff %s", outputPath)
+				if string(output) != string(expected) {
+					t.Fatalf("output differs, run: git diff %s", outputPath)
+				}
 			}
 		})
 	}
@@ -117,4 +131,11 @@ func executeGoAWK(srcPath, inputPath string) ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
+}
+
+func sortedLines(data []byte) []byte {
+	trimmed := strings.TrimSuffix(string(data), "\n")
+	lines := strings.Split(trimmed, "\n")
+	sort.Strings(lines)
+	return []byte(strings.Join(lines, "\n") + "\n")
 }
