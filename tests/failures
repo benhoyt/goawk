@@ -1,12 +1,12 @@
---- FAIL: TestAgainstOneTrueAWK (1.83s)
+--- FAIL: TestAgainstOneTrueAWK (1.89s)
     --- FAIL: TestAgainstOneTrueAWK/p.25 (0.01s)
-    	goawk_test.go:81: printf is not yet implemented
+    	goawk_test.go:81: parse error at 1:45: printf is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/p.26 (0.01s)
     	goawk_test.go:81: parse error at 2:32: unexpected \
     --- FAIL: TestAgainstOneTrueAWK/p.26a (0.01s)
     	goawk_test.go:81: parse error at 2:32: unexpected \
     --- FAIL: TestAgainstOneTrueAWK/p.3 (0.01s)
-    	goawk_test.go:81: printf is not yet implemented
+    	goawk_test.go:81: parse error at 1:37: printf is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/p.44 (0.01s)
     	goawk_test.go:81: parse error at 3:3: expected expression
     --- FAIL: TestAgainstOneTrueAWK/p.47 (0.01s)
@@ -14,19 +14,19 @@
     --- FAIL: TestAgainstOneTrueAWK/p.48 (0.01s)
     	goawk_test.go:81: parse error at 4:23: unexpected   after |
     --- FAIL: TestAgainstOneTrueAWK/p.48a (0.01s)
-    	goawk_test.go:81: printf is not yet implemented
+    	goawk_test.go:81: parse error at 3:24: printf is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/p.48b (0.01s)
     	goawk_test.go:81: parse error at 3:35: can't have newline in regex
     --- FAIL: TestAgainstOneTrueAWK/p.5 (0.01s)
-    	goawk_test.go:81: printf is not yet implemented
+    	goawk_test.go:81: parse error at 2:72: printf is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/p.50 (0.01s)
     	goawk_test.go:81: parse error at 4:25: unexpected   after |
     --- FAIL: TestAgainstOneTrueAWK/p.51 (0.01s)
-    	goawk_test.go:81: printf is not yet implemented
+    	goawk_test.go:81: parse error at 6:32: printf is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/p.52 (0.01s)
-    	goawk_test.go:81: printf is not yet implemented
+    	goawk_test.go:81: parse error at 5:47: printf is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/p.5a (0.01s)
-    	goawk_test.go:81: printf is not yet implemented
+    	goawk_test.go:81: parse error at 2:76: printf is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/p.table (0.01s)
     	goawk_test.go:81: parse error at 11:34: expected ) instead of ,
     --- FAIL: TestAgainstOneTrueAWK/t.3.x (0.01s)
@@ -41,12 +41,8 @@
     	goawk_test.go:93: output differs, run: git diff tests/output/t.NF
     --- FAIL: TestAgainstOneTrueAWK/t.a (0.01s)
     	goawk_test.go:93: output differs, run: git diff tests/output/t.a
-    --- FAIL: TestAgainstOneTrueAWK/t.addops (0.01s)
-    	goawk_test.go:81: parse error at 17:5: expected expression
     --- FAIL: TestAgainstOneTrueAWK/t.arith (0.01s)
     	goawk_test.go:81: parse error at 2:29: can't have newline in regex
-    --- FAIL: TestAgainstOneTrueAWK/t.array1 (0.01s)
-    	goawk_test.go:81: parse error at 9:14: expected ) instead of ,
     --- FAIL: TestAgainstOneTrueAWK/t.assert (0.01s)
     	goawk_test.go:81: parse error at 7:17: expected expression
     --- FAIL: TestAgainstOneTrueAWK/t.avg (0.01s)
@@ -60,7 +56,7 @@
     --- FAIL: TestAgainstOneTrueAWK/t.cmp (0.01s)
     	goawk_test.go:93: output differs, run: git diff tests/output/t.cmp
     --- FAIL: TestAgainstOneTrueAWK/t.cond (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.cond
+    	goawk_test.go:81: parse error at 1:43: expected expression
     --- FAIL: TestAgainstOneTrueAWK/t.crlf (0.01s)
     	goawk_test.go:81: parse error at 3:9: unexpected \
     --- FAIL: TestAgainstOneTrueAWK/t.cum (0.01s)
@@ -68,7 +64,7 @@
     --- FAIL: TestAgainstOneTrueAWK/t.d.x (0.01s)
     	goawk_test.go:93: output differs, run: git diff tests/output/t.d.x
     --- FAIL: TestAgainstOneTrueAWK/t.delete2 (0.01s)
-    	goawk_test.go:81: printf is not yet implemented
+    	goawk_test.go:81: parse error at 11:58: printf is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.e (0.01s)
     	goawk_test.go:93: output differs, run: git diff tests/output/t.e
     --- FAIL: TestAgainstOneTrueAWK/t.else (0.01s)
@@ -118,7 +114,7 @@
     --- FAIL: TestAgainstOneTrueAWK/t.j.x (0.01s)
     	goawk_test.go:93: output differs, run: git diff tests/output/t.j.x
     --- FAIL: TestAgainstOneTrueAWK/t.longstr (0.01s)
-    	goawk_test.go:81: printf is not yet implemented
+    	goawk_test.go:81: parse error at 3:17: printf is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.makef (0.01s)
     	goawk_test.go:93: output differs, run: git diff tests/output/t.makef
     --- FAIL: TestAgainstOneTrueAWK/t.match1 (0.01s)
@@ -127,16 +123,16 @@
     	goawk_test.go:93: output differs, run: git diff tests/output/t.nameval
     --- FAIL: TestAgainstOneTrueAWK/t.next (0.01s)
     	goawk_test.go:93: output differs, run: git diff tests/output/t.next
-    --- FAIL: TestAgainstOneTrueAWK/t.not (0.02s)
+    --- FAIL: TestAgainstOneTrueAWK/t.not (0.03s)
     	goawk_test.go:93: output differs, run: git diff tests/output/t.not
     --- FAIL: TestAgainstOneTrueAWK/t.ofmt (0.01s)
     	goawk_test.go:93: output differs, run: git diff tests/output/t.ofmt
     --- FAIL: TestAgainstOneTrueAWK/t.pipe (0.01s)
     	goawk_test.go:81: parse error at 1:42: unexpected   after |
     --- FAIL: TestAgainstOneTrueAWK/t.printf (0.01s)
-    	goawk_test.go:81: printf is not yet implemented
+    	goawk_test.go:81: parse error at 2:35: printf is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.printf2 (0.01s)
-    	goawk_test.go:81: printf is not yet implemented
+    	goawk_test.go:81: parse error at 2:35: printf is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.randk (0.01s)
     	goawk_test.go:81: parse error at 6:24: can't have newline in regex
     --- FAIL: TestAgainstOneTrueAWK/t.rec (0.01s)
@@ -163,4 +159,4 @@
     	goawk_test.go:81: parse error at 14:44: can't have newline in regex
 FAIL
 exit status 1
-FAIL	github.com/benhoyt/goawk	1.842s
+FAIL	github.com/benhoyt/goawk	1.894s

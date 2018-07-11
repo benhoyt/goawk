@@ -93,13 +93,22 @@ func (p *parser) stmtsBrace() Stmts {
 func (p *parser) simpleStmt() Stmt {
 	switch p.tok {
 	case PRINT, PRINTF:
-		tok := p.tok
+		op := p.tok
 		p.next()
+		gotParen := false
+		if p.tok == LPAREN {
+			p.next()
+			gotParen = true
+		}
 		args := p.exprList()
-		if tok == PRINT {
+		if gotParen {
+			p.expect(RPAREN)
+		}
+		if op == PRINT {
 			return &PrintStmt{args}
 		} else {
-			return &PrintfStmt{args}
+			panic(p.error("printf is not yet implemented"))
+			// TODO: return &PrintfStmt{args}
 		}
 	case DELETE:
 		p.next()

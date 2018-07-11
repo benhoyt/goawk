@@ -4,8 +4,6 @@ package main
 /*
 TODO:
 - testing (against other implementations?)
-    - support syntax: '{ print (1, 2) }'
-      both print and printf support optional parens
     - add unsupported functions/keywords to lexer so errors are obvious
       function, getline, etc
     - if only BEGIN, don't wait for input or exec files
