@@ -145,7 +145,16 @@ func (l *Lexer) Scan() (Position, Token, string) {
 	case ')':
 		tok = RPAREN
 	case '*':
-		tok = l.choice('=', MUL, MUL_ASSIGN)
+		switch l.ch {
+		case '*':
+			l.next()
+			tok = l.choice('=', POW, POW_ASSIGN)
+		case '=':
+			l.next()
+			tok = MUL_ASSIGN
+		default:
+			tok = MUL
+		}
 	case '=':
 		tok = l.choice('=', ASSIGN, EQUALS)
 	case '^':

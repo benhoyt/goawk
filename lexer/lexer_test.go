@@ -67,7 +67,7 @@ func TestNumber(t *testing.T) {
 func TestStringMethod(t *testing.T) {
 	input := "# comment line\n" +
 		"+ += && = : , -- / /= $ == >= > ++ { [ < ( #\n" +
-		"<= ~ % %= * *= !~ ! != || ^ ^= ? } ] ) ; - -= " +
+		"<= ~ % %= * *= !~ ! != || ^ ^= ** **= ? } ] ) ; - -= " +
 		"BEGIN break continue delete do else END exit " +
 		"for if in next print printf return while " +
 		"atan2 cos exp gsub index int length log match rand " +
@@ -90,7 +90,7 @@ func TestStringMethod(t *testing.T) {
 
 	expected := "newline " +
 		"+ += && = : , -- / /= $ == >= > ++ { [ < ( newline " +
-		"<= ~ % %= * *= !~ ! != || ^ ^= ? } ] ) ; - -= " +
+		"<= ~ % %= * *= !~ ! != || ^ ^= ^ ^= ? } ] ) ; - -= " +
 		"BEGIN break continue delete do else END exit " +
 		"for if in next print printf return while " +
 		"atan2 cos exp gsub index int length log match rand " +
