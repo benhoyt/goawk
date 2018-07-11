@@ -71,13 +71,13 @@ func TestAgainstOneTrueAWK(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			} else if string(output) != string(expected) {
-				t.Fatalf("output differs, run: git diff %s", outputPath)
 				if writeGoAWK {
-					err := ioutil.WriteFile(outputPath, expected, 0644)
+					err := ioutil.WriteFile(outputPath, output, 0644)
 					if err != nil {
 						t.Fatalf("error writing goawk output: %v", err)
 					}
 				}
+				t.Fatalf("output differs, run: git diff %s", outputPath)
 			}
 		})
 	}
