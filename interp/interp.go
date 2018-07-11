@@ -757,7 +757,7 @@ func (p *Interp) call(op Token, args []value) value {
 		p.matchLength = loc[1] - loc[0]
 		return num(float64(p.matchStart))
 	case F_SPRINTF:
-		// TODO: I don't think this works anymore
+		// TODO: this sprintf code doesn't work anymore
 		vals := make([]interface{}, len(args)-1)
 		for i, a := range args[1:] {
 			vals[i] = interface{}(a)
@@ -780,7 +780,6 @@ func (p *Interp) call(op Token, args []value) value {
 		// TODO: previous seed value should be returned
 		return num(0)
 	case F_SUBSTR:
-		// TODO: untested
 		s := p.toString(args[0])
 		pos := int(args[1].num())
 		if pos > len(s) {

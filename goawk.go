@@ -10,6 +10,8 @@ TODO:
     - add unsupported functions/keywords to lexer so errors are obvious
       function, getline, etc
     - if only BEGIN, don't wait for input or exec files
+    - rename ExecFile to ExecActions and add ExecStream and ExecFiles
+      use in both goawk.go and goawk_test.go
     - proper parsing of div (instead of regex), eg: k/n (p.48b)
       add exprOrRegex() which uses:
         if lexer.PeekRune() == '/': p.regex()
@@ -22,6 +24,7 @@ TODO:
 - performance testing: I/O, allocations, CPU
 
 NICE TO HAVE:
+- ampersand handling in sub/gsub
 - parser: ensure vars aren't used in array context and vice-versa
 - regex caching for user regexes
 - multi-dimensional "in", multi-dimensional IndexExpr and SUBSEP
@@ -47,6 +50,7 @@ import (
 
 func main() {
 	progFile := flag.String("f", "", "load AWK source from `filename`")
+	debug := flag.Bool("d", false, "debug mode (print parsed AST on stderr)")
 	flag.Parse()
 	args := flag.Args()
 
@@ -73,8 +77,9 @@ func main() {
 		}
 		errorExit(errMsg)
 	}
-	fmt.Println(prog)
-	fmt.Println("-----") // TODO
+	if *debug {
+		fmt.Fprintln(os.Stderr, prog)
+	}
 
 	p := interp.New(os.Stdout)
 	err = p.ExecBegin(prog)
