@@ -8,6 +8,7 @@ import (
 	"io"
 	"math"
 	"math/rand"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -18,10 +19,7 @@ import (
 )
 
 var (
-	// ErrExit is returned by Exec functions when an "exit" statement
-	// is encountered.
-	ErrExit = errors.New("exit")
-
+	errExit     = errors.New("exit")
 	errBreak    = errors.New("break")
 	errContinue = errors.New("continue")
 	errNext     = errors.New("next")
@@ -82,8 +80,54 @@ func New(output io.Writer) *Interp {
 	return p
 }
 
-func (p *Interp) ExecBegin(program *Program) error {
-	for _, statements := range program.Begin {
+func (p *Interp) ExecStream(prog *Program, input io.Reader) error {
+	err := p.execBegin(prog.Begin)
+	if err != nil && err != errExit {
+		return err
+	}
+	if err != errExit {
+		err = p.execActions(prog.Actions, "", input)
+		if err != nil && err != errExit {
+			return err
+		}
+	}
+	err = p.execEnd(prog.End)
+	if err != nil && err != errExit {
+		return err
+	}
+	return nil
+}
+
+func (p *Interp) ExecFiles(prog *Program, inputPaths []string) error {
+	err := p.execBegin(prog.Begin)
+	if err != nil && err != errExit {
+		return err
+	}
+	if err != errExit {
+		for _, path := range inputPaths {
+			f, errOpen := os.Open(path)
+			if errOpen != nil {
+				return errOpen
+			}
+			err = p.execActions(prog.Actions, path, f)
+			f.Close()
+			if err != nil {
+				break
+			}
+		}
+		if err != nil && err != errExit {
+			return err
+		}
+	}
+	err = p.execEnd(prog.End)
+	if err != nil && err != errExit {
+		return err
+	}
+	return nil
+}
+
+func (p *Interp) execBegin(begin []Stmts) error {
+	for _, statements := range begin {
 		err := p.executes(statements)
 		if err != nil {
 			return err
@@ -92,14 +136,14 @@ func (p *Interp) ExecBegin(program *Program) error {
 	return nil
 }
 
-func (p *Interp) ExecFile(program *Program, filename string, input io.Reader) error {
+func (p *Interp) execActions(actions []Action, filename string, input io.Reader) error {
 	p.setFile(filename)
 	scanner := bufio.NewScanner(input)
-	inRange := make([]bool, len(program.Actions))
+	inRange := make([]bool, len(actions))
 lineLoop:
 	for scanner.Scan() {
 		p.nextLine(scanner.Text())
-		for i, action := range program.Actions {
+		for i, action := range actions {
 			matched := false
 			switch len(action.Pattern) {
 			case 0:
@@ -153,8 +197,8 @@ lineLoop:
 	return nil
 }
 
-func (p *Interp) ExecEnd(program *Program) error {
-	for _, statements := range program.End {
+func (p *Interp) execEnd(end []Stmts) error {
+	for _, statements := range end {
 		err := p.executes(statements)
 		if err != nil {
 			return err
@@ -276,7 +320,7 @@ func (p *Interp) execute(stmt Stmt) (execErr error) {
 		return errNext
 	case *ExitStmt:
 		// TODO: update to handle s.Status (exit status code)
-		return ErrExit
+		return errExit
 	case *DeleteStmt:
 		index := p.eval(s.Index[0]) // TODO: handle multi index
 		delete(p.arrays[s.Array], p.toString(index))

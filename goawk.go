@@ -5,8 +5,6 @@ package main
 TODO:
 - testing (against other implementations?)
     - if only BEGIN, don't wait for input or exec files
-    - rename ExecFile to ExecActions and add ExecStream and ExecFiles
-      use in both goawk.go and goawk_test.go
     - proper parsing of div (instead of regex), eg: k/n (p.48b)
       add exprOrRegex() which uses:
         if lexer.PeekRune() == '/': p.regex()
@@ -77,34 +75,12 @@ func main() {
 	}
 
 	p := interp.New(os.Stdout)
-	err = p.ExecBegin(prog)
-	if err != nil && err != interp.ErrExit {
-		errorExit("%s", err)
+	if len(args) < 1 {
+		err = p.ExecStream(prog, os.Stdin)
+	} else {
+		err = p.ExecFiles(prog, args)
 	}
-
-	if err != interp.ErrExit {
-		if len(args) < 1 {
-			err = p.ExecFile(prog, "", os.Stdin)
-		} else {
-			for _, filename := range args {
-				f, errOpen := os.Open(filename)
-				if errOpen != nil {
-					errorExit("%s", errOpen)
-				}
-				err = p.ExecFile(prog, filename, f)
-				f.Close()
-				if err != nil {
-					break
-				}
-			}
-		}
-		if err != nil && err != interp.ErrExit {
-			errorExit("%s", err)
-		}
-	}
-
-	err = p.ExecEnd(prog)
-	if err != nil && err != interp.ErrExit {
+	if err != nil {
 		errorExit("%s", err)
 	}
 }

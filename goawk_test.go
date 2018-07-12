@@ -109,29 +109,12 @@ func executeGoAWK(srcPath, inputPath string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	buf := &bytes.Buffer{}
 	p := interp.New(buf)
-	err = p.ExecBegin(prog)
-	if err != nil && err != interp.ErrExit {
+	err = p.ExecFiles(prog, []string{inputPath})
+	if err != nil {
 		return nil, err
 	}
-	if err != interp.ErrExit {
-		f, errOpen := os.Open(inputPath)
-		if errOpen != nil {
-			return nil, errOpen
-		}
-		err = p.ExecFile(prog, inputPath, f)
-		f.Close()
-		if err != nil && err != interp.ErrExit {
-			return nil, err
-		}
-	}
-	err = p.ExecEnd(prog)
-	if err != nil && err != interp.ErrExit {
-		return nil, err
-	}
-
 	return buf.Bytes(), nil
 }
 
