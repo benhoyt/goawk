@@ -4,7 +4,6 @@ package main
 /*
 TODO:
 - testing (against other implementations?)
-    - if only BEGIN, don't wait for input or exec files
     - proper parsing of div (instead of regex), eg: k/n (p.48b)
       add exprOrRegex() which uses:
         if lexer.PeekRune() == '/': p.regex()

@@ -85,6 +85,9 @@ func (p *Interp) ExecStream(prog *Program, input io.Reader) error {
 	if err != nil && err != errExit {
 		return err
 	}
+	if prog.Actions == nil && prog.End == nil {
+		return nil
+	}
 	if err != errExit {
 		err = p.execActions(prog.Actions, "", input)
 		if err != nil && err != errExit {
@@ -102,6 +105,9 @@ func (p *Interp) ExecFiles(prog *Program, inputPaths []string) error {
 	err := p.execBegin(prog.Begin)
 	if err != nil && err != errExit {
 		return err
+	}
+	if prog.Actions == nil && prog.End == nil {
+		return nil
 	}
 	if err != errExit {
 		for _, path := range inputPaths {
