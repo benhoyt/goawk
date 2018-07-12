@@ -4,6 +4,7 @@ package parser
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	. "github.com/benhoyt/goawk/lexer"
 )
@@ -395,7 +396,9 @@ func (p *parser) postIncr() Expr {
 func (p *parser) primary() Expr {
 	switch p.tok {
 	case NUMBER:
-		n, _ := strconv.ParseFloat(p.val, 64)
+		// AWK allows forms like "1.5e", but ParseFloat doesn't
+		s := strings.TrimRight(p.val, "eE")
+		n, _ := strconv.ParseFloat(s, 64)
 		p.next()
 		return &NumExpr{n}
 	case STRING:

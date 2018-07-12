@@ -5,6 +5,7 @@ package main
 TODO:
 
 - testing (against other implementations?)
+    - need the 17EZ / 30p float parsing behaviour in value.numStr() as well?
     - implement printf / sprintf (scan to determine types, then call Sprintf?)
     - shouldn't allow syntax: { $1 = substr($1, 1, 3) print $1 }
     - should allow: NR==1, NR==2 { print "A", $0 };  NR==4, NR==6 { print "B", $0 }

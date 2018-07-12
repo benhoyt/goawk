@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"text/scanner"
 )
 
 const (
@@ -75,8 +76,16 @@ func (v value) num() float64 {
 	case typeStr:
 		// Note that converting to number directly (in constrast to
 		// "numeric strings") allows things like "1.5foo"
-		var f float64
-		_, _ = fmt.Sscanf(v.s, "%f", &f)
+		var scan scanner.Scanner
+		scan.Init(strings.NewReader(v.s))
+		tok := scan.Scan()
+		if tok != scanner.Float && tok != scanner.Int {
+			return 0
+		}
+		text := scan.TokenText()
+		// Scanner allows trailing 'e', ParseFloat doesn't
+		text = strings.TrimRight(text, "eE")
+		f, _ := strconv.ParseFloat(text, 64)
 		return f
 	default:
 		return 0
