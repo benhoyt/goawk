@@ -3,12 +3,17 @@ package main
 
 /*
 TODO:
+
+"In some contexts, a <slash> ( '/' ) that is used to surround an ERE
+could also be the division operator. This shall be resolved in such a
+way that wherever the division operator could appear, a <slash> is
+assumed to be the division operator. (There is no unary division operator.)"
+
 - testing (against other implementations?)
     - proper parsing of div (instead of regex), eg: k/n (p.48b)
       add exprOrRegex() which uses:
         if lexer.PeekRune() == '/': p.regex()
         else p.expr()
-    - \ line continuation (p.26, p.26a)
     - implement printf / sprintf (scan to determine types, then call Sprintf?)
     - shouldn't allow syntax: { $1 = substr($1, 1, 3) print $1 }
     - should allow: NR==1, NR==2 { print "A", $0 };  NR==4, NR==6 { print "B", $0 }

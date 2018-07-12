@@ -29,7 +29,16 @@ func NewLexer(src []byte) *Lexer {
 }
 
 func (l *Lexer) Scan() (Position, Token, string) {
-	for l.ch == ' ' || l.ch == '\t' || l.ch == '\r' {
+	for l.ch == ' ' || l.ch == '\t' || l.ch == '\r' || l.ch == '\\' {
+		if l.ch == '\\' {
+			l.next()
+			if l.ch == '\r' {
+				l.next()
+			}
+			if l.ch != '\n' {
+				return l.pos, ILLEGAL, "expected \\n after \\ line continuation"
+			}
+		}
 		l.next()
 	}
 	if l.ch == '#' {
