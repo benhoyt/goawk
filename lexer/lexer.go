@@ -202,12 +202,12 @@ func (l *Lexer) Scan() (Position, Token, string) {
 	case '&':
 		tok = l.choice('&', ILLEGAL, AND)
 		if tok == ILLEGAL {
-			return l.pos, ILLEGAL, fmt.Sprintf("unexpected %c after &", l.ch)
+			return l.pos, ILLEGAL, fmt.Sprintf("unexpected %q after '&'", l.ch)
 		}
 	case '|':
 		tok = l.choice('|', ILLEGAL, OR)
 		if tok == ILLEGAL {
-			return l.pos, ILLEGAL, fmt.Sprintf("unexpected %c after |", l.ch)
+			return l.pos, ILLEGAL, fmt.Sprintf("unexpected %q after '|'", l.ch)
 		}
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.':
 		runes := []rune{ch}
@@ -278,7 +278,7 @@ func (l *Lexer) Scan() (Position, Token, string) {
 		val = string(runes)
 	default:
 		tok = ILLEGAL
-		val = fmt.Sprintf("unexpected %c", ch)
+		val = fmt.Sprintf("unexpected %q", ch)
 	}
 	return pos, tok, val
 }

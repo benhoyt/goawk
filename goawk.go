@@ -10,6 +10,11 @@ way that wherever the division operator could appear, a <slash> is
 assumed to be the division operator. (There is no unary division operator.)"
 
 - testing (against other implementations?)
+    - why are these different?
+		$ echo 1root | awk '{ print ($1 > 1) }'
+		1
+		$ echo 1root | go run goawk.go '{ print ($1 > 1) }'
+		0
     - proper parsing of div (instead of regex), eg: k/n (p.48b)
       add exprOrRegex() which uses:
         if lexer.PeekRune() == '/': p.regex()
