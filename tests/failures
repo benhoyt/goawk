@@ -1,4 +1,4 @@
---- FAIL: TestAgainstOneTrueAWK (1.91s)
+--- FAIL: TestAgainstOneTrueAWK (1.92s)
     --- FAIL: TestAgainstOneTrueAWK/p.25 (0.01s)
     	goawk_test.go:81: parse error at 1:3: 'printf' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/p.3 (0.01s)
@@ -12,7 +12,7 @@
     --- FAIL: TestAgainstOneTrueAWK/p.48a (0.01s)
     	goawk_test.go:81: parse error at 3:3: 'printf' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/p.48b (0.01s)
-    	goawk_test.go:81: parse error at 3:35: can't have newline in regex
+    	goawk_test.go:93: output differs, run: git diff tests/output/p.48b
     --- FAIL: TestAgainstOneTrueAWK/p.49 (0.01s)
     	goawk_test.go:81: parse error at 1:19: 'system' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/p.5 (0.01s)
@@ -40,13 +40,13 @@
     --- FAIL: TestAgainstOneTrueAWK/t.a (0.01s)
     	goawk_test.go:93: output differs, run: git diff tests/output/t.a
     --- FAIL: TestAgainstOneTrueAWK/t.addops (0.01s)
-    	goawk_test.go:81: parse error at 21:7: 'sprintf' is not yet implemented
-    --- FAIL: TestAgainstOneTrueAWK/t.arith (0.01s)
-    	goawk_test.go:81: parse error at 2:29: can't have newline in regex
+    	goawk_test.go:81: parse error at 12:14: expected ) instead of 
+    --- FAIL: TestAgainstOneTrueAWK/t.arith (0.02s)
+    	goawk_test.go:93: output differs, run: git diff tests/output/t.arith
     --- FAIL: TestAgainstOneTrueAWK/t.assert (0.01s)
     	goawk_test.go:81: parse error at 3:1: 'function' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.avg (0.01s)
-    	goawk_test.go:81: parse error at 4:18: can't have newline in regex
+    	goawk_test.go:93: output differs, run: git diff tests/output/t.avg
     --- FAIL: TestAgainstOneTrueAWK/t.beginexit (0.01s)
     	goawk_test.go:81: parse error at 2:9: 'getline' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.beginnext (0.01s)
@@ -132,7 +132,7 @@
     --- FAIL: TestAgainstOneTrueAWK/t.printf2 (0.01s)
     	goawk_test.go:81: parse error at 2:2: 'printf' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.randk (0.01s)
-    	goawk_test.go:81: parse error at 6:24: can't have newline in regex
+    	goawk_test.go:93: output differs, run: git diff tests/output/t.randk
     --- FAIL: TestAgainstOneTrueAWK/t.rec (0.01s)
     	goawk_test.go:93: output differs, run: git diff tests/output/t.rec
     --- FAIL: TestAgainstOneTrueAWK/t.set0 (0.01s)
@@ -140,7 +140,7 @@
     --- FAIL: TestAgainstOneTrueAWK/t.set1 (0.01s)
     	goawk_test.go:81: parse error at 1:1: 'function' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.set3 (0.01s)
-    	goawk_test.go:81: parse error at 1:29: can't have newline in regex
+    	goawk_test.go:93: output differs, run: git diff tests/output/t.set3
     --- FAIL: TestAgainstOneTrueAWK/t.split2a (0.01s)
     	goawk_test.go:93: output differs, run: git diff tests/output/t.split2a
     --- FAIL: TestAgainstOneTrueAWK/t.split3 (0.02s)
@@ -157,4 +157,4 @@
     	goawk_test.go:81: parse error at 14:3: 'printf' is not yet implemented
 FAIL
 exit status 1
-FAIL	github.com/benhoyt/goawk	1.913s
+FAIL	github.com/benhoyt/goawk	1.925s

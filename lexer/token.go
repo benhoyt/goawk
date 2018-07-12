@@ -94,7 +94,7 @@ const (
 	STRING
 	REGEX
 
-	LAST       = STRING
+	LAST       = REGEX
 	FIRST_FUNC = F_ATAN2
 	LAST_FUNC  = F_TOUPPER
 )
@@ -231,6 +231,7 @@ var tokenNames = map[Token]string{
 	NAME:   "name",
 	NUMBER: "number",
 	STRING: "string",
+	REGEX:  "regex",
 }
 
 func (t Token) String() string {

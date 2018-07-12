@@ -2,6 +2,7 @@
 package lexer
 
 import (
+	"bytes"
 	"fmt"
 	"unicode/utf8"
 )
@@ -89,14 +90,16 @@ func (l *Lexer) Scan() (Position, Token, string) {
 	case ',':
 		tok = COMMA
 	case '/':
-		// TODO: this isn't correct handling of ERE parsing (see spec)
-		switch l.ch {
-		case '=':
-			l.next()
-			tok = DIV_ASSIGN
-		case ' ', '\t':
-			tok = DIV
-		default:
+		// TODO: incorrect handling of / (division) and regex parsing,
+		// but good enough for now: if there's another / on the line,
+		// we parse it as a REGEX token, otherwise DIV.
+		prevOfs := l.offset - 1
+		lineLen := bytes.IndexByte(l.src[prevOfs:], '\n')
+		if lineLen < 0 {
+			lineLen = len(l.src) - prevOfs
+		}
+		looksLikeRegex := bytes.IndexByte(l.src[prevOfs:prevOfs+lineLen], '/') >= 0
+		if looksLikeRegex {
 			runes := []rune{}
 			for l.ch != '/' {
 				c := l.ch
@@ -119,6 +122,8 @@ func (l *Lexer) Scan() (Position, Token, string) {
 			l.next()
 			tok = REGEX
 			val = string(runes)
+		} else {
+			tok = l.choice('=', DIV, DIV_ASSIGN)
 		}
 	case '{':
 		tok = LBRACE

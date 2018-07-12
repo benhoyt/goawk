@@ -66,13 +66,14 @@ func TestNumber(t *testing.T) {
 
 func TestStringMethod(t *testing.T) {
 	input := "# comment line\n" +
-		"+ += && = : , -- / /= $ == >= > ++ { [ < ( #\n" +
+		"+ += && = : , -- /\n/= $ == >= > ++ { [ < ( #\n" +
 		"<= ~ % %= * *= !~ ! != || ^ ^= ** **= ? } ] ) ; - -= " +
 		"BEGIN break continue delete do else END exit " +
 		"for if in next print return while " +
 		"atan2 cos exp gsub index int length log match rand " +
 		"sin split sqrt srand sub substr tolower toupper " +
-		"x \"str\\n\" 1234\n " +
+		"x \"str\\n\" 1234\n" +
+		"/foo/\n" +
 		"@ ."
 
 	strs := make([]string, 0, LAST+1)
@@ -89,13 +90,14 @@ func TestStringMethod(t *testing.T) {
 	output := strings.Join(strs, " ")
 
 	expected := "newline " +
-		"+ += && = : , -- / /= $ == >= > ++ { [ < ( newline " +
+		"+ += && = : , -- / newline /= $ == >= > ++ { [ < ( newline " +
 		"<= ~ % %= * *= !~ ! != || ^ ^= ^ ^= ? } ] ) ; - -= " +
 		"BEGIN break continue delete do else END exit " +
 		"for if in next print return while " +
 		"atan2 cos exp gsub index int length log match rand " +
 		"sin split sqrt srand sub substr tolower toupper " +
 		"name string number newline " +
+		"regex newline " +
 		"<illegal> <illegal> EOF"
 	if output != expected {
 		t.Errorf("expected %q, got %q", expected, output)
