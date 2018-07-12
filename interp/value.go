@@ -5,6 +5,7 @@ package interp
 import (
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -29,8 +30,7 @@ func str(s string) value {
 }
 
 func numStr(s string) value {
-	var f float64
-	_, err := fmt.Sscanf(s, "%f", &f)
+	f, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
 	return value{typ: typeStr, isNumStr: err == nil, s: s, n: f}
 }
 
@@ -73,6 +73,8 @@ func (v value) num() float64 {
 	case typeNum:
 		return v.n
 	case typeStr:
+		// Note that converting to number directly (in constrast to
+		// "numeric strings") allows things like "1.5foo"
 		var f float64
 		_, _ = fmt.Sscanf(v.s, "%f", &f)
 		return f
