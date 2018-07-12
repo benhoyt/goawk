@@ -1,160 +1,158 @@
---- FAIL: TestAgainstOneTrueAWK (1.92s)
+--- FAIL: TestAgainstOneTrueAWK (1.85s)
     --- FAIL: TestAgainstOneTrueAWK/p.25 (0.01s)
-    	goawk_test.go:81: parse error at 1:3: 'printf' is not yet implemented
+    	goawk_test.go:88: parse error at 1:3: 'printf' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/p.3 (0.01s)
-    	goawk_test.go:81: parse error at 1:3: 'printf' is not yet implemented
+    	goawk_test.go:88: parse error at 1:3: 'printf' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/p.44 (0.01s)
-    	goawk_test.go:81: parse error at 1:1: 'function' is not yet implemented
+    	goawk_test.go:88: parse error at 1:1: 'function' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/p.47 (0.01s)
-    	goawk_test.go:81: parse error at 1:18: expected expression
+    	goawk_test.go:88: parse error at 1:18: expected expression
     --- FAIL: TestAgainstOneTrueAWK/p.48 (0.01s)
-    	goawk_test.go:81: parse error at 4:23: unexpected   after |
+    	goawk_test.go:88: parse error at 4:23: unexpected   after |
     --- FAIL: TestAgainstOneTrueAWK/p.48a (0.01s)
-    	goawk_test.go:81: parse error at 3:3: 'printf' is not yet implemented
-    --- FAIL: TestAgainstOneTrueAWK/p.48b (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/p.48b
+    	goawk_test.go:88: parse error at 3:3: 'printf' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/p.49 (0.01s)
-    	goawk_test.go:81: parse error at 1:19: 'system' is not yet implemented
+    	goawk_test.go:88: parse error at 1:19: 'system' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/p.5 (0.01s)
-    	goawk_test.go:81: parse error at 2:4: 'printf' is not yet implemented
+    	goawk_test.go:88: parse error at 2:4: 'printf' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/p.50 (0.01s)
-    	goawk_test.go:81: parse error at 4:25: unexpected   after |
+    	goawk_test.go:88: parse error at 4:25: unexpected   after |
     --- FAIL: TestAgainstOneTrueAWK/p.51 (0.01s)
-    	goawk_test.go:81: parse error at 6:2: 'printf' is not yet implemented
+    	goawk_test.go:88: parse error at 6:2: 'printf' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/p.52 (0.01s)
-    	goawk_test.go:81: parse error at 5:4: 'printf' is not yet implemented
+    	goawk_test.go:88: parse error at 5:4: 'printf' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/p.5a (0.01s)
-    	goawk_test.go:81: parse error at 2:4: 'printf' is not yet implemented
+    	goawk_test.go:88: parse error at 2:4: 'printf' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/p.table (0.01s)
-    	goawk_test.go:81: parse error at 4:25: 'sprintf' is not yet implemented
+    	goawk_test.go:88: parse error at 4:25: 'sprintf' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.3.x (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.3.x
-    --- FAIL: TestAgainstOneTrueAWK/t.6 (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.6
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.3.x
+    --- FAIL: TestAgainstOneTrueAWK/t.6 (0.02s)
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.6
     --- FAIL: TestAgainstOneTrueAWK/t.6a (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.6a
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.6a
     --- FAIL: TestAgainstOneTrueAWK/t.6b (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.6b
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.6b
     --- FAIL: TestAgainstOneTrueAWK/t.NF (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.NF
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.NF
     --- FAIL: TestAgainstOneTrueAWK/t.a (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.a
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.a
     --- FAIL: TestAgainstOneTrueAWK/t.addops (0.01s)
-    	goawk_test.go:81: parse error at 12:14: expected ) instead of 
+    	goawk_test.go:88: parse error at 12:14: expected ) instead of regex
     --- FAIL: TestAgainstOneTrueAWK/t.arith (0.02s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.arith
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.arith
     --- FAIL: TestAgainstOneTrueAWK/t.assert (0.01s)
-    	goawk_test.go:81: parse error at 3:1: 'function' is not yet implemented
+    	goawk_test.go:88: parse error at 3:1: 'function' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.avg (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.avg
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.avg
     --- FAIL: TestAgainstOneTrueAWK/t.beginexit (0.01s)
-    	goawk_test.go:81: parse error at 2:9: 'getline' is not yet implemented
+    	goawk_test.go:88: parse error at 2:9: 'getline' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.beginnext (0.01s)
-    	goawk_test.go:81: parse error at 2:9: 'getline' is not yet implemented
+    	goawk_test.go:88: parse error at 2:9: 'getline' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.builtins (0.01s)
-    	goawk_test.go:81: parse error at 1:21: expected expression
+    	goawk_test.go:88: parse error at 1:21: expected expression
     --- FAIL: TestAgainstOneTrueAWK/t.cmp (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.cmp
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.cmp
     --- FAIL: TestAgainstOneTrueAWK/t.cond (0.01s)
-    	goawk_test.go:81: parse error at 1:43: expected expression
+    	goawk_test.go:88: parse error at 1:43: expected expression
     --- FAIL: TestAgainstOneTrueAWK/t.cum (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.cum
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.cum
     --- FAIL: TestAgainstOneTrueAWK/t.d.x (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.d.x
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.d.x
     --- FAIL: TestAgainstOneTrueAWK/t.delete2 (0.01s)
-    	goawk_test.go:81: parse error at 11:2: 'printf' is not yet implemented
+    	goawk_test.go:88: parse error at 11:2: 'printf' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.e (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.e
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.e
     --- FAIL: TestAgainstOneTrueAWK/t.else (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.else
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.else
     --- FAIL: TestAgainstOneTrueAWK/t.exit1 (0.01s)
-    	goawk_test.go:81: parse error at 6:1: 'function' is not yet implemented
+    	goawk_test.go:88: parse error at 6:1: 'function' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.f.x (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.f.x
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.f.x
     --- FAIL: TestAgainstOneTrueAWK/t.for3 (0.01s)
-    	goawk_test.go:81: parse error at 4:14: expected expression
+    	goawk_test.go:88: parse error at 4:14: expected expression
     --- FAIL: TestAgainstOneTrueAWK/t.format4 (0.01s)
-    	goawk_test.go:81: parse error at 2:6: 'sprintf' is not yet implemented
+    	goawk_test.go:88: parse error at 2:6: 'sprintf' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.fun (0.01s)
-    	goawk_test.go:81: parse error at 1:1: 'function' is not yet implemented
+    	goawk_test.go:88: parse error at 1:1: 'function' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.fun0 (0.01s)
-    	goawk_test.go:81: parse error at 1:1: 'function' is not yet implemented
+    	goawk_test.go:88: parse error at 1:1: 'function' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.fun1 (0.01s)
-    	goawk_test.go:81: parse error at 1:1: 'function' is not yet implemented
+    	goawk_test.go:88: parse error at 1:1: 'function' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.fun2 (0.01s)
-    	goawk_test.go:81: parse error at 1:1: 'function' is not yet implemented
+    	goawk_test.go:88: parse error at 1:1: 'function' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.fun3 (0.01s)
-    	goawk_test.go:81: parse error at 1:1: 'function' is not yet implemented
+    	goawk_test.go:88: parse error at 1:1: 'function' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.fun4 (0.01s)
-    	goawk_test.go:81: parse error at 1:1: 'function' is not yet implemented
+    	goawk_test.go:88: parse error at 1:1: 'function' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.fun5 (0.01s)
-    	goawk_test.go:81: parse error at 1:1: 'function' is not yet implemented
+    	goawk_test.go:88: parse error at 1:1: 'function' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.getval (0.01s)
-    	goawk_test.go:81: parse error at 6:1: expected expression
+    	goawk_test.go:88: parse error at 6:1: expected expression
     --- FAIL: TestAgainstOneTrueAWK/t.gsub3 (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.gsub3
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.gsub3
     --- FAIL: TestAgainstOneTrueAWK/t.gsub4 (0.01s)
-    	goawk_test.go:81: invalid regex "[1root:EMpNB8Zp56:0:0:Super-User,,,,,,,:/:/bin/sh]": error parsing regexp: invalid character class range: `r-U`
+    	goawk_test.go:88: invalid regex "[1root:EMpNB8Zp56:0:0:Super-User,,,,,,,:/:/bin/sh]": error parsing regexp: invalid character class range: `r-U`
     --- FAIL: TestAgainstOneTrueAWK/t.i.x (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.i.x
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.i.x
     --- FAIL: TestAgainstOneTrueAWK/t.in (0.01s)
-    	goawk_test.go:81: parse error at 6:18: unexpected   after |
+    	goawk_test.go:88: parse error at 6:18: unexpected   after |
     --- FAIL: TestAgainstOneTrueAWK/t.in1 (0.01s)
-    	goawk_test.go:81: parse error at 6:38: unexpected   after |
+    	goawk_test.go:88: parse error at 6:38: unexpected   after |
     --- FAIL: TestAgainstOneTrueAWK/t.in2 (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.in2
-    --- FAIL: TestAgainstOneTrueAWK/t.incr3 (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.incr3
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.in2
+    --- FAIL: TestAgainstOneTrueAWK/t.incr3 (0.02s)
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.incr3
     --- FAIL: TestAgainstOneTrueAWK/t.index (0.01s)
-    	goawk_test.go:81: parse error at 7:3: expected expression
+    	goawk_test.go:88: parse error at 7:3: expected expression
     --- FAIL: TestAgainstOneTrueAWK/t.intest2 (0.01s)
-    	goawk_test.go:81: parse error at 10:9: expected ) instead of ,
+    	goawk_test.go:88: parse error at 10:9: expected ) instead of ,
     --- FAIL: TestAgainstOneTrueAWK/t.j.x (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.j.x
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.j.x
     --- FAIL: TestAgainstOneTrueAWK/t.longstr (0.01s)
-    	goawk_test.go:81: parse error at 3:1: 'printf' is not yet implemented
+    	goawk_test.go:88: parse error at 3:1: 'printf' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.makef (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.makef
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.makef
     --- FAIL: TestAgainstOneTrueAWK/t.match1 (0.01s)
-    	goawk_test.go:81: parse error at 4:3: 'printf' is not yet implemented
+    	goawk_test.go:88: parse error at 4:3: 'printf' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.nameval (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.nameval
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.nameval
     --- FAIL: TestAgainstOneTrueAWK/t.next (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.next
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.next
     --- FAIL: TestAgainstOneTrueAWK/t.not (0.02s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.not
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.not
     --- FAIL: TestAgainstOneTrueAWK/t.ofmt (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.ofmt
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.ofmt
     --- FAIL: TestAgainstOneTrueAWK/t.pipe (0.01s)
-    	goawk_test.go:81: parse error at 1:42: unexpected   after |
+    	goawk_test.go:88: parse error at 1:42: unexpected   after |
     --- FAIL: TestAgainstOneTrueAWK/t.printf (0.01s)
-    	goawk_test.go:81: parse error at 2:2: 'printf' is not yet implemented
+    	goawk_test.go:88: parse error at 2:2: 'printf' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.printf2 (0.01s)
-    	goawk_test.go:81: parse error at 2:2: 'printf' is not yet implemented
+    	goawk_test.go:88: parse error at 2:2: 'printf' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.randk (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.randk
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.randk
     --- FAIL: TestAgainstOneTrueAWK/t.rec (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.rec
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.rec
     --- FAIL: TestAgainstOneTrueAWK/t.set0 (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.set0
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.set0
     --- FAIL: TestAgainstOneTrueAWK/t.set1 (0.01s)
-    	goawk_test.go:81: parse error at 1:1: 'function' is not yet implemented
+    	goawk_test.go:88: parse error at 1:1: 'function' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/t.set3 (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.set3
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.set3
     --- FAIL: TestAgainstOneTrueAWK/t.split2a (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.split2a
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.split2a
     --- FAIL: TestAgainstOneTrueAWK/t.split3 (0.02s)
-    	goawk_test.go:81: invalid regex "[1root:EMpNB8Zp56:0:0:Super-User,,,,,,,:/:/bin/sh]": error parsing regexp: invalid character class range: `r-U`
-    --- FAIL: TestAgainstOneTrueAWK/t.split8 (0.02s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.split8
+    	goawk_test.go:88: invalid regex "[1root:EMpNB8Zp56:0:0:Super-User,,,,,,,:/:/bin/sh]": error parsing regexp: invalid character class range: `r-U`
+    --- FAIL: TestAgainstOneTrueAWK/t.split8 (0.01s)
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.split8
     --- FAIL: TestAgainstOneTrueAWK/t.strcmp1 (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.strcmp1
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.strcmp1
     --- FAIL: TestAgainstOneTrueAWK/t.sub2 (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.sub2
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.sub2
     --- FAIL: TestAgainstOneTrueAWK/t.sub3 (0.01s)
-    	goawk_test.go:93: output differs, run: git diff tests/output/t.sub3
+    	goawk_test.go:106: output differs, run: git diff tests/output/t.sub3
     --- FAIL: TestAgainstOneTrueAWK/t.time (0.01s)
-    	goawk_test.go:81: parse error at 14:3: 'printf' is not yet implemented
+    	goawk_test.go:88: parse error at 14:3: 'printf' is not yet implemented
 FAIL
 exit status 1
-FAIL	github.com/benhoyt/goawk	1.925s
+FAIL	github.com/benhoyt/goawk	1.862s

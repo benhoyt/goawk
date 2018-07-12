@@ -38,9 +38,16 @@ func TestAgainstOneTrueAWK(t *testing.T) {
 		"t": "test.data",
 		"p": "test.countries",
 	}
+	// These programs exit with non-zero status code
 	nonzeroExits := map[string]bool{
 		"t.exit":  true,
 		"t.exit1": true,
+	}
+	// Can't really diff test rand() tests as we're using a totally
+	// different algorithm for random numbers
+	randTests := map[string]bool{
+		"p.48b":    true,
+		"t.randk:": true,
 	}
 	// These tests use "for (x in a)", which iterates in an undefined
 	// order (according to the spec), so sort lines before comparing.
@@ -79,19 +86,24 @@ func TestAgainstOneTrueAWK(t *testing.T) {
 			output, err := executeGoAWK(srcPath, inputPath)
 			if err != nil {
 				t.Fatal(err)
-			} else {
-				if sortLines[info.Name()] {
-					output = sortedLines(output)
+			}
+			if randTests[info.Name()] {
+				// For tests that use rand(), run them to ensure they
+				// parse and interpret, but can't compare the output,
+				// so stop now
+				return
+			}
+			if sortLines[info.Name()] {
+				output = sortedLines(output)
+			}
+			if writeGoAWK {
+				err := ioutil.WriteFile(outputPath, output, 0644)
+				if err != nil {
+					t.Fatalf("error writing goawk output: %v", err)
 				}
-				if writeGoAWK {
-					err := ioutil.WriteFile(outputPath, output, 0644)
-					if err != nil {
-						t.Fatalf("error writing goawk output: %v", err)
-					}
-				}
-				if string(output) != string(expected) {
-					t.Fatalf("output differs, run: git diff %s", outputPath)
-				}
+			}
+			if string(output) != string(expected) {
+				t.Fatalf("output differs, run: git diff %s", outputPath)
 			}
 		})
 	}
