@@ -3,6 +3,7 @@ package interp
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -246,7 +247,15 @@ func (p *Interp) execute(stmt Stmt) (execErr error) {
 		}
 		io.WriteString(p.output, line+p.outputRecordSep)
 	case *PrintfStmt:
-		panic(newError("printf is not yet implemented"))
+		if len(s.Args) == 0 {
+			break
+		}
+		format := p.toString(p.eval(s.Args[0]))
+		args := make([]value, len(s.Args)-1)
+		for i, a := range s.Args[1:] {
+			args[i] = p.eval(a)
+		}
+		io.WriteString(p.output, p.sprintf(format, args))
 	case *IfStmt:
 		if p.eval(s.Cond).boolean() {
 			return p.executes(s.Body)
@@ -486,7 +495,7 @@ func (p *Interp) eval(expr Expr) value {
 				fieldSep = p.fieldSep
 			}
 			array := e.Args[1].(*VarExpr).Name
-			return num(float64(p.callSplit(str, array, fieldSep)))
+			return num(float64(p.split(str, array, fieldSep)))
 		case F_SUB, F_GSUB:
 			regex := p.toString(p.eval(e.Args[0]))
 			repl := p.toString(p.eval(e.Args[1]))
@@ -496,7 +505,7 @@ func (p *Interp) eval(expr Expr) value {
 			} else {
 				in = p.line
 			}
-			out, n := p.callSub(regex, repl, in, e.Func == F_GSUB)
+			out, n := p.sub(regex, repl, in, e.Func == F_GSUB)
 			if len(e.Args) == 3 {
 				p.assign(e.Args[2], str(out))
 			} else {
@@ -807,12 +816,7 @@ func (p *Interp) call(op Token, args []value) value {
 		p.matchLength = loc[1] - loc[0]
 		return num(float64(p.matchStart))
 	case F_SPRINTF:
-		// TODO: this sprintf code doesn't work anymore
-		vals := make([]interface{}, len(args)-1)
-		for i, a := range args[1:] {
-			vals[i] = interface{}(a)
-		}
-		return str(fmt.Sprintf(p.toString(args[0]), vals...))
+		return str(p.sprintf(p.toString(args[0]), args[1:]))
 	case F_SQRT:
 		return num(math.Sqrt(args[0].num()))
 	case F_RAND:
@@ -859,7 +863,7 @@ func (p *Interp) call(op Token, args []value) value {
 	}
 }
 
-func (p *Interp) callSplit(s, arrayName, fs string) int {
+func (p *Interp) split(s, arrayName, fs string) int {
 	var parts []string
 	if fs == " " {
 		parts = strings.Fields(s)
@@ -875,7 +879,7 @@ func (p *Interp) callSplit(s, arrayName, fs string) int {
 	return len(array)
 }
 
-func (p *Interp) callSub(regex, repl, in string, global bool) (out string, num int) {
+func (p *Interp) sub(regex, repl, in string, global bool) (out string, num int) {
 	// TODO: ampersand handling
 	re := p.mustCompile(regex)
 	count := 0
@@ -887,6 +891,66 @@ func (p *Interp) callSub(regex, repl, in string, global bool) (out string, num i
 		return repl
 	})
 	return out, count
+}
+
+func parseFmtTypes(s string) ([]byte, error) {
+	types := []byte{}
+	for i := 0; i < len(s); i++ {
+		if s[i] == '%' {
+			i++
+			if i >= len(s) {
+				return nil, errors.New("expected type specifier after %")
+			}
+			if s[i] == '%' {
+				i++
+				continue
+			}
+			for i < len(s) && bytes.IndexByte([]byte(".-+*#0123456789"), s[i]) >= 0 {
+				if s[i] == '*' {
+					types = append(types, 'd')
+				}
+				i++
+			}
+			if i >= len(s) {
+				return nil, errors.New("expected type specifier after %")
+			}
+			var t byte
+			switch s[i] {
+			case 'd', 'i', 'o', 'u', 'x', 'X', 'c':
+				t = 'd'
+			case 'f', 'e', 'E', 'g', 'G':
+				t = 'f'
+			case 's':
+				t = 's'
+			default:
+				return nil, fmt.Errorf("invalid format type %q", s[i])
+			}
+			types = append(types, t)
+		}
+	}
+	return types, nil
+}
+
+func (p *Interp) sprintf(format string, args []value) string {
+	types, err := parseFmtTypes(format)
+	if err != nil {
+		panic(newError("format error: %s", err))
+	}
+	if len(types) != len(args) {
+		panic(newError("format error: got %d args, expected %d", len(args), len(types)))
+	}
+	converted := make([]interface{}, len(args))
+	for i, a := range args {
+		switch types[i] {
+		case 'd':
+			converted[i] = int(a.num())
+		case 'f':
+			converted[i] = a.num()
+		case 's':
+			converted[i] = p.toString(a)
+		}
+	}
+	return fmt.Sprintf(format, converted...)
 }
 
 func (p *Interp) assign(left Expr, right value) {

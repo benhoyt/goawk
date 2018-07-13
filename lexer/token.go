@@ -103,8 +103,6 @@ var unsupportedKeywords = map[string]bool{
 	"close":    true,
 	"getline":  true,
 	"function": true,
-	"printf":   true,
-	"sprintf":  true,
 	"system":   true,
 }
 
