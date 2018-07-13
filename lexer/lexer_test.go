@@ -72,9 +72,9 @@ func TestStringMethod(t *testing.T) {
 		"+ += && = : , -- /\n/= $ == >= > ++ { [ < ( #\n" +
 		"<= ~ % %= * *= !~ ! != || ^ ^= ** **= ? } ] ) ; - -= " +
 		"BEGIN break continue delete do else END exit " +
-		"for if in next print printf return while " +
-		"atan2 cos exp gsub index int length log match rand " +
-		"sin split sprintf sqrt srand sub substr tolower toupper " +
+		"for function getline if in next print printf return while " +
+		"atan2 close cos exp gsub index int length log match rand " +
+		"sin split sprintf sqrt srand sub substr system tolower toupper " +
 		"x \"str\\n\" 1234\n" +
 		"/foo/\n" +
 		"@ ."
@@ -96,9 +96,9 @@ func TestStringMethod(t *testing.T) {
 		"+ += && = : , -- / newline /= $ == >= > ++ { [ < ( newline " +
 		"<= ~ % %= * *= !~ ! != || ^ ^= ^ ^= ? } ] ) ; - -= " +
 		"BEGIN break continue delete do else END exit " +
-		"for if in next print printf return while " +
-		"atan2 cos exp gsub index int length log match rand " +
-		"sin split sprintf sqrt srand sub substr tolower toupper " +
+		"for <illegal> <illegal> if in next print printf return while " +
+		"atan2 <illegal> cos exp gsub index int length log match rand " +
+		"sin split sprintf sqrt srand sub substr <illegal> tolower toupper " +
 		"name string number newline " +
 		"regex newline " +
 		"<illegal> <illegal> EOF"
