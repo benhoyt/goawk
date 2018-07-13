@@ -37,12 +37,13 @@ TODO:
 - performance testing: I/O, allocations, CPU
 
 NICE TO HAVE:
-- parser: ensure vars aren't used in array context and vice-versa
-- regex caching for user regexes
+- user-defined functions
 - multi-dimensional "in", multi-dimensional IndexExpr and SUBSEP
 - print redirection, eg: { print >"tempbig" }
 - print piping, eg: print c ":" pop[c] | "sort"
-- user-defined functions
+- implement getline
+- parser: ensure vars aren't used in array context and vice-versa
+- regex caching for user regexes
 - I don't think interp.SetArray is concurrency-safe
 
 */

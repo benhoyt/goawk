@@ -8,7 +8,7 @@ const (
 	ILLEGAL Token = iota
 	EOF
 	NEWLINE
-	CONCAT
+	CONCAT // Not really a token, but used as an operator
 
 	// Symbols
 	ADD
@@ -59,6 +59,8 @@ const (
 	END
 	EXIT
 	FOR
+	FUNCTION
+	GETLINE
 	IF
 	IN
 	NEXT
@@ -69,6 +71,7 @@ const (
 
 	// Built-in functions
 	F_ATAN2
+	F_CLOSE
 	F_COS
 	F_EXP
 	F_GSUB
@@ -85,6 +88,7 @@ const (
 	F_SRAND
 	F_SUB
 	F_SUBSTR
+	F_SYSTEM
 	F_TOLOWER
 	F_TOUPPER
 
@@ -116,6 +120,8 @@ var keywordTokens = map[string]Token{
 	"END":      END,
 	"exit":     EXIT,
 	"for":      FOR,
+	"function": FUNCTION,
+	"getline":  GETLINE,
 	"if":       IF,
 	"in":       IN,
 	"next":     NEXT,
@@ -125,6 +131,7 @@ var keywordTokens = map[string]Token{
 	"while":    WHILE,
 
 	"atan2":   F_ATAN2,
+	"close":   F_CLOSE,
 	"cos":     F_COS,
 	"exp":     F_EXP,
 	"gsub":    F_GSUB,
@@ -141,6 +148,7 @@ var keywordTokens = map[string]Token{
 	"srand":   F_SRAND,
 	"sub":     F_SUB,
 	"substr":  F_SUBSTR,
+	"system":  F_SYSTEM,
 	"tolower": F_TOLOWER,
 	"toupper": F_TOUPPER,
 }
@@ -198,6 +206,8 @@ var tokenNames = map[Token]string{
 	END:      "END",
 	EXIT:     "exit",
 	FOR:      "for",
+	FUNCTION: "function",
+	GETLINE:  "getline",
 	IF:       "if",
 	IN:       "in",
 	NEXT:     "next",
@@ -207,6 +217,7 @@ var tokenNames = map[Token]string{
 	WHILE:    "while",
 
 	F_ATAN2:   "atan2",
+	F_CLOSE:   "close",
 	F_COS:     "cos",
 	F_EXP:     "exp",
 	F_GSUB:    "gsub",
@@ -223,6 +234,7 @@ var tokenNames = map[Token]string{
 	F_SRAND:   "srand",
 	F_SUB:     "sub",
 	F_SUBSTR:  "substr",
+	F_SYSTEM:  "system",
 	F_TOLOWER: "tolower",
 	F_TOUPPER: "toupper",
 
