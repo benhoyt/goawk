@@ -5,7 +5,6 @@ package main
 TODO:
 
 - testing (against other implementations?)
-    - why does t.randk come back into git diff when we rerun "go test"
     - handle %u in sprintf (tests/t.printf2)
     - handle %c values above 128 in sprintf (tests/t.printf2)
     - parsing of semicolon after for, parses "print" inside loop:

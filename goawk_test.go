@@ -46,8 +46,8 @@ func TestAgainstOneTrueAWK(t *testing.T) {
 	// Can't really diff test rand() tests as we're using a totally
 	// different algorithm for random numbers
 	randTests := map[string]bool{
-		"p.48b":    true,
-		"t.randk:": true,
+		"p.48b":   true,
+		"t.randk": true,
 	}
 	// These tests use "for (x in a)", which iterates in an undefined
 	// order (according to the spec), so sort lines before comparing.
