@@ -52,7 +52,8 @@ func TestAgainstOneTrueAWK(t *testing.T) {
 	// These tests use "for (x in a)", which iterates in an undefined
 	// order (according to the spec), so sort lines before comparing.
 	sortLines := map[string]bool{
-		"p.43": true,
+		"p.43":  true,
+		"t.in2": true,
 	}
 
 	infos, err := ioutil.ReadDir(testsDir)

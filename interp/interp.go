@@ -674,6 +674,9 @@ func (p *Interp) SetField(index int, value string) {
 		}
 	}
 	p.fields[index-1] = value
+	if index > p.numFields {
+		p.fields = p.fields[:index]
+	}
 	p.numFields = len(p.fields)
 	p.line = strings.Join(p.fields, p.outputFieldSep)
 }
