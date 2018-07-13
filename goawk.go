@@ -5,7 +5,27 @@ package main
 TODO:
 
 - testing (against other implementations?)
+    - why does t.randk come back into git diff when we rerun "go test"
+    - handle %u in sprintf (tests/t.printf2)
+    - handle %c values above 128 in sprintf (tests/t.printf2)
+    - parsing of semicolon after for, parses "print" inside loop:
+      for (i=1; i<=NF; i++); print s
     - implement ARGC and ARGV (see p.48a)
+    - fix tests/t.split8
+    - what's up with numFields being set to 1 here:
+		$ echo '' | awk 'BEGIN {FS=":" ; OFS=":"} {print NF "",$0}'
+		0:
+		$ echo '' | go run goawk.go 'BEGIN {FS=":" ; OFS=":"} {print NF "",$0}'
+		1:
+    - what's up with t.NF changing when awk runs?
+    - tests/t.delete2 not working
+    - tests/t.incr3 not working
+		{ s = 0
+		  for (i=1; i <= NF;  s += $(i++))
+			;
+		  print s
+		}
+    - ampersand '&' handling in sub/gsub (will fix tests/t.gsub3, t.sub2, t.sub3)
     - shouldn't allow syntax: { $1 = substr($1, 1, 3) print $1 }
     - should allow: NR==1, NR==2 { print "A", $0 };  NR==4, NR==6 { print "B", $0 }
       needs to look for semicolon after statement block?
@@ -17,7 +37,6 @@ TODO:
 - performance testing: I/O, allocations, CPU
 
 NICE TO HAVE:
-- ampersand handling in sub/gsub
 - parser: ensure vars aren't used in array context and vice-versa
 - regex caching for user regexes
 - multi-dimensional "in", multi-dimensional IndexExpr and SUBSEP
