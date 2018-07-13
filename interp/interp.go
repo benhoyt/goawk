@@ -896,13 +896,13 @@ func (p *Interp) sub(regex, repl, in string, global bool) (out string, num int) 
 	return out, count
 }
 
-func parseFmtTypes(s string) ([]byte, error) {
-	types := []byte{}
+func parseFmtTypes(s string) (format string, types []byte, err error) {
+	out := []byte(s)
 	for i := 0; i < len(s); i++ {
 		if s[i] == '%' {
 			i++
 			if i >= len(s) {
-				return nil, errors.New("expected type specifier after %")
+				return "", nil, errors.New("expected type specifier after %")
 			}
 			if s[i] == '%' {
 				i++
@@ -915,27 +915,30 @@ func parseFmtTypes(s string) ([]byte, error) {
 				i++
 			}
 			if i >= len(s) {
-				return nil, errors.New("expected type specifier after %")
+				return "", nil, errors.New("expected type specifier after %")
 			}
 			var t byte
 			switch s[i] {
-			case 'd', 'i', 'o', 'u', 'x', 'X', 'c':
+			case 'd', 'i', 'o', 'x', 'X', 'c':
 				t = 'd'
+			case 'u':
+				t = 'u'
+				out[i] = 'd'
 			case 'f', 'e', 'E', 'g', 'G':
 				t = 'f'
 			case 's':
 				t = 's'
 			default:
-				return nil, fmt.Errorf("invalid format type %q", s[i])
+				return "", nil, fmt.Errorf("invalid format type %q", s[i])
 			}
 			types = append(types, t)
 		}
 	}
-	return types, nil
+	return string(out), types, nil
 }
 
 func (p *Interp) sprintf(format string, args []value) string {
-	types, err := parseFmtTypes(format)
+	format, types, err := parseFmtTypes(format)
 	if err != nil {
 		panic(newError("format error: %s", err))
 	}
@@ -947,6 +950,8 @@ func (p *Interp) sprintf(format string, args []value) string {
 		switch types[i] {
 		case 'd':
 			converted[i] = int(a.num())
+		case 'u':
+			converted[i] = uint32(a.num())
 		case 'f':
 			converted[i] = a.num()
 		case 's':
