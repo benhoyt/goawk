@@ -78,6 +78,7 @@ func (v value) num() float64 {
 		// "numeric strings") allows things like "1.5foo"
 		var scan scanner.Scanner
 		scan.Init(strings.NewReader(v.s))
+		scan.Error = func(*scanner.Scanner, string) {}
 		tok := scan.Scan()
 		if tok != scanner.Float && tok != scanner.Int {
 			return 0
