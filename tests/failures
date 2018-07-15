@@ -1,12 +1,10 @@
---- FAIL: TestAgainstOneTrueAWK (2.81s)
+--- FAIL: TestAgainstOneTrueAWK (2.99s)
     --- FAIL: TestAgainstOneTrueAWK/p.44 (0.01s)
     	goawk_test.go:89: parse error at 1:1: 'function' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/p.47 (0.01s)
     	goawk_test.go:89: parse error at 1:18: expected expression
     --- FAIL: TestAgainstOneTrueAWK/p.48 (0.02s)
     	goawk_test.go:89: parse error at 4:23: unexpected ' ' after '|'
-    --- FAIL: TestAgainstOneTrueAWK/p.48a (0.01s)
-    	goawk_test.go:107: output differs, run: git diff tests/output/p.48a
     --- FAIL: TestAgainstOneTrueAWK/p.49 (0.01s)
     	goawk_test.go:89: parse error at 1:19: 'system' is not yet implemented
     --- FAIL: TestAgainstOneTrueAWK/p.50 (0.02s)
@@ -59,17 +57,15 @@
     	goawk_test.go:89: parse error at 6:18: unexpected ' ' after '|'
     --- FAIL: TestAgainstOneTrueAWK/t.in1 (0.02s)
     	goawk_test.go:89: parse error at 6:38: unexpected ' ' after '|'
-    --- FAIL: TestAgainstOneTrueAWK/t.incr3 (0.01s)
-    	goawk_test.go:107: output differs, run: git diff tests/output/t.incr3
     --- FAIL: TestAgainstOneTrueAWK/t.index (0.01s)
     	goawk_test.go:89: parse error at 7:3: expected expression
-    --- FAIL: TestAgainstOneTrueAWK/t.intest2 (0.01s)
+    --- FAIL: TestAgainstOneTrueAWK/t.intest2 (0.02s)
     	goawk_test.go:89: parse error at 10:9: expected ) instead of ,
     --- FAIL: TestAgainstOneTrueAWK/t.match1 (0.01s)
     	goawk_test.go:89: parse error at 4:39: expected expression
-    --- FAIL: TestAgainstOneTrueAWK/t.pipe (0.01s)
+    --- FAIL: TestAgainstOneTrueAWK/t.pipe (0.02s)
     	goawk_test.go:89: parse error at 1:42: unexpected ' ' after '|'
-    --- FAIL: TestAgainstOneTrueAWK/t.printf2 (0.01s)
+    --- FAIL: TestAgainstOneTrueAWK/t.printf2 (0.02s)
     	goawk_test.go:107: output differs, run: git diff tests/output/t.printf2
     --- FAIL: TestAgainstOneTrueAWK/t.set1 (0.01s)
     	goawk_test.go:89: parse error at 1:1: 'function' is not yet implemented
@@ -77,12 +73,12 @@
     	goawk_test.go:75: error running awk: exit status 2
     --- FAIL: TestAgainstOneTrueAWK/t.split8 (0.02s)
     	goawk_test.go:107: output differs, run: git diff tests/output/t.split8
-    --- FAIL: TestAgainstOneTrueAWK/t.sub2 (0.02s)
+    --- FAIL: TestAgainstOneTrueAWK/t.sub2 (0.03s)
     	goawk_test.go:107: output differs, run: git diff tests/output/t.sub2
-    --- FAIL: TestAgainstOneTrueAWK/t.sub3 (0.01s)
+    --- FAIL: TestAgainstOneTrueAWK/t.sub3 (0.02s)
     	goawk_test.go:107: output differs, run: git diff tests/output/t.sub3
     --- FAIL: TestAgainstOneTrueAWK/t.time (0.01s)
     	goawk_test.go:89: parse error at 16:2: expected expression
 FAIL
 exit status 1
-FAIL	github.com/benhoyt/goawk	2.817s
+FAIL	github.com/benhoyt/goawk	2.996s

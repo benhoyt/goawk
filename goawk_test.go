@@ -124,6 +124,7 @@ func executeGoAWK(srcPath, inputPath string) ([]byte, error) {
 	}
 	buf := &bytes.Buffer{}
 	p := interp.New(buf)
+	p.SetArgs([]string{"goawk_test", inputPath})
 	err = p.ExecFiles(prog, []string{inputPath})
 	if err != nil {
 		return nil, err

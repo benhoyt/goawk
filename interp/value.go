@@ -80,13 +80,20 @@ func (v value) num() float64 {
 		scan.Init(strings.NewReader(v.s))
 		scan.Error = func(*scanner.Scanner, string) {}
 		tok := scan.Scan()
+		negative := tok == '-'
+		if tok == '-' || tok == '+' {
+			tok = scan.Scan()
+		}
 		if tok != scanner.Float && tok != scanner.Int {
 			return 0
 		}
-		text := scan.TokenText()
 		// Scanner allows trailing 'e', ParseFloat doesn't
+		text := scan.TokenText()
 		text = strings.TrimRight(text, "eE")
 		f, _ := strconv.ParseFloat(text, 64)
+		if negative {
+			f = -f
+		}
 		return f
 	default:
 		return 0

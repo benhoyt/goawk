@@ -46,6 +46,7 @@ type Interp struct {
 	output  io.Writer
 	vars    map[string]value
 	arrays  map[string]map[string]value
+	argc    int
 	random  *rand.Rand
 
 	line        string
@@ -547,6 +548,8 @@ func (p *Interp) nextLine(line string) {
 
 func (p *Interp) getVar(name string) value {
 	switch name {
+	case "ARGC":
+		return num(float64(p.argc))
 	case "CONVFMT":
 		return str(p.convertFormat)
 	case "FILENAME":
@@ -588,6 +591,8 @@ func (p *Interp) setVarError(name string, v value) error {
 	// $ awk 'BEGIN { NF = "3.0"; print (NF == "3.0"); }'
 	// 1
 	switch name {
+	case "ARGC":
+		p.argc = int(v.num())
 	case "CONVFMT":
 		p.convertFormat = p.toString(v)
 	case "FILENAME":
@@ -679,6 +684,15 @@ func (p *Interp) SetField(index int, value string) {
 	}
 	p.numFields = len(p.fields)
 	p.line = strings.Join(p.fields, p.outputFieldSep)
+}
+
+func (p *Interp) SetArgs(args []string) {
+	p.argc = len(args)
+	array := make(map[string]value, len(args))
+	for i, a := range args {
+		array[strconv.Itoa(i)] = str(a)
+	}
+	p.arrays["ARGV"] = array
 }
 
 func (p *Interp) toString(v value) string {
