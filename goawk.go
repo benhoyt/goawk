@@ -5,7 +5,6 @@ package main
 TODO:
 
 - testing (against other implementations?)
-    - handle %u in sprintf (tests/t.printf2)
     - handle %c values above 128 in sprintf (tests/t.printf2)
     - parsing of semicolon after for, parses "print" inside loop:
       for (i=1; i<=NF; i++); print s

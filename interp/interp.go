@@ -919,11 +919,14 @@ func parseFmtTypes(s string) (format string, types []byte, err error) {
 			}
 			var t byte
 			switch s[i] {
-			case 'd', 'i', 'o', 'x', 'X', 'c':
+			case 'd', 'i', 'o', 'x', 'X':
 				t = 'd'
 			case 'u':
 				t = 'u'
 				out[i] = 'd'
+			case 'c':
+				t = 'c'
+				out[i] = 's'
 			case 'f', 'e', 'E', 'g', 'G':
 				t = 'f'
 			case 's':
@@ -947,16 +950,29 @@ func (p *Interp) sprintf(format string, args []value) string {
 	}
 	converted := make([]interface{}, len(args))
 	for i, a := range args {
+		var v interface{}
 		switch types[i] {
 		case 'd':
-			converted[i] = int(a.num())
+			v = int(a.num())
 		case 'u':
-			converted[i] = uint32(a.num())
+			v = uint32(a.num())
+		case 'c':
+			var c []byte
+			if a.isTrueStr() {
+				s := p.toString(a)
+				if len(s) > 0 {
+					c = []byte{s[0]}
+				}
+			} else {
+				c = []byte{byte(a.num())}
+			}
+			v = c
 		case 'f':
-			converted[i] = a.num()
+			v = a.num()
 		case 's':
-			converted[i] = p.toString(a)
+			v = p.toString(a)
 		}
+		converted[i] = v
 	}
 	return fmt.Sprintf(format, converted...)
 }
