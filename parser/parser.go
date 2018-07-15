@@ -73,9 +73,13 @@ func (p *parser) program() *Program {
 }
 
 func (p *parser) stmts() Stmts {
-	if p.tok == LBRACE {
+	switch p.tok {
+	case SEMICOLON:
+		p.next()
+		return nil
+	case LBRACE:
 		return p.stmtsBrace()
-	} else {
+	default:
 		return []Stmt{p.stmt()}
 	}
 }
