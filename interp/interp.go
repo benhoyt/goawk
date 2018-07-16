@@ -899,7 +899,6 @@ func (p *Interp) split(s, arrayName, fs string) int {
 }
 
 func (p *Interp) sub(regex, repl, in string, global bool) (out string, num int) {
-	// TODO: ampersand handling
 	re := p.mustCompile(regex)
 	count := 0
 	out = re.ReplaceAllStringFunc(in, func(s string) string {
@@ -907,7 +906,29 @@ func (p *Interp) sub(regex, repl, in string, global bool) (out string, num int) 
 			return s
 		}
 		count++
-		return repl
+		// Handle & (ampersand) properly in replacement string
+		r := make([]byte, 0, len(repl))
+		for i := 0; i < len(repl); i++ {
+			switch repl[i] {
+			case '&':
+				r = append(r, s...)
+			case '\\':
+				i++
+				if i < len(repl) {
+					switch repl[i] {
+					case '&':
+						r = append(r, repl[i])
+					default:
+						r = append(r, '\\', repl[i])
+					}
+				} else {
+					r = append(r, '\\')
+				}
+			default:
+				r = append(r, repl[i])
+			}
+		}
+		return string(r)
 	})
 	return out, count
 }
