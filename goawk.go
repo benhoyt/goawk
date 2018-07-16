@@ -6,13 +6,10 @@ TODO:
 
 - testing (against other implementations?)
     - handle %c values above 128 in sprintf (tests/t.printf2)
-    - fix tests/t.split8
-    - what's up with numFields being set to 1 here:
-		$ echo '' | awk 'BEGIN {FS=":" ; OFS=":"} {print NF "",$0}'
-		0:
-		$ echo '' | go run goawk.go 'BEGIN {FS=":" ; OFS=":"} {print NF "",$0}'
-		1:
-    - what's up with t.NF changing when awk runs?
+    - t.NF not working; in awk, this program
+      '{ OFS = "|"; print NF; NF = 2; print NF; print; }'
+      produces different output when run as a sub-process (eg: os/exec)
+      vs when run from the command line -- why? which is correct?
     - tests/t.delete2 not working
     - ampersand '&' handling in sub/gsub (will fix tests/t.gsub3, t.sub2, t.sub3)
     - shouldn't allow syntax: { $1 = substr($1, 1, 3) print $1 }

@@ -534,6 +534,8 @@ func (p *Interp) setLine(line string) {
 	p.line = line
 	if p.fieldSep == " " {
 		p.fields = strings.Fields(line)
+	} else if line == "" {
+		p.fields = nil
 	} else {
 		p.fields = p.fieldSepRegex.Split(line, -1)
 	}
@@ -884,7 +886,7 @@ func (p *Interp) split(s, arrayName, fs string) int {
 	var parts []string
 	if fs == " " {
 		parts = strings.Fields(s)
-	} else {
+	} else if s != "" {
 		re := p.mustCompile(fs)
 		parts = re.Split(s, -1)
 	}
