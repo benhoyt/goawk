@@ -10,7 +10,6 @@ TODO:
       '{ OFS = "|"; print NF; NF = 2; print NF; print; }'
       produces different output when run as a sub-process (eg: os/exec)
       vs when run from the command line -- why? which is correct?
-    - tests/t.delete2 not working
     - shouldn't allow syntax: { $1 = substr($1, 1, 3) print $1 }
     - should allow: NR==1, NR==2 { print "A", $0 };  NR==4, NR==6 { print "B", $0 }
       needs to look for semicolon after statement block?

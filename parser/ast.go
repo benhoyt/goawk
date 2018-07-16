@@ -174,8 +174,11 @@ type IndexExpr struct {
 }
 
 func (e *IndexExpr) String() string {
-	// TODO: fix for multi index
-	return e.Name + "[" + e.Index[0].String() + "]"
+	indices := make([]string, len(e.Index))
+	for i, index := range e.Index {
+		indices[i] = index.String()
+	}
+	return e.Name + "[" + strings.Join(indices, ", ") + "]"
 }
 
 type AssignExpr struct {
@@ -376,6 +379,9 @@ type DeleteStmt struct {
 }
 
 func (s *DeleteStmt) String() string {
-	// TODO: fix s.Index[0] for multi subscripts
-	return "delete " + s.Array + "[" + s.Index[0].String() + "]"
+	indices := make([]string, len(s.Index))
+	for i, index := range s.Index {
+		indices[i] = index.String()
+	}
+	return "delete " + s.Array + "[" + strings.Join(indices, ", ") + "]"
 }

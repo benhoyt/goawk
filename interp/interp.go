@@ -338,8 +338,8 @@ func (p *Interp) execute(stmt Stmt) (execErr error) {
 		// TODO: update to handle s.Status (exit status code)
 		return errExit
 	case *DeleteStmt:
-		index := p.eval(s.Index[0]) // TODO: handle multi index
-		delete(p.arrays[s.Array], p.toString(index))
+		index := p.evalIndex(s.Index)
+		delete(p.arrays[s.Array], index)
 	case *ExprStmt:
 		p.eval(s.Expr)
 	default:
@@ -441,8 +441,8 @@ func (p *Interp) eval(expr Expr) value {
 	case *VarExpr:
 		return p.getVar(e.Name)
 	case *IndexExpr:
-		index := p.eval(e.Index[0]) // TODO: handle multi index
-		return p.getArray(e.Name, p.toString(index))
+		index := p.evalIndex(e.Index)
+		return p.getArray(e.Name, index)
 	case *AssignExpr:
 		right := p.eval(e.Right)
 		if e.Op != ASSIGN {
@@ -1019,8 +1019,8 @@ func (p *Interp) assign(left Expr, right value) {
 	case *VarExpr:
 		p.setVar(left.Name, right)
 	case *IndexExpr:
-		index := p.eval(left.Index[0]) // TODO: handle multi index
-		p.setArray(left.Name, p.toString(index), right)
+		index := p.evalIndex(left.Index)
+		p.setArray(left.Name, index, right)
 	case *FieldExpr:
 		index := p.eval(left.Index)
 		// TODO: should error if index is a non-number string
@@ -1028,4 +1028,12 @@ func (p *Interp) assign(left Expr, right value) {
 	default:
 		panic(fmt.Sprintf("unexpected lvalue type: %T", left))
 	}
+}
+
+func (p *Interp) evalIndex(indexExprs []Expr) string {
+	indices := make([]string, len(indexExprs))
+	for i, expr := range indexExprs {
+		indices[i] = p.toString(p.eval(expr))
+	}
+	return strings.Join(indices, p.subscriptSep)
 }
