@@ -70,9 +70,14 @@ func (v value) str(floatFormat string) string {
 }
 
 func (v value) num() float64 {
+	f, _ := v.numChecked()
+	return f
+}
+
+func (v value) numChecked() (float64, error) {
 	switch v.typ {
 	case typeNum:
-		return v.n
+		return v.n, nil
 	case typeStr:
 		// Note that converting to number directly (in constrast to
 		// "numeric strings") allows things like "1.5foo"
@@ -85,7 +90,7 @@ func (v value) num() float64 {
 			tok = scan.Scan()
 		}
 		if tok != scanner.Float && tok != scanner.Int {
-			return 0
+			return 0, fmt.Errorf("invalid number %q", v.s)
 		}
 		// Scanner allows trailing 'e', ParseFloat doesn't
 		text := scan.TokenText()
@@ -94,8 +99,8 @@ func (v value) num() float64 {
 		if negative {
 			f = -f
 		}
-		return f
+		return f, nil
 	default:
-		return 0
+		return 0, nil
 	}
 }

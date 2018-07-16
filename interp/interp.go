@@ -436,8 +436,11 @@ func (p *Interp) eval(expr Expr) value {
 		return boolean(re.MatchString(p.line))
 	case *FieldExpr:
 		index := p.eval(e.Index)
-		// TODO: should error if index is a non-number string
-		return p.getField(int(index.num()))
+		indexNum, err := index.numChecked()
+		if err != nil {
+			panic(newError("field index not a number: %q", p.toString(index)))
+		}
+		return p.getField(int(indexNum))
 	case *VarExpr:
 		return p.getVar(e.Name)
 	case *IndexExpr:
@@ -623,7 +626,7 @@ func (p *Interp) setVarError(name string, v value) error {
 	case "RLENGTH":
 		p.matchLength = int(v.num())
 	case "RS":
-		panic(newError("assigning RS not supported"))
+		return newError("assigning RS not supported")
 	case "RSTART":
 		p.matchStart = int(v.num())
 	case "SUBSEP":
@@ -1023,8 +1026,11 @@ func (p *Interp) assign(left Expr, right value) {
 		p.setArray(left.Name, index, right)
 	case *FieldExpr:
 		index := p.eval(left.Index)
-		// TODO: should error if index is a non-number string
-		p.SetField(int(index.num()), p.toString(right))
+		indexNum, err := index.numChecked()
+		if err != nil {
+			panic(newError("field index not a number: %q", p.toString(index)))
+		}
+		p.SetField(int(indexNum), p.toString(right))
 	default:
 		panic(fmt.Sprintf("unexpected lvalue type: %T", left))
 	}
