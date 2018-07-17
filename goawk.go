@@ -91,6 +91,7 @@ func main() {
 	if err != nil {
 		errorExit("%s", err)
 	}
+	os.Exit(p.ExitStatus())
 }
 
 func showSourceLine(src []byte, pos lexer.Position, dividerLen int) {

@@ -42,12 +42,13 @@ func newError(format string, args ...interface{}) error {
 
 // Interp holds the state of the interpreter
 type Interp struct {
-	program *Program
-	output  io.Writer
-	vars    map[string]value
-	arrays  map[string]map[string]value
-	argc    int
-	random  *rand.Rand
+	program    *Program
+	output     io.Writer
+	vars       map[string]value
+	arrays     map[string]map[string]value
+	argc       int
+	random     *rand.Rand
+	exitStatus int
 
 	line        string
 	fields      []string
@@ -80,6 +81,10 @@ func New(output io.Writer) *Interp {
 	p.outputRecordSep = "\n"
 	p.subscriptSep = "\x1c"
 	return p
+}
+
+func (p *Interp) ExitStatus() int {
+	return p.exitStatus
 }
 
 func (p *Interp) ExecStream(prog *Program, input io.Reader) error {
@@ -335,7 +340,9 @@ func (p *Interp) execute(stmt Stmt) (execErr error) {
 	case *NextStmt:
 		return errNext
 	case *ExitStmt:
-		// TODO: update to handle s.Status (exit status code)
+		if s.Status != nil {
+			p.exitStatus = int(p.eval(s.Status).num())
+		}
 		return errExit
 	case *DeleteStmt:
 		index := p.evalIndex(s.Index)
