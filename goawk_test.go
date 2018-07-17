@@ -20,6 +20,7 @@ import (
 var (
 	testsDir   string
 	outputDir  string
+	awkExe     string
 	writeAWK   bool
 	writeGoAWK bool
 )
@@ -27,6 +28,7 @@ var (
 func TestMain(m *testing.M) {
 	flag.StringVar(&testsDir, "testsdir", "./tests", "directory with one-true-awk tests")
 	flag.StringVar(&outputDir, "outputdir", "./tests/output", "directory for test output")
+	flag.StringVar(&awkExe, "awk", "awk", "awk executable name")
 	flag.BoolVar(&writeAWK, "writeawk", false, "write expected output")
 	flag.BoolVar(&writeGoAWK, "writegoawk", true, "write Go AWK output")
 	flag.Parse()
@@ -69,7 +71,7 @@ func TestAWK(t *testing.T) {
 			inputPath := filepath.Join(testsDir, inputByPrefix[info.Name()[:1]])
 			outputPath := filepath.Join(outputDir, info.Name())
 
-			cmd := exec.Command("awk", "-f", srcPath, inputPath)
+			cmd := exec.Command(awkExe, "-f", srcPath, inputPath)
 			expected, err := cmd.Output()
 			if err != nil && !nonzeroExits[info.Name()] {
 				t.Fatalf("error running awk: %v", err)
