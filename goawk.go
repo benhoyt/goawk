@@ -3,7 +3,6 @@ package main
 
 /*
 TODO:
-
 - testing (against other implementations?)
     - handle %c values above 128 in sprintf (tests/t.printf2)
     - t.NF not working; in awk, this program
@@ -18,6 +17,10 @@ TODO:
 		could also be the division operator. This shall be resolved in such a
 		way that wherever the division operator could appear, a <slash> is
 		assumed to be the division operator. (There is no unary division operator.)"
+- other lexer, parser, and interpreter tests
+- other TODOs:
+  + interp: srand(): truncating fraction, return previous seed
+  + interp: should built-in variables round-trip their types
 - performance testing: I/O, allocations, CPU
 
 NICE TO HAVE:
