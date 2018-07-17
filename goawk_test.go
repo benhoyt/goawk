@@ -33,7 +33,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestAgainstOneTrueAWK(t *testing.T) {
+func TestAWK(t *testing.T) {
 	inputByPrefix := map[string]string{
 		"t": "test.data",
 		"p": "test.countries",
