@@ -16,6 +16,7 @@ An uninitialized value shall have both a numeric value of zero and a string valu
 References to nonexistent fields (that is, fields after $NF), shall evaluate to the uninitialized value.
 
 
+- address tests/failures
 - testing (against other implementations?)
     - handle %c values above 128 in sprintf (tests/t.printf2)
     - t.NF not working; in awk, this program

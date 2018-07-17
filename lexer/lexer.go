@@ -258,8 +258,6 @@ func (l *Lexer) Scan() (Position, Token, string) {
 			if c == '\\' {
 				l.next()
 				switch l.ch {
-				case '"', '\\':
-					c = l.ch
 				case 't':
 					c = '\t'
 				case 'r':
@@ -267,7 +265,7 @@ func (l *Lexer) Scan() (Position, Token, string) {
 				case 'n':
 					c = '\n'
 				default:
-					return l.pos, ILLEGAL, fmt.Sprintf("invalid string escape \\%c", l.ch)
+					c = l.ch
 				}
 			}
 			runes = append(runes, c)
