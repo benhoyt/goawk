@@ -3,6 +3,19 @@ package main
 
 /*
 TODO:
+- post awk thing on SO
+$ echo 'one two' | awk '{ print ($5 == 0) }'
+0
+
+http://pubs.opengroup.org/onlinepubs/9699919799/utilities/awk.html
+
+Comparisons (with the '<', "<=", "!=", "==", '>', and ">=" operators) shall be made numerically if both operands are numeric, if one is numeric and the other has a string value that is a numeric string, or if one is numeric and the other has the uninitialized value. Otherwise, operands shall be converted to strings as required...
+
+An uninitialized value shall have both a numeric value of zero and a string value of the empty string.
+
+References to nonexistent fields (that is, fields after $NF), shall evaluate to the uninitialized value.
+
+
 - testing (against other implementations?)
     - handle %c values above 128 in sprintf (tests/t.printf2)
     - t.NF not working; in awk, this program

@@ -74,6 +74,7 @@ func TestAgainstOneTrueAWK(t *testing.T) {
 			if err != nil && !nonzeroExits[info.Name()] {
 				t.Fatalf("error running awk: %v", err)
 			}
+			expected = bytes.Replace(expected, []byte{0}, []byte("<00>"), -1)
 			if sortLines[info.Name()] {
 				expected = sortedLines(expected)
 			}
@@ -88,6 +89,7 @@ func TestAgainstOneTrueAWK(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			output = bytes.Replace(output, []byte{0}, []byte("<00>"), -1)
 			if randTests[info.Name()] {
 				// For tests that use rand(), run them to ensure they
 				// parse and interpret, but can't compare the output,

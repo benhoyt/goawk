@@ -1011,7 +1011,8 @@ func (p *Interp) sprintf(format string, args []value) string {
 					c = []byte{s[0]}
 				}
 			} else {
-				c = []byte{byte(a.num())}
+				r := []rune{rune(a.num())}
+				c = []byte(string(r))
 			}
 			v = c
 		case 'f':
