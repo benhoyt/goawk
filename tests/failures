@@ -25,8 +25,6 @@
     	parse error at 1:43: expected expression instead of ?
     --- FAIL: TestAWK/t.exit1
     	parse error at 3:9: user-defined functions not yet supported
-    --- FAIL: TestAWK/t.for3
-    	parse error at 4:14: expected expression instead of newline
     --- FAIL: TestAWK/t.fun
     	parse error at 1:1: 'function' is not yet implemented
     --- FAIL: TestAWK/t.fun0

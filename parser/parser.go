@@ -176,11 +176,13 @@ func (p *parser) stmt() Stmt {
 		} else {
 			// Match: for ([pre]; [cond]; [post]) body
 			p.expect(SEMICOLON)
+			p.optionalNewlines()
 			var cond Expr
 			if p.tok != SEMICOLON {
 				cond = p.expr()
 			}
 			p.expect(SEMICOLON)
+			p.optionalNewlines()
 			var post Stmt
 			if p.tok != RPAREN {
 				post = p.simpleStmt()
