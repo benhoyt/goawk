@@ -141,6 +141,7 @@ func (p *parser) stmt() Stmt {
 		p.expect(RPAREN)
 		p.optionalNewlines()
 		body := p.stmts()
+		p.optionalNewlines()
 		var elseBody Stmts
 		if p.tok == ELSE {
 			p.next()

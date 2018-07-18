@@ -51,8 +51,6 @@
     	output differs, run: git diff tests/output/t.printf2
     --- FAIL: TestAWK/t.set1
     	parse error at 1:1: 'function' is not yet implemented
-    --- FAIL: TestAWK/t.time
-    	parse error at 16:2: expected expression instead of else
 FAIL
 exit status 1
 FAIL	github.com/benhoyt/goawk

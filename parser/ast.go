@@ -285,7 +285,7 @@ type IfStmt struct {
 }
 
 func (s *IfStmt) String() string {
-	str := "if (" + s.Cond.String() + ") {\n" + s.Body.String() + "}"
+	str := "if (" + trimParens(s.Cond.String()) + ") {\n" + s.Body.String() + "}"
 	if len(s.Else) > 0 {
 		str += " else {\n" + s.Else.String() + "}"
 	}
@@ -306,7 +306,7 @@ func (s *ForStmt) String() string {
 	}
 	condStr := ""
 	if s.Cond != nil {
-		condStr = " " + s.Cond.String()
+		condStr = " " + trimParens(s.Cond.String())
 	}
 	postStr := ""
 	if s.Post != nil {
@@ -331,7 +331,7 @@ type WhileStmt struct {
 }
 
 func (s *WhileStmt) String() string {
-	return "while (" + s.Cond.String() + ") {\n" + s.Body.String() + "}"
+	return "while (" + trimParens(s.Cond.String()) + ") {\n" + s.Body.String() + "}"
 }
 
 type DoWhileStmt struct {
@@ -340,7 +340,7 @@ type DoWhileStmt struct {
 }
 
 func (s *DoWhileStmt) String() string {
-	return "do {\n" + s.Body.String() + "} while (" + s.Cond.String() + ")"
+	return "do {\n" + s.Body.String() + "} while (" + trimParens(s.Cond.String()) + ")"
 }
 
 type BreakStmt struct{}
@@ -384,4 +384,11 @@ func (s *DeleteStmt) String() string {
 		indices[i] = index.String()
 	}
 	return "delete " + s.Array + "[" + strings.Join(indices, ", ") + "]"
+}
+
+func trimParens(s string) string {
+	if strings.HasPrefix(s, "(") && strings.HasSuffix(s, ")") {
+		s = s[1 : len(s)-1]
+	}
+	return s
 }

@@ -31,12 +31,6 @@ References to nonexistent fields (that is, fields after $NF), shall evaluate to 
 		           ^
 		--------------------------------------------
 		parse error at 10:9: expected ) instead of ,
-    - grammar - newline handling after else:
-		--------------------------------------------------------
-		    else
-		    ^
-		--------------------------------------------------------
-		parse error at 16:2: expected expression instead of else
 	- implement system:
 	  out, err := exec.Command("sh","-c",cmd).Output()
 	- print piping, eg: print c ":" pop[c] | "sort"
