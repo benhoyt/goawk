@@ -56,8 +56,7 @@ func (p *parser) program() *Program {
 				pattern = append(pattern, p.expr())
 			}
 			if !p.matches(LBRACE, EOF, NEWLINE) {
-				p.expect(COMMA)
-				p.optionalNewlines()
+				p.commaNewlines()
 				pattern = append(pattern, p.expr())
 			}
 			// Or an empty action (equivalent to { print $0 })
@@ -254,8 +253,7 @@ func (p *parser) exprList() []Expr {
 	first := true
 	for !p.matches(NEWLINE, SEMICOLON, RBRACE, RBRACKET, RPAREN) {
 		if !first {
-			p.expect(COMMA)
-			p.optionalNewlines()
+			p.commaNewlines()
 		}
 		first = false
 		exprs = append(exprs, p.expr())
@@ -439,11 +437,11 @@ func (p *parser) primary() Expr {
 		p.next()
 		p.expect(LPAREN)
 		regex := p.regex()
-		p.expect(COMMA)
+		p.commaNewlines()
 		repl := p.expr()
 		args := []Expr{regex, repl}
 		if p.tok == COMMA {
-			p.next()
+			p.commaNewlines()
 			in := p.expr()
 			if !IsLValue(in) {
 				panic(p.error("3rd arg to sub/gsub must be lvalue"))
@@ -456,12 +454,12 @@ func (p *parser) primary() Expr {
 		p.next()
 		p.expect(LPAREN)
 		str := p.expr()
-		p.expect(COMMA)
+		p.commaNewlines()
 		array := p.val
 		p.expect(NAME)
 		args := []Expr{str, &VarExpr{array}}
 		if p.tok == COMMA {
-			p.next()
+			p.commaNewlines()
 			args = append(args, p.regex())
 		}
 		p.expect(RPAREN)
@@ -470,7 +468,7 @@ func (p *parser) primary() Expr {
 		p.next()
 		p.expect(LPAREN)
 		str := p.expr()
-		p.expect(COMMA)
+		p.commaNewlines()
 		regex := p.regex()
 		p.expect(RPAREN)
 		return &CallExpr{F_MATCH, []Expr{str, regex}}
@@ -505,11 +503,11 @@ func (p *parser) primary() Expr {
 		p.next()
 		p.expect(LPAREN)
 		str := p.expr()
-		p.expect(COMMA)
+		p.commaNewlines()
 		start := p.expr()
 		args := []Expr{str, start}
 		if p.tok == COMMA {
-			p.next()
+			p.commaNewlines()
 			args = append(args, p.expr())
 		}
 		p.expect(RPAREN)
@@ -519,7 +517,7 @@ func (p *parser) primary() Expr {
 		p.expect(LPAREN)
 		args := []Expr{p.expr()}
 		for p.tok == COMMA {
-			p.next()
+			p.commaNewlines()
 			args = append(args, p.expr())
 		}
 		p.expect(RPAREN)
@@ -538,7 +536,7 @@ func (p *parser) primary() Expr {
 		p.next()
 		p.expect(LPAREN)
 		arg1 := p.expr()
-		p.expect(COMMA)
+		p.commaNewlines()
 		arg2 := p.expr()
 		p.expect(RPAREN)
 		return &CallExpr{op, []Expr{arg1, arg2}}
@@ -565,6 +563,11 @@ func (p *parser) binaryLeft(parse func() Expr, ops ...Token) Expr {
 		expr = &BinaryExpr{expr, op, right}
 	}
 	return expr
+}
+
+func (p *parser) commaNewlines() {
+	p.expect(COMMA)
+	p.optionalNewlines()
 }
 
 func (p *parser) optionalNewlines() {
