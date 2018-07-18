@@ -17,6 +17,11 @@ References to nonexistent fields (that is, fields after $NF), shall evaluate to 
 
 
 - address tests/failures
+	- user-defined functions
+	- print redirection, eg: { print >"tempbig" }
+	- print piping, eg: print c ":" pop[c] | "sort"
+	- implement getline
+
 - testing (against other implementations?)
     - handle %c values above 128 in sprintf (tests/t.printf2)
     - t.NF not working; in awk, this program
@@ -38,11 +43,6 @@ References to nonexistent fields (that is, fields after $NF), shall evaluate to 
 - performance testing: I/O, allocations, CPU
 
 NICE TO HAVE:
-- user-defined functions
-- multi-dimensional "in", multi-dimensional IndexExpr and SUBSEP
-- print redirection, eg: { print >"tempbig" }
-- print piping, eg: print c ":" pop[c] | "sort"
-- implement getline
 - parser: ensure vars aren't used in array context and vice-versa
 - regex caching for user regexes
 - I don't think interp.SetArray is concurrency-safe

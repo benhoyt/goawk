@@ -14,6 +14,7 @@ type Lexer struct {
 	errorMsg string
 	pos      Position
 	nextPos  Position
+	hadSpace bool
 }
 
 type Position struct {
@@ -29,8 +30,14 @@ func NewLexer(src []byte) *Lexer {
 	return l
 }
 
+func (l *Lexer) HadSpace() bool {
+	return l.hadSpace
+}
+
 func (l *Lexer) Scan() (Position, Token, string) {
+	l.hadSpace = false
 	for l.ch == ' ' || l.ch == '\t' || l.ch == '\r' || l.ch == '\\' {
+		l.hadSpace = true
 		if l.ch == '\\' {
 			l.next()
 			if l.ch == '\r' {
@@ -205,10 +212,11 @@ func (l *Lexer) Scan() (Position, Token, string) {
 			return l.pos, ILLEGAL, fmt.Sprintf("unexpected %q after '&'", l.ch)
 		}
 	case '|':
-		tok = l.choice('|', ILLEGAL, OR)
-		if tok == ILLEGAL {
-			return l.pos, ILLEGAL, fmt.Sprintf("unexpected %q after '|'", l.ch)
+		if l.ch != '|' {
+			return pos, ILLEGAL, "pipe operator not yet supported"
 		}
+		l.next()
+		tok = OR
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.':
 		runes := []rune{ch}
 		gotDigit := false

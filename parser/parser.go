@@ -424,6 +424,8 @@ func (p *parser) primary() Expr {
 			index := p.exprList()
 			p.expect(RBRACKET)
 			return &IndexExpr{name, index}
+		} else if p.tok == LPAREN && !p.lexer.HadSpace() {
+			panic(p.error("user-defined functions not yet supported"))
 		}
 		return &VarExpr{name}
 	case LPAREN:
@@ -539,7 +541,7 @@ func (p *parser) primary() Expr {
 		p.expect(RPAREN)
 		return &CallExpr{op, []Expr{arg1, arg2}}
 	default:
-		panic(p.error("expected expression"))
+		panic(p.error("expected expression instead of %s", p.tok))
 	}
 }
 

@@ -2,15 +2,15 @@
     --- FAIL: TestAWK/p.44
     	parse error at 1:1: 'function' is not yet implemented
     --- FAIL: TestAWK/p.47
-    	parse error at 1:18: expected expression
+    	parse error at 1:18: expected expression instead of >
     --- FAIL: TestAWK/p.48
-    	parse error at 4:23: unexpected ' ' after '|'
+    	parse error at 4:22: pipe operator not yet supported
     --- FAIL: TestAWK/p.49
     	parse error at 1:19: 'system' is not yet implemented
     --- FAIL: TestAWK/p.50
-    	parse error at 4:25: unexpected ' ' after '|'
+    	parse error at 4:24: pipe operator not yet supported
     --- FAIL: TestAWK/p.table
-    	parse error at 11:34: expected ) instead of ,
+    	parse error at 11:26: user-defined functions not yet supported
     --- FAIL: TestAWK/t.NF
     	output differs, run: git diff tests/output/t.NF
     --- FAIL: TestAWK/t.addops
@@ -22,13 +22,13 @@
     --- FAIL: TestAWK/t.beginnext
     	parse error at 2:9: 'getline' is not yet implemented
     --- FAIL: TestAWK/t.builtins
-    	parse error at 1:21: expected expression
+    	parse error at 1:21: expected expression instead of newline
     --- FAIL: TestAWK/t.cond
-    	parse error at 1:43: expected expression
+    	parse error at 1:43: expected expression instead of ?
     --- FAIL: TestAWK/t.exit1
-    	parse error at 6:1: 'function' is not yet implemented
+    	parse error at 3:9: user-defined functions not yet supported
     --- FAIL: TestAWK/t.for3
-    	parse error at 4:14: expected expression
+    	parse error at 4:14: expected expression instead of newline
     --- FAIL: TestAWK/t.fun
     	parse error at 1:1: 'function' is not yet implemented
     --- FAIL: TestAWK/t.fun0
@@ -44,21 +44,21 @@
     --- FAIL: TestAWK/t.fun5
     	parse error at 1:1: 'function' is not yet implemented
     --- FAIL: TestAWK/t.getval
-    	parse error at 6:1: expected expression
+    	parse error at 6:1: expected expression instead of }
     --- FAIL: TestAWK/t.gsub4
     	error running awk: exit status 2
     --- FAIL: TestAWK/t.in
-    	parse error at 6:18: unexpected ' ' after '|'
+    	parse error at 6:17: pipe operator not yet supported
     --- FAIL: TestAWK/t.in1
-    	parse error at 6:38: unexpected ' ' after '|'
+    	parse error at 6:37: pipe operator not yet supported
     --- FAIL: TestAWK/t.index
-    	parse error at 7:3: expected expression
+    	parse error at 7:3: expected expression instead of }
     --- FAIL: TestAWK/t.intest2
     	parse error at 10:9: expected ) instead of ,
     --- FAIL: TestAWK/t.match1
-    	parse error at 4:39: expected expression
+    	parse error at 4:39: expected expression instead of newline
     --- FAIL: TestAWK/t.pipe
-    	parse error at 1:42: unexpected ' ' after '|'
+    	parse error at 1:41: pipe operator not yet supported
     --- FAIL: TestAWK/t.printf2
     	output differs, run: git diff tests/output/t.printf2
     --- FAIL: TestAWK/t.set1
@@ -66,7 +66,7 @@
     --- FAIL: TestAWK/t.split3
     	error running awk: exit status 2
     --- FAIL: TestAWK/t.time
-    	parse error at 16:2: expected expression
+    	parse error at 16:2: expected expression instead of else
 FAIL
 exit status 1
 FAIL	github.com/benhoyt/goawk
