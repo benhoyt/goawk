@@ -37,27 +37,6 @@ References to nonexistent fields (that is, fields after $NF), shall evaluate to 
 		    ^
 		--------------------------------------------------------
 		parse error at 16:2: expected expression instead of else
-	- grammar with newline handling here:
-	    { for (i = 1;
-			 length($i) > 0;
-			 i++)
-			print $i
-		}
-		-----------------------------------------------------------
-		{ for (i = 1;
-		             ^
-		-----------------------------------------------------------
-		parse error at 4:14: expected expression instead of newline
-	- grammar with newline handling here:
-		BEGIN {
-		  print 1
-
-		}
-		----------------------------------------------------
-		}
-		^
-		----------------------------------------------------
-		parse error at 4:1: expected expression instead of }
 	- implement system:
 	  out, err := exec.Command("sh","-c",cmd).Output()
 	- print piping, eg: print c ":" pop[c] | "sort"

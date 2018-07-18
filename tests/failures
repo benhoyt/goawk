@@ -39,14 +39,10 @@
     	parse error at 1:1: 'function' is not yet implemented
     --- FAIL: TestAWK/t.fun5
     	parse error at 1:1: 'function' is not yet implemented
-    --- FAIL: TestAWK/t.getval
-    	parse error at 6:1: expected expression instead of }
     --- FAIL: TestAWK/t.in
     	parse error at 6:17: pipe operator not yet supported
     --- FAIL: TestAWK/t.in1
     	parse error at 6:37: pipe operator not yet supported
-    --- FAIL: TestAWK/t.index
-    	parse error at 7:3: expected expression instead of }
     --- FAIL: TestAWK/t.intest2
     	parse error at 10:9: expected ) instead of ,
     --- FAIL: TestAWK/t.pipe

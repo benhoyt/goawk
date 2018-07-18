@@ -237,7 +237,7 @@ func (p *parser) stmt() Stmt {
 	default:
 		s = p.simpleStmt()
 	}
-	if p.matches(NEWLINE, SEMICOLON) {
+	for p.matches(NEWLINE, SEMICOLON) {
 		p.next()
 	}
 	return s
