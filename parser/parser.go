@@ -474,6 +474,7 @@ func (p *parser) primary() Expr {
 		p.expect(RPAREN)
 		return &CallExpr{F_MATCH, []Expr{str, regex}}
 	case F_RAND:
+		// TODO: "rand" is allowed to be called without parens (any other funcs like this?)
 		p.next()
 		p.expect(LPAREN)
 		p.expect(RPAREN)

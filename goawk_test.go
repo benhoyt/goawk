@@ -42,8 +42,10 @@ func TestAWK(t *testing.T) {
 	}
 	// These programs exit with non-zero status code
 	nonzeroExits := map[string]bool{
-		"t.exit":  true,
-		"t.exit1": true,
+		"t.exit":   true,
+		"t.exit1":  true,
+		"t.gsub4":  true, // Has malformed regex from user input
+		"t.split3": true, // Has malformed regex from user input
 	}
 	// Can't really diff test rand() tests as we're using a totally
 	// different algorithm for random numbers

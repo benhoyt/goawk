@@ -17,6 +17,45 @@ References to nonexistent fields (that is, fields after $NF), shall evaluate to 
 
 
 - address tests/failures
+    - grammar - newline handling here: /^[0-9]/ { print $1,
+			length($1),
+			log($1),
+			sqrt($1),
+			int(sqrt($1)),
+			exp($1 % 10) }
+		-----------------------------------------------------------
+		/^[0-9]/ { print $1,
+		                    ^
+		-----------------------------------------------------------
+		parse error at 1:21: expected expression instead of newline
+	- grammar with ?: operator:
+	    $ go run goawk.go 'BEGIN { print (1+2)?"t":"f" }'
+		-----------------------------------------------------
+		BEGIN { print (1+2)?"t":"f" }
+		                   ^
+		-----------------------------------------------------
+		parse error at 1:20: expected expression instead of ?
+	- grammar with newline handling here:
+	    { for (i = 1;
+			 length($i) > 0;
+			 i++)
+			print $i
+		}
+		-----------------------------------------------------------
+		{ for (i = 1;
+		             ^
+		-----------------------------------------------------------
+		parse error at 4:14: expected expression instead of newline
+	- grammar with newline handling here:
+		BEGIN {
+		  print 1
+
+		}
+		----------------------------------------------------
+		}
+		^
+		----------------------------------------------------
+		parse error at 4:1: expected expression instead of }
 	- user-defined functions
 	- print redirection, eg: { print >"tempbig" }
 	- print piping, eg: print c ":" pop[c] | "sort"
