@@ -17,24 +17,26 @@ References to nonexistent fields (that is, fields after $NF), shall evaluate to 
 
 
 - address tests/failures
-    - grammar - newline handling here: /^[0-9]/ { print $1,
-			length($1),
-			log($1),
-			sqrt($1),
-			int(sqrt($1)),
-			exp($1 % 10) }
-		-----------------------------------------------------------
-		/^[0-9]/ { print $1,
-		                    ^
-		-----------------------------------------------------------
-		parse error at 1:21: expected expression instead of newline
 	- grammar with ?: operator:
+	    - this is due to bad exprList handling I think???
 	    $ go run goawk.go 'BEGIN { print (1+2)?"t":"f" }'
 		-----------------------------------------------------
 		BEGIN { print (1+2)?"t":"f" }
 		                   ^
 		-----------------------------------------------------
 		parse error at 1:20: expected expression instead of ?
+    - if (($0,$1) in x) handling
+		--------------------------------------------
+		    if (($0,$1) in x)
+		           ^
+		--------------------------------------------
+		parse error at 10:9: expected ) instead of ,
+    - grammar - newline handling after else:
+		--------------------------------------------------------
+		    else
+		    ^
+		--------------------------------------------------------
+		parse error at 16:2: expected expression instead of else
 	- grammar with newline handling here:
 	    { for (i = 1;
 			 length($i) > 0;
@@ -56,9 +58,11 @@ References to nonexistent fields (that is, fields after $NF), shall evaluate to 
 		^
 		----------------------------------------------------
 		parse error at 4:1: expected expression instead of }
-	- user-defined functions
-	- print redirection, eg: { print >"tempbig" }
+	- implement system:
+	  out, err := exec.Command("sh","-c",cmd).Output()
 	- print piping, eg: print c ":" pop[c] | "sort"
+	- print redirection, eg: { print >"tempbig" }
+	- user-defined functions
 	- implement getline
 
 - testing (against other implementations?)

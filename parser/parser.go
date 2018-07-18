@@ -255,6 +255,7 @@ func (p *parser) exprList() []Expr {
 	for !p.matches(NEWLINE, SEMICOLON, RBRACE, RBRACKET, RPAREN) {
 		if !first {
 			p.expect(COMMA)
+			p.optionalNewlines()
 		}
 		first = false
 		exprs = append(exprs, p.expr())

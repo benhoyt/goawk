@@ -21,8 +21,6 @@
     	parse error at 2:9: 'getline' is not yet implemented
     --- FAIL: TestAWK/t.beginnext
     	parse error at 2:9: 'getline' is not yet implemented
-    --- FAIL: TestAWK/t.builtins
-    	parse error at 1:21: expected expression instead of newline
     --- FAIL: TestAWK/t.cond
     	parse error at 1:43: expected expression instead of ?
     --- FAIL: TestAWK/t.exit1
@@ -53,8 +51,6 @@
     	parse error at 7:3: expected expression instead of }
     --- FAIL: TestAWK/t.intest2
     	parse error at 10:9: expected ) instead of ,
-    --- FAIL: TestAWK/t.match1
-    	parse error at 4:39: expected expression instead of newline
     --- FAIL: TestAWK/t.pipe
     	parse error at 1:41: pipe operator not yet supported
     --- FAIL: TestAWK/t.printf2
