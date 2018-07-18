@@ -41,7 +41,7 @@ func TestAWK(t *testing.T) {
 		"p": "test.countries",
 	}
 	// These programs exit with non-zero status code
-	nonzeroExits := map[string]bool{
+	errorExits := map[string]bool{
 		"t.exit":   true,
 		"t.exit1":  true,
 		"t.gsub4":  true, // Has malformed regex from user input
@@ -75,7 +75,7 @@ func TestAWK(t *testing.T) {
 
 			cmd := exec.Command(awkExe, "-f", srcPath, inputPath)
 			expected, err := cmd.Output()
-			if err != nil && !nonzeroExits[info.Name()] {
+			if err != nil && !errorExits[info.Name()] {
 				t.Fatalf("error running awk: %v", err)
 			}
 			expected = bytes.Replace(expected, []byte{0}, []byte("<00>"), -1)
@@ -89,8 +89,12 @@ func TestAWK(t *testing.T) {
 				}
 			}
 
-			output, err := executeGoAWK(srcPath, inputPath)
+			prog, err := parseGoAWK(srcPath)
 			if err != nil {
+				t.Fatal(err)
+			}
+			output, err := executeGoAWK(prog, inputPath)
+			if err != nil && !errorExits[info.Name()] {
 				t.Fatal(err)
 			}
 			output = bytes.Replace(output, []byte{0}, []byte("<00>"), -1)
@@ -119,7 +123,7 @@ func TestAWK(t *testing.T) {
 	_ = os.Remove("tempsmall")
 }
 
-func executeGoAWK(srcPath, inputPath string) ([]byte, error) {
+func parseGoAWK(srcPath string) (*parser.Program, error) {
 	src, err := ioutil.ReadFile(srcPath)
 	if err != nil {
 		return nil, err
@@ -128,14 +132,15 @@ func executeGoAWK(srcPath, inputPath string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	return prog, nil
+}
+
+func executeGoAWK(prog *parser.Program, inputPath string) ([]byte, error) {
 	buf := &bytes.Buffer{}
 	p := interp.New(buf)
 	p.SetArgs([]string{"goawk_test", inputPath})
-	err = p.ExecFiles(prog, []string{inputPath})
-	if err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
+	err := p.ExecFiles(prog, []string{inputPath})
+	return buf.Bytes(), err
 }
 
 func sortedLines(data []byte) []byte {
