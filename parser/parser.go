@@ -540,7 +540,7 @@ func (p *parser) primary() Expr {
 		}
 		p.expect(RPAREN)
 		return &CallExpr{F_SPRINTF, args}
-	case F_COS, F_SIN, F_EXP, F_LOG, F_SQRT, F_INT, F_TOLOWER, F_TOUPPER:
+	case F_COS, F_SIN, F_EXP, F_LOG, F_SQRT, F_INT, F_TOLOWER, F_TOUPPER, F_SYSTEM:
 		// 1-argument functions
 		op := p.tok
 		p.next()

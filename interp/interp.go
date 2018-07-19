@@ -10,9 +10,11 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	. "github.com/benhoyt/goawk/lexer"
@@ -887,6 +889,44 @@ func (p *Interp) call(op Token, args []value) value {
 		return str(strings.ToLower(p.toString(args[0])))
 	case F_TOUPPER:
 		return str(strings.ToUpper(p.toString(args[0])))
+	case F_SYSTEM:
+		cmdline := p.toString(args[0])
+		cmd := exec.Command("sh", "-c", cmdline)
+		stdout, err := cmd.StdoutPipe()
+		if err != nil {
+			return num(-1)
+		}
+		stderr, err := cmd.StderrPipe()
+		if err != nil {
+			return num(-1)
+		}
+		err = cmd.Start()
+		if err != nil {
+			fmt.Println(err)
+			return num(-1)
+		}
+		// TODO: this doesn't stream output -- why not?
+		go func() {
+			io.Copy(os.Stdout, stdout)
+		}()
+		go func() {
+			io.Copy(os.Stderr, stderr)
+		}()
+		err = cmd.Wait()
+		if err != nil {
+			if exitErr, ok := err.(*exec.ExitError); ok {
+				if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
+					return num(float64(status.ExitStatus()))
+				} else {
+					fmt.Printf("couldn't get exit status for %q: %v\n", cmdline, err)
+					return num(-1)
+				}
+			} else {
+				fmt.Printf("unexpected error running command %q: %v\n", cmdline, err)
+				return num(-1)
+			}
+		}
+		return num(0)
 	default:
 		panic(fmt.Sprintf("unexpected function: %s", op))
 	}

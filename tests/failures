@@ -5,8 +5,6 @@
     	parse error at 1:18: expected expression instead of >
     --- FAIL: TestAWK/p.48
     	parse error at 4:22: pipe operator not yet supported
-    --- FAIL: TestAWK/p.49
-    	parse error at 1:19: 'system' is not yet implemented
     --- FAIL: TestAWK/p.50
     	parse error at 4:24: pipe operator not yet supported
     --- FAIL: TestAWK/p.table

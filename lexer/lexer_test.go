@@ -98,7 +98,7 @@ func TestStringMethod(t *testing.T) {
 		"BEGIN break continue delete do else END exit " +
 		"for <illegal> <illegal> if in next print printf return while " +
 		"atan2 <illegal> cos exp gsub index int length log match rand " +
-		"sin split sprintf sqrt srand sub substr <illegal> tolower toupper " +
+		"sin split sprintf sqrt srand sub substr system tolower toupper " +
 		"name string number newline " +
 		"regex newline " +
 		"<illegal> <illegal> EOF"
@@ -108,7 +108,6 @@ func TestStringMethod(t *testing.T) {
 
 	var unsupportedTokens = map[Token]bool{
 		F_CLOSE:  true,
-		F_SYSTEM: true,
 		FUNCTION: true,
 		GETLINE:  true,
 	}

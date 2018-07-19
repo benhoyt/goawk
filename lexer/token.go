@@ -107,7 +107,6 @@ var unsupportedKeywords = map[string]bool{
 	"close":    true,
 	"getline":  true,
 	"function": true,
-	"system":   true,
 }
 
 var keywordTokens = map[string]Token{

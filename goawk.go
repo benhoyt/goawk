@@ -25,8 +25,6 @@ References to nonexistent fields (that is, fields after $NF), shall evaluate to 
 		                   ^
 		-----------------------------------------------------
 		parse error at 1:20: expected expression instead of ?
-	- implement system:
-	  out, err := exec.Command("sh","-c",cmd).Output()
 	- print piping, eg: print c ":" pop[c] | "sort"
 	- print redirection, eg: { print >"tempbig" }
 	- user-defined functions
