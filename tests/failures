@@ -43,8 +43,6 @@
     	parse error at 6:17: pipe operator not yet supported
     --- FAIL: TestAWK/t.in1
     	parse error at 6:37: pipe operator not yet supported
-    --- FAIL: TestAWK/t.intest2
-    	parse error at 10:9: expected ) instead of ,
     --- FAIL: TestAWK/t.pipe
     	parse error at 1:41: pipe operator not yet supported
     --- FAIL: TestAWK/t.printf2

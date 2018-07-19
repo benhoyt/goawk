@@ -168,7 +168,10 @@ func (p *parser) stmt() Stmt {
 			if !ok {
 				panic(p.error("expected 'for (var in array) ...'"))
 			}
-			varExpr, ok := (inExpr.Index).(*VarExpr)
+			if len(inExpr.Index) != 1 {
+				panic(p.error("expected 'for (var in array) ...'"))
+			}
+			varExpr, ok := (inExpr.Index[0]).(*VarExpr)
 			if !ok {
 				panic(p.error("expected 'for (var in array) ...'"))
 			}
@@ -306,7 +309,7 @@ func (p *parser) in() Expr {
 		p.next()
 		array := p.val
 		p.expect(NAME)
-		expr = &InExpr{expr, array}
+		expr = &InExpr{[]Expr{expr}, array}
 	}
 	return expr
 }
@@ -432,9 +435,21 @@ func (p *parser) primary() Expr {
 		return &VarExpr{name}
 	case LPAREN:
 		p.next()
-		expr := p.expr()
-		p.expect(RPAREN)
-		return expr
+		exprs := p.exprList()
+		switch len(exprs) {
+		case 0:
+			panic(p.error("expected expression, not %s", p.tok))
+		case 1:
+			p.expect(RPAREN)
+			return exprs[0]
+		default:
+			// Multi-dimensional array "in" requires parens around index
+			p.expect(RPAREN)
+			p.expect(IN)
+			array := p.val
+			p.expect(NAME)
+			return &InExpr{exprs, array}
+		}
 	case F_SUB, F_GSUB:
 		op := p.tok
 		p.next()

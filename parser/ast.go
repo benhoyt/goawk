@@ -117,12 +117,19 @@ func (e *BinaryExpr) String() string {
 }
 
 type InExpr struct {
-	Index Expr
+	Index []Expr
 	Array string
 }
 
 func (e *InExpr) String() string {
-	return "(" + e.Index.String() + " in " + e.Array + ")"
+	if len(e.Index) == 1 {
+		return "(" + e.Index[0].String() + " in " + e.Array + ")"
+	}
+	indices := make([]string, len(e.Index))
+	for i, index := range e.Index {
+		indices[i] = index.String()
+	}
+	return "((" + strings.Join(indices, ", ") + ") in " + e.Array + ")"
 }
 
 type CondExpr struct {

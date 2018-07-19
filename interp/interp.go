@@ -423,8 +423,8 @@ func (p *Interp) eval(expr Expr) value {
 			return binaryFuncs[e.Op](p, left, right)
 		}
 	case *InExpr:
-		index := p.eval(e.Index)
-		_, ok := p.arrays[e.Array][p.toString(index)]
+		index := p.evalIndex(e.Index)
+		_, ok := p.arrays[e.Array][index]
 		return boolean(ok)
 	case *CondExpr:
 		cond := p.eval(e.Cond)
