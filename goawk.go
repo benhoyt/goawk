@@ -48,6 +48,7 @@ References to nonexistent fields (that is, fields after $NF), shall evaluate to 
 - other TODOs:
   + interp: srand(): truncating fraction, return previous seed
   + interp: should built-in variables round-trip their types
+  + interp: system() doesn't stream output
 - performance testing: I/O, allocations, CPU
 
 NICE TO HAVE:
@@ -104,14 +105,14 @@ func main() {
 		fmt.Fprintln(os.Stderr, prog)
 	}
 
-	p := interp.New(os.Stdout)
+	p := interp.New(prog, os.Stdout)
 	interpArgs := []string{filepath.Base(os.Args[0])}
 	interpArgs = append(interpArgs, args...)
 	p.SetArgs(interpArgs)
 	if len(args) < 1 {
-		err = p.ExecStream(prog, os.Stdin)
+		err = p.ExecStream(os.Stdin)
 	} else {
-		err = p.ExecFiles(prog, args)
+		err = p.ExecFiles(args)
 	}
 	if err != nil {
 		errorExit("%s", err)

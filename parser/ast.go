@@ -11,9 +11,10 @@ import (
 )
 
 type Program struct {
-	Begin   []Stmts
-	Actions []Action
-	End     []Stmts
+	Begin     []Stmts
+	Actions   []Action
+	End       []Stmts
+	Functions []Function
 }
 
 func (p *Program) String() string {
@@ -26,6 +27,9 @@ func (p *Program) String() string {
 	}
 	for _, ss := range p.End {
 		parts = append(parts, "END {\n"+ss.String()+"}")
+	}
+	for _, f := range p.Functions {
+		parts = append(parts, f.String())
 	}
 	return strings.Join(parts, "\n\n")
 }
@@ -69,19 +73,20 @@ type Expr interface {
 	String() string
 }
 
-func (e *FieldExpr) expr()  {}
-func (e *UnaryExpr) expr()  {}
-func (e *BinaryExpr) expr() {}
-func (e *InExpr) expr()     {}
-func (e *CondExpr) expr()   {}
-func (e *NumExpr) expr()    {}
-func (e *StrExpr) expr()    {}
-func (e *RegExpr) expr()    {}
-func (e *VarExpr) expr()    {}
-func (e *IndexExpr) expr()  {}
-func (e *AssignExpr) expr() {}
-func (e *IncrExpr) expr()   {}
-func (e *CallExpr) expr()   {}
+func (e *FieldExpr) expr()    {}
+func (e *UnaryExpr) expr()    {}
+func (e *BinaryExpr) expr()   {}
+func (e *InExpr) expr()       {}
+func (e *CondExpr) expr()     {}
+func (e *NumExpr) expr()      {}
+func (e *StrExpr) expr()      {}
+func (e *RegExpr) expr()      {}
+func (e *VarExpr) expr()      {}
+func (e *IndexExpr) expr()    {}
+func (e *AssignExpr) expr()   {}
+func (e *IncrExpr) expr()     {}
+func (e *CallExpr) expr()     {}
+func (e *UserCallExpr) expr() {}
 
 type FieldExpr struct {
 	Index Expr
@@ -225,6 +230,19 @@ func (e *CallExpr) String() string {
 	return e.Func.String() + "(" + strings.Join(args, ", ") + ")"
 }
 
+type UserCallExpr struct {
+	Name string
+	Args []Expr
+}
+
+func (e *UserCallExpr) String() string {
+	args := make([]string, len(e.Args))
+	for i, a := range e.Args {
+		args[i] = a.String()
+	}
+	return e.Name + "(" + strings.Join(args, ", ") + ")"
+}
+
 func IsLValue(expr Expr) bool {
 	switch expr.(type) {
 	case *VarExpr, *IndexExpr, *FieldExpr:
@@ -252,6 +270,7 @@ func (s *ContinueStmt) stmt() {}
 func (s *NextStmt) stmt()     {}
 func (s *ExitStmt) stmt()     {}
 func (s *DeleteStmt) stmt()   {}
+func (s *ReturnStmt) stmt()   {}
 
 type PrintStmt struct {
 	Args []Expr
@@ -391,6 +410,29 @@ func (s *DeleteStmt) String() string {
 		indices[i] = index.String()
 	}
 	return "delete " + s.Array + "[" + strings.Join(indices, ", ") + "]"
+}
+
+type ReturnStmt struct {
+	Value Expr
+}
+
+func (s *ReturnStmt) String() string {
+	var valueStr string
+	if s.Value != nil {
+		valueStr = " " + s.Value.String()
+	}
+	return "return" + valueStr
+}
+
+type Function struct {
+	Name   string
+	Params []string // TODO: probably need types too
+	Body   Stmts
+}
+
+func (f *Function) String() string {
+	return "function " + f.Name + "(" + strings.Join(f.Params, ", ") + ") {\n" +
+		f.Body.String() + "}"
 }
 
 func trimParens(s string) string {

@@ -104,9 +104,8 @@ const (
 )
 
 var unsupportedKeywords = map[string]bool{
-	"close":    true,
-	"getline":  true,
-	"function": true,
+	"close":   true,
+	"getline": true,
 }
 
 var keywordTokens = map[string]Token{

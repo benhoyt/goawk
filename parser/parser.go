@@ -19,12 +19,13 @@ func (e *ParseError) Error() string {
 }
 
 type parser struct {
-	lexer     *Lexer
-	pos       Position
-	tok       Token
-	val       string
-	progState progState
-	inLoop    bool
+	lexer      *Lexer
+	pos        Position
+	tok        Token
+	val        string
+	progState  progState
+	inLoop     bool
+	inFunction bool
 }
 
 type progState int
@@ -48,6 +49,8 @@ func (p *parser) program() *Program {
 			p.next()
 			p.progState = endState
 			prog.End = append(prog.End, p.stmtsBrace())
+		case FUNCTION:
+			prog.Functions = append(prog.Functions, p.function())
 		default:
 			p.progState = actionState
 			// Allow empty pattern, normal pattern, or range pattern
@@ -238,6 +241,16 @@ func (p *parser) stmt() Stmt {
 			status = p.expr()
 		}
 		s = &ExitStmt{status}
+	case RETURN:
+		if !p.inFunction {
+			panic(p.error("return must be inside a function"))
+		}
+		p.next()
+		var value Expr
+		if !p.matches(NEWLINE, SEMICOLON, RBRACE) {
+			value = p.expr()
+		}
+		s = &ReturnStmt{value}
 	default:
 		s = p.simpleStmt()
 	}
@@ -252,6 +265,33 @@ func (p *parser) loopStmts() Stmts {
 	ss := p.stmts()
 	p.inLoop = false
 	return ss
+}
+
+func (p *parser) function() Function {
+	if p.inFunction {
+		panic(p.error("can't nest functions"))
+	}
+	p.inFunction = true
+	p.next()
+	name := p.val
+	p.expect(NAME)
+	p.expect(LPAREN)
+	first := true
+	params := []string{}
+	for p.tok != RPAREN {
+		if !first {
+			p.commaNewlines()
+		}
+		first = false
+		param := p.val
+		p.expect(NAME)
+		params = append(params, param)
+	}
+	p.expect(RPAREN)
+	p.optionalNewlines()
+	body := p.stmtsBrace()
+	p.inFunction = false
+	return Function{name, params, body}
 }
 
 func (p *parser) exprList() []Expr {
@@ -430,7 +470,10 @@ func (p *parser) primary() Expr {
 			p.expect(RBRACKET)
 			return &IndexExpr{name, index}
 		} else if p.tok == LPAREN && !p.lexer.HadSpace() {
-			panic(p.error("user-defined functions not yet supported"))
+			p.next()
+			args := p.exprList()
+			p.expect(RPAREN)
+			return &UserCallExpr{name, args}
 		}
 		return &VarExpr{name}
 	case LPAREN:

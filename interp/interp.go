@@ -70,8 +70,9 @@ type Interp struct {
 	matchStart      int
 }
 
-func New(output io.Writer) *Interp {
+func New(program *Program, output io.Writer) *Interp {
 	p := &Interp{}
+	p.program = program
 	p.output = output
 	p.vars = make(map[string]value)
 	p.arrays = make(map[string]map[string]value)
@@ -89,33 +90,33 @@ func (p *Interp) ExitStatus() int {
 	return p.exitStatus
 }
 
-func (p *Interp) ExecStream(prog *Program, input io.Reader) error {
-	err := p.execBegin(prog.Begin)
+func (p *Interp) ExecStream(input io.Reader) error {
+	err := p.execBegin(p.program.Begin)
 	if err != nil && err != errExit {
 		return err
 	}
-	if prog.Actions == nil && prog.End == nil {
+	if p.program.Actions == nil && p.program.End == nil {
 		return nil
 	}
 	if err != errExit {
-		err = p.execActions(prog.Actions, "", input)
+		err = p.execActions(p.program.Actions, "", input)
 		if err != nil && err != errExit {
 			return err
 		}
 	}
-	err = p.execEnd(prog.End)
+	err = p.execEnd(p.program.End)
 	if err != nil && err != errExit {
 		return err
 	}
 	return nil
 }
 
-func (p *Interp) ExecFiles(prog *Program, inputPaths []string) error {
-	err := p.execBegin(prog.Begin)
+func (p *Interp) ExecFiles(inputPaths []string) error {
+	err := p.execBegin(p.program.Begin)
 	if err != nil && err != errExit {
 		return err
 	}
-	if prog.Actions == nil && prog.End == nil {
+	if p.program.Actions == nil && p.program.End == nil {
 		return nil
 	}
 	if err != errExit {
@@ -124,7 +125,7 @@ func (p *Interp) ExecFiles(prog *Program, inputPaths []string) error {
 			if errOpen != nil {
 				return errOpen
 			}
-			err = p.execActions(prog.Actions, path, f)
+			err = p.execActions(p.program.Actions, path, f)
 			f.Close()
 			if err != nil {
 				break
@@ -134,7 +135,7 @@ func (p *Interp) ExecFiles(prog *Program, inputPaths []string) error {
 			return err
 		}
 	}
-	err = p.execEnd(prog.End)
+	err = p.execEnd(p.program.End)
 	if err != nil && err != errExit {
 		return err
 	}
@@ -380,7 +381,7 @@ func EvalLine(src, line string) (s string, n float64, err error) {
 	if err != nil {
 		return "", 0, err
 	}
-	interp := New(nil) // expressions can't write to output
+	interp := New(nil, nil) // expressions can't write to output
 	interp.setLine(line)
 	return interp.Eval(expr)
 }
@@ -532,6 +533,8 @@ func (p *Interp) eval(expr Expr) value {
 			}
 			return p.call(e.Func, args)
 		}
+	case *UserCallExpr:
+		return p.userCall(e.Name, e.Args)
 	default:
 		panic(fmt.Sprintf("unexpected expr type: %T", expr))
 	}
@@ -930,6 +933,11 @@ func (p *Interp) call(op Token, args []value) value {
 	default:
 		panic(fmt.Sprintf("unexpected function: %s", op))
 	}
+}
+
+func (p *Interp) userCall(name string, args []Expr) value {
+	// fmt.Printf("TODO: calling %q with %d args\n", name, len(args))
+	return value{}
 }
 
 func (p *Interp) split(s, arrayName, fs string) int {

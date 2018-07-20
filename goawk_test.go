@@ -138,9 +138,9 @@ func parseGoAWK(srcPath string) (*parser.Program, error) {
 
 func executeGoAWK(prog *parser.Program, inputPath string) ([]byte, error) {
 	buf := &bytes.Buffer{}
-	p := interp.New(buf)
+	p := interp.New(prog, buf)
 	p.SetArgs([]string{"goawk_test", inputPath})
-	err := p.ExecFiles(prog, []string{inputPath})
+	err := p.ExecFiles([]string{inputPath})
 	return buf.Bytes(), err
 }
 
