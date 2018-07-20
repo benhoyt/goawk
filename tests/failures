@@ -1,42 +1,24 @@
 --- FAIL: TestAWK
-    --- FAIL: TestAWK/p.44
-    	parse error at 1:1: 'function' is not yet implemented
     --- FAIL: TestAWK/p.47
     	parse error at 1:18: expected expression instead of >
     --- FAIL: TestAWK/p.48
     	parse error at 4:22: pipe operator not yet supported
     --- FAIL: TestAWK/p.50
     	parse error at 4:24: pipe operator not yet supported
-    --- FAIL: TestAWK/p.table
-    	parse error at 11:26: user-defined functions not yet supported
     --- FAIL: TestAWK/t.NF
     	output differs, run: git diff tests/output/t.NF
     --- FAIL: TestAWK/t.addops
     	parse error at 12:14: expected ) instead of regex
-    --- FAIL: TestAWK/t.assert
-    	parse error at 3:1: 'function' is not yet implemented
     --- FAIL: TestAWK/t.beginexit
     	parse error at 2:9: 'getline' is not yet implemented
     --- FAIL: TestAWK/t.beginnext
     	parse error at 2:9: 'getline' is not yet implemented
     --- FAIL: TestAWK/t.cond
     	parse error at 1:43: expected expression instead of ?
-    --- FAIL: TestAWK/t.exit1
-    	parse error at 3:9: user-defined functions not yet supported
-    --- FAIL: TestAWK/t.fun
-    	parse error at 1:1: 'function' is not yet implemented
-    --- FAIL: TestAWK/t.fun0
-    	parse error at 1:1: 'function' is not yet implemented
-    --- FAIL: TestAWK/t.fun1
-    	parse error at 1:1: 'function' is not yet implemented
-    --- FAIL: TestAWK/t.fun2
-    	parse error at 1:1: 'function' is not yet implemented
-    --- FAIL: TestAWK/t.fun3
-    	parse error at 1:1: 'function' is not yet implemented
     --- FAIL: TestAWK/t.fun4
-    	parse error at 1:1: 'function' is not yet implemented
+    	output differs, run: git diff tests/output/t.fun4
     --- FAIL: TestAWK/t.fun5
-    	parse error at 1:1: 'function' is not yet implemented
+    	output differs, run: git diff tests/output/t.fun5
     --- FAIL: TestAWK/t.in
     	parse error at 6:17: pipe operator not yet supported
     --- FAIL: TestAWK/t.in1
@@ -45,8 +27,6 @@
     	parse error at 1:41: pipe operator not yet supported
     --- FAIL: TestAWK/t.printf2
     	output differs, run: git diff tests/output/t.printf2
-    --- FAIL: TestAWK/t.set1
-    	parse error at 1:1: 'function' is not yet implemented
 FAIL
 exit status 1
 FAIL	github.com/benhoyt/goawk

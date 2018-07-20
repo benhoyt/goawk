@@ -42,6 +42,14 @@ func newError(format string, args ...interface{}) error {
 	return &Error{fmt.Sprintf(format, args...)}
 }
 
+type returnValue struct {
+	Value value
+}
+
+func (r returnValue) Error() string {
+	return "<return " + r.Value.str("%.6g") + ">"
+}
+
 // Interp holds the state of the interpreter
 type Interp struct {
 	program    *Program
@@ -51,6 +59,7 @@ type Interp struct {
 	argc       int
 	random     *rand.Rand
 	exitStatus int
+	locals     []map[string]value
 
 	line        string
 	fields      []string
@@ -236,6 +245,10 @@ func (p *Interp) executes(stmts Stmts) error {
 func (p *Interp) execute(stmt Stmt) (execErr error) {
 	defer func() {
 		if r := recover(); r != nil {
+			if r == errExit {
+				execErr = errExit
+				return
+			}
 			// Convert to interpreter Error or re-panic
 			execErr = r.(*Error)
 		}
@@ -295,6 +308,7 @@ func (p *Interp) execute(stmt Stmt) (execErr error) {
 		}
 	case *ForInStmt:
 		for index := range p.arrays[s.Array] {
+			// TODO: does awk treat this as a local var inside a function?
 			p.setVar(s.Var, str(index))
 			err := p.executes(s.Body)
 			if err == errBreak {
@@ -347,6 +361,12 @@ func (p *Interp) execute(stmt Stmt) (execErr error) {
 			p.exitStatus = int(p.eval(s.Status).num())
 		}
 		return errExit
+	case *ReturnStmt:
+		var value value
+		if s.Value != nil {
+			value = p.eval(s.Value)
+		}
+		return returnValue{value}
 	case *DeleteStmt:
 		index := p.evalIndex(s.Index)
 		delete(p.arrays[s.Array], index)
@@ -564,6 +584,12 @@ func (p *Interp) nextLine(line string) {
 }
 
 func (p *Interp) getVar(name string) value {
+	if len(p.locals) > 0 {
+		v, ok := p.locals[len(p.locals)-1][name]
+		if ok {
+			return v
+		}
+	}
 	switch name {
 	case "ARGC":
 		return num(float64(p.argc))
@@ -603,6 +629,14 @@ func (p *Interp) SetVar(name string, value string) error {
 }
 
 func (p *Interp) setVarError(name string, v value) error {
+	if len(p.locals) > 0 {
+		_, ok := p.locals[len(p.locals)-1][name]
+		if ok {
+			p.locals[len(p.locals)-1][name] = v
+			return nil
+		}
+	}
+
 	// TODO: should the types of the built-in variables roundtrip?
 	// i.e., if you set NF to a string should it read back as a string?
 	// $ awk 'BEGIN { NF = "3.0"; print (NF == "3.0"); }'
@@ -936,7 +970,32 @@ func (p *Interp) call(op Token, args []value) value {
 }
 
 func (p *Interp) userCall(name string, args []Expr) value {
-	// fmt.Printf("TODO: calling %q with %d args\n", name, len(args))
+	f, ok := p.program.Functions[name]
+	if !ok {
+		// TODO: could check for this at parse time
+		panic(newError("undefined function %q", name))
+	}
+	if len(args) > len(f.Params) {
+		// TODO: could check for this at parse time
+		panic(newError("%q called with more arguments than declared", name))
+	}
+
+	locals := make(map[string]value, len(f.Params))
+	for i, arg := range args {
+		locals[f.Params[i]] = p.eval(arg)
+	}
+	for i := len(args); i < len(f.Params); i++ {
+		locals[f.Params[i]] = value{}
+	}
+	p.locals = append(p.locals, locals)
+	err := p.executes(f.Body)
+	p.locals = p.locals[:len(p.locals)-1]
+	if r, ok := err.(returnValue); ok {
+		return r.Value
+	}
+	if err != nil {
+		panic(err)
+	}
 	return value{}
 }
 

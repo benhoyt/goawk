@@ -45,6 +45,8 @@ References to nonexistent fields (that is, fields after $NF), shall evaluate to 
 		way that wherever the division operator could appear, a <slash> is
 		assumed to be the division operator. (There is no unary division operator.)"
 - other lexer, parser, and interpreter tests
+  - test user-defined functions: recursion, locals vs globals, etc
+  - does awk treat for-in variable as local?
 - other TODOs:
   + interp: srand(): truncating fraction, return previous seed
   + interp: should built-in variables round-trip their types

@@ -4,6 +4,7 @@ package parser
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -14,7 +15,7 @@ type Program struct {
 	Begin     []Stmts
 	Actions   []Action
 	End       []Stmts
-	Functions []Function
+	Functions map[string]Function
 }
 
 func (p *Program) String() string {
@@ -28,8 +29,14 @@ func (p *Program) String() string {
 	for _, ss := range p.End {
 		parts = append(parts, "END {\n"+ss.String()+"}")
 	}
-	for _, f := range p.Functions {
-		parts = append(parts, f.String())
+	funcNames := make([]string, 0, len(p.Functions))
+	for name := range p.Functions {
+		funcNames = append(funcNames, name)
+	}
+	sort.Strings(funcNames)
+	for _, name := range funcNames {
+		function := p.Functions[name]
+		parts = append(parts, function.String())
 	}
 	return strings.Join(parts, "\n\n")
 }

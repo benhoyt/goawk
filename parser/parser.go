@@ -38,6 +38,7 @@ const (
 
 func (p *parser) program() *Program {
 	prog := &Program{}
+	prog.Functions = make(map[string]Function)
 	p.optionalNewlines()
 	for p.tok != EOF {
 		switch p.tok {
@@ -50,7 +51,8 @@ func (p *parser) program() *Program {
 			p.progState = endState
 			prog.End = append(prog.End, p.stmtsBrace())
 		case FUNCTION:
-			prog.Functions = append(prog.Functions, p.function())
+			function := p.function(prog.Functions)
+			prog.Functions[function.Name] = function
 		default:
 			p.progState = actionState
 			// Allow empty pattern, normal pattern, or range pattern
@@ -267,13 +269,16 @@ func (p *parser) loopStmts() Stmts {
 	return ss
 }
 
-func (p *parser) function() Function {
+func (p *parser) function(functions map[string]Function) Function {
 	if p.inFunction {
 		panic(p.error("can't nest functions"))
 	}
 	p.inFunction = true
 	p.next()
 	name := p.val
+	if _, ok := functions[name]; ok {
+		panic(p.error("function %q already defined", name))
+	}
 	p.expect(NAME)
 	p.expect(LPAREN)
 	first := true
