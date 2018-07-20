@@ -433,7 +433,8 @@ func (s *ReturnStmt) String() string {
 
 type Function struct {
 	Name   string
-	Params []string // TODO: probably need types too
+	Params []string
+	Arrays []bool
 	Body   Stmts
 }
 

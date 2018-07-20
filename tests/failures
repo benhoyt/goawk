@@ -15,10 +15,6 @@
     	parse error at 2:9: 'getline' is not yet implemented
     --- FAIL: TestAWK/t.cond
     	parse error at 1:43: expected expression instead of ?
-    --- FAIL: TestAWK/t.fun4
-    	output differs, run: git diff tests/output/t.fun4
-    --- FAIL: TestAWK/t.fun5
-    	output differs, run: git diff tests/output/t.fun5
     --- FAIL: TestAWK/t.in
     	parse error at 6:17: pipe operator not yet supported
     --- FAIL: TestAWK/t.in1

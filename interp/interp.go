@@ -59,7 +59,10 @@ type Interp struct {
 	argc       int
 	random     *rand.Rand
 	exitStatus int
-	locals     []map[string]value
+
+	locals        []map[string]value
+	localArrays   []map[string]string
+	nilLocalArray int
 
 	line        string
 	fields      []string
@@ -307,8 +310,7 @@ func (p *Interp) execute(stmt Stmt) (execErr error) {
 			}
 		}
 	case *ForInStmt:
-		for index := range p.arrays[s.Array] {
-			// TODO: does awk treat this as a local var inside a function?
+		for index := range p.arrays[p.getArrayName(s.Array)] {
 			p.setVar(s.Var, str(index))
 			err := p.executes(s.Body)
 			if err == errBreak {
@@ -369,7 +371,7 @@ func (p *Interp) execute(stmt Stmt) (execErr error) {
 		return returnValue{value}
 	case *DeleteStmt:
 		index := p.evalIndex(s.Index)
-		delete(p.arrays[s.Array], index)
+		delete(p.arrays[p.getArrayName(s.Array)], index)
 	case *ExprStmt:
 		p.eval(s.Expr)
 	default:
@@ -447,7 +449,7 @@ func (p *Interp) eval(expr Expr) value {
 		}
 	case *InExpr:
 		index := p.evalIndex(e.Index)
-		_, ok := p.arrays[e.Array][index]
+		_, ok := p.arrays[p.getArrayName(e.Array)][index]
 		return boolean(ok)
 	case *CondExpr:
 		cond := p.eval(e.Cond)
@@ -690,11 +692,22 @@ func (p *Interp) setVar(name string, v value) {
 	}
 }
 
+func (p *Interp) getArrayName(name string) string {
+	if len(p.localArrays) > 0 {
+		n, ok := p.localArrays[len(p.localArrays)-1][name]
+		if ok {
+			return n
+		}
+	}
+	return name
+}
+
 func (p *Interp) getArray(name, index string) value {
-	return p.arrays[name][index]
+	return p.arrays[p.getArrayName(name)][index]
 }
 
 func (p *Interp) setArray(name, index string, v value) {
+	name = p.getArrayName(name)
 	array, ok := p.arrays[name]
 	if !ok {
 		array = make(map[string]value)
@@ -980,16 +993,43 @@ func (p *Interp) userCall(name string, args []Expr) value {
 		panic(newError("%q called with more arguments than declared", name))
 	}
 
-	locals := make(map[string]value, len(f.Params))
+	locals := make(map[string]value)
+	arrays := make(map[string]string)
 	for i, arg := range args {
-		locals[f.Params[i]] = p.eval(arg)
+		if f.Arrays[i] {
+			// TODO: we're not actually checking if it's an array here, just a name --
+			// what happens if it's not an array?
+			a, ok := arg.(*VarExpr)
+			if !ok {
+				panic(newError("%s() argument %q must be an array", name, f.Params[i]))
+			}
+			arrays[f.Params[i]] = a.Name
+		} else {
+			locals[f.Params[i]] = p.eval(arg)
+		}
 	}
 	for i := len(args); i < len(f.Params); i++ {
-		locals[f.Params[i]] = value{}
+		if f.Arrays[i] {
+			arrays[f.Params[i]] = "__nla" + strconv.Itoa(p.nilLocalArray)
+			p.nilLocalArray++
+		} else {
+			locals[f.Params[i]] = value{}
+		}
 	}
 	p.locals = append(p.locals, locals)
+	p.localArrays = append(p.localArrays, arrays)
+
 	err := p.executes(f.Body)
+
 	p.locals = p.locals[:len(p.locals)-1]
+	for i := len(args); i < len(f.Params); i++ {
+		if f.Arrays[i] {
+			p.nilLocalArray--
+			delete(p.arrays, "__nla"+strconv.Itoa(p.nilLocalArray))
+		}
+	}
+	p.localArrays = p.localArrays[:len(p.localArrays)-1]
+
 	if r, ok := err.(returnValue); ok {
 		return r.Value
 	}
@@ -1011,7 +1051,7 @@ func (p *Interp) split(s, arrayName, fs string) int {
 	for i, part := range parts {
 		array[strconv.Itoa(i+1)] = numStr(part)
 	}
-	p.arrays[arrayName] = array
+	p.arrays[p.getArrayName(arrayName)] = array
 	return len(array)
 }
 

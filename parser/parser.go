@@ -19,13 +19,14 @@ func (e *ParseError) Error() string {
 }
 
 type parser struct {
-	lexer      *Lexer
-	pos        Position
-	tok        Token
-	val        string
-	progState  progState
-	inLoop     bool
-	inFunction bool
+	lexer       *Lexer
+	pos         Position
+	tok         Token
+	val         string
+	progState   progState
+	inLoop      bool
+	inFunction  bool
+	arrayParams map[string]bool
 }
 
 type progState int
@@ -121,6 +122,7 @@ func (p *parser) simpleStmt() Stmt {
 	case DELETE:
 		p.next()
 		array := p.val
+		p.arrayParam(array)
 		p.expect(NAME)
 		p.expect(LBRACKET)
 		index := p.exprList()
@@ -180,6 +182,7 @@ func (p *parser) stmt() Stmt {
 			if !ok {
 				panic(p.error("expected 'for (var in array) ...'"))
 			}
+			p.arrayParam(inExpr.Array)
 			body := p.loopStmts()
 			s = &ForInStmt{varExpr.Name, inExpr.Array, body}
 		} else {
@@ -292,11 +295,27 @@ func (p *parser) function(functions map[string]Function) Function {
 		p.expect(NAME)
 		params = append(params, param)
 	}
+	p.arrayParams = make(map[string]bool, len(params))
 	p.expect(RPAREN)
 	p.optionalNewlines()
+
 	body := p.stmtsBrace()
+
+	arrays := make([]bool, len(params))
+	for i, name := range params {
+		_, isArray := p.arrayParams[name]
+		arrays[i] = isArray
+	}
+
+	p.arrayParams = nil
 	p.inFunction = false
-	return Function{name, params, body}
+	return Function{name, params, arrays, body}
+}
+
+func (p *parser) arrayParam(name string) {
+	if p.inFunction {
+		p.arrayParams[name] = true
+	}
 }
 
 func (p *parser) exprList() []Expr {
@@ -353,6 +372,7 @@ func (p *parser) in() Expr {
 	for p.tok == IN {
 		p.next()
 		array := p.val
+		p.arrayParam(array)
 		p.expect(NAME)
 		expr = &InExpr{[]Expr{expr}, array}
 	}
@@ -473,6 +493,7 @@ func (p *parser) primary() Expr {
 			p.next()
 			index := p.exprList()
 			p.expect(RBRACKET)
+			p.arrayParam(name)
 			return &IndexExpr{name, index}
 		} else if p.tok == LPAREN && !p.lexer.HadSpace() {
 			p.next()
@@ -495,6 +516,7 @@ func (p *parser) primary() Expr {
 			p.expect(RPAREN)
 			p.expect(IN)
 			array := p.val
+			p.arrayParam(array)
 			p.expect(NAME)
 			return &InExpr{exprs, array}
 		}
@@ -522,6 +544,7 @@ func (p *parser) primary() Expr {
 		str := p.expr()
 		p.commaNewlines()
 		array := p.val
+		p.arrayParam(array)
 		p.expect(NAME)
 		args := []Expr{str, &VarExpr{array}}
 		if p.tok == COMMA {

@@ -27,7 +27,6 @@ References to nonexistent fields (that is, fields after $NF), shall evaluate to 
 		parse error at 1:20: expected expression instead of ?
 	- print piping, eg: print c ":" pop[c] | "sort"
 	- print redirection, eg: { print >"tempbig" }
-	- user-defined functions
 	- implement getline
 
 - testing (against other implementations?)
@@ -45,7 +44,7 @@ References to nonexistent fields (that is, fields after $NF), shall evaluate to 
 		way that wherever the division operator could appear, a <slash> is
 		assumed to be the division operator. (There is no unary division operator.)"
 - other lexer, parser, and interpreter tests
-  - test user-defined functions: recursion, locals vs globals, etc
+  - test user-defined functions: recursion, locals vs globals, array params, etc
   - does awk treat for-in variable as local?
 - other TODOs:
   + interp: srand(): truncating fraction, return previous seed
