@@ -280,27 +280,35 @@ func (s *DeleteStmt) stmt()   {}
 func (s *ReturnStmt) stmt()   {}
 
 type PrintStmt struct {
-	Args []Expr
+	Args     []Expr
+	Redirect Token
+	Dest     Expr
 }
 
 func (s *PrintStmt) String() string {
-	parts := make([]string, len(s.Args))
-	for i, a := range s.Args {
+	return printString("print", s.Args, s.Redirect, s.Dest)
+}
+
+func printString(f string, args []Expr, redirect Token, dest Expr) string {
+	parts := make([]string, len(args))
+	for i, a := range args {
 		parts[i] = a.String()
 	}
-	return "print " + strings.Join(parts, ", ")
+	str := f + " " + strings.Join(parts, ", ")
+	if dest != nil {
+		str += " " + redirect.String() + dest.String()
+	}
+	return str
 }
 
 type PrintfStmt struct {
-	Args []Expr
+	Args     []Expr
+	Redirect Token
+	Dest     Expr
 }
 
 func (s *PrintfStmt) String() string {
-	parts := make([]string, len(s.Args))
-	for i, a := range s.Args {
-		parts[i] = a.String()
-	}
-	return "printf " + strings.Join(parts, ", ")
+	return printString("printf", s.Args, s.Redirect, s.Dest)
 }
 
 type ExprStmt struct {

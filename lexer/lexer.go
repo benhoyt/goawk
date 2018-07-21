@@ -197,7 +197,16 @@ func (l *Lexer) Scan() (Position, Token, string) {
 	case '<':
 		tok = l.choice('=', LESS, LTE)
 	case '>':
-		tok = l.choice('=', GREATER, GTE)
+		switch l.ch {
+		case '=':
+			l.next()
+			tok = GTE
+		case '>':
+			l.next()
+			tok = APPEND
+		default:
+			tok = GREATER
+		}
 	case '~':
 		tok = MATCH
 	case '?':
@@ -212,11 +221,7 @@ func (l *Lexer) Scan() (Position, Token, string) {
 			return l.pos, ILLEGAL, fmt.Sprintf("unexpected %q after '&'", l.ch)
 		}
 	case '|':
-		if l.ch != '|' {
-			return pos, ILLEGAL, "pipe operator not yet supported"
-		}
-		l.next()
-		tok = OR
+		tok = l.choice('|', PIPE, OR)
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.':
 		runes := []rune{ch}
 		gotDigit := false

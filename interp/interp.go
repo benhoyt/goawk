@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math"
 	"math/rand"
 	"os"
@@ -59,6 +60,8 @@ type Interp struct {
 	argc       int
 	random     *rand.Rand
 	exitStatus int
+	streams    map[string]io.WriteCloser
+	commands   map[string]*exec.Cmd
 
 	locals        []map[string]value
 	localArrays   []map[string]string
@@ -103,6 +106,10 @@ func (p *Interp) ExitStatus() int {
 }
 
 func (p *Interp) ExecStream(input io.Reader) error {
+	p.streams = make(map[string]io.WriteCloser)
+	p.commands = make(map[string]*exec.Cmd)
+	defer p.closeAll()
+
 	err := p.execBegin(p.program.Begin)
 	if err != nil && err != errExit {
 		return err
@@ -124,6 +131,10 @@ func (p *Interp) ExecStream(input io.Reader) error {
 }
 
 func (p *Interp) ExecFiles(inputPaths []string) error {
+	p.streams = make(map[string]io.WriteCloser)
+	p.commands = make(map[string]*exec.Cmd)
+	defer p.closeAll()
+
 	err := p.execBegin(p.program.Begin)
 	if err != nil && err != errExit {
 		return err
@@ -152,6 +163,15 @@ func (p *Interp) ExecFiles(inputPaths []string) error {
 		return err
 	}
 	return nil
+}
+
+func (p *Interp) closeAll() {
+	for _, w := range p.streams {
+		_ = w.Close()
+	}
+	for _, cmd := range p.commands {
+		_ = cmd.Wait()
+	}
 }
 
 func (p *Interp) execBegin(begin []Stmts) error {
@@ -270,7 +290,8 @@ func (p *Interp) execute(stmt Stmt) (execErr error) {
 		} else {
 			line = p.line
 		}
-		io.WriteString(p.output, line+p.outputRecordSep)
+		output := p.getStream(s.Redirect, s.Dest)
+		io.WriteString(output, line+p.outputRecordSep)
 	case *PrintfStmt:
 		if len(s.Args) == 0 {
 			break
@@ -280,7 +301,8 @@ func (p *Interp) execute(stmt Stmt) (execErr error) {
 		for i, a := range s.Args[1:] {
 			args[i] = p.eval(a)
 		}
-		io.WriteString(p.output, p.sprintf(format, args))
+		output := p.getStream(s.Redirect, s.Dest)
+		io.WriteString(output, p.sprintf(format, args))
 	case *IfStmt:
 		if p.eval(s.Cond).boolean() {
 			return p.executes(s.Body)
@@ -378,6 +400,63 @@ func (p *Interp) execute(stmt Stmt) (execErr error) {
 		panic(fmt.Sprintf("unexpected stmt type: %T", stmt))
 	}
 	return nil
+}
+
+func (p *Interp) getStream(redirect Token, dest Expr) io.Writer {
+	switch redirect {
+	case GREATER, APPEND:
+		name := p.toString(p.eval(dest))
+		if w, ok := p.streams[name]; ok {
+			return w
+		}
+		flags := os.O_CREATE | os.O_WRONLY
+		if redirect == GREATER {
+			flags |= os.O_TRUNC
+		} else {
+			flags |= os.O_APPEND
+		}
+		w, err := os.OpenFile(name, flags, 0644)
+		if err != nil {
+			panic(newError("redirection error: %s", err))
+		}
+		p.streams[name] = w
+		return w
+	case PIPE:
+		cmdline := p.toString(p.eval(dest))
+		if w, ok := p.streams[cmdline]; ok {
+			return w
+		}
+		cmd := exec.Command("sh", "-c", cmdline)
+		w, err := cmd.StdinPipe()
+		if err != nil {
+			panic(newError("error connecting to stdin pipe: %v\n", err))
+		}
+		// TODO: when to close these?
+		stdout, err := cmd.StdoutPipe()
+		if err != nil {
+			panic(newError("error connecting to stdout pipe: %v\n", err))
+		}
+		stderr, err := cmd.StderrPipe()
+		if err != nil {
+			panic(newError("error connecting to stderr pipe: %v\n", err))
+		}
+		err = cmd.Start()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return ioutil.Discard
+		}
+		go func() {
+			io.Copy(os.Stdout, stdout)
+		}()
+		go func() {
+			io.Copy(os.Stderr, stderr)
+		}()
+		p.commands[cmdline] = cmd
+		p.streams[cmdline] = w
+		return w
+	default:
+		return p.output
+	}
 }
 
 func (p *Interp) evalSafe(expr Expr) (v value, err error) {
@@ -866,6 +945,17 @@ func (p *Interp) call(op Token, args []value) value {
 	switch op {
 	case F_ATAN2:
 		return num(math.Atan2(args[0].num(), args[1].num()))
+	case F_CLOSE:
+		name := p.toString(args[0])
+		w, ok := p.streams[name]
+		if !ok {
+			return num(-1)
+		}
+		err := w.Close()
+		if err != nil {
+			return num(-1)
+		}
+		return num(0)
 	case F_COS:
 		return num(math.Cos(args[0].num()))
 	case F_EXP:
@@ -946,16 +1036,17 @@ func (p *Interp) call(op Token, args []value) value {
 		if err != nil {
 			return num(-1)
 		}
+		defer stdout.Close()
 		stderr, err := cmd.StderrPipe()
 		if err != nil {
 			return num(-1)
 		}
+		defer stderr.Close()
 		err = cmd.Start()
 		if err != nil {
-			fmt.Println(err)
+			fmt.Fprintln(os.Stderr, err)
 			return num(-1)
 		}
-		// TODO: this doesn't stream output -- why not?
 		go func() {
 			io.Copy(os.Stdout, stdout)
 		}()
@@ -968,11 +1059,11 @@ func (p *Interp) call(op Token, args []value) value {
 				if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
 					return num(float64(status.ExitStatus()))
 				} else {
-					fmt.Printf("couldn't get exit status for %q: %v\n", cmdline, err)
+					fmt.Fprintf(os.Stderr, "couldn't get exit status for %q: %v\n", cmdline, err)
 					return num(-1)
 				}
 			} else {
-				fmt.Printf("unexpected error running command %q: %v\n", cmdline, err)
+				fmt.Fprintf(os.Stderr, "unexpected error running command %q: %v\n", cmdline, err)
 				return num(-1)
 			}
 		}

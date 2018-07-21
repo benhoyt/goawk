@@ -114,10 +114,17 @@ func (p *parser) simpleStmt() Stmt {
 		if gotParen {
 			p.expect(RPAREN)
 		}
+		redirect := ILLEGAL
+		var dest Expr
+		if p.matches(GREATER, APPEND, PIPE) {
+			redirect = p.tok
+			p.next()
+			dest = p.expr()
+		}
 		if op == PRINT {
-			return &PrintStmt{args}
+			return &PrintStmt{args, redirect, dest}
 		} else {
-			return &PrintfStmt{args}
+			return &PrintfStmt{args, redirect, dest}
 		}
 	case DELETE:
 		p.next()
@@ -611,7 +618,7 @@ func (p *parser) primary() Expr {
 		}
 		p.expect(RPAREN)
 		return &CallExpr{F_SPRINTF, args}
-	case F_COS, F_SIN, F_EXP, F_LOG, F_SQRT, F_INT, F_TOLOWER, F_TOUPPER, F_SYSTEM:
+	case F_COS, F_SIN, F_EXP, F_LOG, F_SQRT, F_INT, F_TOLOWER, F_TOUPPER, F_SYSTEM, F_CLOSE:
 		// 1-argument functions
 		op := p.tok
 		p.next()

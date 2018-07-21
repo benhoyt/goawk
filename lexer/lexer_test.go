@@ -21,7 +21,7 @@ func TestNumber(t *testing.T) {
 		{"0", "1:1 number 0"},
 		{"9", "1:1 number 9"},
 		{" 0 ", "1:2 number 0"},
-		{"\n  1", "1:1 newline , 2:3 number 1"},
+		{"\n  1", "1:1 <newline> , 2:3 number 1"},
 		{"1234", "1:1 number 1234"},
 		{".5", "1:1 number .5"},
 		{".5e1", "1:1 number .5e1"},
@@ -69,8 +69,8 @@ func TestNumber(t *testing.T) {
 
 func TestStringMethod(t *testing.T) {
 	input := "# comment line\n" +
-		"+ += && = : , -- /\n/= $ == >= > ++ { [ < ( #\n" +
-		"<= ~ % %= * *= !~ ! != || ^ ^= ** **= ? } ] ) ; - -= " +
+		"+ += && = : , -- /\n/= $ == >= > >> ++ { [ < ( #\n" +
+		"<= ~ % %= * *= !~ ! != | || ^ ^= ** **= ? } ] ) ; - -= " +
 		"BEGIN break continue delete do else END exit " +
 		"for function getline if in next print printf return while " +
 		"atan2 close cos exp gsub index int length log match rand " +
@@ -92,22 +92,21 @@ func TestStringMethod(t *testing.T) {
 	}
 	output := strings.Join(strs, " ")
 
-	expected := "newline " +
-		"+ += && = : , -- / newline /= $ == >= > ++ { [ < ( newline " +
-		"<= ~ % %= * *= !~ ! != || ^ ^= ^ ^= ? } ] ) ; - -= " +
+	expected := "<newline> " +
+		"+ += && = : , -- / <newline> /= $ == >= > >> ++ { [ < ( <newline> " +
+		"<= ~ % %= * *= !~ ! != | || ^ ^= ^ ^= ? } ] ) ; - -= " +
 		"BEGIN break continue delete do else END exit " +
 		"for function <illegal> if in next print printf return while " +
-		"atan2 <illegal> cos exp gsub index int length log match rand " +
+		"atan2 close cos exp gsub index int length log match rand " +
 		"sin split sprintf sqrt srand sub substr system tolower toupper " +
-		"name string number newline " +
-		"regex newline " +
+		"name string number <newline> " +
+		"regex <newline> " +
 		"<illegal> <illegal> EOF"
 	if output != expected {
 		t.Errorf("expected %q, got %q", expected, output)
 	}
 
 	var unsupportedTokens = map[Token]bool{
-		F_CLOSE: true,
 		GETLINE: true,
 	}
 	for i, s := range seen {

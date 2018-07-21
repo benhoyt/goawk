@@ -17,6 +17,7 @@ References to nonexistent fields (that is, fields after $NF), shall evaluate to 
 
 
 - address tests/failures
+    - grammar of print with > >> | shouldn't require parens
 	- grammar with ?: operator:
 	    - this is due to bad exprList handling I think???
 	    $ go run goawk.go 'BEGIN { print (1+2)?"t":"f" }'
@@ -25,8 +26,6 @@ References to nonexistent fields (that is, fields after $NF), shall evaluate to 
 		                   ^
 		-----------------------------------------------------
 		parse error at 1:20: expected expression instead of ?
-	- print piping, eg: print c ":" pop[c] | "sort"
-	- print redirection, eg: { print >"tempbig" }
 	- implement getline
 
 - testing (against other implementations?)

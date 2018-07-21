@@ -14,6 +14,7 @@ const (
 	ADD
 	ADD_ASSIGN
 	AND
+	APPEND
 	ASSIGN
 	COLON
 	COMMA
@@ -39,6 +40,7 @@ const (
 	NOT
 	NOT_EQUALS
 	OR
+	PIPE
 	POW
 	POW_ASSIGN
 	QUESTION
@@ -104,7 +106,6 @@ const (
 )
 
 var unsupportedKeywords = map[string]bool{
-	"close":   true,
 	"getline": true,
 }
 
@@ -154,12 +155,13 @@ var keywordTokens = map[string]Token{
 var tokenNames = map[Token]string{
 	ILLEGAL: "<illegal>",
 	EOF:     "EOF",
-	NEWLINE: "newline",
+	NEWLINE: "<newline>",
 	CONCAT:  "<concat>",
 
 	ADD:        "+",
 	ADD_ASSIGN: "+=",
 	AND:        "&&",
+	APPEND:     ">>",
 	ASSIGN:     "=",
 	COLON:      ":",
 	COMMA:      ",",
@@ -185,6 +187,7 @@ var tokenNames = map[Token]string{
 	NOT:        "!",
 	NOT_EQUALS: "!=",
 	OR:         "||",
+	PIPE:       "|",
 	POW:        "^",
 	POW_ASSIGN: "^=",
 	QUESTION:   "?",
