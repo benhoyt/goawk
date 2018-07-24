@@ -77,7 +77,7 @@ func TestAWK(t *testing.T) {
 			cmd := exec.Command(awkExe, "-f", srcPath, inputPath)
 			expected, err := cmd.Output()
 			if err != nil && !errorExits[info.Name()] {
-				t.Fatalf("error running awk: %v", err)
+				t.Fatalf("error running %s: %v", awkExe, err)
 			}
 			expected = bytes.Replace(expected, []byte{0}, []byte("<00>"), -1)
 			if sortLines[info.Name()] {

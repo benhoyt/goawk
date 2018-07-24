@@ -431,7 +431,6 @@ func (p *Interp) getStream(redirect Token, dest Expr) io.Writer {
 		if err != nil {
 			panic(newError("error connecting to stdin pipe: %v\n", err))
 		}
-		// TODO: when to close these?
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
 			panic(newError("error connecting to stdout pipe: %v\n", err))
@@ -1036,12 +1035,10 @@ func (p *Interp) call(op Token, args []value) value {
 		if err != nil {
 			return num(-1)
 		}
-		defer stdout.Close()
 		stderr, err := cmd.StderrPipe()
 		if err != nil {
 			return num(-1)
 		}
-		defer stderr.Close()
 		err = cmd.Start()
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
