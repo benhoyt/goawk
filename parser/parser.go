@@ -37,6 +37,7 @@ const (
 	actionState
 )
 
+// Parse an entire AWK program.
 func (p *parser) program() *Program {
 	prog := &Program{}
 	prog.Functions = make(map[string]Function)
@@ -164,6 +165,13 @@ func (p *parser) stmt() Stmt {
 		}
 		s = &IfStmt{cond, body, elseBody}
 	case FOR:
+		// Parse for statement, either "for in" or C-like for loop.
+		//
+		//     FOR LPAREN NAME IN NAME RPAREN NEWLINE* stmts |
+		//     FOR LPAREN [simpleStmt] SEMICOLON NEWLINE*
+		//                [expr] SEMICOLON NEWLINE*
+		//                [simpleStmt] RPAREN NEWLINE* stmts
+		//
 		p.next()
 		p.expect(LPAREN)
 		var pre Stmt
@@ -338,10 +346,18 @@ func (p *parser) exprList() []Expr {
 	return exprs
 }
 
+// Parse a single expression.
 func (p *parser) expr() Expr {
 	return p.assign()
 }
 
+// Parse an = assignment expression:
+//
+//     lvalue [assign_op assign]
+//
+// An lvalue is a variable name, an array[expr] index expression, or
+// an $expr field expression.
+//
 func (p *parser) assign() Expr {
 	expr := p.cond()
 	if IsLValue(expr) && p.matches(ASSIGN, ADD_ASSIGN, DIV_ASSIGN,
@@ -354,24 +370,38 @@ func (p *parser) assign() Expr {
 	return expr
 }
 
+// Parse a ?: conditional expression:
+//
+//     or [QUESTION NEWLINE* cond COLON NEWLINE* cond]
+//
 func (p *parser) cond() Expr {
 	expr := p.or()
 	if p.tok == QUESTION {
 		p.next()
+		p.optionalNewlines()
 		t := p.cond()
 		p.expect(COLON)
+		p.optionalNewlines()
 		f := p.cond()
 		return &CondExpr{expr, t, f}
 	}
 	return expr
 }
 
+// Parse an || or expresion:
+//
+//     and [OR NEWLINE* and] [OR NEWLINE* and] ...
+//
 func (p *parser) or() Expr {
-	return p.binaryLeft(p.and, OR)
+	return p.binaryLeft(p.and, true, OR)
 }
 
+// Parse an && and expresion:
+//
+//     in [AND NEWLINE* in] [AND NEWLINE* in] ...
+//
 func (p *parser) and() Expr {
-	return p.binaryLeft(p.in, AND)
+	return p.binaryLeft(p.in, true, AND)
 }
 
 func (p *parser) in() Expr {
@@ -419,11 +449,11 @@ func (p *parser) concat() Expr {
 }
 
 func (p *parser) add() Expr {
-	return p.binaryLeft(p.mul, ADD, SUB)
+	return p.binaryLeft(p.mul, false, ADD, SUB)
 }
 
 func (p *parser) mul() Expr {
-	return p.binaryLeft(p.unary, MUL, DIV, MOD)
+	return p.binaryLeft(p.unary, false, MUL, DIV, MOD)
 }
 
 func (p *parser) unary() Expr {
@@ -641,6 +671,10 @@ func (p *parser) primary() Expr {
 	}
 }
 
+// Parse /.../ regex or generic espression:
+//
+//     REGEX | expr
+//
 func (p *parser) regex() Expr {
 	if p.tok == REGEX {
 		regex := p.val
@@ -650,28 +684,45 @@ func (p *parser) regex() Expr {
 	return p.expr()
 }
 
-func (p *parser) binaryLeft(parse func() Expr, ops ...Token) Expr {
+// Parse left-associative binary operator. Allow newlines after
+// operator if allowNewline is true.
+//
+//     parse [op parse] [op parse] ...
+//
+func (p *parser) binaryLeft(parse func() Expr, allowNewline bool, ops ...Token) Expr {
 	expr := parse()
 	for p.matches(ops...) {
 		op := p.tok
 		p.next()
+		if allowNewline {
+			p.optionalNewlines()
+		}
 		right := parse()
 		expr = &BinaryExpr{expr, op, right}
 	}
 	return expr
 }
 
+// Parse comma followed by optional newlines:
+//
+//     COMMA NEWLINE*
+//
 func (p *parser) commaNewlines() {
 	p.expect(COMMA)
 	p.optionalNewlines()
 }
 
+// Parse zero or more optional newlines:
+//
+//    [NEWLINE] [NEWLINE] ...
+//
 func (p *parser) optionalNewlines() {
 	for p.tok == NEWLINE {
 		p.next()
 	}
 }
 
+// Parse next token into p.tok (and set p.pos and p.val).
 func (p *parser) next() {
 	p.pos, p.tok, p.val = p.lexer.Scan()
 	if p.tok == ILLEGAL {
@@ -679,6 +730,7 @@ func (p *parser) next() {
 	}
 }
 
+// Ensure current token is tok, and parse next token into p.tok.
 func (p *parser) expect(tok Token) {
 	if p.tok != tok {
 		panic(p.error("expected %s instead of %s", tok, p.tok))
@@ -686,6 +738,8 @@ func (p *parser) expect(tok Token) {
 	p.next()
 }
 
+// Return true iff current token matches one of the given operators,
+// but don't parse next token.
 func (p *parser) matches(operators ...Token) bool {
 	for _, operator := range operators {
 		if p.tok == operator {
