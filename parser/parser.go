@@ -106,14 +106,13 @@ func (p *parser) simpleStmt() Stmt {
 	case PRINT, PRINTF:
 		op := p.tok
 		p.next()
-		gotParen := false
+		var args []Expr
 		if p.tok == LPAREN {
 			p.next()
-			gotParen = true
-		}
-		args := p.exprList()
-		if gotParen {
+			args = p.exprList(p.expr)
 			p.expect(RPAREN)
+		} else {
+			args = p.exprList(p.printExpr)
 		}
 		redirect := ILLEGAL
 		var dest Expr
@@ -133,7 +132,7 @@ func (p *parser) simpleStmt() Stmt {
 		p.arrayParam(array)
 		p.expect(NAME)
 		p.expect(LBRACKET)
-		index := p.exprList()
+		index := p.exprList(p.expr)
 		p.expect(RBRACKET)
 		return &DeleteStmt{array, index}
 	case IF, FOR, WHILE, DO, BREAK, CONTINUE, NEXT, EXIT:
@@ -333,23 +332,22 @@ func (p *parser) arrayParam(name string) {
 	}
 }
 
-func (p *parser) exprList() []Expr {
+func (p *parser) exprList(parse func() Expr) []Expr {
 	exprs := []Expr{}
 	first := true
-	for !p.matches(NEWLINE, SEMICOLON, RBRACE, RBRACKET, RPAREN) {
+	for !p.matches(NEWLINE, SEMICOLON, RBRACE, RBRACKET, RPAREN, GREATER, PIPE, APPEND) {
 		if !first {
 			p.commaNewlines()
 		}
 		first = false
-		exprs = append(exprs, p.expr())
+		exprs = append(exprs, parse())
 	}
 	return exprs
 }
 
 // Parse a single expression.
-func (p *parser) expr() Expr {
-	return p.assign()
-}
+func (p *parser) expr() Expr      { return p._assign(p.cond) }
+func (p *parser) printExpr() Expr { return p._assign(p.printCond) }
 
 // Parse an = assignment expression:
 //
@@ -358,13 +356,13 @@ func (p *parser) expr() Expr {
 // An lvalue is a variable name, an array[expr] index expression, or
 // an $expr field expression.
 //
-func (p *parser) assign() Expr {
-	expr := p.cond()
+func (p *parser) _assign(higher func() Expr) Expr {
+	expr := higher()
 	if IsLValue(expr) && p.matches(ASSIGN, ADD_ASSIGN, DIV_ASSIGN,
 		MOD_ASSIGN, MUL_ASSIGN, POW_ASSIGN, SUB_ASSIGN) {
 		op := p.tok
 		p.next()
-		right := p.assign()
+		right := p._assign(higher)
 		return &AssignExpr{expr, op, right}
 	}
 	return expr
@@ -374,15 +372,19 @@ func (p *parser) assign() Expr {
 //
 //     or [QUESTION NEWLINE* cond COLON NEWLINE* cond]
 //
-func (p *parser) cond() Expr {
-	expr := p.or()
+func (p *parser) cond() Expr      { return p._cond(p.or) }
+func (p *parser) printCond() Expr { return p._cond(p.printOr) }
+
+func (p *parser) _cond(higher func() Expr) Expr {
+	expr := higher()
 	if p.tok == QUESTION {
 		p.next()
 		p.optionalNewlines()
-		t := p.cond()
+		// TODO: should these be p.expr()
+		t := p._cond(higher)
 		p.expect(COLON)
 		p.optionalNewlines()
-		f := p.cond()
+		f := p._cond(higher)
 		return &CondExpr{expr, t, f}
 	}
 	return expr
@@ -392,20 +394,25 @@ func (p *parser) cond() Expr {
 //
 //     and [OR NEWLINE* and] [OR NEWLINE* and] ...
 //
-func (p *parser) or() Expr {
-	return p.binaryLeft(p.and, true, OR)
-}
+func (p *parser) or() Expr      { return p.binaryLeft(p.and, true, OR) }
+func (p *parser) printOr() Expr { return p.binaryLeft(p.printAnd, true, OR) }
 
 // Parse an && and expresion:
 //
 //     in [AND NEWLINE* in] [AND NEWLINE* in] ...
 //
-func (p *parser) and() Expr {
-	return p.binaryLeft(p.in, true, AND)
-}
+func (p *parser) and() Expr      { return p.binaryLeft(p.in, true, AND) }
+func (p *parser) printAnd() Expr { return p.binaryLeft(p.printIn, true, AND) }
 
-func (p *parser) in() Expr {
-	expr := p.match()
+// Parse an "in" expression:
+//
+//     match [IN NAME] [IN NAME] ...
+//
+func (p *parser) in() Expr      { return p._in(p.match) }
+func (p *parser) printIn() Expr { return p._in(p.printMatch) }
+
+func (p *parser) _in(higher func() Expr) Expr {
+	expr := higher()
 	for p.tok == IN {
 		p.next()
 		array := p.val
@@ -416,20 +423,34 @@ func (p *parser) in() Expr {
 	return expr
 }
 
-func (p *parser) match() Expr {
-	expr := p.compare()
+// Parse a ~ match expression:
+//
+//     compare [MATCH|NOT_MATCH compare]
+//
+func (p *parser) match() Expr      { return p._match(p.compare) }
+func (p *parser) printMatch() Expr { return p._match(p.printCompare) }
+
+func (p *parser) _match(higher func() Expr) Expr {
+	expr := higher()
 	if p.matches(MATCH, NOT_MATCH) {
 		op := p.tok
 		p.next()
-		right := p.compare() // Not match() as these aren't associative
+		right := higher() // Not match() as these aren't associative
 		return &BinaryExpr{expr, op, right}
 	}
 	return expr
 }
 
-func (p *parser) compare() Expr {
+// Parse a comparison expression:
+//
+//     concat [EQUALS|NOT_EQUALS|LESS|LTE|GREATER|GTE concat]
+//
+func (p *parser) compare() Expr      { return p._compare(EQUALS, NOT_EQUALS, LESS, LTE, GTE, GREATER) }
+func (p *parser) printCompare() Expr { return p._compare(EQUALS, NOT_EQUALS, LESS, LTE, GTE) }
+
+func (p *parser) _compare(ops ...Token) Expr {
 	expr := p.concat()
-	if p.matches(EQUALS, NOT_EQUALS, LESS, LTE, GREATER, GTE) {
+	if p.matches(ops...) {
 		op := p.tok
 		p.next()
 		right := p.concat() // Not compare() as these aren't associative
@@ -528,20 +549,20 @@ func (p *parser) primary() Expr {
 		p.next()
 		if p.tok == LBRACKET {
 			p.next()
-			index := p.exprList()
+			index := p.exprList(p.expr)
 			p.expect(RBRACKET)
 			p.arrayParam(name)
 			return &IndexExpr{name, index}
 		} else if p.tok == LPAREN && !p.lexer.HadSpace() {
 			p.next()
-			args := p.exprList()
+			args := p.exprList(p.expr)
 			p.expect(RPAREN)
 			return &UserCallExpr{name, args}
 		}
 		return &VarExpr{name}
 	case LPAREN:
 		p.next()
-		exprs := p.exprList()
+		exprs := p.exprList(p.expr)
 		switch len(exprs) {
 		case 0:
 			panic(p.error("expected expression, not %s", p.tok))
@@ -689,15 +710,15 @@ func (p *parser) regex() Expr {
 //
 //     parse [op parse] [op parse] ...
 //
-func (p *parser) binaryLeft(parse func() Expr, allowNewline bool, ops ...Token) Expr {
-	expr := parse()
+func (p *parser) binaryLeft(higher func() Expr, allowNewline bool, ops ...Token) Expr {
+	expr := higher()
 	for p.matches(ops...) {
 		op := p.tok
 		p.next()
 		if allowNewline {
 			p.optionalNewlines()
 		}
-		right := parse()
+		right := higher()
 		expr = &BinaryExpr{expr, op, right}
 	}
 	return expr

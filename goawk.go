@@ -17,8 +17,6 @@ References to nonexistent fields (that is, fields after $NF), shall evaluate to 
 
 
 - address tests/failures
-    - get stricter with grammar from spec, esp newlines and the following issues
-    - grammar of print with > >> | shouldn't require parens
 	- grammar with ?: operator:
 	    - this is due to bad exprList handling I think???
 	    $ go run goawk.go 'BEGIN { print (1+2)?"t":"f" }'
