@@ -106,13 +106,11 @@ func (p *parser) simpleStmt() Stmt {
 	case PRINT, PRINTF:
 		op := p.tok
 		p.next()
-		var args []Expr
-		if p.tok == LPAREN {
-			p.next()
-			args = p.exprList(p.expr)
-			p.expect(RPAREN)
-		} else {
-			args = p.exprList(p.printExpr)
+		args := p.exprList(p.printExpr)
+		if len(args) == 1 {
+			if m, ok := args[0].(*MultiExpr); ok {
+				args = m.Exprs
+			}
 		}
 		redirect := ILLEGAL
 		var dest Expr
@@ -572,11 +570,14 @@ func (p *parser) primary() Expr {
 		default:
 			// Multi-dimensional array "in" requires parens around index
 			p.expect(RPAREN)
-			p.expect(IN)
-			array := p.val
-			p.arrayParam(array)
-			p.expect(NAME)
-			return &InExpr{exprs, array}
+			if p.tok == IN {
+				p.next()
+				array := p.val
+				p.arrayParam(array)
+				p.expect(NAME)
+				return &InExpr{exprs, array}
+			}
+			return &MultiExpr{exprs}
 		}
 	case F_SUB, F_GSUB:
 		op := p.tok

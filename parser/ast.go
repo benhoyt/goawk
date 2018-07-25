@@ -94,6 +94,7 @@ func (e *AssignExpr) expr()   {}
 func (e *IncrExpr) expr()     {}
 func (e *CallExpr) expr()     {}
 func (e *UserCallExpr) expr() {}
+func (e *MultiExpr) expr()    {}
 
 type FieldExpr struct {
 	Index Expr
@@ -248,6 +249,18 @@ func (e *UserCallExpr) String() string {
 		args[i] = a.String()
 	}
 	return e.Name + "(" + strings.Join(args, ", ") + ")"
+}
+
+type MultiExpr struct {
+	Exprs []Expr
+}
+
+func (e *MultiExpr) String() string {
+	exprs := make([]string, len(e.Exprs))
+	for i, e := range e.Exprs {
+		exprs[i] = e.String()
+	}
+	return "(" + strings.Join(exprs, ", ") + ")"
 }
 
 func IsLValue(expr Expr) bool {

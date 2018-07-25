@@ -17,14 +17,6 @@ References to nonexistent fields (that is, fields after $NF), shall evaluate to 
 
 
 - address tests/failures
-	- grammar with ?: operator:
-	    - this is due to bad exprList handling I think???
-	    $ go run goawk.go 'BEGIN { print (1+2)?"t":"f" }'
-		-----------------------------------------------------
-		BEGIN { print (1+2)?"t":"f" }
-		                   ^
-		-----------------------------------------------------
-		parse error at 1:20: expected expression instead of ?
 	- implement getline
 
 - testing (against other implementations?)
@@ -48,6 +40,7 @@ References to nonexistent fields (that is, fields after $NF), shall evaluate to 
   + interp: srand(): truncating fraction, return previous seed
   + interp: should built-in variables round-trip their types
   + interp: system() doesn't stream output
+  + interp: flag "unexpected comma-separated expression" at parse time
 - performance testing: I/O, allocations, CPU
 
 NICE TO HAVE:

@@ -645,6 +645,9 @@ func (p *Interp) eval(expr Expr) value {
 		}
 	case *UserCallExpr:
 		return p.userCall(e.Name, e.Args)
+	case *MultiExpr:
+		// TODO: figure out a good way to make this a parse-time error
+		panic(newError("unexpected comma-separated expression: %s", expr))
 	default:
 		panic(fmt.Sprintf("unexpected expr type: %T", expr))
 	}
@@ -1017,7 +1020,7 @@ func (p *Interp) call(op Token, args []value) value {
 		s := p.toString(args[0])
 		pos := int(args[1].num())
 		if pos > len(s) {
-			pos = len(s)
+			pos = len(s) + 1
 		}
 		if pos < 1 {
 			pos = 1

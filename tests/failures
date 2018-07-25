@@ -7,8 +7,6 @@
     	parse error at 2:9: 'getline' is not yet implemented
     --- FAIL: TestAWK/t.beginnext
     	parse error at 2:9: 'getline' is not yet implemented
-    --- FAIL: TestAWK/t.cond
-    	parse error at 1:43: expected expression instead of ?
     --- FAIL: TestAWK/t.printf2
     	output differs, run: git diff tests/output/t.printf2
 FAIL
