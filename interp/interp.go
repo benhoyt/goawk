@@ -53,15 +53,16 @@ func (r returnValue) Error() string {
 
 // Interp holds the state of the interpreter
 type Interp struct {
-	program    *Program
-	output     io.Writer
-	vars       map[string]value
-	arrays     map[string]map[string]value
-	argc       int
-	random     *rand.Rand
-	exitStatus int
-	streams    map[string]io.WriteCloser
-	commands   map[string]*exec.Cmd
+	program     *Program
+	output      io.Writer
+	errorOutput io.Writer
+	vars        map[string]value
+	arrays      map[string]map[string]value
+	argc        int
+	random      *rand.Rand
+	exitStatus  int
+	streams     map[string]io.WriteCloser
+	commands    map[string]*exec.Cmd
 
 	locals        []map[string]value
 	localArrays   []map[string]string
@@ -85,10 +86,19 @@ type Interp struct {
 	matchStart      int
 }
 
-func New(program *Program, output io.Writer) *Interp {
+func New(program *Program, output, errorOutput io.Writer) *Interp {
 	p := &Interp{}
 	p.program = program
+
+	if output == nil {
+		output = os.Stdout
+	}
 	p.output = output
+	if errorOutput == nil {
+		errorOutput = os.Stderr
+	}
+	p.errorOutput = errorOutput
+
 	p.vars = make(map[string]value)
 	p.arrays = make(map[string]map[string]value)
 	p.random = rand.New(rand.NewSource(0))
@@ -441,14 +451,14 @@ func (p *Interp) getStream(redirect Token, dest Expr) io.Writer {
 		}
 		err = cmd.Start()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			fmt.Fprintln(p.errorOutput, err)
 			return ioutil.Discard
 		}
 		go func() {
-			io.Copy(os.Stdout, stdout)
+			io.Copy(p.output, stdout)
 		}()
 		go func() {
-			io.Copy(os.Stderr, stderr)
+			io.Copy(p.errorOutput, stderr)
 		}()
 		p.commands[cmdline] = cmd
 		p.streams[cmdline] = w
@@ -481,7 +491,7 @@ func EvalLine(src, line string) (s string, n float64, err error) {
 	if err != nil {
 		return "", 0, err
 	}
-	interp := New(nil, nil) // expressions can't write to output
+	interp := New(nil, nil, nil) // Expressions can't write to output
 	interp.setLine(line)
 	return interp.Eval(expr)
 }
@@ -1041,14 +1051,14 @@ func (p *Interp) call(op Token, args []value) value {
 		}
 		err = cmd.Start()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			fmt.Fprintln(p.errorOutput, err)
 			return num(-1)
 		}
 		go func() {
-			io.Copy(os.Stdout, stdout)
+			io.Copy(p.output, stdout)
 		}()
 		go func() {
-			io.Copy(os.Stderr, stderr)
+			io.Copy(p.errorOutput, stderr)
 		}()
 		err = cmd.Wait()
 		if err != nil {
@@ -1056,11 +1066,11 @@ func (p *Interp) call(op Token, args []value) value {
 				if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
 					return num(float64(status.ExitStatus()))
 				} else {
-					fmt.Fprintf(os.Stderr, "couldn't get exit status for %q: %v\n", cmdline, err)
+					fmt.Fprintf(p.errorOutput, "couldn't get exit status for %q: %v\n", cmdline, err)
 					return num(-1)
 				}
 			} else {
-				fmt.Fprintf(os.Stderr, "unexpected error running command %q: %v\n", cmdline, err)
+				fmt.Fprintf(p.errorOutput, "unexpected error running command %q: %v\n", cmdline, err)
 				return num(-1)
 			}
 		}

@@ -106,7 +106,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, prog)
 	}
 
-	p := interp.New(prog, os.Stdout)
+	p := interp.New(prog, nil, nil)
 	interpArgs := []string{filepath.Base(os.Args[0])}
 	interpArgs = append(interpArgs, args...)
 	p.SetArgs(interpArgs)

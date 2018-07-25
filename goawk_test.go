@@ -137,11 +137,14 @@ func parseGoAWK(srcPath string) (*parser.Program, error) {
 }
 
 func executeGoAWK(prog *parser.Program, inputPath string) ([]byte, error) {
-	buf := &bytes.Buffer{}
-	p := interp.New(prog, buf)
+	outBuf := &bytes.Buffer{}
+	errBuf := &bytes.Buffer{}
+	p := interp.New(prog, outBuf, errBuf)
 	p.SetArgs([]string{"goawk_test", inputPath})
 	err := p.ExecFiles([]string{inputPath})
-	return buf.Bytes(), err
+	result := outBuf.Bytes()
+	result = append(result, errBuf.Bytes()...)
+	return result, err
 }
 
 func sortedLines(data []byte) []byte {

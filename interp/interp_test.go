@@ -119,7 +119,8 @@ func TestInterp(t *testing.T) {
 				t.Fatal(err)
 			}
 			outBuf := &bytes.Buffer{}
-			p := interp.New(prog, outBuf)
+			errBuf := &bytes.Buffer{}
+			p := interp.New(prog, outBuf, errBuf)
 			err = p.ExecStream(strings.NewReader(test.in))
 			if err != nil {
 				if test.err != "" {
@@ -133,7 +134,7 @@ func TestInterp(t *testing.T) {
 			if test.err != "" {
 				t.Fatalf(`expected error %q, got ""`, test.err)
 			}
-			out := outBuf.String()
+			out := outBuf.String() + errBuf.String()
 			if out != test.out {
 				t.Fatalf("expected %q, got %q", test.out, out)
 			}
