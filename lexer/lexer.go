@@ -2,7 +2,6 @@
 package lexer
 
 import (
-	"bytes"
 	"fmt"
 	"unicode/utf8"
 )
@@ -15,6 +14,7 @@ type Lexer struct {
 	pos      Position
 	nextPos  Position
 	hadSpace bool
+	lastTok  Token
 }
 
 type Position struct {
@@ -35,6 +35,12 @@ func (l *Lexer) HadSpace() bool {
 }
 
 func (l *Lexer) Scan() (Position, Token, string) {
+	pos, tok, val := l.scan()
+	l.lastTok = tok
+	return pos, tok, val
+}
+
+func (l *Lexer) scan() (Position, Token, string) {
 	l.hadSpace = false
 	for l.ch == ' ' || l.ch == '\t' || l.ch == '\r' || l.ch == '\\' {
 		l.hadSpace = true
@@ -97,41 +103,7 @@ func (l *Lexer) Scan() (Position, Token, string) {
 	case ',':
 		tok = COMMA
 	case '/':
-		// TODO: incorrect handling of / (division) and regex parsing,
-		// but good enough for now: if there's another / on the line,
-		// we parse it as a REGEX token, otherwise DIV.
-		prevOfs := l.offset - 1
-		lineLen := bytes.IndexByte(l.src[prevOfs:], '\n')
-		if lineLen < 0 {
-			lineLen = len(l.src) - prevOfs
-		}
-		looksLikeRegex := bytes.IndexByte(l.src[prevOfs:prevOfs+lineLen], '/') >= 0
-		if looksLikeRegex {
-			runes := []rune{}
-			for l.ch != '/' {
-				c := l.ch
-				if c < 0 {
-					return l.pos, ILLEGAL, "didn't find end slash in regex"
-				}
-				if c == '\r' || c == '\n' {
-					return l.pos, ILLEGAL, "can't have newline in regex"
-				}
-				if c == '\\' {
-					l.next()
-					if l.ch != '/' {
-						runes = append(runes, '\\')
-					}
-					c = l.ch
-				}
-				runes = append(runes, c)
-				l.next()
-			}
-			l.next()
-			tok = REGEX
-			val = string(runes)
-		} else {
-			tok = l.choice('=', DIV, DIV_ASSIGN)
-		}
+		tok = l.choice('=', DIV, DIV_ASSIGN)
 	case '{':
 		tok = LBRACE
 	case '[':
@@ -292,6 +264,48 @@ func (l *Lexer) Scan() (Position, Token, string) {
 		val = fmt.Sprintf("unexpected %q", ch)
 	}
 	return pos, tok, val
+}
+
+func (l *Lexer) ScanRegex() (Position, Token, string) {
+	pos, tok, val := l.scanRegex()
+	l.lastTok = tok
+	return pos, tok, val
+}
+
+func (l *Lexer) scanRegex() (Position, Token, string) {
+	pos := l.pos
+	runes := []rune{}
+	switch l.lastTok {
+	case DIV:
+		// Regex after '/' (the usual case)
+		pos.Column -= 1
+	case DIV_ASSIGN:
+		// Regex after '/=' (possible when regex starts with '=')
+		pos.Column -= 2
+		runes = append(runes, '=')
+	default:
+		return l.pos, ILLEGAL, fmt.Sprintf("unexpected %s preceding regex", l.lastTok)
+	}
+	for l.ch != '/' {
+		c := l.ch
+		if c < 0 {
+			return l.pos, ILLEGAL, "didn't find end slash in regex"
+		}
+		if c == '\r' || c == '\n' {
+			return l.pos, ILLEGAL, "can't have newline in regex"
+		}
+		if c == '\\' {
+			l.next()
+			if l.ch != '/' {
+				runes = append(runes, '\\')
+			}
+			c = l.ch
+		}
+		runes = append(runes, c)
+		l.next()
+	}
+	l.next()
+	return pos, REGEX, string(runes)
 }
 
 func (l *Lexer) next() {

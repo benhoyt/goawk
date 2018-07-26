@@ -76,7 +76,6 @@ func TestStringMethod(t *testing.T) {
 		"atan2 close cos exp gsub index int length log match rand " +
 		"sin split sprintf sqrt srand sub substr system tolower toupper " +
 		"x \"str\\n\" 1234\n" +
-		"/foo/\n" +
 		"@ ."
 
 	strs := make([]string, 0, LAST+1)
@@ -100,18 +99,28 @@ func TestStringMethod(t *testing.T) {
 		"atan2 close cos exp gsub index int length log match rand " +
 		"sin split sprintf sqrt srand sub substr system tolower toupper " +
 		"name string number <newline> " +
-		"regex <newline> " +
 		"<illegal> <illegal> EOF"
 	if output != expected {
 		t.Errorf("expected %q, got %q", expected, output)
 	}
 
-	var unsupportedTokens = map[Token]bool{
-		GETLINE: true,
-	}
 	for i, s := range seen {
-		if !unsupportedTokens[Token(i)] && !s && Token(i) != CONCAT {
+		if !s && Token(i) != CONCAT && Token(i) != GETLINE && Token(i) != REGEX {
 			t.Errorf("token %s (%d) not seen", Token(i), i)
 		}
+	}
+
+	l = NewLexer([]byte(`/foo/`))
+	_, tok1, _ := l.Scan()
+	_, tok2, val := l.ScanRegex()
+	if tok1 != Token(DIV) || tok2 != Token(REGEX) || val != "foo" {
+		t.Errorf(`expected / regex "foo", got %s %s %q`, tok1, tok2, val)
+	}
+
+	l = NewLexer([]byte(`/=foo/`))
+	_, tok1, _ = l.Scan()
+	_, tok2, val = l.ScanRegex()
+	if tok1 != Token(DIV_ASSIGN) || tok2 != Token(REGEX) || val != "=foo" {
+		t.Errorf(`expected /= regex "=foo", got %s %s %q`, tok1, tok2, val)
 	}
 }

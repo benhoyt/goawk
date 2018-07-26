@@ -28,11 +28,6 @@ References to nonexistent fields (that is, fields after $NF), shall evaluate to 
     - shouldn't allow syntax: { $1 = substr($1, 1, 3) print $1 }
     - should allow: NR==1, NR==2 { print "A", $0 };  NR==4, NR==6 { print "B", $0 }
       needs to look for semicolon after statement block?
-    - proper parsing of div (instead of regex)
-		"In some contexts, a <slash> ( '/' ) that is used to surround an ERE
-		could also be the division operator. This shall be resolved in such a
-		way that wherever the division operator could appear, a <slash> is
-		assumed to be the division operator. (There is no unary division operator.)"
 - other lexer, parser, and interpreter tests
   - test user-defined functions: recursion, locals vs globals, array params, etc
   - does awk treat for-in variable as local?

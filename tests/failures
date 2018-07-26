@@ -1,8 +1,6 @@
 --- FAIL: TestAWK
     --- FAIL: TestAWK/t.NF
     	output differs, run: git diff tests/output/t.NF
-    --- FAIL: TestAWK/t.addops
-    	parse error at 12:14: expected ) instead of regex
     --- FAIL: TestAWK/t.beginexit
     	parse error at 2:9: 'getline' is not yet implemented
     --- FAIL: TestAWK/t.beginnext

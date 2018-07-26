@@ -520,17 +520,6 @@ func (p *Interp) eval(expr Expr) value {
 			}
 			right := p.eval(e.Right)
 			return boolean(right.boolean())
-		case MATCH, NOT_MATCH:
-			if regExpr, ok := e.Right.(*RegExpr); ok {
-				re := p.mustCompile(regExpr.Regex)
-				matched := re.MatchString(p.toString(left))
-				if e.Op == MATCH {
-					return boolean(matched)
-				} else {
-					return boolean(!matched)
-				}
-			}
-			fallthrough
 		default:
 			right := p.eval(e.Right)
 			return binaryFuncs[e.Op](p, left, right)

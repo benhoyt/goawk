@@ -433,7 +433,7 @@ func (p *parser) _match(higher func() Expr) Expr {
 	if p.matches(MATCH, NOT_MATCH) {
 		op := p.tok
 		p.next()
-		right := higher() // Not match() as these aren't associative
+		right := p.regexStr(higher) // Not match() as these aren't associative
 		return &BinaryExpr{expr, op, right}
 	}
 	return expr
@@ -535,9 +535,8 @@ func (p *parser) primary() Expr {
 		s := p.val
 		p.next()
 		return &StrExpr{s}
-	case REGEX:
-		regex := p.val
-		p.next()
+	case DIV, DIV_ASSIGN:
+		regex := p.nextRegex()
 		return &RegExpr{regex}
 	case DOLLAR:
 		p.next()
@@ -583,7 +582,7 @@ func (p *parser) primary() Expr {
 		op := p.tok
 		p.next()
 		p.expect(LPAREN)
-		regex := p.regex()
+		regex := p.regexStr(p.expr)
 		p.commaNewlines()
 		repl := p.expr()
 		args := []Expr{regex, repl}
@@ -608,7 +607,7 @@ func (p *parser) primary() Expr {
 		args := []Expr{str, &VarExpr{array}}
 		if p.tok == COMMA {
 			p.commaNewlines()
-			args = append(args, p.regex())
+			args = append(args, p.regexStr(p.expr))
 		}
 		p.expect(RPAREN)
 		return &CallExpr{F_SPLIT, args}
@@ -617,7 +616,7 @@ func (p *parser) primary() Expr {
 		p.expect(LPAREN)
 		str := p.expr()
 		p.commaNewlines()
-		regex := p.regex()
+		regex := p.regexStr(p.expr)
 		p.expect(RPAREN)
 		return &CallExpr{F_MATCH, []Expr{str, regex}}
 	case F_RAND:
@@ -697,13 +696,12 @@ func (p *parser) primary() Expr {
 //
 //     REGEX | expr
 //
-func (p *parser) regex() Expr {
-	if p.tok == REGEX {
-		regex := p.val
-		p.next()
+func (p *parser) regexStr(parse func() Expr) Expr {
+	if p.matches(DIV, DIV_ASSIGN) {
+		regex := p.nextRegex()
 		return &StrExpr{regex}
 	}
-	return p.expr()
+	return parse()
 }
 
 // Parse left-associative binary operator. Allow newlines after
@@ -750,6 +748,16 @@ func (p *parser) next() {
 	if p.tok == ILLEGAL {
 		panic(p.error("%s", p.val))
 	}
+}
+
+func (p *parser) nextRegex() string {
+	p.pos, p.tok, p.val = p.lexer.ScanRegex()
+	if p.tok == ILLEGAL {
+		panic(p.error("%s", p.val))
+	}
+	regex := p.val
+	p.next()
+	return regex
 }
 
 // Ensure current token is tok, and parse next token into p.tok.
