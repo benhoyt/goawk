@@ -110,15 +110,15 @@ func main() {
 func showSourceLine(src []byte, pos lexer.Position, dividerLen int) {
 	divider := strings.Repeat("-", dividerLen)
 	if divider != "" {
-		fmt.Println(divider)
+		fmt.Fprintln(os.Stderr, divider)
 	}
 	lines := bytes.Split(src, []byte{'\n'})
 	srcLine := string(lines[pos.Line-1])
 	numTabs := strings.Count(srcLine[:pos.Column-1], "\t")
-	fmt.Println(strings.Replace(srcLine, "\t", "    ", -1))
-	fmt.Println(strings.Repeat(" ", pos.Column-1) + strings.Repeat("   ", numTabs) + "^")
+	fmt.Fprintln(os.Stderr, strings.Replace(srcLine, "\t", "    ", -1))
+	fmt.Fprintln(os.Stderr, strings.Repeat(" ", pos.Column-1)+strings.Repeat("   ", numTabs)+"^")
 	if divider != "" {
-		fmt.Println(divider)
+		fmt.Fprintln(os.Stderr, divider)
 	}
 }
 
