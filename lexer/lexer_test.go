@@ -95,7 +95,7 @@ func TestStringMethod(t *testing.T) {
 		"+ += && = : , -- / <newline> /= $ == >= > >> ++ { [ < ( <newline> " +
 		"<= ~ % %= * *= !~ ! != | || ^ ^= ^ ^= ? } ] ) ; - -= " +
 		"BEGIN break continue delete do else END exit " +
-		"for function <illegal> if in next print printf return while " +
+		"for function getline if in next print printf return while " +
 		"atan2 close cos exp gsub index int length log match rand " +
 		"sin split sprintf sqrt srand sub substr system tolower toupper " +
 		"name string number <newline> " +
@@ -105,7 +105,7 @@ func TestStringMethod(t *testing.T) {
 	}
 
 	for i, s := range seen {
-		if !s && Token(i) != CONCAT && Token(i) != GETLINE && Token(i) != REGEX {
+		if !s && Token(i) != CONCAT && Token(i) != REGEX {
 			t.Errorf("token %s (%d) not seen", Token(i), i)
 		}
 	}

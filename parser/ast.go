@@ -95,6 +95,7 @@ func (e *IncrExpr) expr()     {}
 func (e *CallExpr) expr()     {}
 func (e *UserCallExpr) expr() {}
 func (e *MultiExpr) expr()    {}
+func (e *GetlineExpr) expr()  {}
 
 type FieldExpr struct {
 	Index Expr
@@ -261,6 +262,27 @@ func (e *MultiExpr) String() string {
 		exprs[i] = e.String()
 	}
 	return "(" + strings.Join(exprs, ", ") + ")"
+}
+
+type GetlineExpr struct {
+	Command Expr
+	Var     string
+	File    Expr
+}
+
+func (e *GetlineExpr) String() string {
+	s := ""
+	if e.Command != nil {
+		s += e.Command.String() + " |"
+	}
+	s += "getline"
+	if e.Var != "" {
+		s += " " + e.Var
+	}
+	if e.File != nil {
+		s += " <" + e.File.String()
+	}
+	return s
 }
 
 func IsLValue(expr Expr) bool {

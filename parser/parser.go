@@ -344,8 +344,27 @@ func (p *parser) exprList(parse func() Expr) []Expr {
 }
 
 // Parse a single expression.
-func (p *parser) expr() Expr      { return p._assign(p.cond) }
+func (p *parser) expr() Expr      { return p.getLine() }
 func (p *parser) printExpr() Expr { return p._assign(p.printCond) }
+
+// Parse an "expr | getline [var]" expression:
+//
+//     assign [PIPE GETLINE [NAME]]
+//
+func (p *parser) getLine() Expr {
+	expr := p._assign(p.cond)
+	if p.tok == PIPE {
+		p.next()
+		p.expect(GETLINE)
+		name := ""
+		if p.tok == NAME {
+			name = p.val
+			p.next()
+		}
+		return &GetlineExpr{expr, name, nil}
+	}
+	return expr
+}
 
 // Parse an = assignment expression:
 //
@@ -578,6 +597,19 @@ func (p *parser) primary() Expr {
 			}
 			return &MultiExpr{exprs}
 		}
+	case GETLINE:
+		p.next()
+		name := ""
+		if p.tok == NAME {
+			name = p.val
+			p.next()
+		}
+		var file Expr
+		if p.tok == LESS {
+			p.next()
+			file = p.expr()
+		}
+		return &GetlineExpr{nil, name, file}
 	case F_SUB, F_GSUB:
 		op := p.tok
 		p.next()

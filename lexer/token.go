@@ -105,10 +105,6 @@ const (
 	LAST_FUNC  = F_TOUPPER
 )
 
-var unsupportedKeywords = map[string]bool{
-	"getline": true,
-}
-
 var keywordTokens = map[string]Token{
 	"BEGIN":    BEGIN,
 	"break":    BREAK,

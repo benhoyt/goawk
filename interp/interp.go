@@ -637,6 +637,8 @@ func (p *Interp) eval(expr Expr) value {
 	case *MultiExpr:
 		// TODO: figure out a good way to make this a parse-time error
 		panic(newError("unexpected comma-separated expression: %s", expr))
+	case *GetlineExpr:
+		panic(newError("TODO: getline not yet supported"))
 	default:
 		panic(fmt.Sprintf("unexpected expr type: %T", expr))
 	}

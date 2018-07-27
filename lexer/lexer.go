@@ -84,9 +84,6 @@ func (l *Lexer) scan() (Position, Token, string) {
 			l.next()
 		}
 		name := string(runes)
-		if unsupportedKeywords[name] {
-			return pos, ILLEGAL, fmt.Sprintf("'%s' is not yet implemented", name)
-		}
 		tok, isKeyword := keywordTokens[name]
 		if !isKeyword {
 			tok = NAME

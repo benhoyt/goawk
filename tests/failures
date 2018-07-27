@@ -2,9 +2,9 @@
     --- FAIL: TestAWK/t.NF
     	output differs, run: git diff tests/output/t.NF
     --- FAIL: TestAWK/t.beginexit
-    	parse error at 2:9: 'getline' is not yet implemented
+    	TODO: getline not yet supported
     --- FAIL: TestAWK/t.beginnext
-    	parse error at 2:9: 'getline' is not yet implemented
+    	TODO: getline not yet supported
     --- FAIL: TestAWK/t.printf2
     	output differs, run: git diff tests/output/t.printf2
 FAIL
