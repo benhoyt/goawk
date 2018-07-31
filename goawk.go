@@ -96,11 +96,7 @@ func main() {
 	interpArgs := []string{filepath.Base(os.Args[0])}
 	interpArgs = append(interpArgs, args...)
 	p.SetArgs(interpArgs)
-	if len(args) < 1 {
-		err = p.ExecStream(os.Stdin)
-	} else {
-		err = p.ExecFiles(args)
-	}
+	err = p.Exec(os.Stdin, args)
 	if err != nil {
 		errorExit("%s", err)
 	}

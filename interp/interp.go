@@ -61,8 +61,15 @@ type Interp struct {
 	argc        int
 	random      *rand.Rand
 	exitStatus  int
-	streams     map[string]io.WriteCloser
+	streams     map[string]io.Closer
 	commands    map[string]*exec.Cmd
+
+	scanner       *bufio.Scanner
+	scanners      map[string]*bufio.Scanner
+	stdin         io.Reader
+	filenames     []string
+	filenameIndex int
+	input         io.Reader
 
 	locals        []map[string]value
 	localArrays   []map[string]string
@@ -115,9 +122,16 @@ func (p *Interp) ExitStatus() int {
 	return p.exitStatus
 }
 
-func (p *Interp) ExecStream(input io.Reader) error {
-	p.streams = make(map[string]io.WriteCloser)
+func (p *Interp) Exec(stdin io.Reader, filenames []string) error {
+	p.stdin = stdin
+	if len(filenames) == 0 {
+		filenames = []string{"-"}
+	}
+	p.filenames = filenames
+	p.filenameIndex = 0
+	p.streams = make(map[string]io.Closer)
 	p.commands = make(map[string]*exec.Cmd)
+	p.scanners = make(map[string]*bufio.Scanner)
 	defer p.closeAll()
 
 	err := p.execBegin(p.program.Begin)
@@ -128,42 +142,7 @@ func (p *Interp) ExecStream(input io.Reader) error {
 		return nil
 	}
 	if err != errExit {
-		err = p.execActions(p.program.Actions, "", input)
-		if err != nil && err != errExit {
-			return err
-		}
-	}
-	err = p.execEnd(p.program.End)
-	if err != nil && err != errExit {
-		return err
-	}
-	return nil
-}
-
-func (p *Interp) ExecFiles(inputPaths []string) error {
-	p.streams = make(map[string]io.WriteCloser)
-	p.commands = make(map[string]*exec.Cmd)
-	defer p.closeAll()
-
-	err := p.execBegin(p.program.Begin)
-	if err != nil && err != errExit {
-		return err
-	}
-	if p.program.Actions == nil && p.program.End == nil {
-		return nil
-	}
-	if err != errExit {
-		for _, path := range inputPaths {
-			f, errOpen := os.Open(path)
-			if errOpen != nil {
-				return errOpen
-			}
-			err = p.execActions(p.program.Actions, path, f)
-			f.Close()
-			if err != nil {
-				break
-			}
-		}
+		err = p.execActions(p.program.Actions)
 		if err != nil && err != errExit {
 			return err
 		}
@@ -176,6 +155,9 @@ func (p *Interp) ExecFiles(inputPaths []string) error {
 }
 
 func (p *Interp) closeAll() {
+	if prevInput, ok := p.input.(io.Closer); ok {
+		prevInput.Close()
+	}
 	for _, w := range p.streams {
 		_ = w.Close()
 	}
@@ -194,13 +176,18 @@ func (p *Interp) execBegin(begin []Stmts) error {
 	return nil
 }
 
-func (p *Interp) execActions(actions []Action, filename string, input io.Reader) error {
-	p.setFile(filename)
-	scanner := bufio.NewScanner(input)
+func (p *Interp) execActions(actions []Action) error {
 	inRange := make([]bool, len(actions))
 lineLoop:
-	for scanner.Scan() {
-		p.nextLine(scanner.Text())
+	for {
+		line, err := p.nextLine()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		p.setLine(line)
 		for i, action := range actions {
 			matched := false
 			switch len(action.Pattern) {
@@ -248,9 +235,6 @@ lineLoop:
 				return err
 			}
 		}
-	}
-	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("reading lines from input: %s", err)
 	}
 	return nil
 }
@@ -300,7 +284,7 @@ func (p *Interp) execute(stmt Stmt) (execErr error) {
 		} else {
 			line = p.line
 		}
-		output := p.getStream(s.Redirect, s.Dest)
+		output := p.getOutputStream(s.Redirect, s.Dest)
 		io.WriteString(output, line+p.outputRecordSep)
 	case *PrintfStmt:
 		if len(s.Args) == 0 {
@@ -311,7 +295,7 @@ func (p *Interp) execute(stmt Stmt) (execErr error) {
 		for i, a := range s.Args[1:] {
 			args[i] = p.eval(a)
 		}
-		output := p.getStream(s.Redirect, s.Dest)
+		output := p.getOutputStream(s.Redirect, s.Dest)
 		io.WriteString(output, p.sprintf(format, args))
 	case *IfStmt:
 		if p.eval(s.Cond).boolean() {
@@ -412,13 +396,19 @@ func (p *Interp) execute(stmt Stmt) (execErr error) {
 	return nil
 }
 
-func (p *Interp) getStream(redirect Token, dest Expr) io.Writer {
-	switch redirect {
-	case GREATER, APPEND:
-		name := p.toString(p.eval(dest))
-		if w, ok := p.streams[name]; ok {
+func (p *Interp) getOutputStream(redirect Token, dest Expr) io.Writer {
+	if redirect == ILLEGAL {
+		return p.output
+	}
+	name := p.toString(p.eval(dest))
+	if s, ok := p.streams[name]; ok {
+		if w, ok := s.(io.Writer); ok {
 			return w
 		}
+		panic(newError("can't write to reader stream"))
+	}
+	switch redirect {
+	case GREATER, APPEND:
 		flags := os.O_CREATE | os.O_WRONLY
 		if redirect == GREATER {
 			flags |= os.O_TRUNC
@@ -427,16 +417,12 @@ func (p *Interp) getStream(redirect Token, dest Expr) io.Writer {
 		}
 		w, err := os.OpenFile(name, flags, 0644)
 		if err != nil {
-			panic(newError("redirection error: %s", err))
+			panic(newError("output redirection error: %s", err))
 		}
 		p.streams[name] = w
 		return w
 	case PIPE:
-		cmdline := p.toString(p.eval(dest))
-		if w, ok := p.streams[cmdline]; ok {
-			return w
-		}
-		cmd := exec.Command("sh", "-c", cmdline)
+		cmd := exec.Command("sh", "-c", name)
 		w, err := cmd.StdinPipe()
 		if err != nil {
 			panic(newError("error connecting to stdin pipe: %v\n", err))
@@ -460,11 +446,32 @@ func (p *Interp) getStream(redirect Token, dest Expr) io.Writer {
 		go func() {
 			io.Copy(p.errorOutput, stderr)
 		}()
-		p.commands[cmdline] = cmd
-		p.streams[cmdline] = w
+		p.commands[name] = cmd
+		p.streams[name] = w
 		return w
 	default:
-		return p.output
+		panic(fmt.Sprintf("unexpected redirect type %s", redirect))
+	}
+}
+
+func (p *Interp) getInputScanner(name string, isFile bool) *bufio.Scanner {
+	if s, ok := p.streams[name]; ok {
+		if _, ok := s.(io.Reader); ok {
+			return p.scanners[name]
+		}
+		panic(newError("can't read from writer stream"))
+	}
+	if isFile {
+		r, err := os.Open(name)
+		if err != nil {
+			panic(newError("input redirection error: %s", err))
+		}
+		scanner := bufio.NewScanner(r)
+		p.scanners[name] = scanner
+		p.streams[name] = r
+		return scanner
+	} else {
+		panic(newError("TODO: cmd |getline not yet supported"))
 	}
 }
 
@@ -638,7 +645,44 @@ func (p *Interp) eval(expr Expr) value {
 		// TODO: figure out a good way to make this a parse-time error
 		panic(newError("unexpected comma-separated expression: %s", expr))
 	case *GetlineExpr:
-		panic(newError("TODO: getline not yet supported"))
+		var line string
+		switch {
+		case e.Command != nil:
+			name := p.toString(p.eval(e.Command))
+			scanner := p.getInputScanner(name, false)
+			if !scanner.Scan() {
+				if err := scanner.Err(); err != nil {
+					return num(-1)
+				}
+				return num(0)
+			}
+			line = scanner.Text()
+		case e.File != nil:
+			name := p.toString(p.eval(e.File))
+			scanner := p.getInputScanner(name, true)
+			if !scanner.Scan() {
+				if err := scanner.Err(); err != nil {
+					return num(-1)
+				}
+				return num(0)
+			}
+			line = scanner.Text()
+		default:
+			var err error
+			line, err = p.nextLine()
+			if err == io.EOF {
+				return num(0)
+			}
+			if err != nil {
+				return num(-1)
+			}
+		}
+		if e.Var != "" {
+			p.setVar(e.Var, str(line))
+		} else {
+			p.setLine(line)
+		}
+		return num(1)
 	default:
 		panic(fmt.Sprintf("unexpected expr type: %T", expr))
 	}
@@ -661,10 +705,41 @@ func (p *Interp) setLine(line string) {
 	p.numFields = len(p.fields)
 }
 
-func (p *Interp) nextLine(line string) {
-	p.setLine(line)
+func (p *Interp) nextLine() (string, error) {
+	for {
+		if p.scanner == nil {
+			if prevInput, ok := p.input.(io.Closer); ok {
+				prevInput.Close()
+			}
+			if p.filenameIndex >= len(p.filenames) {
+				return "", io.EOF
+			}
+			filename := p.filenames[p.filenameIndex]
+			p.filenameIndex++
+			if filename == "-" {
+				p.input = p.stdin
+				p.setFile("")
+			} else {
+				input, err := os.Open(filename)
+				if err != nil {
+					return "", err
+				}
+				p.input = input
+				p.setFile(filename)
+			}
+			p.scanner = bufio.NewScanner(p.input)
+		}
+		if p.scanner.Scan() {
+			break
+		}
+		if err := p.scanner.Err(); err != nil {
+			return "", fmt.Errorf("error reading from input: %s", err)
+		}
+		p.scanner = nil
+	}
 	p.lineNum++
 	p.fileLineNum++
+	return p.scanner.Text(), nil
 }
 
 func (p *Interp) getVar(name string) value {

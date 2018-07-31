@@ -121,7 +121,7 @@ func TestInterp(t *testing.T) {
 			outBuf := &bytes.Buffer{}
 			errBuf := &bytes.Buffer{}
 			p := interp.New(prog, outBuf, errBuf)
-			err = p.ExecStream(strings.NewReader(test.in))
+			err = p.Exec(strings.NewReader(test.in), nil)
 			if err != nil {
 				if test.err != "" {
 					if err.Error() == test.err {

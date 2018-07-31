@@ -1,10 +1,6 @@
 --- FAIL: TestAWK
     --- FAIL: TestAWK/t.NF
     	output differs, run: git diff tests/output/t.NF
-    --- FAIL: TestAWK/t.beginexit
-    	TODO: getline not yet supported
-    --- FAIL: TestAWK/t.beginnext
-    	TODO: getline not yet supported
     --- FAIL: TestAWK/t.printf2
     	output differs, run: git diff tests/output/t.printf2
 FAIL
