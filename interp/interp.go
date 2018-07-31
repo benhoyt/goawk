@@ -471,7 +471,36 @@ func (p *Interp) getInputScanner(name string, isFile bool) *bufio.Scanner {
 		p.streams[name] = r
 		return scanner
 	} else {
-		panic(newError("TODO: cmd |getline not yet supported"))
+		cmd := exec.Command("sh", "-c", name)
+		stdin, err := cmd.StdinPipe()
+		if err != nil {
+			panic(newError("error connecting to stdin pipe: %v\n", err))
+		}
+		r, err := cmd.StdoutPipe()
+		if err != nil {
+			panic(newError("error connecting to stdout pipe: %v\n", err))
+		}
+		stderr, err := cmd.StderrPipe()
+		if err != nil {
+			panic(newError("error connecting to stderr pipe: %v\n", err))
+		}
+		err = cmd.Start()
+		if err != nil {
+			fmt.Fprintln(p.errorOutput, err)
+			return bufio.NewScanner(strings.NewReader(""))
+		}
+		go func() {
+			io.Copy(stdin, p.stdin)
+			stdin.Close()
+		}()
+		go func() {
+			io.Copy(p.errorOutput, stderr)
+		}()
+		scanner := bufio.NewScanner(r)
+		p.commands[name] = cmd
+		p.streams[name] = r
+		p.scanners[name] = scanner
+		return scanner
 	}
 }
 
