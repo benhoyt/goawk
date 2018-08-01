@@ -397,11 +397,10 @@ func (p *parser) _cond(higher func() Expr) Expr {
 	if p.tok == QUESTION {
 		p.next()
 		p.optionalNewlines()
-		// TODO: should these be p.expr()
-		t := p._cond(higher)
+		t := p.expr()
 		p.expect(COLON)
 		p.optionalNewlines()
-		f := p._cond(higher)
+		f := p.expr()
 		return &CondExpr{expr, t, f}
 	}
 	return expr
@@ -652,7 +651,6 @@ func (p *parser) primary() Expr {
 		p.expect(RPAREN)
 		return &CallExpr{F_MATCH, []Expr{str, regex}}
 	case F_RAND:
-		// TODO: "rand" is allowed to be called without parens (any other funcs like this?)
 		p.next()
 		p.expect(LPAREN)
 		p.expect(RPAREN)

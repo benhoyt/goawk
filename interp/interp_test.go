@@ -51,14 +51,15 @@ func TestInterp(t *testing.T) {
 		{`BEGIN { print 1?"t":"f" }`, "", "t\n", "", ""},
 		{`BEGIN { print (1+2)?"t":"f" }`, "", "t\n", "", ""},
 		{`BEGIN { print (1+2?"t":"f") }`, "", "t\n", "", ""},
+		{`BEGIN { print(1 ? x="t" : "f"); print x; }`, "", "t\nt\n", "", ""},
 
 		// Ensure certain odd syntax matches awk behaviour
 		{`BEGIN { printf "x" }; BEGIN { printf "y" }`, "", "xy", "", ""},
+		{`BEGIN { printf "x" };; BEGIN { printf "y" }`, "", "xy", "", ""},
 
 		// Ensure syntax errors result in errors
-		{`BEGIN { }'`, "", "", `parse error at 1:10: unexpected '\''`, `invalid char ''' in expression`},
+		{`BEGIN { }'`, "", "", `parse error at 1:10: unexpected '\''`, `syntax error at source line 1`},
 		{`{ $1 = substr($1, 1, 3) print $1 }`, "", "", "ERROR", "syntax error"},
-		{`BEGIN { printf "x" };; BEGIN { printf "y" }`, "", "xy", `parse error at 1:21: expected expression instead of ;`, "each rule must have a pattern or an action part"},
 	}
 	for _, test := range tests {
 		testName := test.src
@@ -107,7 +108,7 @@ func TestInterp(t *testing.T) {
 		})
 
 		// Then test it in GoAWK
-		t.Run("goawk_"+testName, func(t *testing.T) {
+		t.Run(testName, func(t *testing.T) {
 			prog, err := parser.ParseProgram([]byte(test.src))
 			if err != nil {
 				if test.err != "" {
