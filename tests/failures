@@ -1,6 +1,4 @@
 --- FAIL: TestAWK
-    --- FAIL: TestAWK/t.NF
-    	output differs, run: git diff tests/output/t.NF
     --- FAIL: TestAWK/t.null0
     	output differs, run: git diff tests/output/t.null0
 FAIL

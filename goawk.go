@@ -2,24 +2,15 @@
 package main
 
 /*
+
 TODO:
 - testing (against other implementations?)
+    - t.null0 not working due to handling of uninitialized values:
+		- StackOverflow question: https://stackoverflow.com/questions/51632945
     - t.NF not working; in awk, this program
       '{ OFS = "|"; print NF; NF = 2; print NF; print; }'
       produces different output when run as a sub-process (eg: os/exec)
       vs when run from the command line -- why? which is correct?
-    - t.null0 not working due to handling of uninitialized values:
-		- post awk thing on SO
-		$ echo 'one two' | awk '{ print ($5 == 0) }'
-		0
-
-		http://pubs.opengroup.org/onlinepubs/9699919799/utilities/awk.html
-
-		Comparisons (with the '<', "<=", "!=", "==", '>', and ">=" operators) shall be made numerically if both operands are numeric, if one is numeric and the other has a string value that is a numeric string, or if one is numeric and the other has the uninitialized value. Otherwise, operands shall be converted to strings as required...
-
-		An uninitialized value shall have both a numeric value of zero and a string value of the empty string.
-
-		References to nonexistent fields (that is, fields after $NF), shall evaluate to the uninitialized value.
 
     - shouldn't allow syntax: { $1 = substr($1, 1, 3) print $1 }
     - should allow: NR==1, NR==2 { print "A", $0 };  NR==4, NR==6 { print "B", $0 }

@@ -44,8 +44,14 @@ func TestAWK(t *testing.T) {
 	errorExits := map[string]bool{
 		"t.exit":   true,
 		"t.exit1":  true,
-		"t.gsub4":  true, // Has malformed regex from user input
-		"t.split3": true, // Has malformed regex from user input
+		"t.gsub4":  true,
+		"t.split3": true,
+	}
+	// These programs have known different output
+	knownDifferent := map[string]bool{
+		"t.gsub4":   true, // Has malformed regex from user input (but awk doesn't mind)
+		"t.split3":  true, // Has malformed regex from user input (but awk doesn't mind)
+		"t.printf2": true, // Handles non-ASCII differently (we allow non-ASCII with printf %c)
 	}
 	// Can't really diff test rand() tests as we're using a totally
 	// different algorithm for random numbers
@@ -99,7 +105,7 @@ func TestAWK(t *testing.T) {
 				t.Fatal(err)
 			}
 			output = bytes.Replace(output, []byte{0}, []byte("<00>"), -1)
-			if randTests[info.Name()] {
+			if randTests[info.Name()] || knownDifferent[info.Name()] {
 				// For tests that use rand(), run them to ensure they
 				// parse and interpret, but can't compare the output,
 				// so stop now
