@@ -63,6 +63,7 @@ type Interp struct {
 	exitStatus  int
 	streams     map[string]io.Closer
 	commands    map[string]*exec.Cmd
+	regexCache  map[string]*regexp.Regexp
 
 	scanner       *bufio.Scanner
 	scanners      map[string]*bufio.Scanner
@@ -93,6 +94,8 @@ type Interp struct {
 	matchStart      int
 }
 
+const maxCachedRegexes = 100
+
 func New(program *Program, output, errorOutput io.Writer) *Interp {
 	p := &Interp{}
 	p.program = program
@@ -108,6 +111,7 @@ func New(program *Program, output, errorOutput io.Writer) *Interp {
 
 	p.vars = make(map[string]value)
 	p.arrays = make(map[string]map[string]value)
+	p.regexCache = make(map[string]*regexp.Regexp, 10)
 	p.random = rand.New(rand.NewSource(0))
 	p.convertFormat = "%.6g"
 	p.outputFormat = "%.6g"
@@ -671,7 +675,7 @@ func (p *Interp) eval(expr Expr) value {
 	case *UserCallExpr:
 		return p.userCall(e.Name, e.Args)
 	case *MultiExpr:
-		// TODO: figure out a good way to make this a parse-time error
+		// Note: should figure out a good way to make this a parse-time error
 		panic(newError("unexpected comma-separated expression: %s", expr))
 	case *GetlineExpr:
 		var line string
@@ -825,10 +829,6 @@ func (p *Interp) setVarError(name string, v value) error {
 		}
 	}
 
-	// TODO: should the types of the built-in variables roundtrip?
-	// i.e., if you set NF to a string should it read back as a string?
-	// $ awk 'BEGIN { NF = "3.0"; print (NF == "3.0"); }'
-	// 1
 	switch name {
 	case "ARGC":
 		p.argc = int(v.num())
@@ -950,10 +950,16 @@ func (p *Interp) toString(v value) string {
 }
 
 func (p *Interp) mustCompile(regex string) *regexp.Regexp {
-	// TODO: cache
+	if re, ok := p.regexCache[regex]; ok {
+		return re
+	}
 	re, err := regexp.Compile(regex)
 	if err != nil {
 		panic(newError("invalid regex %q: %s", regex, err))
+	}
+	// Dumb, non-LRU cache: just cache the first N regexes
+	if len(p.regexCache) < maxCachedRegexes {
+		p.regexCache[regex] = re
 	}
 	return re
 }

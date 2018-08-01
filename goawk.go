@@ -19,15 +19,13 @@ TODO:
   - test user-defined functions: recursion, locals vs globals, array params, etc
   - does awk treat for-in variable as local?
 - other TODOs:
+  + interp: TODOs about parse checking in userCall
   + interp: srand(): truncating fraction, return previous seed
-  + interp: should built-in variables round-trip their types
-  + interp: system() doesn't stream output
-  + interp: flag "unexpected comma-separated expression" at parse time
 - performance testing: I/O, allocations, CPU
 
 NICE TO HAVE:
 - parser: ensure vars aren't used in array context and vice-versa
-- regex caching for user regexes
+- interp: flag "unexpected comma-separated expression" at parse time
 - I don't think interp.SetArray is concurrency-safe
 
 */
