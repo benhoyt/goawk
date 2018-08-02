@@ -4,20 +4,10 @@ package main
 /*
 
 TODO:
-- testing (against other implementations?)
-    - t.null0 not working due to handling of uninitialized values:
-		- StackOverflow question: https://stackoverflow.com/questions/51632945
-    - t.NF not working; in awk, this program
-      '{ OFS = "|"; print NF; NF = 2; print NF; print; }'
-      produces different output when run as a sub-process (eg: os/exec)
-      vs when run from the command line -- why? which is correct?
-
-    - shouldn't allow syntax: { $1 = substr($1, 1, 3) print $1 }
-    - should allow: NR==1, NR==2 { print "A", $0 };  NR==4, NR==6 { print "B", $0 }
-      needs to look for semicolon after statement block?
 - other lexer, parser, and interpreter tests
   - test user-defined functions: recursion, locals vs globals, array params, etc
   - does awk treat for-in variable as local?
+  - fix broken interp tests due to syntax handling
 - other TODOs:
   + interp: TODOs about parse checking in userCall
   + interp: srand(): truncating fraction, return previous seed

@@ -58,7 +58,7 @@ func TestInterp(t *testing.T) {
 		{`BEGIN { printf "x" };; BEGIN { printf "y" }`, "", "xy", "", ""},
 
 		// Ensure syntax errors result in errors
-		{`BEGIN { }'`, "", "", `parse error at 1:10: unexpected '\''`, `syntax error at source line 1`},
+		{`BEGIN { }'`, "", "", `parse error at 1:10: unexpected '\''`, "syntax error"},
 		{`{ $1 = substr($1, 1, 3) print $1 }`, "", "", "ERROR", "syntax error"},
 	}
 	for _, test := range tests {
