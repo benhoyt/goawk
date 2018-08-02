@@ -1,6 +1,2 @@
---- FAIL: TestAWK
-    --- FAIL: TestAWK/t.null0
-    	output differs, run: git diff tests/output/t.null0
-FAIL
-exit status 1
-FAIL	github.com/benhoyt/goawk
+PASS
+ok  	github.com/benhoyt/goawk

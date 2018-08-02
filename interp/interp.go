@@ -910,7 +910,7 @@ func (p *Interp) getField(index int) value {
 		return numStr(p.line)
 	}
 	if index > len(p.fields) {
-		return value{}
+		return str("")
 	}
 	return numStr(p.fields[index-1])
 }
