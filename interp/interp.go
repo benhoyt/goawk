@@ -1190,11 +1190,9 @@ func (p *Interp) call(op Token, args []value) value {
 func (p *Interp) userCall(name string, args []Expr) value {
 	f, ok := p.program.Functions[name]
 	if !ok {
-		// TODO: could check for this at parse time
 		panic(newError("undefined function %q", name))
 	}
 	if len(args) > len(f.Params) {
-		// TODO: could check for this at parse time
 		panic(newError("%q called with more arguments than declared", name))
 	}
 
@@ -1202,8 +1200,6 @@ func (p *Interp) userCall(name string, args []Expr) value {
 	arrays := make(map[string]string)
 	for i, arg := range args {
 		if f.Arrays[i] {
-			// TODO: we're not actually checking if it's an array here, just a name --
-			// what happens if it's not an array?
 			a, ok := arg.(*VarExpr)
 			if !ok {
 				panic(newError("%s() argument %q must be an array", name, f.Params[i]))
