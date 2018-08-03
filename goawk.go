@@ -10,7 +10,6 @@ TODO:
   - fix broken interp tests due to syntax handling
 - other TODOs:
   + interp: TODOs about parse checking in userCall
-  + interp: srand(): truncating fraction, return previous seed
 - performance testing: I/O, allocations, CPU
 
 NICE TO HAVE:

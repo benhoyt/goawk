@@ -60,6 +60,7 @@ type Interp struct {
 	arrays      map[string]map[string]value
 	argc        int
 	random      *rand.Rand
+	randSeed    float64
 	exitStatus  int
 	streams     map[string]io.Closer
 	commands    map[string]*exec.Cmd
@@ -112,7 +113,9 @@ func New(program *Program, output, errorOutput io.Writer) *Interp {
 	p.vars = make(map[string]value)
 	p.arrays = make(map[string]map[string]value)
 	p.regexCache = make(map[string]*regexp.Regexp, 10)
-	p.random = rand.New(rand.NewSource(0))
+	p.randSeed = 1.0
+	seed := math.Float64bits(p.randSeed)
+	p.random = rand.New(rand.NewSource(int64(seed)))
 	p.convertFormat = "%.6g"
 	p.outputFormat = "%.6g"
 	p.fieldSep = " "
@@ -1108,15 +1111,15 @@ func (p *Interp) call(op Token, args []value) value {
 	case F_SIN:
 		return num(math.Sin(args[0].num()))
 	case F_SRAND:
+		prevSeed := p.randSeed
 		switch len(args) {
 		case 0:
 			p.random.Seed(time.Now().UnixNano())
 		case 1:
-			// TODO: truncating the fraction part here, is that okay?
-			p.random.Seed(int64(args[0].num()))
+			p.randSeed = args[0].num()
+			p.random.Seed(int64(math.Float64bits(p.randSeed)))
 		}
-		// TODO: previous seed value should be returned
-		return num(0)
+		return num(prevSeed)
 	case F_SUBSTR:
 		s := p.toString(args[0])
 		pos := int(args[1].num())
