@@ -89,7 +89,7 @@ func (v value) numChecked() (float64, error) {
 		if tok == '-' || tok == '+' {
 			tok = scan.Scan()
 		}
-		if tok != scanner.Float && tok != scanner.Int {
+		if scan.ErrorCount != 0 || (tok != scanner.Float && tok != scanner.Int) {
 			return 0, fmt.Errorf("invalid number %q", v.s)
 		}
 		// Scanner allows trailing 'e', ParseFloat doesn't
