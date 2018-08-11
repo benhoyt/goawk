@@ -8,6 +8,10 @@ TODO:
   - tests for recursion, locals vs globals, array params, etc
   - fix broken interp tests due to syntax handling
 - performance testing: I/O, allocations, CPU
+  + add "go test" benchmarks for various common workloads
+  + faster to do switch+case for binary funcs instead of map of funcs?
+  + getVar/setVar overhead -- can resolve stuff at compile-time
+  + defer in eval/exec
 
 NICE TO HAVE:
 - parser: ensure vars aren't used in array context and vice-versa
@@ -22,6 +26,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
+	"runtime/pprof"
 	"strings"
 
 	"github.com/benhoyt/goawk/interp"
@@ -32,6 +38,8 @@ import (
 func main() {
 	progFile := flag.String("f", "", "load AWK source from `filename`")
 	debug := flag.Bool("d", false, "debug mode (print parsed AST on stderr)")
+	cpuprofile := flag.String("cpuprofile", "", "write CPU profile to `file`")
+	memprofile := flag.String("memprofile", "", "write memory profile to `file`")
 	flag.Parse()
 	args := flag.Args()
 
@@ -62,6 +70,16 @@ func main() {
 		fmt.Fprintln(os.Stderr, prog)
 	}
 
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			errorExit("could not create CPU profile: %v", err)
+		}
+		if err := pprof.StartCPUProfile(f); err != nil {
+			errorExit("could not start CPU profile: %v", err)
+		}
+	}
+
 	p := interp.New(prog, nil, nil)
 	interpArgs := []string{filepath.Base(os.Args[0])}
 	interpArgs = append(interpArgs, args...)
@@ -70,6 +88,23 @@ func main() {
 	if err != nil {
 		errorExit("%s", err)
 	}
+
+	if *cpuprofile != "" {
+		pprof.StopCPUProfile()
+	}
+
+	if *memprofile != "" {
+		f, err := os.Create(*memprofile)
+		if err != nil {
+			errorExit("could not create memory profile: %v", err)
+		}
+		runtime.GC() // get up-to-date statistics
+		if err := pprof.WriteHeapProfile(f); err != nil {
+			errorExit("could not write memory profile: %v", err)
+		}
+		f.Close()
+	}
+
 	os.Exit(p.ExitStatus())
 }
 
