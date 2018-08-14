@@ -837,5 +837,9 @@ func ParseExpr(src []byte) (expr Expr, err error) {
 	lexer := NewLexer(src)
 	p := parser{lexer: lexer}
 	p.next()
-	return p.expr(), nil
+	expr = p.expr()
+	if p.tok != EOF {
+		panic(p.error("expected EOF, not %v", p.tok))
+	}
+	return expr, nil
 }
