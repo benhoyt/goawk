@@ -55,7 +55,9 @@ func (r returnValue) Error() string {
 type Interp struct {
 	program     *Program
 	output      io.Writer
+	flushOutput bool
 	errorOutput io.Writer
+	flushError  bool
 	vars        map[string]value
 	arrays      map[string]map[string]value
 	argc        int
@@ -102,11 +104,13 @@ func New(program *Program, output, errorOutput io.Writer) *Interp {
 	p.program = program
 
 	if output == nil {
-		output = os.Stdout
+		output = bufio.NewWriterSize(os.Stdout, 64*1024)
+		p.flushOutput = true
 	}
 	p.output = output
 	if errorOutput == nil {
-		errorOutput = os.Stderr
+		errorOutput = bufio.NewWriterSize(os.Stderr, 64*1024)
+		p.flushError = true
 	}
 	p.errorOutput = errorOutput
 
@@ -170,6 +174,12 @@ func (p *Interp) closeAll() {
 	}
 	for _, cmd := range p.commands {
 		_ = cmd.Wait()
+	}
+	if p.flushOutput {
+		p.output.(*bufio.Writer).Flush()
+	}
+	if p.flushError {
+		p.errorOutput.(*bufio.Writer).Flush()
 	}
 }
 
