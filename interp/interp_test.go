@@ -122,8 +122,8 @@ func TestInterp(t *testing.T) {
 			}
 			outBuf := &bytes.Buffer{}
 			errBuf := &bytes.Buffer{}
-			p := interp.New(prog, outBuf, errBuf)
-			err = p.Exec(strings.NewReader(test.in), nil)
+			p := interp.New(outBuf, errBuf)
+			err = p.Exec(prog, strings.NewReader(test.in), nil)
 			if err != nil {
 				if test.err != "" {
 					if err.Error() == test.err {
@@ -153,14 +153,14 @@ func benchmarkProgram(b *testing.B, n int, input, expected, srcFormat string, ar
 		b.Fatalf("error parsing %s: %v", b.Name(), err)
 	}
 	outBuf := &bytes.Buffer{}
-	p := interp.New(prog, outBuf, ioutil.Discard)
+	p := interp.New(outBuf, ioutil.Discard)
 	if expected != "" {
 		expected += "\n"
 	}
 	for i := 0; i < n; i++ {
 		outBuf.Reset()
 		b.StartTimer()
-		err := p.Exec(strings.NewReader(input), nil)
+		err := p.Exec(prog, strings.NewReader(input), nil)
 		b.StopTimer()
 		if err != nil {
 			b.Fatalf("error interpreting %s: %v", b.Name(), err)
@@ -251,4 +251,25 @@ func BenchmarkFields(b *testing.B) {
 	input := strings.Join(inputLines, "\n")
 	expected := strings.Join(expectedLines, "\n")
 	benchmarkProgram(b, 1, input, expected, "{ print $1, $3 }")
+}
+
+func Example() {
+	src := "{ print $1+$2 }"
+	input := "1 2\n3 4\n5 6"
+
+	prog, err := parser.ParseProgram([]byte(src))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	p := interp.New(nil, nil)
+	err = p.Exec(prog, bytes.NewReader([]byte(input)), nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	// Output:
+	// 3
+	// 7
+	// 11
 }

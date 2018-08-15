@@ -11,6 +11,7 @@ import (
 	. "github.com/benhoyt/goawk/lexer"
 )
 
+// Program is the abstract syntax tree for an entire AWK program.
 type Program struct {
 	Begin     []Stmts
 	Actions   []Action
@@ -75,6 +76,7 @@ func (a *Action) String() string {
 	return strings.Join(patterns, ", ") + sep + stmtsStr
 }
 
+// Expr is the abstract syntax tree for any AWK expression.
 type Expr interface {
 	expr()
 	String() string
@@ -285,6 +287,9 @@ func (e *GetlineExpr) String() string {
 	return s
 }
 
+// IsLValue returns true if the given expression can be used as an
+// lvalue (on the left-hand side of an assignment, in a ++ or --
+// operation, or as the third argument to sub or gsub).
 func IsLValue(expr Expr) bool {
 	switch expr.(type) {
 	case *VarExpr, *IndexExpr, *FieldExpr:

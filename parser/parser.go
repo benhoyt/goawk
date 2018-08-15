@@ -1,4 +1,8 @@
-// GoAWK parser.
+// Package parser is an AWK parser and abstract syntax tree.
+//
+// You can parse an entire AWK program using ParseProgram, or parse a
+// single expression using ParseExpr.
+//
 package parser
 
 import (
@@ -9,6 +13,8 @@ import (
 	. "github.com/benhoyt/goawk/lexer"
 )
 
+// ParseError is the type of error returned by the parse functions
+// (actually *ParseError).
 type ParseError struct {
 	Position Position
 	Message  string
@@ -16,6 +22,40 @@ type ParseError struct {
 
 func (e *ParseError) Error() string {
 	return fmt.Sprintf("parse error at %d:%d: %s", e.Position.Line, e.Position.Column, e.Message)
+}
+
+// ParseProgram parses an entire AWK program, returning the *Program
+// abstract syntax tree or a *ParseError on error.
+func ParseProgram(src []byte) (prog *Program, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			// Convert to ParseError or re-panic
+			err = r.(*ParseError)
+		}
+	}()
+	lexer := NewLexer(src)
+	p := parser{lexer: lexer}
+	p.next()
+	return p.program(), nil
+}
+
+// ParseExpr parses a single AWK expression, returning the Expr
+// abstract syntax tree or a *ParseError on error.
+func ParseExpr(src []byte) (expr Expr, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			// Convert to ParseError or re-panic
+			err = r.(*ParseError)
+		}
+	}()
+	lexer := NewLexer(src)
+	p := parser{lexer: lexer}
+	p.next()
+	expr = p.expr()
+	if p.tok != EOF {
+		panic(p.error("expected EOF, not %v", p.tok))
+	}
+	return expr, nil
 }
 
 type parser struct {
@@ -812,34 +852,4 @@ func (p *parser) matches(operators ...Token) bool {
 func (p *parser) error(format string, args ...interface{}) error {
 	message := fmt.Sprintf(format, args...)
 	return &ParseError{p.pos, message}
-}
-
-func ParseProgram(src []byte) (prog *Program, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			// Convert to ParseError or re-panic
-			err = r.(*ParseError)
-		}
-	}()
-	lexer := NewLexer(src)
-	p := parser{lexer: lexer}
-	p.next()
-	return p.program(), nil
-}
-
-func ParseExpr(src []byte) (expr Expr, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			// Convert to ParseError or re-panic
-			err = r.(*ParseError)
-		}
-	}()
-	lexer := NewLexer(src)
-	p := parser{lexer: lexer}
-	p.next()
-	expr = p.expr()
-	if p.tok != EOF {
-		panic(p.error("expected EOF, not %v", p.tok))
-	}
-	return expr, nil
 }

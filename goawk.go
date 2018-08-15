@@ -1,9 +1,10 @@
-// GoAWK: an implementation of (some of) AWK written in Go.
+// Package goawk is an implementation of AWK written in Go.
 package main
 
 /*
 
 TODO:
+- add full range of AWK command-line params, eg: -v
 - other lexer, parser, and interpreter tests
   - tests for recursion, locals vs globals, array params, etc
   - fix broken interp tests due to syntax handling
@@ -11,7 +12,7 @@ TODO:
   + add "go test" benchmarks for various common workloads
   + faster to do switch+case for binary funcs instead of map of funcs?
   + getVar/setVar overhead -- can resolve stuff at compile-time
-  + defer in eval/exec
+  + defer in eval/exec -- will this help?
 
 NICE TO HAVE:
 - parser: ensure vars aren't used in array context and vice-versa
@@ -80,11 +81,11 @@ func main() {
 		}
 	}
 
-	p := interp.New(prog, nil, nil)
+	p := interp.New(nil, nil)
 	interpArgs := []string{filepath.Base(os.Args[0])}
 	interpArgs = append(interpArgs, args...)
 	p.SetArgs(interpArgs)
-	err = p.Exec(os.Stdin, args)
+	err = p.Exec(prog, os.Stdin, args)
 	if err != nil {
 		errorExit("%s", err)
 	}

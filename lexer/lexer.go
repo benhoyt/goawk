@@ -1,4 +1,11 @@
-// GoAWK lexer (tokenizer).
+// Package lexer is an AWK lexer (tokenizer).
+//
+// The lexer turns a string of AWK source code into a stream of
+// tokens for parsing.
+//
+// To tokenize some source, create a new lexer with NewLexer(src) and
+// then call Scan() until the token type is EOF or ILLEGAL.
+//
 package lexer
 
 import (
@@ -6,6 +13,8 @@ import (
 	"unicode/utf8"
 )
 
+// Lexer tokenizes a byte string of AWK source code. Use NewLexer to
+// actually create a lexer, and Scan() or ScanRegex() to get tokens.
 type Lexer struct {
 	src      []byte
 	offset   int
@@ -17,11 +26,14 @@ type Lexer struct {
 	lastTok  Token
 }
 
+// Position stores the source line and column where a token starts.
 type Position struct {
 	Line   int
 	Column int
 }
 
+// NewLexer creates a new lexer that will tokenize the given source
+// code. See the module-level example for a working example.
 func NewLexer(src []byte) *Lexer {
 	l := &Lexer{src: src}
 	l.nextPos.Line = 1
@@ -30,10 +42,19 @@ func NewLexer(src []byte) *Lexer {
 	return l
 }
 
+// HadSpace returns true if the previously-scanned token had
+// whitespace before it. Used by the parser because when calling a
+// user-defined function the grammar doesn't allow a space between
+// the function name and the left parenthesis.
 func (l *Lexer) HadSpace() bool {
 	return l.hadSpace
 }
 
+// Scan scans the next token and returns its position (line/column),
+// token value (one of the uppercased token constants), and the
+// string value of the token. For most tokens, the token value is
+// empty. For NAME, NUMBER, STRING, and REGEX tokens, it's the
+// token's value. For an ILLEGAL token, it's the error message.
 func (l *Lexer) Scan() (Position, Token, string) {
 	pos, tok, val := l.scan()
 	l.lastTok = tok
@@ -263,6 +284,10 @@ func (l *Lexer) scan() (Position, Token, string) {
 	return pos, tok, val
 }
 
+// ScanRegex parses an AWK regular expression in /slash/ syntax. The
+// AWK grammar has somewhat special handling of regex tokens, so the
+// parser can only call this after a DIV or DIV_ASSIGN token has just
+// been scanned.
 func (l *Lexer) ScanRegex() (Position, Token, string) {
 	pos, tok, val := l.scanRegex()
 	l.lastTok = tok

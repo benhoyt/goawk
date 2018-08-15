@@ -124,3 +124,22 @@ func TestStringMethod(t *testing.T) {
 		t.Errorf(`expected /= regex "=foo", got %s %s %q`, tok1, tok2, val)
 	}
 }
+
+func Example() {
+	lexer := NewLexer([]byte(`$0 { print $1 }`))
+	for {
+		pos, tok, val := lexer.Scan()
+		if tok == EOF {
+			break
+		}
+		fmt.Printf("%d:%d %s %q\n", pos.Line, pos.Column, tok, val)
+	}
+	// Output:
+	// 1:1 $ ""
+	// 1:2 number "0"
+	// 1:4 { ""
+	// 1:6 print ""
+	// 1:12 $ ""
+	// 1:13 number "1"
+	// 1:15 } ""
+}

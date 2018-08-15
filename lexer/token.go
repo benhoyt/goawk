@@ -2,6 +2,7 @@
 
 package lexer
 
+// Token is the type of a single token.
 type Token int
 
 const (
@@ -241,6 +242,7 @@ var tokenNames = map[Token]string{
 	REGEX:  "regex",
 }
 
+// String returns the string name of this token.
 func (t Token) String() string {
 	return tokenNames[t]
 }

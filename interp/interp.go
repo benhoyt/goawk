@@ -1,4 +1,8 @@
-// GoAWK interpreter.
+// Package interp is the GoAWK tree-walking interpreter.
+//
+// Typical usage is to call New to create an interpreter and then
+// Exec with a parsed *parser.Program to execute a program.
+//
 package interp
 
 import (
@@ -29,8 +33,8 @@ var (
 	errNext     = errors.New("next")
 )
 
-// *Error is returned by Exec and Eval functions on interpreter error,
-// for example a negative field index.
+// Error (actually *Error) is returned by Exec and Eval functions on
+// interpreter error, for example a negative field index.
 type Error struct {
 	message string
 }
@@ -51,7 +55,8 @@ func (r returnValue) Error() string {
 	return "<return " + r.Value.str("%.6g") + ">"
 }
 
-// Interp holds the state of the interpreter
+// Interp holds the state of the GoAWK interpreter. Call New to
+// actually create an Interp.
 type Interp struct {
 	program     *Program
 	output      io.Writer
@@ -99,9 +104,11 @@ type Interp struct {
 
 const maxCachedRegexes = 100
 
-func New(program *Program, output, errorOutput io.Writer) *Interp {
+// New creates and sets up a new interpeter and sets the output and
+// error output writers to the given values (if nil, they're set to
+// buffered versions of os.Stdout and os.Stderr, respectively).
+func New(output, errorOutput io.Writer) *Interp {
 	p := &Interp{}
-	p.program = program
 
 	if output == nil {
 		output = bufio.NewWriterSize(os.Stdout, 64*1024)
@@ -118,6 +125,7 @@ func New(program *Program, output, errorOutput io.Writer) *Interp {
 	p.arrays = make(map[string]map[string]value)
 	p.regexCache = make(map[string]*regexp.Regexp, 10)
 	p.randSeed = 1.0
+	p.exitStatus = -1
 	seed := math.Float64bits(p.randSeed)
 	p.random = rand.New(rand.NewSource(int64(seed)))
 	p.convertFormat = "%.6g"
@@ -129,11 +137,17 @@ func New(program *Program, output, errorOutput io.Writer) *Interp {
 	return p
 }
 
+// ExitStatus returns the exit status code of the program (call after
+// calling Exec).
 func (p *Interp) ExitStatus() int {
 	return p.exitStatus
 }
 
-func (p *Interp) Exec(stdin io.Reader, filenames []string) error {
+// Exec executes the given program using the given input reader and
+// input filenames (empty slice means read only from stdin, and a
+// filename of "-" means read stdin instead of a real file).
+func (p *Interp) Exec(program *Program, stdin io.Reader, filenames []string) error {
+	p.program = program
 	p.stdin = stdin
 	if len(filenames) == 0 {
 		filenames = []string{"-"}
@@ -531,26 +545,24 @@ func (p *Interp) evalSafe(expr Expr) (v value, err error) {
 	return p.eval(expr), nil
 }
 
-func (p *Interp) Eval(expr Expr) (s string, n float64, err error) {
+// EvalStr evaluates the given expression and returns the result as a
+// string (or a *Error on error).
+func (p *Interp) EvalStr(expr Expr) (string, error) {
 	v, err := p.evalSafe(expr)
 	if err != nil {
-		return "", 0, err
+		return "", err
 	}
-	return p.toString(v), v.num(), nil
+	return p.toString(v), nil
 }
 
-func EvalLine(src, line string) (s string, n float64, err error) {
-	expr, err := ParseExpr([]byte(src))
+// EvalNum evaluates the given expression and returns the result as a
+// number (or a *Error on error).
+func (p *Interp) EvalNum(expr Expr) (float64, error) {
+	v, err := p.evalSafe(expr)
 	if err != nil {
-		return "", 0, err
+		return 0, err
 	}
-	interp := New(nil, nil, nil) // Expressions can't write to output
-	interp.setLine(line)
-	return interp.Eval(expr)
-}
-
-func Eval(src string) (s string, n float64, err error) {
-	return EvalLine(src, "")
+	return v.num(), nil
 }
 
 func (p *Interp) eval(expr Expr) value {
@@ -829,6 +841,8 @@ func (p *Interp) getVar(name string) value {
 	}
 }
 
+// SetVar sets the named variable to value (useful for setting FS and
+// other built-in variables before calling Exec).
 func (p *Interp) SetVar(name string, value string) error {
 	return p.setVarError(name, str(value))
 }
@@ -928,6 +942,7 @@ func (p *Interp) getField(index int) value {
 	return numStr(p.fields[index-1])
 }
 
+// SetField sets a single field, equivalent to "$index = value".
 func (p *Interp) SetField(index int, value string) {
 	if index < 0 {
 		panic(newError("field index negative: %d", index))
@@ -949,6 +964,8 @@ func (p *Interp) SetField(index int, value string) {
 	p.line = strings.Join(p.fields, p.outputFieldSep)
 }
 
+// SetArgs sets the command-line arguments for the ARGV array
+// accessible to the AWK program.
 func (p *Interp) SetArgs(args []string) {
 	p.argc = len(args)
 	array := make(map[string]value, len(args))
