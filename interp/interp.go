@@ -125,7 +125,6 @@ func New(output, errorOutput io.Writer) *Interp {
 	p.arrays = make(map[string]map[string]value)
 	p.regexCache = make(map[string]*regexp.Regexp, 10)
 	p.randSeed = 1.0
-	p.exitStatus = -1
 	seed := math.Float64bits(p.randSeed)
 	p.random = rand.New(rand.NewSource(int64(seed)))
 	p.convertFormat = "%.6g"
