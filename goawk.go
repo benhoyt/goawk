@@ -4,7 +4,6 @@ package main
 /*
 
 TODO:
-- add full range of AWK command-line params, eg: -v
 - other lexer, parser, and interpreter tests
   - tests for recursion, locals vs globals, array params, etc
   - fix broken interp tests due to syntax handling
@@ -22,6 +21,7 @@ NICE TO HAVE:
 
 import (
 	"bytes"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -37,10 +37,15 @@ import (
 )
 
 func main() {
-	progFile := flag.String("f", "", "load AWK source from `filename`")
-	debug := flag.Bool("d", false, "debug mode (print parsed AST on stderr)")
+	progFile := flag.String("f", "", "load AWK source from `progfile`")
+	fieldSep := flag.String("F", " ", "field separator")
+	var vars varFlags
+	flag.Var(&vars, "v", "variable `assignment` (name=value)")
+
+	debug := flag.Bool("d", false, "debug mode (print parsed AST to stderr)")
 	cpuprofile := flag.String("cpuprofile", "", "write CPU profile to `file`")
 	memprofile := flag.String("memprofile", "", "write memory profile to `file`")
+
 	flag.Parse()
 	args := flag.Args()
 
@@ -53,7 +58,7 @@ func main() {
 		}
 	} else {
 		if len(args) < 1 {
-			errorExit("usage: goawk (src | -f path) [filename] ...")
+			errorExit("usage: goawk [-F fs] [-v var=value] [-f progfile | 'prog'] [file ...]")
 		}
 		src = []byte(args[0])
 		args = args[1:]
@@ -82,6 +87,11 @@ func main() {
 	}
 
 	p := interp.New(nil, nil)
+	p.SetVar("FS", *fieldSep)
+	for _, v := range vars {
+		p.SetVar(v.name, v.value)
+	}
+
 	interpArgs := []string{filepath.Base(os.Args[0])}
 	interpArgs = append(interpArgs, args...)
 	p.SetArgs(interpArgs)
@@ -127,4 +137,24 @@ func showSourceLine(src []byte, pos lexer.Position, dividerLen int) {
 func errorExit(format string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, format+"\n", args...)
 	os.Exit(1)
+}
+
+type varFlag struct {
+	name  string
+	value string
+}
+
+type varFlags []varFlag
+
+func (v *varFlags) String() string {
+	return ""
+}
+
+func (v *varFlags) Set(value string) error {
+	parts := strings.SplitN(value, "=", 2)
+	if len(parts) != 2 {
+		return errors.New("must be name=value")
+	}
+	*v = append(*v, varFlag{parts[0], parts[1]})
+	return nil
 }
