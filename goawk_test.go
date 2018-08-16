@@ -26,8 +26,8 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	flag.StringVar(&testsDir, "testsdir", "./tests", "directory with one-true-awk tests")
-	flag.StringVar(&outputDir, "outputdir", "./tests/output", "directory for test output")
+	flag.StringVar(&testsDir, "testsdir", "./testdata", "directory with one-true-awk tests")
+	flag.StringVar(&outputDir, "outputdir", "./testdata/output", "directory for test output")
 	flag.StringVar(&awkExe, "awk", "awk", "awk executable name")
 	flag.BoolVar(&writeAWK, "writeawk", false, "write expected output")
 	flag.BoolVar(&writeGoAWK, "writegoawk", true, "write Go AWK output")
