@@ -4,7 +4,7 @@ package main
 /*
 
 TODO:
-- other lexer, parser, and interpreter tests
+- other interp tests
   - tests for recursion, locals vs globals, array params, etc
   - fix broken interp tests due to syntax handling
 - performance testing: I/O, allocations, CPU

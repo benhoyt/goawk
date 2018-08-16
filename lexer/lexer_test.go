@@ -11,33 +11,52 @@ import (
 	. "github.com/benhoyt/goawk/lexer"
 )
 
-// TODO: add other lexer tests
-
-func TestNumber(t *testing.T) {
+func TestLexer(t *testing.T) {
 	tests := []struct {
 		input  string
 		output string
 	}{
-		{"0", "1:1 number 0"},
-		{"9", "1:1 number 9"},
-		{" 0 ", "1:2 number 0"},
-		{"\n  1", "1:1 <newline> , 2:3 number 1"},
-		{"1234", "1:1 number 1234"},
-		{".5", "1:1 number .5"},
-		{".5e1", "1:1 number .5e1"},
-		{"5e+1", "1:1 number 5e+1"},
-		{"5e-1", "1:1 number 5e-1"},
-		{"0.", "1:1 number 0."},
-		{"42e", "1:1 number 42e"},
-		{"4.2e", "1:1 number 4.2e"},
-		{"1.e3", "1:1 number 1.e3"},
-		{"1.e3", "1:1 number 1.e3"},
-		{"1e3foo", "1:1 number 1e3, 1:4 name foo"},
-		{"1e3+", "1:1 number 1e3, 1:4 + "},
-		{"1e3.4", "1:1 number 1e3, 1:4 number .4"},
-		{"42@", "1:1 number 42, 1:3 <illegal> unexpected '@'"},
-		{"0..", "1:1 number 0., 1:4 <illegal> expected digits"},
-		{".", "1:2 <illegal> expected digits"},
+		// Comments, whitespace, line continuations
+		{"+# foo \n- #foo", `1:1 + "", 1:8 <newline> "", 2:1 - ""`},
+		{"+\\\n-", `1:1 + "", 2:1 - ""`},
+		{"+\\\r\n-", `1:1 + "", 2:1 - ""`},
+		{"+\\-", `1:1 + "", 1:3 <illegal> "expected \\n after \\ line continuation", 1:3 - ""`},
+
+		// Names and keywords
+		{"x y0", `1:1 name "x", 1:3 name "y0"`},
+		{"x 0y", `1:1 name "x", 1:3 number "0", 1:4 name "y"`},
+		{"sub SUB", `1:1 sub "", 1:5 name "SUB"`},
+
+		// String tokens
+		{`"foo"`, `1:1 string "foo"`},
+		{`"a\t\r\n\zb"`, `1:1 string "a\t\r\nzb"`},
+		{`"x`, `1:3 <illegal> "didn't find end quote in string"`},
+		{"\"x\n\"", `1:3 <illegal> "can't have newline in string", 1:3 <newline> "", 2:2 <illegal> "didn't find end quote in string"`},
+
+		// Number tokens
+		{"0", `1:1 number "0"`},
+		{"9", `1:1 number "9"`},
+		{" 0 ", `1:2 number "0"`},
+		{"\n  1", `1:1 <newline> "", 2:3 number "1"`},
+		{"1234", `1:1 number "1234"`},
+		{".5", `1:1 number ".5"`},
+		{".5e1", `1:1 number ".5e1"`},
+		{"5e+1", `1:1 number "5e+1"`},
+		{"5e-1", `1:1 number "5e-1"`},
+		{"0.", `1:1 number "0."`},
+		{"42e", `1:1 number "42e"`},
+		{"4.2e", `1:1 number "4.2e"`},
+		{"1.e3", `1:1 number "1.e3"`},
+		{"1.e3", `1:1 number "1.e3"`},
+		{"1e3foo", `1:1 number "1e3", 1:4 name "foo"`},
+		{"1e3+", `1:1 number "1e3", 1:4 + ""`},
+		{"1e3.4", `1:1 number "1e3", 1:4 number ".4"`},
+		{"42@", `1:1 number "42", 1:3 <illegal> "unexpected '@'"`},
+		{"0..", `1:1 number "0.", 1:4 <illegal> "expected digits"`},
+		{".", `1:2 <illegal> "expected digits"`},
+
+		// Misc errors
+		{"&=", `1:2 <illegal> "unexpected '=' after '&'", 1:2 = ""`},
 	}
 	for _, test := range tests {
 		t.Run(test.input, func(t *testing.T) {
@@ -57,7 +76,7 @@ func TestNumber(t *testing.T) {
 						t.Fatalf("couldn't parse float: %q", val)
 					}
 				}
-				strs = append(strs, fmt.Sprintf("%d:%d %s %s", pos.Line, pos.Column, tok, val))
+				strs = append(strs, fmt.Sprintf("%d:%d %s %q", pos.Line, pos.Column, tok, val))
 			}
 			output := strings.Join(strs, ", ")
 			if output != test.output {
@@ -67,7 +86,33 @@ func TestNumber(t *testing.T) {
 	}
 }
 
-func TestStringMethod(t *testing.T) {
+func TestRegex(t *testing.T) {
+	tests := []struct {
+		input  string
+		output string
+	}{
+		{`/foo/`, `1:1 regex "foo"`},
+		{`/=foo/`, `1:1 regex "=foo"`},
+		{`/a\/b/`, `1:1 regex "a/b"`},
+		{`/a\/\zb/`, `1:1 regex "a/\\zb"`},
+		{`/a`, `1:3 <illegal> "didn't find end slash in regex"`},
+		{"/a\n", `1:3 <illegal> "can't have newline in regex"`},
+		{`foo/`, `1:4 <illegal> "unexpected name preceding regex"`},
+	}
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			l := NewLexer([]byte(test.input))
+			l.Scan() // Scan first token (probably DIV)
+			pos, tok, val := l.ScanRegex()
+			output := fmt.Sprintf("%d:%d %s %q", pos.Line, pos.Column, tok, val)
+			if output != test.output {
+				t.Errorf("expected %q, got %q", test.output, output)
+			}
+		})
+	}
+}
+
+func TestAllTokens(t *testing.T) {
 	input := "# comment line\n" +
 		"+ += && = : , -- /\n/= $ == >= > >> ++ { [ < ( #\n" +
 		"<= ~ % %= * *= !~ ! != | || ^ ^= ** **= ? } ] ) ; - -= " +
