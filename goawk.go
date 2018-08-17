@@ -22,7 +22,6 @@ package main
 
 TODO:
 - other interp tests
-  - tests for recursion, locals vs globals, array params, etc
 - performance testing: I/O, allocations, CPU
   + add "go test" benchmarks for various common workloads
   + faster to do switch+case for binary funcs instead of map of funcs?

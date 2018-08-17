@@ -34,7 +34,100 @@ func TestInterp(t *testing.T) {
 		err    string
 		awkErr string
 	}{
+		// BEGIN and END work correctly
+		{`BEGIN { print "b" }`, "", "b\n", "", ""},
+		{`BEGIN { print "b" }`, "foo", "b\n", "", ""},
+		{`END { print "e" }`, "", "e\n", "", ""},
+		{`END { print "e" }`, "foo", "e\n", "", ""},
+		{`BEGIN { print "b"} END { print "e" }`, "", "b\ne\n", "", ""},
+		{`BEGIN { print "b"} END { print "e" }`, "foo", "b\ne\n", "", ""},
+		{`BEGIN { print "b"} $0 { print NR } END { print "e" }`, "foo", "b\n1\ne\n", "", ""},
+
+		// Patterns
+		{`$0`, "foo\n\nbar", "foo\nbar\n", "", ""},
+		{`{ print $0 }`, "foo\n\nbar", "foo\n\nbar\n", "", ""},
+		{`$1=="foo"`, "foo\n\nbar", "foo\n", "", ""},
+		{`$1==42`, "foo\n42\nbar", "42\n", "", ""},
+		{`$1=="42"`, "foo\n42\nbar", "42\n", "", ""},
+		{`/foo/`, "foo\nx\nfood\nxfooz\nbar", "foo\nfood\nxfooz\n", "", ""},
+		{`NR==2, NR==4`, "1\n2\n3\n4\n5\n6\n", "2\n3\n4\n", "", ""},
+		{`
+NR==2, NR==4 { print $0 }
+NR==3, NR==5 { print NR }
+`, "a\nb\nc\nd\ne\nf\ng", "b\nc\n3\nd\n4\n5\n", "", ""},
+
+		// print and printf statements
+		{`BEGIN { print "x", "y" }`, "", "x y\n", "", ""},
+		{`BEGIN { OFS = ","; print "x", "y" }`, "", "x,y\n", "", ""},
+		{`BEGIN { ORS = "."; print "x", "y" }`, "", "x y.", "", ""},
+		{`BEGIN { ORS = ""; print "x", "y" }`, "", "x y", "", ""},
+		{`{ print; print }`, "foo", "foo\nfoo\n", "", ""},
+		{`BEGIN { print; print }`, "", "\n\n", "", ""},
+		{`BEGIN { printf "%% %d %x %c %f %s", 42, 42, 42, 42, 42 }`, "", "% 42 2a * 42.000000 42", "", ""},
+		{`BEGIN { printf "%3d", 42 }`, "", " 42", "", ""},
+		{`BEGIN { printf "%3s", "x" }`, "", "  x", "", ""},
+		{`BEGIN { printf "%.1g", 42 }`, "", "4e+01", "", ""},
+
+		// if and loop statements
+		{`BEGIN { if (1) print "t"; }`, "", "t\n", "", ""},
+		{`BEGIN { if (0) print "t"; }`, "", "", "", ""},
+		{`BEGIN { if (1) print "t"; else print "f" }`, "", "t\n", "", ""},
+		{`BEGIN { if (0) print "t"; else print "f" }`, "", "f\n", "", ""},
+
+		// Builtin functions
+		{`{ print tolower($1 $2) }`, "Fo o\nB aR", "foo\nbar\n", "", ""},
 		{`{ print toupper($1 $2) }`, "Fo o\nB aR", "FOO\nBAR\n", "", ""},
+
+		// Conditional expressions parse and work correctly
+		{`BEGIN { print 0?"t":"f" }`, "", "f\n", "", ""},
+		{`BEGIN { print 1?"t":"f" }`, "", "t\n", "", ""},
+		{`BEGIN { print (1+2)?"t":"f" }`, "", "t\n", "", ""},
+		{`BEGIN { print (1+2?"t":"f") }`, "", "t\n", "", ""},
+		{`BEGIN { print(1 ? x="t" : "f"); print x; }`, "", "t\nt\n", "", ""},
+
+		// Locals vs globals, array params, and recursion
+		{`
+function f(loc) {
+	glob += 1
+	loc += 1
+	print glob, loc
+}
+BEGIN {
+	glob = 1
+	loc = 42
+	f(3)
+	print loc
+	f(4)
+	print loc
+}
+`, "", "2 4\n42\n3 5\n42\n", "", ""},
+		{`
+function set(a, x, v) {
+	a[x] = v
+}
+function get(a, x) {
+	return a[x]
+}
+BEGIN {
+	a["x"] = 1
+	set(b, "y", 2)
+	for (k in a) print k, a[k]
+	print "---"
+	for (k in b) print k, b[k]
+	print "---"
+	print get(a, "x"), get(b, "y")
+}
+`, "", "x 1\n---\ny 2\n---\n1 2\n", "", ""},
+		{`
+function fib(n) {
+	return n < 3 ? 1 : fib(n-2) + fib(n-1)
+}
+BEGIN {
+	for (i = 1; i <= 7; i++) {
+		printf "%d ", fib(i)
+	}
+}
+`, "", "1 1 2 3 5 8 13 ", "", ""},
 
 		// Greater than operator requires parentheses in print statement,
 		// otherwise it's a redirection directive
@@ -46,13 +139,6 @@ func TestInterp(t *testing.T) {
 		// Grammar should allow blocks wherever statements are allowed
 		{`BEGIN { if (1) printf "x"; else printf "y" }`, "", "x", "", ""},
 		// {`BEGIN { printf "x"; { printf "y"; printf "z" } }`, "", "xyz", "", ""},
-
-		// Conditional expressions parse and work correctly
-		{`BEGIN { print 0?"t":"f" }`, "", "f\n", "", ""},
-		{`BEGIN { print 1?"t":"f" }`, "", "t\n", "", ""},
-		{`BEGIN { print (1+2)?"t":"f" }`, "", "t\n", "", ""},
-		{`BEGIN { print (1+2?"t":"f") }`, "", "t\n", "", ""},
-		{`BEGIN { print(1 ? x="t" : "f"); print x; }`, "", "t\nt\n", "", ""},
 
 		// Ensure certain odd syntax matches awk behaviour
 		// {`BEGIN { printf "x" }; BEGIN { printf "y" }`, "", "xy", "", ""},
