@@ -21,10 +21,8 @@ package main
 /*
 
 TODO:
-- improve goawk.go docstring and interp docs for GoDoc
 - other interp tests
   - tests for recursion, locals vs globals, array params, etc
-  - fix broken interp tests due to syntax handling
 - performance testing: I/O, allocations, CPU
   + add "go test" benchmarks for various common workloads
   + faster to do switch+case for binary funcs instead of map of funcs?
@@ -34,6 +32,7 @@ TODO:
 NICE TO HAVE:
 - parser: ensure vars aren't used in array context and vice-versa
 - interp: flag "unexpected comma-separated expression" at parse time
+- fix broken interp tests due to syntax handling
 
 */
 
