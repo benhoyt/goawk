@@ -17,7 +17,7 @@ To use the command-line version, simply use `go get` to install it, and then run
 
 To use it in your Go programs, you can call `interp.Exec()` directly for simple needs:
 
-    input := bytes.NewBufferString("foo bar\n\nbaz buz")
+    input := bytes.NewReader([]byte("foo bar\n\nbaz buz"))
     err := interp.Exec("$0 { print $1 }", " ", input, nil)
     if err != nil {
         fmt.Println(err)
