@@ -253,9 +253,21 @@ func BenchmarkFields(b *testing.B) {
 	benchmarkProgram(b, 1, input, expected, "{ print $1, $3 }")
 }
 
-func Example() {
+func Example_simple() {
+	input := bytes.NewReader([]byte("foo bar\n\nbaz buz"))
+	err := interp.Exec("$0 { print $1 }", " ", input, nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	// Output:
+	// foo
+	// baz
+}
+
+func Example_program() {
 	src := "{ print $1+$2 }"
-	input := "1 2\n3 4\n5 6"
+	input := "1,2\n3,4\n5,6"
 
 	prog, err := parser.ParseProgram([]byte(src))
 	if err != nil {
@@ -263,6 +275,7 @@ func Example() {
 		return
 	}
 	p := interp.New(nil, nil)
+	p.SetVar("FS", ",")
 	err = p.Exec(prog, bytes.NewReader([]byte(input)), nil)
 	if err != nil {
 		fmt.Println(err)
@@ -272,4 +285,23 @@ func Example() {
 	// 3
 	// 7
 	// 11
+}
+
+func Example_expression() {
+	src := "1 + 2 * 3 / 4"
+
+	expr, err := parser.ParseExpr([]byte(src))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	p := interp.New(nil, nil)
+	n, err := p.EvalNum(expr)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(n)
+	// Output:
+	// 2.5
 }

@@ -1,9 +1,27 @@
 // Package goawk is an implementation of AWK written in Go.
+//
+// You can use the command-line "goawk" command or call AWK from your
+// Go programs using the "interp" package. The command-line program
+// has the same interface as regular awk:
+//
+//     goawk [-F fs] [-v var=value] [-f progfile | 'prog'] [file ...]
+//
+// The -F flag specifies the field separator (the default is to split
+// on whitespace). The -v flag allows you to set a variable to a
+// given value (multiple -v flags allowed). The -f flag allows you to
+// read AWK source from a file instead of the 'prog' command-line
+// argument. The rest of the arguments are input filenames (default
+// is to read from stdin).
+//
+// To use GoAWK in your Go programs, see README.md or the "interp"
+// docs.
+//
 package main
 
 /*
 
 TODO:
+- improve goawk.go docstring and interp docs for GoDoc
 - other interp tests
   - tests for recursion, locals vs globals, array params, etc
   - fix broken interp tests due to syntax handling

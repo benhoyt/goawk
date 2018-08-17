@@ -1,4 +1,4 @@
-// GoAWK interpreter
+// GoAWK interpreter value type (not exported).
 
 package interp
 

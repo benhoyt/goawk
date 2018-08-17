@@ -1,7 +1,10 @@
-// Package interp is the GoAWK tree-walking interpreter.
+// Package interp is the GoAWK interpreter (a simple tree-walker).
 //
-// Typical usage is to call New to create an interpreter and then
-// Exec with a parsed *parser.Program to execute a program.
+// For basic usage, use the top-level Exec function. For more
+// complicated use cases and configuration options, use New to create
+// an interpreter and then call Interp.Exec to execute a whole
+// program or Interp.EvalNum or Interp.EvalStr to evaluate a
+// stand-alone expression.
 //
 package interp
 
@@ -176,6 +179,19 @@ func (p *Interp) Exec(program *Program, stdin io.Reader, filenames []string) err
 		return err
 	}
 	return nil
+}
+
+// Exec provides a simple way to parse and execute an AWK program
+// with the given field separator. Exec reads input from the given
+// reader (nil means use os.Stdin) and writes output to stdout (nil
+// means use os.Stdout).
+func Exec(src, fieldSep string, input io.Reader, output io.Writer) error {
+	prog, err := ParseProgram([]byte(src))
+	if err != nil {
+		return err
+	}
+	p := New(output, ioutil.Discard)
+	return p.Exec(prog, input, nil)
 }
 
 func (p *Interp) closeAll() {
