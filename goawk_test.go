@@ -52,6 +52,7 @@ func TestAWK(t *testing.T) {
 		"t.gsub4":   true, // Has malformed regex from user input (but awk doesn't mind)
 		"t.split3":  true, // Has malformed regex from user input (but awk doesn't mind)
 		"t.printf2": true, // Handles non-ASCII differently (we allow non-ASCII with printf %c)
+		"t.NF":      true, // Different between awk and gawk
 	}
 	// Can't really diff test rand() tests as we're using a totally
 	// different algorithm for random numbers

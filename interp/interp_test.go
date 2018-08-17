@@ -20,7 +20,7 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	flag.StringVar(&awkExe, "awk", "awk", "awk executable name")
+	flag.StringVar(&awkExe, "awk", "", "awk executable name")
 	flag.Parse()
 	os.Exit(m.Run())
 }
@@ -67,46 +67,49 @@ func TestInterp(t *testing.T) {
 		if len(testName) > 70 {
 			testName = testName[:70]
 		}
-		// Run it through external awk program first
-		t.Run("awk_"+testName, func(t *testing.T) {
-			srcFile, err := ioutil.TempFile("", "goawktest_")
-			if err != nil {
-				t.Fatalf("error creating temp file: %v", err)
-			}
-			defer os.Remove(srcFile.Name())
-			_, err = srcFile.Write([]byte(test.src))
-			if err != nil {
-				t.Fatalf("error writing temp file: %v", err)
-			}
-			cmd := exec.Command(awkExe, "-f", srcFile.Name(), "-")
-			if test.in != "" {
-				stdin, err := cmd.StdinPipe()
+
+		if awkExe != "" {
+			// Run it through external awk program first
+			t.Run("awk_"+testName, func(t *testing.T) {
+				srcFile, err := ioutil.TempFile("", "goawktest_")
 				if err != nil {
-					t.Fatalf("error fetching stdin pipe: %v", err)
+					t.Fatalf("error creating temp file: %v", err)
 				}
-				go func() {
-					defer stdin.Close()
-					stdin.Write([]byte(test.in))
-				}()
-			}
-			out, err := cmd.CombinedOutput()
-			if err != nil {
-				if test.awkErr != "" {
-					if strings.Contains(string(out), test.awkErr) {
-						return
+				defer os.Remove(srcFile.Name())
+				_, err = srcFile.Write([]byte(test.src))
+				if err != nil {
+					t.Fatalf("error writing temp file: %v", err)
+				}
+				cmd := exec.Command(awkExe, "-f", srcFile.Name(), "-")
+				if test.in != "" {
+					stdin, err := cmd.StdinPipe()
+					if err != nil {
+						t.Fatalf("error fetching stdin pipe: %v", err)
 					}
-					t.Fatalf("expected error %q, got:\n%s", test.awkErr, out)
-				} else {
-					t.Fatalf("error running %s: %v:\n%s", awkExe, err, out)
+					go func() {
+						defer stdin.Close()
+						stdin.Write([]byte(test.in))
+					}()
 				}
-			}
-			if test.awkErr != "" {
-				t.Fatalf(`expected error %q, got ""`, test.awkErr)
-			}
-			if string(out) != test.out {
-				t.Fatalf("expected %q, got %q", test.out, out)
-			}
-		})
+				out, err := cmd.CombinedOutput()
+				if err != nil {
+					if test.awkErr != "" {
+						if strings.Contains(string(out), test.awkErr) {
+							return
+						}
+						t.Fatalf("expected error %q, got:\n%s", test.awkErr, out)
+					} else {
+						t.Fatalf("error running %s: %v:\n%s", awkExe, err, out)
+					}
+				}
+				if test.awkErr != "" {
+					t.Fatalf(`expected error %q, got ""`, test.awkErr)
+				}
+				if string(out) != test.out {
+					t.Fatalf("expected %q, got %q", test.out, out)
+				}
+			})
+		}
 
 		// Then test it in GoAWK
 		t.Run(testName, func(t *testing.T) {
