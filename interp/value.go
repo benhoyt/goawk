@@ -4,6 +4,7 @@ package interp
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"text/scanner"
@@ -57,7 +58,15 @@ func (v value) boolean() bool {
 func (v value) str(floatFormat string) string {
 	switch v.typ {
 	case typeNum:
-		if v.n == float64(int(v.n)) {
+		if math.IsNaN(v.n) {
+			return "nan"
+		} else if math.IsInf(v.n, 0) {
+			if v.n < 0 {
+				return "-inf"
+			} else {
+				return "inf"
+			}
+		} else if v.n == float64(int(v.n)) {
 			return strconv.Itoa(int(v.n))
 		} else {
 			return fmt.Sprintf(floatFormat, v.n)

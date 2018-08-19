@@ -73,10 +73,94 @@ NR==3, NR==5 { print NR }
 		{`BEGIN { if (0) print "t"; }`, "", "", "", ""},
 		{`BEGIN { if (1) print "t"; else print "f" }`, "", "t\n", "", ""},
 		{`BEGIN { if (0) print "t"; else print "f" }`, "", "f\n", "", ""},
+		{`BEGIN { for (;;) { print "x"; break } }`, "", "x\n", "", ""},
+		{`BEGIN { for (;;) { printf "%d ", i; i++; if (i>2) break; } }`, "", "0 1 2 ", "", ""},
+		{`BEGIN { for (i=5; ; ) { printf "%d ", i; i++; if (i>8) break; } }`, "", "5 6 7 8 ", "", ""},
+		{`BEGIN { for (i=5; ; i++) { printf "%d ", i; if (i>8) break; } }`, "", "5 6 7 8 9 ", "", ""},
+		{`BEGIN { for (i=5; i<8; i++) { printf "%d ", i } }`, "", "5 6 7 ", "", ""},
+		{`BEGIN { for (i=0; i<10; i++) { if (i < 5) continue; printf "%d ", i } }`, "", "5 6 7 8 9 ", "", ""},
+		{`BEGIN { a["x"] = 3; a["y"] = 4; for (k in a) x += a[k]; print x }`, "", "7\n", "", ""},
+		{`BEGIN { while (i < 5) { print i; i++ } }`, "", "\n1\n2\n3\n4\n", "", ""},
+		{`BEGIN { do { print i; i++ } while (i < 5) }`, "", "\n1\n2\n3\n4\n", "", ""},
+
+		// Arrays, "in", and delete
+		{`BEGIN { a["x"] = 3; print "x" in a, "y" in a }`, "", "1 0\n", "", ""},
+		{`BEGIN { a["x"] = 3; a["y"] = 4; delete a["x"]; for (k in a) print k, a[k] }`, "", "y 4\n", "", ""},
+		{`BEGIN { a["x"] = 3; a["y"] = 4; for (k in a) delete a[k]; for (k in a) print k, a[k] }`, "", "", "", ""},
+
+		// Unary expressions: ! + -
+		{`BEGIN { print !42, !1, !0, !!42, !!1, !!0 }`, "", "0 0 1 1 1 0\n", "", ""},
+		{`BEGIN { print !42, !1, !0, !!42, !!1, !!0 }`, "", "0 0 1 1 1 0\n", "", ""},
+		{`BEGIN { print +4, +"3", +0, +-3, -3, - -4, -"3" }`, "", "4 3 0 -3 -3 4 -3\n", "", ""},
+
+		// Binary expressions: == != < <= > >= + - * ^ / % CONCAT ~ !~
+		{`BEGIN { print (1==1, 1==0, "1"==1, "1"==1.0) }`, "", "1 0 1 1\n", "", ""},
+		// TODO: tests for numeric strings from $ fields
+
+		// Other expressions: TODO ?: num str regex
+		// Built-in variables: TODO
+		// Field expressions and assignment: TODO
+		// Assignment expressions: TODO
+		// Incr/decr expressions: TODO
 
 		// Builtin functions
-		{`{ print tolower($1 $2) }`, "Fo o\nB aR", "foo\nbar\n", "", ""},
-		{`{ print toupper($1 $2) }`, "Fo o\nB aR", "FOO\nBAR\n", "", ""},
+		{`BEGIN { print sin(0), sin(0.5), sin(1), sin(-1) }`, "", "0 0.479426 0.841471 -0.841471\n", "", ""},
+		{`BEGIN { print cos(0), cos(0.5), cos(1), cos(-1) }`, "", "1 0.877583 0.540302 0.540302\n", "", ""},
+		{`BEGIN { print exp(0), exp(0.5), exp(1), exp(-1) }`, "", "1 1.64872 2.71828 0.367879\n", "", ""},
+		{`BEGIN { print log(0), log(0.5), log(1), log(-1) }`, "", "-inf -0.693147 0 nan\n", "", ""},
+		{`BEGIN { print sqrt(0), sqrt(2), sqrt(4), sqrt(-1) }`, "", "0 1.41421 2 nan\n", "", ""},
+		{`BEGIN { print int(3.5), int("1.9"), int(4), int(-3.6), int("x"), int("") }`, "", "3 1 4 -3 0 0\n", "", ""},
+		{`BEGIN { print match("food", "foo"), RSTART, RLENGTH }`, "", "1 1 3\n", "", ""},
+		{`BEGIN { print match("x food y", "fo"), RSTART, RLENGTH }`, "", "3 3 2\n", "", ""},
+		{`BEGIN { print match("x food y", "fox"), RSTART, RLENGTH }`, "", "0 0 -1\n", "", ""},
+		{`BEGIN { print match("x food y", /[fod]+/), RSTART, RLENGTH }`, "", "3 3 4\n", "", ""},
+		{`{ print length, length(), length("buzz"), length("") }`, "foo bar", "7 7 4 0\n", "", ""},
+		{`BEGIN { print index("foo", "f"), index("foo0", 0), index("foo", "o"), index("foo", "x") }`, "", "1 4 2 0\n", "", ""},
+		{`BEGIN { print atan2(1, 0.5), atan2(-1, 0) }`, "", "1.10715 -1.5708\n", "", ""},
+		{`BEGIN { print sprintf("%3d", 42) }`, "", " 42\n", "", ""},
+		{`BEGIN { print substr("food", 1) }`, "", "food\n", "", ""},
+		{`BEGIN { print substr("food", 1, 2) }`, "", "fo\n", "", ""},
+		{`BEGIN { print substr("food", 1, 4) }`, "", "food\n", "", ""},
+		{`BEGIN { print substr("food", 1, 8) }`, "", "food\n", "", ""},
+		{`BEGIN { print substr("food", 2) }`, "", "ood\n", "", ""},
+		{`BEGIN { print substr("food", 2, 2) }`, "", "oo\n", "", ""},
+		{`BEGIN { print substr("food", 2, 3) }`, "", "ood\n", "", ""},
+		{`BEGIN { print substr("food", 2, 8) }`, "", "ood\n", "", ""},
+		{`BEGIN { print substr("food", 0, 8) }`, "", "food\n", "", ""},
+		{`BEGIN { print substr("food", -1, 8) }`, "", "food\n", "", ""},
+		{`BEGIN { print substr("food", 5, 8) }`, "", "\n", "", ""},
+		{`BEGIN { system("echo foo") }`, "", "foo\n", "", ""},
+		{`BEGIN { n = split("ab c d ", a); for (i=1; i<=n; i++) print a[i] }`, "", "ab\nc\nd\n", "", ""},
+		{`BEGIN { n = split("ab,c,d,", a, ","); for (i=1; i<=n; i++) print a[i] }`, "", "ab\nc\nd\n\n", "", ""},
+		{`BEGIN { n = split("ab,c.d,", a, /[,.]/); for (i=1; i<=n; i++) print a[i] }`, "", "ab\nc\nd\n\n", "", ""},
+		{`BEGIN { n = split("1 2", a); print (n, a[1], a[2], a[1]==1, a[2]==2) }`, "", "2 1 2 1 1\n", "", ""},
+		{`BEGIN { x = "1.2.3"; print sub(/\./, ",", x); print x }`, "", "1\n1,2.3\n", "", ""},
+		{`{ print sub(/\./, ","); print $0 }`, "1.2.3", "1\n1,2.3\n", "", ""},
+		{`BEGIN { x = "1.2.3"; print gsub(/\./, ",", x); print x }`, "", "2\n1,2,3\n", "", ""},
+		{`{ print gsub(/\./, ","); print $0 }`, "1.2.3", "2\n1,2,3\n", "", ""},
+		{`{ print gsub(/[0-9]/, "(&)"); print $0 }`, "0123x. 42y", "6\n(0)(1)(2)(3)x. (4)(2)y\n", "", ""},
+		{`{ print gsub(/[0-9]+/, "(&)"); print $0 }`, "0123x. 42y", "2\n(0123)x. (42)y\n", "", ""},
+		{`{ print gsub(/[0-9]/, "\\&"); print $0 }`, "0123x. 42y", "6\n&&&&x. &&y\n", "", ""},
+		{`BEGIN { print tolower("Foo BaR") }`, "", "foo bar\n", "", ""},
+		{`BEGIN { print toupper("Foo BaR") }`, "", "FOO BAR\n", "", ""},
+		{`
+BEGIN {
+	srand(1)
+	a = rand(); b = rand(); c = rand()
+	srand(1)
+	x = rand(); y = rand(); z = rand()
+	print (a==b, b==c, x==y, y==z)
+	print (a==x, b==y, c==z)
+}
+`, "", "0 0 0 0\n1 1 1\n", "", ""},
+		{`
+BEGIN {
+	for (i = 0; i < 1000; i++) {
+		if (rand() < 0.5) n++
+	}
+	print (n>400)
+}
+`, "", "1\n", "", ""},
 
 		// Conditional expressions parse and work correctly
 		{`BEGIN { print 0?"t":"f" }`, "", "f\n", "", ""},
@@ -128,6 +212,14 @@ BEGIN {
 	}
 }
 `, "", "1 1 2 3 5 8 13 ", "", ""},
+		{`
+function early() {
+	print "x"
+	return
+	print "y"
+}
+BEGIN { early() }
+`, "", "x\n", "", ""},
 
 		// Greater than operator requires parentheses in print statement,
 		// otherwise it's a redirection directive

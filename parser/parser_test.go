@@ -8,6 +8,9 @@ import (
 	"github.com/benhoyt/goawk/parser"
 )
 
+// NOTE: parser doesn't have its own tests, as the idea is to test
+// the parser in the interp tests.
+
 func Example_valid() {
 	prog, err := parser.ParseProgram([]byte("$0 { print $1 }"))
 	if err != nil {
