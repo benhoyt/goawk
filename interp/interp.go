@@ -1382,33 +1382,33 @@ func (p *Interp) sprintf(format string, args []value) string {
 	if err != nil {
 		panic(newError("format error: %s", err))
 	}
-	if len(types) != len(args) {
+	if len(types) > len(args) {
 		panic(newError("format error: got %d args, expected %d", len(args), len(types)))
 	}
-	converted := make([]interface{}, len(args))
-	for i, a := range args {
+	converted := make([]interface{}, len(types))
+	for i, t := range types {
 		var v interface{}
-		switch types[i] {
+		switch t {
 		case 'd':
-			v = int(a.num())
+			v = int(args[i].num())
 		case 'u':
-			v = uint32(a.num())
+			v = uint32(args[i].num())
 		case 'c':
 			var c []byte
-			if a.isTrueStr() {
-				s := p.toString(a)
+			if args[i].isTrueStr() {
+				s := p.toString(args[i])
 				if len(s) > 0 {
 					c = []byte{s[0]}
 				}
 			} else {
-				r := []rune{rune(a.num())}
+				r := []rune{rune(args[i].num())}
 				c = []byte(string(r))
 			}
 			v = c
 		case 'f':
-			v = a.num()
+			v = args[i].num()
 		case 's':
-			v = p.toString(a)
+			v = p.toString(args[i])
 		}
 		converted[i] = v
 	}
