@@ -35,6 +35,8 @@ var (
 	errBreak    = errors.New("break")
 	errContinue = errors.New("continue")
 	errNext     = errors.New("next")
+
+	crlfNewline = runtime.GOOS == "windows"
 )
 
 // Error (actually *Error) is returned by Exec and Eval functions on
@@ -135,11 +137,7 @@ func New(output, errorOutput io.Writer) *Interp {
 	p.outputFormat = "%.6g"
 	p.fieldSep = " "
 	p.outputFieldSep = " "
-	if runtime.GOOS == "windows" {
-		p.outputRecordSep = "\r\n"
-	} else {
-		p.outputRecordSep = "\n"
-	}
+	p.outputRecordSep = "\n"
 	p.subscriptSep = "\x1c"
 	return p
 }
@@ -275,7 +273,8 @@ lineLoop:
 			}
 			// No action is equivalent to { print $0 }
 			if action.Stmts == nil {
-				io.WriteString(p.output, p.line+p.outputRecordSep)
+				writeOutput(p.output, p.line)
+				writeOutput(p.output, p.outputRecordSep)
 				continue
 			}
 			err := p.executes(action.Stmts)
@@ -336,7 +335,8 @@ func (p *Interp) execute(stmt Stmt) (execErr error) {
 			line = p.line
 		}
 		output := p.getOutputStream(s.Redirect, s.Dest)
-		io.WriteString(output, line+p.outputRecordSep)
+		writeOutput(output, line)
+		writeOutput(output, p.outputRecordSep)
 	case *PrintfStmt:
 		if len(s.Args) == 0 {
 			break
@@ -347,7 +347,7 @@ func (p *Interp) execute(stmt Stmt) (execErr error) {
 			args[i] = p.eval(a)
 		}
 		output := p.getOutputStream(s.Redirect, s.Dest)
-		io.WriteString(output, p.sprintf(format, args))
+		writeOutput(output, p.sprintf(format, args))
 	case *IfStmt:
 		if p.eval(s.Cond).boolean() {
 			return p.executes(s.Body)
@@ -1446,4 +1446,13 @@ func (p *Interp) evalIndex(indexExprs []Expr) string {
 		indices[i] = p.toString(p.eval(expr))
 	}
 	return strings.Join(indices, p.subscriptSep)
+}
+
+func writeOutput(w io.Writer, s string) {
+	if crlfNewline {
+		// First normalize to \n, then convert all newlines to \r\n (on Windows)
+		s = strings.Replace(s, "\r\n", "\n", -1)
+		s = strings.Replace(s, "\n", "\r\n", -1)
+	}
+	io.WriteString(w, s)
 }
