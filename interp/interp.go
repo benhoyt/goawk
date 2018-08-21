@@ -20,6 +20,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -134,7 +135,11 @@ func New(output, errorOutput io.Writer) *Interp {
 	p.outputFormat = "%.6g"
 	p.fieldSep = " "
 	p.outputFieldSep = " "
-	p.outputRecordSep = "\n"
+	if runtime.GOOS == "windows" {
+		p.outputRecordSep = "\r\n"
+	} else {
+		p.outputRecordSep = "\n"
+	}
 	p.subscriptSep = "\x1c"
 	return p
 }
@@ -471,15 +476,15 @@ func (p *Interp) getOutputStream(redirect Token, dest Expr) io.Writer {
 		cmd := exec.Command("sh", "-c", name)
 		w, err := cmd.StdinPipe()
 		if err != nil {
-			panic(newError("error connecting to stdin pipe: %v\n", err))
+			panic(newError("error connecting to stdin pipe: %v", err))
 		}
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
-			panic(newError("error connecting to stdout pipe: %v\n", err))
+			panic(newError("error connecting to stdout pipe: %v", err))
 		}
 		stderr, err := cmd.StderrPipe()
 		if err != nil {
-			panic(newError("error connecting to stderr pipe: %v\n", err))
+			panic(newError("error connecting to stderr pipe: %v", err))
 		}
 		err = cmd.Start()
 		if err != nil {
@@ -520,15 +525,15 @@ func (p *Interp) getInputScanner(name string, isFile bool) *bufio.Scanner {
 		cmd := exec.Command("sh", "-c", name)
 		stdin, err := cmd.StdinPipe()
 		if err != nil {
-			panic(newError("error connecting to stdin pipe: %v\n", err))
+			panic(newError("error connecting to stdin pipe: %v", err))
 		}
 		r, err := cmd.StdoutPipe()
 		if err != nil {
-			panic(newError("error connecting to stdout pipe: %v\n", err))
+			panic(newError("error connecting to stdout pipe: %v", err))
 		}
 		stderr, err := cmd.StderrPipe()
 		if err != nil {
-			panic(newError("error connecting to stderr pipe: %v\n", err))
+			panic(newError("error connecting to stderr pipe: %v", err))
 		}
 		err = cmd.Start()
 		if err != nil {
