@@ -64,7 +64,7 @@ type parser struct {
 	tok         Token
 	val         string
 	progState   progState
-	inLoop      bool
+	loopCount   int
 	inFunction  bool
 	arrayParams map[string]bool
 }
@@ -274,13 +274,13 @@ func (p *parser) stmt() Stmt {
 		p.expect(RPAREN)
 		s = &DoWhileStmt{body, cond}
 	case BREAK:
-		if !p.inLoop {
+		if p.loopCount == 0 {
 			panic(p.error("break must be inside a loop body"))
 		}
 		p.next()
 		s = &BreakStmt{}
 	case CONTINUE:
-		if !p.inLoop {
+		if p.loopCount == 0 {
 			panic(p.error("continue must be inside a loop body"))
 		}
 		p.next()
@@ -318,9 +318,9 @@ func (p *parser) stmt() Stmt {
 }
 
 func (p *parser) loopStmts() Stmts {
-	p.inLoop = true
+	p.loopCount++
 	ss := p.stmts()
-	p.inLoop = false
+	p.loopCount--
 	return ss
 }
 

@@ -84,6 +84,27 @@ NR==3, NR==5 { print NR }
 		{`BEGIN { a["x"] = 3; a["y"] = 4; for (k in a) x += a[k]; print x }`, "", "7\n", "", ""},
 		{`BEGIN { while (i < 5) { print i; i++ } }`, "", "\n1\n2\n3\n4\n", "", ""},
 		{`BEGIN { do { print i; i++ } while (i < 5) }`, "", "\n1\n2\n3\n4\n", "", ""},
+		// regression tests for break and continue with nested loops
+		{`
+BEGIN {
+	for (i = 0; i < 1; i++) {
+		for (j = 0; j < 1; j++) {
+			print i, j
+		}
+		break
+	}
+}
+`, "", "0 0\n", "", ""},
+		{`
+BEGIN {
+	for (i = 0; i < 1; i++) {
+		for (j = 0; j < 1; j++) {
+			print i, j
+		}
+		continue
+	}
+}
+`, "", "0 0\n", "", ""},
 
 		// Arrays, "in", and delete
 		{`BEGIN { a["x"] = 3; print "x" in a, "y" in a }`, "", "1 0\n", "", ""},
