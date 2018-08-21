@@ -29,9 +29,13 @@ func TestLexer(t *testing.T) {
 
 		// String tokens
 		{`"foo"`, `1:1 string "foo"`},
-		{`"a\t\r\n\zb"`, `1:1 string "a\t\r\nzb"`},
+		{`"a\t\r\n\z\'\"b"`, `1:1 string "a\t\r\nz'\"b"`},
 		{`"x`, `1:3 <illegal> "didn't find end quote in string"`},
 		{"\"x\n\"", `1:3 <illegal> "can't have newline in string", 1:3 <newline> "", 2:2 <illegal> "didn't find end quote in string"`},
+		{`'foo'`, `1:1 string "foo"`},
+		{`'a\t\r\n\z\'\"b'`, `1:1 string "a\t\r\nz'\"b"`},
+		{`'x`, `1:3 <illegal> "didn't find end quote in string"`},
+		{"'x\n'", `1:3 <illegal> "can't have newline in string", 1:3 <newline> "", 2:2 <illegal> "didn't find end quote in string"`},
 
 		// Number tokens
 		{"0", `1:1 number "0"`},

@@ -121,6 +121,8 @@ BEGIN {
 		// TODO: tests for numeric strings from $ fields
 
 		// Other expressions: TODO ?: num str regex
+		{`BEGIN { print '\"' 'x' "y" '\"' }`, "", "\"xy\"\n", "", "syntax error"},
+
 		// Built-in variables: TODO
 		// Field expressions and assignment: TODO
 		// Assignment expressions: TODO
@@ -261,7 +263,6 @@ BEGIN { early() }
 		// {`BEGIN { printf "x" };; BEGIN { printf "y" }`, "", "xy", "", ""},
 
 		// Ensure syntax errors result in errors
-		{`BEGIN { }'`, "", "", `parse error at 1:10: unexpected '\''`, "syntax error"},
 		// {`{ $1 = substr($1, 1, 3) print $1 }`, "", "", "ERROR", "syntax error"},
 	}
 	for _, test := range tests {

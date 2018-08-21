@@ -248,9 +248,12 @@ func (l *Lexer) scan() (Position, Token, string) {
 		}
 		tok = NUMBER
 		val = string(runes)
-	case '"':
+	case '"', '\'':
+		// Note: POSIX awk spec doesn't allow single-quoted strings,
+		// but this helps without quoting, especially on Windows
+		// where the shell quote character is " (double quote).
 		runes := []rune{}
-		for l.ch != '"' {
+		for l.ch != ch {
 			c := l.ch
 			if c < 0 {
 				return l.pos, ILLEGAL, "didn't find end quote in string"
