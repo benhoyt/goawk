@@ -29,18 +29,19 @@ TODO:
   + defer in eval/exec -- will this help?
 
 NICE TO HAVE:
+- fix broken interp tests due to syntax handling
+- proper CSV support: https://news.ycombinator.com/item?id=17788471
+- think about linear time string concat: https://news.ycombinator.com/item?id=17788028
+- support for calling Go functions: https://news.ycombinator.com/item?id=17788915
 - parser: ensure vars aren't used in array context and vice-versa
 - interp: flag "unexpected comma-separated expression" at parse time
-- fix broken interp tests due to syntax handling
 
 */
 
 import (
 	"bytes"
-	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -53,10 +54,11 @@ import (
 )
 
 func main() {
-	progFile := flag.String("f", "", "load AWK source from `progfile`")
+	var progFiles multiString
+	flag.Var(&progFiles, "f", "load AWK source from `progfile` (multiple allowed)")
 	fieldSep := flag.String("F", " ", "field separator")
-	var vars varFlags
-	flag.Var(&vars, "v", "variable `assignment` (name=value)")
+	var vars multiString
+	flag.Var(&vars, "v", "name=value variable `assignment` (multiple allowed)")
 
 	debug := flag.Bool("d", false, "debug mode (print parsed AST to stderr)")
 	cpuprofile := flag.String("cpuprofile", "", "write CPU profile to `file`")
@@ -66,12 +68,22 @@ func main() {
 	args := flag.Args()
 
 	var src []byte
-	if *progFile != "" {
-		var err error
-		src, err = ioutil.ReadFile(*progFile)
-		if err != nil {
-			errorExit("%s", err)
+	if len(progFiles) > 0 {
+		buf := &bytes.Buffer{}
+		for _, progFile := range progFiles {
+			f, err := os.Open(progFile)
+			if err != nil {
+				errorExit("%s", err)
+			}
+			_, err = buf.ReadFrom(f)
+			if err != nil {
+				f.Close()
+				errorExit("%s", err)
+			}
+			f.Close()
+			buf.WriteByte('\n')
 		}
+		src = buf.Bytes()
 	} else {
 		if len(args) < 1 {
 			errorExit("usage: goawk [-F fs] [-v var=value] [-f progfile | 'prog'] [file ...]")
@@ -105,7 +117,11 @@ func main() {
 	p := interp.New(nil, nil)
 	p.SetVar("FS", *fieldSep)
 	for _, v := range vars {
-		p.SetVar(v.name, v.value)
+		parts := strings.SplitN(v, "=", 2)
+		if len(parts) != 2 {
+			errorExit("-v flag must be in format name=value")
+		}
+		p.SetVar(parts[0], parts[1])
 	}
 
 	interpArgs := []string{filepath.Base(os.Args[0])}
@@ -155,22 +171,13 @@ func errorExit(format string, args ...interface{}) {
 	os.Exit(1)
 }
 
-type varFlag struct {
-	name  string
-	value string
+type multiString []string
+
+func (m *multiString) String() string {
+	return fmt.Sprintf("%v", []string(*m))
 }
 
-type varFlags []varFlag
-
-func (v *varFlags) String() string {
-	return ""
-}
-
-func (v *varFlags) Set(value string) error {
-	parts := strings.SplitN(value, "=", 2)
-	if len(parts) != 2 {
-		return errors.New("must be name=value")
-	}
-	*v = append(*v, varFlag{parts[0], parts[1]})
+func (m *multiString) Set(value string) error {
+	*m = append(*m, value)
 	return nil
 }
