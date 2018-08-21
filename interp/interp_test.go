@@ -67,6 +67,8 @@ NR==3, NR==5 { print NR }
 		{`BEGIN { printf "%3d", 42 }`, "", " 42", "", ""},
 		{`BEGIN { printf "%3s", "x" }`, "", "  x", "", ""},
 		{`BEGIN { printf "%.1g", 42 }`, "", "4e+01", "", ""},
+		{`BEGIN { printf "%d", 12, 34 }`, "", "12", "", ""},
+		{`BEGIN { printf "%d" }`, "", "", "format error: got 0 args, expected 1", "not enough args in printf"},
 
 		// if and loop statements
 		{`BEGIN { if (1) print "t"; }`, "", "t\n", "", ""},
@@ -118,6 +120,8 @@ NR==3, NR==5 { print NR }
 		{`BEGIN { print index("foo", "f"), index("foo0", 0), index("foo", "o"), index("foo", "x") }`, "", "1 4 2 0\n", "", ""},
 		{`BEGIN { print atan2(1, 0.5), atan2(-1, 0) }`, "", "1.10715 -1.5708\n", "", ""},
 		{`BEGIN { print sprintf("%3d", 42) }`, "", " 42\n", "", ""},
+		{`BEGIN { print sprintf("%d", 12, 34) }`, "", "12\n", "", ""},
+		{`BEGIN { print sprintf("%d") }`, "", "", "format error: got 0 args, expected 1", "not enough args in printf"},
 		{`BEGIN { print substr("food", 1) }`, "", "food\n", "", ""},
 		{`BEGIN { print substr("food", 1, 2) }`, "", "fo\n", "", ""},
 		{`BEGIN { print substr("food", 1, 4) }`, "", "food\n", "", ""},
