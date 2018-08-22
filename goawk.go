@@ -22,7 +22,7 @@ package main
 
 TODO:
 - support name=value args in "file" args (in nextLine)
-- support "-f -" arg to mean read awk program from stdin
+- add tests for goawk command line handling
 - other interp tests
 - performance testing: I/O, allocations, CPU
   + add "go test" benchmarks for various common workloads
@@ -73,16 +73,23 @@ func main() {
 	if len(progFiles) > 0 {
 		buf := &bytes.Buffer{}
 		for _, progFile := range progFiles {
-			f, err := os.Open(progFile)
-			if err != nil {
-				errorExit("%s", err)
-			}
-			_, err = buf.ReadFrom(f)
-			if err != nil {
+			if progFile == "-" {
+				_, err := buf.ReadFrom(os.Stdin)
+				if err != nil {
+					errorExit("%s", err)
+				}
+			} else {
+				f, err := os.Open(progFile)
+				if err != nil {
+					errorExit("%s", err)
+				}
+				_, err = buf.ReadFrom(f)
+				if err != nil {
+					f.Close()
+					errorExit("%s", err)
+				}
 				f.Close()
-				errorExit("%s", err)
 			}
-			f.Close()
 			buf.WriteByte('\n')
 		}
 		src = buf.Bytes()

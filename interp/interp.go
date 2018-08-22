@@ -148,12 +148,15 @@ func (p *Interp) ExitStatus() int {
 	return p.exitStatus
 }
 
-// Exec executes the given program using the given input reader and
-// input arguments (usually filenames: empty slice means read only
-// from stdin, and a filename of "-" means read stdin instead of a
-// real file).
+// Exec executes the given program using the given input reader (nil
+// means os.Stdin) and input arguments (usually filenames: empty
+// slice means read only from stdin, and a filename of "-" means read
+// stdin instead of a real file).
 func (p *Interp) Exec(program *Program, stdin io.Reader, args []string) error {
 	p.program = program
+	if stdin == nil {
+		stdin = os.Stdin
+	}
 	p.stdin = stdin
 	p.argc = len(args) + 1
 	for i, arg := range args {
@@ -788,7 +791,7 @@ func (p *Interp) setLine(line string) {
 func (p *Interp) nextLine() (string, error) {
 	for {
 		if p.scanner == nil {
-			if prevInput, ok := p.input.(io.Closer); ok {
+			if prevInput, ok := p.input.(io.Closer); ok && p.input != p.stdin {
 				prevInput.Close()
 			}
 			if p.filenameIndex >= p.argc && !p.hadFiles {
