@@ -21,6 +21,8 @@ package main
 /*
 
 TODO:
+- support name=value args in "file" args (in nextLine)
+- support "-f -" arg to mean read awk program from stdin
 - other interp tests
 - performance testing: I/O, allocations, CPU
   + add "go test" benchmarks for various common workloads
@@ -123,10 +125,8 @@ func main() {
 		}
 		p.SetVar(parts[0], parts[1])
 	}
+	p.SetArgv0(filepath.Base(os.Args[0]))
 
-	interpArgs := []string{filepath.Base(os.Args[0])}
-	interpArgs = append(interpArgs, args...)
-	p.SetArgs(interpArgs)
 	err = p.Exec(prog, os.Stdin, args)
 	if err != nil {
 		errorExit("%s", err)

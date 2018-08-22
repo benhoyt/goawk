@@ -82,8 +82,8 @@ type Interp struct {
 	scanner       *bufio.Scanner
 	scanners      map[string]*bufio.Scanner
 	stdin         io.Reader
-	filenames     []string
 	filenameIndex int
+	hadFiles      bool
 	input         io.Reader
 
 	locals        []map[string]value
@@ -149,16 +149,18 @@ func (p *Interp) ExitStatus() int {
 }
 
 // Exec executes the given program using the given input reader and
-// input filenames (empty slice means read only from stdin, and a
-// filename of "-" means read stdin instead of a real file).
-func (p *Interp) Exec(program *Program, stdin io.Reader, filenames []string) error {
+// input arguments (usually filenames: empty slice means read only
+// from stdin, and a filename of "-" means read stdin instead of a
+// real file).
+func (p *Interp) Exec(program *Program, stdin io.Reader, args []string) error {
 	p.program = program
 	p.stdin = stdin
-	if len(filenames) == 0 {
-		filenames = []string{"-"}
+	p.argc = len(args) + 1
+	for i, arg := range args {
+		p.setArray("ARGV", strconv.Itoa(i+1), str(arg))
 	}
-	p.filenames = filenames
-	p.filenameIndex = 0
+	p.filenameIndex = 1
+	p.hadFiles = false
 	p.streams = make(map[string]io.Closer)
 	p.commands = make(map[string]*exec.Cmd)
 	p.scanners = make(map[string]*bufio.Scanner)
@@ -789,21 +791,32 @@ func (p *Interp) nextLine() (string, error) {
 			if prevInput, ok := p.input.(io.Closer); ok {
 				prevInput.Close()
 			}
-			if p.filenameIndex >= len(p.filenames) {
-				return "", io.EOF
-			}
-			filename := p.filenames[p.filenameIndex]
-			p.filenameIndex++
-			if filename == "-" {
+			if p.filenameIndex >= p.argc && !p.hadFiles {
 				p.input = p.stdin
 				p.setFile("")
+				p.hadFiles = true
 			} else {
-				input, err := os.Open(filename)
-				if err != nil {
-					return "", err
+				if p.filenameIndex >= p.argc {
+					return "", io.EOF
 				}
-				p.input = input
-				p.setFile(filename)
+				index := strconv.Itoa(p.filenameIndex)
+				filename := p.toString(p.getArray("ARGV", index))
+				p.filenameIndex++
+				if filename == "" {
+					p.input = nil
+					continue
+				} else if filename == "-" {
+					p.input = p.stdin
+					p.setFile("")
+				} else {
+					input, err := os.Open(filename)
+					if err != nil {
+						return "", err
+					}
+					p.input = input
+					p.setFile(filename)
+					p.hadFiles = true
+				}
 			}
 			p.scanner = bufio.NewScanner(p.input)
 		}
@@ -984,16 +997,14 @@ func (p *Interp) SetField(index int, value string) {
 	p.line = strings.Join(p.fields, p.outputFieldSep)
 }
 
-// SetArgs sets the command-line arguments for the ARGV array
-// accessible to the AWK program.
-func (p *Interp) SetArgs(args []string) {
-	p.argc = len(args)
-	array := make(map[string]value, len(args))
-	for i, a := range args {
-		array[strconv.Itoa(i)] = str(a)
-	}
-	p.arrays["ARGV"] = array
+func (p *Interp) SetArgv0(argv0 string) {
+	p.setArray("ARGV", "0", str(argv0))
 }
+
+// SetArgs sets the command-line arguments for the ARGV array
+// accessible to the AWK program. This function is DEPRECATED and
+// does nothing now that Exec sets ARGV.
+func (p *Interp) SetArgs(args []string) {}
 
 func (p *Interp) toString(v value) string {
 	return v.str(p.convertFormat)
