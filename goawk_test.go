@@ -223,6 +223,9 @@ func TestCommandLine(t *testing.T) {
 				ARGC = 3
 			}
 			$0`, "testdata/g.1", "-", "testdata/g.2"}, "c\nd", "ONE\nc\nd\n"},
+		{[]string{"-v", "A=1", "-f", "testdata/g.3", "B=2", "/dev/null"}, "",
+			"A=1, B=0\n\tARGV[1] = B=2\n\tARGV[2] = /dev/null\nA=1, B=2\n"},
+		{[]string{`END { print (x==42) }`, "x=42.0"}, "", "1\n"},
 	}
 	for _, test := range tests {
 		testName := strings.Join(test.args, " ")
@@ -231,9 +234,11 @@ func TestCommandLine(t *testing.T) {
 			if test.stdin != "" {
 				cmd.Stdin = bytes.NewReader([]byte(test.stdin))
 			}
+			stderr := &bytes.Buffer{}
+			cmd.Stderr = stderr
 			output, err := cmd.Output()
 			if err != nil {
-				t.Fatalf("error running %s: %v", awkExe, err)
+				t.Fatalf("error running %s: %v: %s", awkExe, err, stderr.String())
 			}
 			if string(output) != test.output {
 				t.Fatalf("expected %q, got %q", test.output, output)
@@ -243,9 +248,11 @@ func TestCommandLine(t *testing.T) {
 			if test.stdin != "" {
 				cmd.Stdin = bytes.NewReader([]byte(test.stdin))
 			}
+			stderr = &bytes.Buffer{}
+			cmd.Stderr = stderr
 			output, err = cmd.Output()
 			if err != nil {
-				t.Fatalf("error running %s: %v", goAWKExe, err)
+				t.Fatalf("error running %s: %v: %s", goAWKExe, err, stderr.String())
 			}
 			if string(output) != test.output {
 				t.Fatalf("expected %q, got %q", test.output, output)

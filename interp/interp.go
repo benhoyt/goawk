@@ -37,6 +37,7 @@ var (
 	errNext     = errors.New("next")
 
 	crlfNewline = runtime.GOOS == "windows"
+	varRegex    = regexp.MustCompile(`^([_a-zA-Z][_a-zA-Z0-9]*)=(.*)`)
 )
 
 // Error (actually *Error) is returned by Exec and Eval functions on
@@ -805,7 +806,11 @@ func (p *Interp) nextLine() (string, error) {
 				index := strconv.Itoa(p.filenameIndex)
 				filename := p.toString(p.getArray("ARGV", index))
 				p.filenameIndex++
-				if filename == "" {
+				matches := varRegex.FindStringSubmatch(filename)
+				if len(matches) >= 3 {
+					p.setVar(matches[1], numStr(matches[2]))
+					continue
+				} else if filename == "" {
 					p.input = nil
 					continue
 				} else if filename == "-" {

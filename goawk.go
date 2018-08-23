@@ -21,8 +21,6 @@ package main
 /*
 
 TODO:
-- support name=value args in "file" args (in nextLine)
-- add tests for goawk command line handling
 - other interp tests
 - performance testing: I/O, allocations, CPU
   + add "go test" benchmarks for various common workloads
