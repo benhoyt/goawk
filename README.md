@@ -7,7 +7,7 @@ AWK is a fascinating text-processing language, and somehow after reading the del
 
 <!-- [**Read more about how it works and performs here.**](TODO) -->
 
-To use the command-line version, simply use `go get` to install it, and then run it using `goawk`:
+To use the command-line version, simply use `go get` to install it, and then run it using `goawk` (assuming `$GOPATH/bin` is in your `PATH`):
 
     $ go get github.com/benhoyt/goawk
     $ goawk 'BEGIN { print "foo", 42 }'
