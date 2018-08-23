@@ -21,6 +21,8 @@ package main
 /*
 
 TODO:
+- think about length() and substr() chars vs bytes:
+  https://github.com/benhoyt/goawk/issues/2#issuecomment-415314000
 - other interp tests
 - performance testing: I/O, allocations, CPU
   + add "go test" benchmarks for various common workloads

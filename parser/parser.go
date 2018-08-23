@@ -549,7 +549,7 @@ func (p *parser) pow() Expr {
 	expr := p.preIncr()
 	if p.tok == POW {
 		p.next()
-		right := p.pow()
+		right := p.unary()
 		return &BinaryExpr{expr, POW, right}
 	}
 	return expr

@@ -68,7 +68,7 @@ NR==3, NR==5 { print NR }
 		{`BEGIN { printf "%3s", "x" }`, "", "  x", "", ""},
 		{`BEGIN { printf "%.1g", 42 }`, "", "4e+01", "", ""},
 		{`BEGIN { printf "%d", 12, 34 }`, "", "12", "", ""},
-		{`BEGIN { printf "%d" }`, "", "", "format error: got 0 args, expected 1", "not enough args in printf"},
+		{`BEGIN { printf "%d" }`, "", "", "format error: got 0 args, expected 1", "not enough arg"},
 
 		// if and loop statements
 		{`BEGIN { if (1) print "t"; }`, "", "t\n", "", ""},
@@ -116,9 +116,33 @@ BEGIN {
 		{`BEGIN { print !42, !1, !0, !!42, !!1, !!0 }`, "", "0 0 1 1 1 0\n", "", ""},
 		{`BEGIN { print +4, +"3", +0, +-3, -3, - -4, -"3" }`, "", "4 3 0 -3 -3 4 -3\n", "", ""},
 
-		// Binary expressions: == != < <= > >= + - * ^ / % CONCAT ~ !~
+		// Comparison expressions: == != < <= > >=
 		{`BEGIN { print (1==1, 1==0, "1"==1, "1"==1.0) }`, "", "1 0 1 1\n", "", ""},
-		// TODO: tests for numeric strings from $ fields
+		{`{ print ($0=="1", $0==1) }`, "1\n1.0\n+1", "1 1\n0 1\n0 1\n", "", ""},
+		{`{ print ($1=="1", $1==1) }`, "1\n1.0\n+1", "1 1\n0 1\n0 1\n", "", ""},
+		{`BEGIN { print (1!=1, 1!=0, "1"!=1, "1"!=1.0) }`, "", "0 1 0 0\n", "", ""},
+		{`{ print ($0!="1", $0!=1) }`, "1\n1.0\n+1", "0 0\n1 0\n1 0\n", "", ""},
+		{`{ print ($1!="1", $1!=1) }`, "1\n1.0\n+1", "0 0\n1 0\n1 0\n", "", ""},
+		{`BEGIN { print (0<1, 1<1, 2<1, "12"<"2") }`, "", "1 0 0 1\n", "", ""},
+		{`{ print ($1<2) }`, "1\n1.0\n+1", "1\n1\n1\n", "", ""},
+		{`BEGIN { print (0<=1, 1<=1, 2<=1, "12"<="2") }`, "", "1 1 0 1\n", "", ""},
+		{`{ print ($1<=2) }`, "1\n1.0\n+1", "1\n1\n1\n", "", ""},
+		{`BEGIN { print (0>1, 1>1, 2>1, "12">"2") }`, "", "0 0 1 0\n", "", ""},
+		{`{ print ($1>2) }`, "1\n1.0\n+1", "0\n0\n0\n", "", ""},
+		{`BEGIN { print (0>=1, 1>=1, 2>=1, "12">="2") }`, "", "0 1 1 0\n", "", ""},
+		{`{ print ($1>=2) }`, "1\n1.0\n+1", "0\n0\n0\n", "", ""},
+
+		// Other binary expressions: + - * ^ / % CONCAT ~ !~
+		{`BEGIN { print 1+2, 1+2+3, 1+-2, -1+2, "1"+"2", 3+.14 }`, "", "3 6 -1 1 3 3.14\n", "", ""},
+		{`BEGIN { print 1-2, 1-2-3, 1-+2, -1-2, "1"-"2", 3-.14 }`, "", "-1 -4 -1 -3 -1 2.86\n", "", ""},
+		{`BEGIN { print 2*3, 2*3*4, 2*-3, -2*3, "2"*"3", 3*.14 }`, "", "6 24 -6 -6 6 0.42\n", "", ""},
+		{`BEGIN { print 2/3, 2/3/4, 2/-3, -2/3, "2"/"3", 3/.14 }`, "", "0.666667 0.166667 -0.666667 -0.666667 0.666667 21.4286\n", "", ""},
+		{`BEGIN { print 2%3, 2%3%4, 2%-3, -2%3, "2"%"3", 3%.14 }`, "", "2 2 2 -2 2 0.06\n", "", ""},
+		{`BEGIN { print 2^3, 2^3^3, 2^-3, -2^3, "2"^"3", 3^.14 }`, "", "8 134217728 0.125 -8 8 1.16626\n", "", ""},
+		{`BEGIN { print 1 2, "x" "yz", 1+2 3+4 }`, "", "12 xyz 37\n", "", ""},
+		{`BEGIN { print "food"~/oo/, "food"~/[oO]+d/, "food"~"f", "food"~"F", "food"~0 }`, "", "1 1 1 0 0\n", "", ""},
+		{`BEGIN { print "food"!~/oo/, "food"!~/[oO]+d/, "food"!~"f", "food"!~"F", "food"!~0 }`, "", "0 0 0 1 1\n", "", ""},
+		{`BEGIN { print 1+2*3/4^5%6 7, (1+2)*3/4^5%6 "7" }`, "", "1.005867 0.008789067\n", "", ""},
 
 		// Other expressions: TODO ?: num str regex
 		{`BEGIN { print '\"' 'x' "y" '\"' }`, "", "\"xy\"\n", "", "syntax error"},
@@ -144,7 +168,7 @@ BEGIN {
 		{`BEGIN { print atan2(1, 0.5), atan2(-1, 0) }`, "", "1.10715 -1.5708\n", "", ""},
 		{`BEGIN { print sprintf("%3d", 42) }`, "", " 42\n", "", ""},
 		{`BEGIN { print sprintf("%d", 12, 34) }`, "", "12\n", "", ""},
-		{`BEGIN { print sprintf("%d") }`, "", "", "format error: got 0 args, expected 1", "not enough args in printf"},
+		{`BEGIN { print sprintf("%d") }`, "", "", "format error: got 0 args, expected 1", "not enough arg"},
 		{`BEGIN { print substr("food", 1) }`, "", "food\n", "", ""},
 		{`BEGIN { print substr("food", 1, 2) }`, "", "fo\n", "", ""},
 		{`BEGIN { print substr("food", 1, 4) }`, "", "food\n", "", ""},
