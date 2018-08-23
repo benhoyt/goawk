@@ -21,6 +21,7 @@ var (
 	testsDir   string
 	outputDir  string
 	awkExe     string
+	goAWKExe   string
 	writeAWK   bool
 	writeGoAWK bool
 )
@@ -29,6 +30,7 @@ func TestMain(m *testing.M) {
 	flag.StringVar(&testsDir, "testsdir", "./testdata", "directory with one-true-awk tests")
 	flag.StringVar(&outputDir, "outputdir", "./testdata/output", "directory for test output")
 	flag.StringVar(&awkExe, "awk", "awk", "awk executable name")
+	flag.StringVar(&goAWKExe, "goawk", "./goawk", "goawk executable name")
 	flag.BoolVar(&writeAWK, "writeawk", false, "write expected output")
 	flag.BoolVar(&writeGoAWK, "writegoawk", true, "write Go AWK output")
 	flag.Parse()
@@ -101,7 +103,7 @@ func TestAWK(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			output, err := executeGoAWK(prog, inputPath)
+			output, err := interpGoAWK(prog, inputPath)
 			if err != nil && !errorExits[info.Name()] {
 				t.Fatal(err)
 			}
@@ -143,7 +145,7 @@ func parseGoAWK(srcPath string) (*parser.Program, error) {
 	return prog, nil
 }
 
-func executeGoAWK(prog *parser.Program, inputPath string) ([]byte, error) {
+func interpGoAWK(prog *parser.Program, inputPath string) ([]byte, error) {
 	outBuf := &bytes.Buffer{}
 	errBuf := &bytes.Buffer{}
 	p := interp.New(outBuf, errBuf)
@@ -159,4 +161,95 @@ func sortedLines(data []byte) []byte {
 	lines := strings.Split(trimmed, "\n")
 	sort.Strings(lines)
 	return []byte(strings.Join(lines, "\n") + "\n")
+}
+
+func TestCommandLine(t *testing.T) {
+	tests := []struct {
+		args   []string
+		stdin  string
+		output string
+	}{
+		// Load source from stdin
+		{[]string{"-f", "-"}, `BEGIN { print "b" }`, "b\n"},
+		{[]string{"-f", "-", "-f", "-"}, `BEGIN { print "b" }`, "b\n"},
+
+		// Program with no input
+		{[]string{`BEGIN { print "a" }`}, "", "a\n"},
+
+		// Read input from stdin
+		{[]string{`$0`}, "one\n\nthree", "one\nthree\n"},
+		{[]string{`$0`, "-"}, "one\n\nthree", "one\nthree\n"},
+		{[]string{`$0`, "-", "-"}, "one\n\nthree", "one\nthree\n"},
+
+		// Read input from file(s)
+		{[]string{`$0`, "testdata/g.1"}, "", "ONE\n"},
+		{[]string{`$0`, "testdata/g.1", "testdata/g.2"}, "", "ONE\nTWO\n"},
+		{[]string{`$0`, "testdata/g.1", "-", "testdata/g.2"}, "STDIN", "ONE\nSTDIN\nTWO\n"},
+		{[]string{`$0`, "testdata/g.1", "-", "testdata/g.2", "-"}, "STDIN", "ONE\nSTDIN\nTWO\n"},
+
+		// Specifying field separator with -F
+		{[]string{`{ print $1, $3 }`}, "1 2 3\n4 5 6", "1 3\n4 6\n"},
+		{[]string{"-F", ",", `{ print $1, $3 }`}, "1 2 3\n4 5 6", "1 2 3 \n4 5 6 \n"},
+		{[]string{"-F", ",", `{ print $1, $3 }`}, "1,2,3\n4,5,6", "1 3\n4 6\n"},
+		{[]string{"-F", ",", `{ print $1, $3 }`}, "1,2,3\n4,5,6", "1 3\n4 6\n"},
+
+		// Assigning other variables with -v
+		{[]string{"-v", "OFS=.", `{ print $1, $3 }`}, "1 2 3\n4 5 6", "1.3\n4.6\n"},
+		{[]string{"-v", "OFS=.", "-v", "ORS=", `{ print $1, $3 }`}, "1 2 3\n4 5 6", "1.34.6"},
+		{[]string{"-v", "x=42", "-v", "y=foo", `BEGIN { print x, y }`}, "", "42 foo\n"},
+
+		// ARGV/ARGC handling
+		{[]string{`
+			BEGIN {
+				for (i=1; i<ARGC; i++) {
+					print i, ARGV[i]
+				}
+			}`, "a", "b"}, "", "1 a\n2 b\n"},
+		{[]string{`
+			BEGIN {
+				for (i=1; i<ARGC; i++) {
+					print i, ARGV[i]
+					delete ARGV[i]
+				}
+			}
+			$0`, "a", "b"}, "c\nd", "1 a\n2 b\nc\nd\n"},
+		{[]string{`
+			BEGIN {
+				ARGV[1] = ""
+			}
+			$0`, "testdata/g.1", "-", "testdata/g.2"}, "c\nd", "c\nd\nTWO\n"},
+		{[]string{`
+			BEGIN {
+				ARGC = 3
+			}
+			$0`, "testdata/g.1", "-", "testdata/g.2"}, "c\nd", "ONE\nc\nd\n"},
+	}
+	for _, test := range tests {
+		testName := strings.Join(test.args, " ")
+		t.Run(testName, func(t *testing.T) {
+			cmd := exec.Command(awkExe, test.args...)
+			if test.stdin != "" {
+				cmd.Stdin = bytes.NewReader([]byte(test.stdin))
+			}
+			output, err := cmd.Output()
+			if err != nil {
+				t.Fatalf("error running %s: %v", awkExe, err)
+			}
+			if string(output) != test.output {
+				t.Fatalf("expected %q, got %q", test.output, output)
+			}
+
+			cmd = exec.Command(goAWKExe, test.args...)
+			if test.stdin != "" {
+				cmd.Stdin = bytes.NewReader([]byte(test.stdin))
+			}
+			output, err = cmd.Output()
+			if err != nil {
+				t.Fatalf("error running %s: %v", goAWKExe, err)
+			}
+			if string(output) != test.output {
+				t.Fatalf("expected %q, got %q", test.output, output)
+			}
+		})
+	}
 }
