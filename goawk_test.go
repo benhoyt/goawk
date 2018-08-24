@@ -184,6 +184,8 @@ func TestCommandLine(t *testing.T) {
 		// Read input from file(s)
 		{[]string{`$0`, "testdata/g.1"}, "", "ONE\n"},
 		{[]string{`$0`, "testdata/g.1", "testdata/g.2"}, "", "ONE\nTWO\n"},
+		{[]string{`{ print FILENAME ":" FNR "/" NR ": " $0 }`, "testdata/g.1", "testdata/g.4"}, "",
+			"testdata/g.1:1/1: ONE\ntestdata/g.4:1/2: FOUR a\ntestdata/g.4:2/3: FOUR b\n"},
 		{[]string{`$0`, "testdata/g.1", "-", "testdata/g.2"}, "STDIN", "ONE\nSTDIN\nTWO\n"},
 		{[]string{`$0`, "testdata/g.1", "-", "testdata/g.2", "-"}, "STDIN", "ONE\nSTDIN\nTWO\n"},
 
@@ -197,6 +199,8 @@ func TestCommandLine(t *testing.T) {
 		{[]string{"-v", "OFS=.", `{ print $1, $3 }`}, "1 2 3\n4 5 6", "1.3\n4.6\n"},
 		{[]string{"-v", "OFS=.", "-v", "ORS=", `{ print $1, $3 }`}, "1 2 3\n4 5 6", "1.34.6"},
 		{[]string{"-v", "x=42", "-v", "y=foo", `BEGIN { print x, y }`}, "", "42 foo\n"},
+		// TODO: uncomment when support for changing RS is added
+		// {[]string{"-v", "RS=;", `$0`}, "a b;c\nd;e", "a b\nc\nd\ne\n"},
 
 		// ARGV/ARGC handling
 		{[]string{`
@@ -241,7 +245,7 @@ func TestCommandLine(t *testing.T) {
 				t.Fatalf("error running %s: %v: %s", awkExe, err, stderr.String())
 			}
 			if string(output) != test.output {
-				t.Fatalf("expected %q, got %q", test.output, output)
+				t.Fatalf("expected AWK to give %q, got %q", test.output, output)
 			}
 
 			cmd = exec.Command(goAWKExe, test.args...)
@@ -255,7 +259,7 @@ func TestCommandLine(t *testing.T) {
 				t.Fatalf("error running %s: %v: %s", goAWKExe, err, stderr.String())
 			}
 			if string(output) != test.output {
-				t.Fatalf("expected %q, got %q", test.output, output)
+				t.Fatalf("expected GoAWK to give %q, got %q", test.output, output)
 			}
 		})
 	}

@@ -24,6 +24,8 @@ TODO:
 - think about length() and substr() chars vs bytes:
   https://github.com/benhoyt/goawk/issues/2#issuecomment-415314000
 - other interp tests
+- get goawk_test.go working in TravisCI
+- add support for assigning RS
 - performance testing: I/O, allocations, CPU
   + add "go test" benchmarks for various common workloads
   + faster to do switch+case for binary funcs instead of map of funcs?
@@ -31,8 +33,8 @@ TODO:
   + defer in eval/exec -- will this help?
 
 NICE TO HAVE:
-- fix broken interp tests due to syntax handling
-- proper CSV support: https://news.ycombinator.com/item?id=17788471
+- fix broken (commented-out) interp tests due to syntax handling
+- think about proper CSV support: https://news.ycombinator.com/item?id=17788471
 - think about linear time string concat: https://news.ycombinator.com/item?id=17788028
 - support for calling Go functions: https://news.ycombinator.com/item?id=17788915
 - parser: ensure vars aren't used in array context and vice-versa

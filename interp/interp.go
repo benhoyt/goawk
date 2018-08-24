@@ -854,7 +854,7 @@ func (p *Interp) getVar(name string) value {
 	case "CONVFMT":
 		return str(p.convertFormat)
 	case "FILENAME":
-		return numStr(p.filename)
+		return str(p.filename)
 	case "FNR":
 		return num(float64(p.fileLineNum))
 	case "FS":

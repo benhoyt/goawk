@@ -58,9 +58,9 @@ NR==3, NR==5 { print NR }
 
 		// print and printf statements
 		{`BEGIN { print "x", "y" }`, "", "x y\n", "", ""},
-		{`BEGIN { OFS = ","; print "x", "y" }`, "", "x,y\n", "", ""},
-		{`BEGIN { ORS = "."; print "x", "y" }`, "", "x y.", "", ""},
-		{`BEGIN { ORS = ""; print "x", "y" }`, "", "x y", "", ""},
+		{`BEGIN { print OFS; OFS = ","; print "x", "y" }`, "", " \nx,y\n", "", ""},
+		{`BEGIN { print ORS; ORS = "."; print "x", "y" }`, "", "\n\nx y.", "", ""},
+		{`BEGIN { print ORS; ORS = ""; print "x", "y" }`, "", "\n\nx y", "", ""},
 		{`{ print; print }`, "foo", "foo\nfoo\n", "", ""},
 		{`BEGIN { print; print }`, "", "\n\n", "", ""},
 		{`BEGIN { printf "%% %d %x %c %f %s", 42, 42, 42, 42, 42 }`, "", "% 42 2a * 42.000000 42", "", ""},
@@ -144,12 +144,71 @@ BEGIN {
 		{`BEGIN { print "food"!~/oo/, "food"!~/[oO]+d/, "food"!~"f", "food"!~"F", "food"!~0 }`, "", "0 0 0 1 1\n", "", ""},
 		{`BEGIN { print 1+2*3/4^5%6 7, (1+2)*3/4^5%6 "7" }`, "", "1.005867 0.008789067\n", "", ""},
 
-		// Other expressions: TODO ?: num str regex
-		{`BEGIN { print '\"' 'x' "y" '\"' }`, "", "\"xy\"\n", "", "syntax error"},
+		// Number, string, and regex expressions
+		{`BEGIN { print 1, 1., .1, 1e0, -1 }`, "", "1 1 0.1 1 -1\n", "", ""},
+		{`BEGIN { print '\"' '\'' 'xy' "z" "'" '\"' }`, "", "\"'xyz'\"\n", "", "syntax error"}, // Check support for single-quoted strings
+		{`{ print /foo/ }`, "food\nfoo\nxfooz\nbar\n", "1\n1\n1\n0\n", "", ""},
 
-		// Built-in variables: TODO
-		// Field expressions and assignment: TODO
-		// Assignment expressions: TODO
+		// Conditional ?: expression
+		{`{ print /x/?"t":"f" }`, "x\ny\nxx\nz\n", "t\nf\nt\nf\n", "", ""},
+		{`BEGIN { print 1?2?3:4:5, 1?0?3:4:5, 0?2?3:4:5 }`, "", "3 4 5\n", "", ""},
+
+		// Built-in variables
+		// ARGC is tested in goawk_test.go
+		{`
+BEGIN {
+	print CONVFMT, 1.2345678 ""
+	CONVFMT = "%.3g"
+	print CONVFMT, 1.234567 ""
+}`, "", "%.6g 1.23457\n%.3g 1.23\n", "", ""},
+		{`BEGIN { FILENAME = "foo"; print FILENAME }`, "", "foo\n", "", ""},
+		{`BEGIN { FILENAME = "123.0"; print (FILENAME==123) }`, "", "0\n", "", ""},
+		// Other FILENAME behaviour is tested in goawk_test.go
+		{`BEGIN { FNR = 123; print FNR }`, "", "123\n", "", ""},
+		{`{ print FNR, $0 }`, "a\nb\nc", "1 a\n2 b\n3 c\n", "", ""},
+		// Other FNR behaviour is tested in goawk_test.go
+		{`BEGIN { print "|" FS "|"; FS="," } { print $1, $2 }`, "a b\na,b\nx,,y", "| |\na b \na b\nx \n", "", ""},
+		{`BEGIN { print "|" FS "|"; FS="\\." } { print $1, $2 }`, "a b\na.b\nx..y", "| |\na b \na b\nx \n", "", ""},
+		{`{ print NF }`, "\na\nc d\ne f g", "0\n1\n2\n3\n", "", ""},
+		{`BEGIN { NR = 123; print NR }`, "", "123\n", "", ""},
+		{`{ print NR, $0 }`, "a\nb\nc", "1 a\n2 b\n3 c\n", "", ""},
+		{`
+BEGIN {
+	print OFMT, 1.2345678
+	OFMT = "%.3g"
+	print OFMT, 1.234567
+}`, "", "%.6g 1.23457\n%.3g 1.23\n", "", ""},
+		// OFS and ORS are tested above
+		{`BEGIN { print RSTART, RLENGTH; RSTART=5; RLENGTH=42; print RSTART, RLENGTH; } `, "",
+			"0 0\n5 42\n", "", ""},
+		{`BEGIN { print RS; }`, "", "\n\n", "", ""},
+		{`BEGIN { print RS; RS="|"; print RS }`, "", "\n\n|\n", "assigning RS not supported", ""},
+		{`
+BEGIN {
+	print SUBSEP
+	a[1, 2] = "onetwo"
+	print a[1, 2]
+	for (k in a) {
+		print k, a[k]
+	}
+	delete a[1, 2]
+	SUBSEP = "|"
+	print SUBSEP
+	a[1, 2] = "onetwo"
+	print a[1, 2]
+	for (k in a) {
+		print k, a[k]
+	}
+}`, "", "\x1c\nonetwo\n1\x1c2 onetwo\n|\nonetwo\n1|2 onetwo\n", "", ""},
+
+		// Field expressions and assignment (and interaction with NF): TODO
+		{`{ print NF; NF=1; $2="two"; print $0, NF }`, "\n", "0\n two 2\n", "", ""},
+		{`{ print NF; NF=2; $2="two"; print $0, NF}`, "\n", "0\n two 2\n", "", ""},
+		{`{ print NF; NF=3; $2="two"; print $0, NF}`, "a b c\n", "3\na two c 3\n", "", ""},
+		// TODO: this has a bug on goawk, but causes a segmentation fault on awk!
+		// {`{ print NF; NF=3; $2="two"; print $0, NF }`, "\n", "0\n two 2\n", "", ""},
+
+		// Assignment expressions and vars: TODO
 		// Incr/decr expressions: TODO
 
 		// Builtin functions

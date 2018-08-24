@@ -7,6 +7,8 @@ AWK is a fascinating text-processing language, and somehow after reading the del
 
 <!-- [**Read more about how it works and performs here.**](TODO) -->
 
+## Basic usage
+
 To use the command-line version, simply use `go get` to install it, and then run it using `goawk` (assuming `$GOPATH/bin` is in your `PATH`):
 
     $ go get github.com/benhoyt/goawk
@@ -48,5 +50,25 @@ Or you can use the `parser` module and then `interp.New()` and `Interp.Exec()` t
     // 3
     // 7
     // 11
+
+Read the [GoDoc documentation](https://godoc.org/github.com/benhoyt/goawk) for more details.
+
+## Differences from AWK
+
+The intention is for GoAWK to conform to the [POSIX AWK spec](TODO), but this section describes some areas where it's different.
+
+Additional features GoAWK has over AWK:
+
+* It's embeddable in your Go programs. :-)
+* I/O is a little bit faster. (TODO: benchmarks)
+* The parser supports `'single-quoted strings'` in addition to `"double-quoted strings"`, primarily to make Windows one-liners easier (the Windows `cmd.exe` shell uses `"` as the quote character).
+
+Things AWK has over GoAWK:
+
+* The GoAWK interpreter is significantly slower. (TODO: benchmarks)
+* GoAWK doesn't yet support changing RS. I intend to fix this soon.
+* GoAWK has a couple of known syntax quirks, but most real code shouldn't run into them (commented-out tests in interp/interp_test.go). I intend to fix these soon.
+
+## The end
 
 Have fun, and please [contact me](https://benhoyt.com/) if you're using GoAWK or have any feedback!
