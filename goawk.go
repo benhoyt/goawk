@@ -13,6 +13,15 @@
 // argument. The rest of the arguments are input filenames (default
 // is to read from stdin).
 //
+// A simple example (prints the sum of the numbers in the file's
+// second column):
+//
+//     $ echo 'foo 12
+//     > bar 34
+//     > baz 56' >file.txt
+//     $ goawk '{ sum += $2 } END { print sum }' file.txt
+//     102
+//
 // To use GoAWK in your Go programs, see README.md or the "interp"
 // docs.
 //

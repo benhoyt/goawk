@@ -55,7 +55,7 @@ Read the [GoDoc documentation](https://godoc.org/github.com/benhoyt/goawk) for m
 
 ## Differences from AWK
 
-The intention is for GoAWK to conform to the [POSIX AWK spec](TODO), but this section describes some areas where it's different.
+The intention is for GoAWK to conform to the [POSIX AWK spec](http://pubs.opengroup.org/onlinepubs/9699919799/utilities/awk.html), but this section describes some areas where it's different.
 
 Additional features GoAWK has over AWK:
 
