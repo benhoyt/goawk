@@ -201,15 +201,30 @@ BEGIN {
 	}
 }`, "", "\x1c\nonetwo\n1\x1c2 onetwo\n|\nonetwo\n1|2 onetwo\n", "", ""},
 
-		// Field expressions and assignment (and interaction with NF): TODO
+		// Field expressions and assignment (and interaction with NF)
 		{`{ print NF; NF=1; $2="two"; print $0, NF }`, "\n", "0\n two 2\n", "", ""},
 		{`{ print NF; NF=2; $2="two"; print $0, NF}`, "\n", "0\n two 2\n", "", ""},
 		{`{ print NF; NF=3; $2="two"; print $0, NF}`, "a b c\n", "3\na two c 3\n", "", ""},
+		{`{ print; print $1, $3, $NF }`, "a b c d e", "a b c d e\na c e\n", "", ""},
+		{`{ print $1,$3; $2="x"; print; print $2 }`, "a b c", "a c\na x c\nx\n", "", ""},
+		{`{ print; $0="x y z"; print; print $1, $3 }`, "a b c", "a b c\nx y z\nx z\n", "", ""},
+		{`{ print $1^2 }`, "10", "100\n", "", ""},
+		{`{ print $-1 }`, "x", "", "field index negative: -1", "field -1"},
 		// TODO: this has a bug on goawk, but causes a segmentation fault on awk!
 		// {`{ print NF; NF=3; $2="two"; print $0, NF }`, "\n", "0\n two 2\n", "", ""},
 
 		// Assignment expressions and vars: TODO
+		{`BEGIN { print x; x = 4; print x; }`, "", "\n4\n", "", ""},
+		{`BEGIN { a["foo"]=1; b[2]="x"; k="foo"; print a[k], b["2"] }`, "", "1 x\n", "", ""},
+		{`BEGIN { s+=5; print s; s-=2; print s; s-=s; print s }`, "", "5\n3\n0\n", "", ""},
+		{`BEGIN { x=2; x*=x; print x; x*=3; print x }`, "", "4\n12\n", "", ""},
+		{`BEGIN { x=6; x/=3; print x; x/=x; print x; x/=.6; print x }`, "", "2\n1\n1.66667\n", "", ""},
+		{`BEGIN { x=12; x%=5; print x }`, "", "2\n", "", ""},
+		{`BEGIN { x=2; x^=5; print x; x^=0.5; print x }`, "", "32\n5.65685\n", "", ""},
+		// TODO: $ field and array += type things
+
 		// Incr/decr expressions: TODO
+		{`BEGIN { s++; s++; print s }`, "", "2\n", "", ""},
 
 		// Builtin functions
 		{`BEGIN { print sin(0), sin(0.5), sin(1), sin(-1) }`, "", "0 0.479426 0.841471 -0.841471\n", "", ""},

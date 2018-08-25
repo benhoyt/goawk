@@ -530,18 +530,7 @@ func (p *parser) add() Expr {
 }
 
 func (p *parser) mul() Expr {
-	return p.binaryLeft(p.unary, false, MUL, DIV, MOD)
-}
-
-func (p *parser) unary() Expr {
-	switch p.tok {
-	case NOT, ADD, SUB:
-		op := p.tok
-		p.next()
-		return &UnaryExpr{op, p.unary()}
-	default:
-		return p.pow()
-	}
+	return p.binaryLeft(p.pow, false, MUL, DIV, MOD)
 }
 
 func (p *parser) pow() Expr {
@@ -549,7 +538,7 @@ func (p *parser) pow() Expr {
 	expr := p.preIncr()
 	if p.tok == POW {
 		p.next()
-		right := p.unary()
+		right := p.pow()
 		return &BinaryExpr{expr, POW, right}
 	}
 	return expr
@@ -599,6 +588,10 @@ func (p *parser) primary() Expr {
 	case DOLLAR:
 		p.next()
 		return &FieldExpr{p.primary()}
+	case NOT, ADD, SUB:
+		op := p.tok
+		p.next()
+		return &UnaryExpr{op, p.primary()}
 	case NAME:
 		name := p.val
 		p.next()
