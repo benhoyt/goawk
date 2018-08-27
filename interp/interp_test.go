@@ -210,10 +210,40 @@ BEGIN {
 		{`{ print; $0="x y z"; print; print $1, $3 }`, "a b c", "a b c\nx y z\nx z\n", "", ""},
 		{`{ print $1^2 }`, "10", "100\n", "", ""},
 		{`{ print $-1 }`, "x", "", "field index negative: -1", "field -1"},
-		// TODO: this has a bug on goawk, but causes a segmentation fault on awk!
-		// {`{ print NF; NF=3; $2="two"; print $0, NF }`, "\n", "0\n two 2\n", "", ""},
+		{`{ NF=-1; }`, "x", "", "NF set to negative value: -1", "negative value"},
 
-		// Assignment expressions and vars: TODO
+		// Lots of NF tests with different combinations of NF, $, and number
+		// of input fields. Some of these cause segmentation faults on awk
+		// (but work fine on gawk and mawk).
+		{`{ NF=1; $1="x"; print $0; print NF }`, "a", "x\n1\n", "", ""},
+		{`{ NF=1; $1="x"; print $0; print NF }`, "a b", "x\n1\n", "", ""},
+		{`{ NF=1; $1="x"; print $0; print NF }`, "a b c", "x\n1\n", "", ""},
+		{`{ NF=1; $2="x"; print $0; print NF }`, "a", "a x\n2\n", "", ""},
+		{`{ NF=1; $2="x"; print $0; print NF }`, "a b", "a x\n2\n", "", ""},
+		{`{ NF=1; $2="x"; print $0; print NF }`, "a b c", "a x\n2\n", "", ""},
+		{`{ NF=1; $3="x"; print $0; print NF }`, "a", "a  x\n3\n", "", ""},
+		{`{ NF=1; $3="x"; print $0; print NF }`, "a b", "a  x\n3\n", "", ""},
+		{`{ NF=1; $3="x"; print $0; print NF }`, "a b c", "a  x\n3\n", "", ""},
+		{`{ NF=2; $1="x"; print $0; print NF }`, "a", "x \n2\n", "", ""},
+		{`{ NF=2; $1="x"; print $0; print NF }`, "a b", "x b\n2\n", "", ""},
+		{`{ NF=2; $1="x"; print $0; print NF }`, "a b c", "x b\n2\n", "", ""},
+		{`{ NF=2; $2="x"; print $0; print NF }`, "a", "a x\n2\n", "", ""},
+		{`{ NF=2; $2="x"; print $0; print NF }`, "a b", "a x\n2\n", "", ""},
+		{`{ NF=2; $2="x"; print $0; print NF }`, "a b c", "a x\n2\n", "", ""},
+		{`{ NF=2; $3="x"; print $0; print NF }`, "a", "a  x\n3\n", "", ""},
+		{`{ NF=2; $3="x"; print $0; print NF }`, "a b", "a b x\n3\n", "", ""},
+		{`{ NF=2; $3="x"; print $0; print NF }`, "a b c", "a b x\n3\n", "", ""},
+		{`{ NF=3; $1="x"; print $0; print NF }`, "a", "x  \n3\n", "", ""},
+		{`{ NF=3; $1="x"; print $0; print NF }`, "a b", "x b \n3\n", "", ""},
+		{`{ NF=3; $1="x"; print $0; print NF }`, "a b c", "x b c\n3\n", "", ""},
+		{`{ NF=3; $2="x"; print $0; print NF }`, "a", "a x \n3\n", "", ""},
+		{`{ NF=3; $2="x"; print $0; print NF }`, "a b", "a x \n3\n", "", ""},
+		{`{ NF=3; $2="x"; print $0; print NF }`, "a b c", "a x c\n3\n", "", ""},
+		{`{ NF=3; $3="x"; print $0; print NF }`, "a", "a  x\n3\n", "", ""},
+		{`{ NF=3; $3="x"; print $0; print NF }`, "a b", "a b x\n3\n", "", ""},
+		{`{ NF=3; $3="x"; print $0; print NF }`, "a b c", "a b x\n3\n", "", ""},
+
+		// Assignment expressions and vars
 		{`BEGIN { print x; x = 4; print x; }`, "", "\n4\n", "", ""},
 		{`BEGIN { a["foo"]=1; b[2]="x"; k="foo"; print a[k], b["2"] }`, "", "1 x\n", "", ""},
 		{`BEGIN { s+=5; print s; s-=2; print s; s-=s; print s }`, "", "5\n3\n0\n", "", ""},
@@ -221,9 +251,12 @@ BEGIN {
 		{`BEGIN { x=6; x/=3; print x; x/=x; print x; x/=.6; print x }`, "", "2\n1\n1.66667\n", "", ""},
 		{`BEGIN { x=12; x%=5; print x }`, "", "2\n", "", ""},
 		{`BEGIN { x=2; x^=5; print x; x^=0.5; print x }`, "", "32\n5.65685\n", "", ""},
-		// TODO: $ field and array += type things
+		{`{ $2+=10; print; $3/=2; print }`, "1 2 3", "1 12 3\n1 12 1.5\n", "", ""},
+		{`BEGIN { a[2] += 1; a["2"] *= 3; print a[2] }`, "", "3\n", "", ""},
 
-		// Incr/decr expressions: TODO
+		// Incr/decr expressions
+		{`BEGIN { print x; print x++; print ++x; print x }`, "", "\n0\n2\n2\n", "", ""},
+		{`BEGIN { print x; print x--; print --x; print x }`, "", "\n0\n-2\n-2\n", "", ""},
 		{`BEGIN { s++; s++; print s }`, "", "2\n", "", ""},
 
 		// Builtin functions

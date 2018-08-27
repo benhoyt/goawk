@@ -916,7 +916,18 @@ func (p *Interp) setVarError(name string, v value) error {
 			p.fieldSepRegex = re
 		}
 	case "NF":
-		p.numFields = int(v.num())
+		numFields := int(v.num())
+		if numFields < 0 {
+			return newError("NF set to negative value: %d", numFields)
+		}
+		p.numFields = numFields
+		if p.numFields < len(p.fields) {
+			p.fields = p.fields[:p.numFields]
+		}
+		for i := len(p.fields); i < p.numFields; i++ {
+			p.fields = append(p.fields, "")
+		}
+		p.line = strings.Join(p.fields, p.outputFieldSep)
 	case "NR":
 		p.lineNum = int(v.num())
 	case "OFMT":
@@ -992,15 +1003,10 @@ func (p *Interp) SetField(index int, value string) {
 		p.setLine(value)
 		return
 	}
-	if index > len(p.fields) {
-		for i := len(p.fields); i < index; i++ {
-			p.fields = append(p.fields, "")
-		}
+	for i := len(p.fields); i < index; i++ {
+		p.fields = append(p.fields, "")
 	}
 	p.fields[index-1] = value
-	if index > p.numFields {
-		p.fields = p.fields[:index]
-	}
 	p.numFields = len(p.fields)
 	p.line = strings.Join(p.fields, p.outputFieldSep)
 }
@@ -1419,11 +1425,13 @@ func (p *Interp) sprintf(format string, args []value) string {
 		case 'u':
 			v = uint32(a.num())
 		case 'c':
-			var c []byte
+			c := make([]byte, 0, 4)
 			if a.isTrueStr() {
 				s := p.toString(a)
 				if len(s) > 0 {
 					c = []byte{s[0]}
+				} else {
+					c = []byte{0}
 				}
 			} else {
 				r := []rune{rune(a.num())}

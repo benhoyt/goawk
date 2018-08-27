@@ -29,7 +29,7 @@ var (
 func TestMain(m *testing.M) {
 	flag.StringVar(&testsDir, "testsdir", "./testdata", "directory with one-true-awk tests")
 	flag.StringVar(&outputDir, "outputdir", "./testdata/output", "directory for test output")
-	flag.StringVar(&awkExe, "awk", "awk", "awk executable name")
+	flag.StringVar(&awkExe, "awk", "gawk", "awk executable name")
 	flag.StringVar(&goAWKExe, "goawk", "./goawk", "goawk executable name")
 	flag.BoolVar(&writeAWK, "writeawk", false, "write expected output")
 	flag.BoolVar(&writeGoAWK, "writegoawk", true, "write Go AWK output")
@@ -51,10 +51,7 @@ func TestAWK(t *testing.T) {
 	}
 	// These programs have known different output
 	knownDifferent := map[string]bool{
-		"t.gsub4":   true, // Has malformed regex from user input (but awk doesn't mind)
-		"t.split3":  true, // Has malformed regex from user input (but awk doesn't mind)
-		"t.printf2": true, // Handles non-ASCII differently (we allow non-ASCII with printf %c)
-		"t.NF":      true, // Different between awk and gawk
+		// None right now (at least against gawk)
 	}
 	// Can't really diff test rand() tests as we're using a totally
 	// different algorithm for random numbers
