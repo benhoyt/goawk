@@ -102,6 +102,7 @@ type Interp struct {
 	outputFormat    string
 	fieldSep        string
 	fieldSepRegex   *regexp.Regexp
+	recordSep       string
 	outputFieldSep  string
 	outputRecordSep string
 	subscriptSep    string
@@ -137,6 +138,7 @@ func New(output, errorOutput io.Writer) *Interp {
 	p.convertFormat = "%.6g"
 	p.outputFormat = "%.6g"
 	p.fieldSep = " "
+	p.recordSep = "\n"
 	p.outputFieldSep = " "
 	p.outputRecordSep = "\n"
 	p.subscriptSep = "\x1c"
@@ -523,7 +525,7 @@ func (p *Interp) getInputScanner(name string, isFile bool) *bufio.Scanner {
 		if err != nil {
 			panic(newError("input redirection error: %s", err))
 		}
-		scanner := bufio.NewScanner(r)
+		scanner := p.newScanner(r)
 		p.scanners[name] = scanner
 		p.streams[name] = r
 		return scanner
@@ -553,12 +555,79 @@ func (p *Interp) getInputScanner(name string, isFile bool) *bufio.Scanner {
 		go func() {
 			io.Copy(p.errorOutput, stderr)
 		}()
-		scanner := bufio.NewScanner(r)
+		scanner := p.newScanner(r)
 		p.commands[name] = cmd
 		p.streams[name] = r
 		p.scanners[name] = scanner
 		return scanner
 	}
+}
+
+func (p *Interp) newScanner(input io.Reader) *bufio.Scanner {
+	switch p.recordSep {
+	case "\n":
+		// Scanner default is to split on newlines
+		return bufio.NewScanner(input)
+	case "":
+		// Empty string for RS means split on newline and skip blank lines
+		scanner := bufio.NewScanner(input)
+		scanner.Split(scanLinesSkipBlank)
+		return scanner
+	default:
+		scanner := bufio.NewScanner(input)
+		splitter := byteSplitter{p.recordSep[0]}
+		scanner.Split(splitter.scan)
+		return scanner
+	}
+}
+
+func dropCR(data []byte) []byte {
+	if len(data) > 0 && data[len(data)-1] == '\r' {
+		return data[0 : len(data)-1]
+	}
+	return data
+}
+
+// Copied from bufio/scan.go in the standard library
+func scanLinesSkipBlank(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	if atEOF && len(data) == 0 {
+		return 0, nil, nil
+	}
+	if i := bytes.IndexByte(data, '\n'); i >= 0 {
+		// Skip additional newlines
+		j := i + 1
+		for j < len(data) && (data[j] == '\n' || data[j] == '\r') {
+			j++
+		}
+		// We have a full newline-terminated line.
+		return j, dropCR(data[0:i]), nil
+	}
+	// If we're at EOF, we have a final, non-terminated line. Return it.
+	if atEOF {
+		return len(data), dropCR(data), nil
+	}
+	// Request more data.
+	return 0, nil, nil
+}
+
+type byteSplitter struct {
+	sep byte
+}
+
+func (s byteSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	if atEOF && len(data) == 0 {
+		return 0, nil, nil
+	}
+	if i := bytes.IndexByte(data, s.sep); i >= 0 {
+		// We have a full sep-terminated record
+		return i + 1, data[0:i], nil
+	}
+	// If at EOF, we have a final, non-terminated record; return it
+	if atEOF {
+		return len(data), data, nil
+	}
+	// Request more data
+	return 0, nil, nil
 }
 
 func (p *Interp) evalSafe(expr Expr) (v value, err error) {
@@ -826,7 +895,7 @@ func (p *Interp) nextLine() (string, error) {
 					p.hadFiles = true
 				}
 			}
-			p.scanner = bufio.NewScanner(p.input)
+			p.scanner = p.newScanner(p.input)
 		}
 		if p.scanner.Scan() {
 			break
@@ -872,7 +941,7 @@ func (p *Interp) getVar(name string) value {
 	case "RLENGTH":
 		return num(float64(p.matchLength))
 	case "RS":
-		return str("\n")
+		return str(p.recordSep)
 	case "RSTART":
 		return num(float64(p.matchStart))
 	case "SUBSEP":
@@ -939,7 +1008,11 @@ func (p *Interp) setVarError(name string, v value) error {
 	case "RLENGTH":
 		p.matchLength = int(v.num())
 	case "RS":
-		return newError("assigning RS not supported")
+		sep := p.toString(v)
+		if len(sep) > 1 {
+			return newError("RS must be at most 1 char")
+		}
+		p.recordSep = sep
 	case "RSTART":
 		p.matchStart = int(v.num())
 	case "SUBSEP":

@@ -182,7 +182,9 @@ BEGIN {
 		{`BEGIN { print RSTART, RLENGTH; RSTART=5; RLENGTH=42; print RSTART, RLENGTH; } `, "",
 			"0 0\n5 42\n", "", ""},
 		{`BEGIN { print RS; }`, "", "\n\n", "", ""},
-		{`BEGIN { print RS; RS="|"; print RS }`, "", "\n\n|\n", "assigning RS not supported", ""},
+		{`BEGIN { print RS; RS="|"; print RS }  { print }`, "a b|c d|", "\n\n|\na b\nc d\n", "", ""},
+		{`BEGIN { RS=""; }  { print }`, "a\n\nb\nc", "a\nb\nc\n", "", ""},
+		{`BEGIN { RS="\n"; }  { print }`, "a\n\nb\nc", "a\n\nb\nc\n", "", ""},
 		{`
 BEGIN {
 	print SUBSEP

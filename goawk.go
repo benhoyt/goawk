@@ -30,11 +30,10 @@ package main
 /*
 
 TODO:
+- break up interp.go?
 - think about length() and substr() chars vs bytes:
   https://github.com/benhoyt/goawk/issues/2#issuecomment-415314000
-- other interp tests
 - get goawk_test.go working in TravisCI
-- add support for assigning RS
 - performance testing: I/O, allocations, CPU
   + add "go test" benchmarks for various common workloads
   + faster to do switch+case for binary funcs instead of map of funcs?
