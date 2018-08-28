@@ -66,7 +66,6 @@ Additional features GoAWK has over AWK:
 Things AWK has over GoAWK:
 
 * The GoAWK interpreter is significantly slower. (TODO: benchmarks)
-* GoAWK doesn't yet support changing RS. I intend to fix this soon.
 * GoAWK has a couple of known syntax quirks, but most real code shouldn't run into them (commented-out tests in interp/interp_test.go). I intend to fix these soon.
 
 ## The end
