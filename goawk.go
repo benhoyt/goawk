@@ -36,6 +36,13 @@ TODO:
 - get goawk_test.go working in TravisCI
 - performance testing: I/O, allocations, CPU
   + add "go test" benchmarks for various common workloads
+	- global vars, local vars, array params to functions
+	- incr ++ expressions
+	- simple builtin function call, eg: sin()
+	- match(), length() - long, index() long, substr() long, split()
+	- sub(), gsub() -- especially non-& case
+	- multiple patterns like "NR==1 { print }  NR==3 { print }"
+	- sprintf
   + faster to do switch+case for binary funcs instead of map of funcs?
   + getVar/setVar overhead -- can resolve stuff at compile-time
   + defer in eval/exec -- will this help?

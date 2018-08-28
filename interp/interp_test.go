@@ -484,7 +484,7 @@ BEGIN { early() }
 	_ = os.Remove("out")
 }
 
-func benchmarkProgram(b *testing.B, n int, input, expected, srcFormat string, args ...interface{}) {
+func benchmarkProgram(b *testing.B, input, expected, srcFormat string, args ...interface{}) {
 	b.StopTimer()
 	src := fmt.Sprintf(srcFormat, args...)
 	prog, err := parser.ParseProgram([]byte(src))
@@ -496,22 +496,19 @@ func benchmarkProgram(b *testing.B, n int, input, expected, srcFormat string, ar
 	if expected != "" {
 		expected += "\n"
 	}
-	for i := 0; i < n; i++ {
-		outBuf.Reset()
-		b.StartTimer()
-		err := p.Exec(prog, strings.NewReader(input), nil)
-		b.StopTimer()
-		if err != nil {
-			b.Fatalf("error interpreting %s: %v", b.Name(), err)
-		}
-		if outBuf.String() != expected {
-			b.Fatalf("expected %q, got %q", expected, outBuf.String())
-		}
+	b.StartTimer()
+	err = p.Exec(prog, strings.NewReader(input), nil)
+	b.StopTimer()
+	if err != nil {
+		b.Fatalf("error interpreting %s: %v", b.Name(), err)
+	}
+	if outBuf.String() != expected {
+		b.Fatalf("expected %q, got %q", expected, outBuf.String())
 	}
 }
 
 func BenchmarkRecursiveFunc(b *testing.B) {
-	benchmarkProgram(b, b.N, "", "13", `
+	benchmarkProgram(b, "", "55", `
 function fib(n) {
   if (n <= 2) {
     return 1
@@ -520,9 +517,12 @@ function fib(n) {
 }
 
 BEGIN {
-  print fib(7)
+  for (i = 0; i < %d; i++) {
+    res = fib(10)
+  }
+  print res
 }
-`)
+`, b.N)
 }
 
 func BenchmarkFuncCall(b *testing.B) {
@@ -531,7 +531,7 @@ func BenchmarkFuncCall(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		sum += i
 	}
-	benchmarkProgram(b, 1, "", fmt.Sprintf("%d", sum), `
+	benchmarkProgram(b, "", fmt.Sprintf("%d", sum), `
 function add(a, b) {
   return a + b
 }
@@ -551,12 +551,65 @@ func BenchmarkForLoop(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		sum += i
 	}
-	benchmarkProgram(b, 1, "", fmt.Sprintf("%d", sum), `
+	benchmarkProgram(b, "", fmt.Sprintf("%d", sum), `
 BEGIN {
   for (i = 0; i < %d; i++) {
     sum += i
   }
   print sum
+}
+`, b.N)
+}
+
+func BenchmarkForInLoop(b *testing.B) {
+	benchmarkProgram(b, "", "4950", `
+BEGIN {
+  for (j = 0; j < 100; j++) {
+  	a[j] = j
+  }
+  for (i = 0; i < %d; i++) {
+  	sum = 0
+    for (k in a) {
+    	sum += a[k]
+    }
+  }
+  print sum
+}
+`, b.N)
+}
+
+func BenchmarkIfStatement(b *testing.B) {
+	benchmarkProgram(b, "", "0", `
+BEGIN {
+  c = 1
+  d = 0
+  for (i = 0; i < %d; i++) {
+  	if (c) { x = 1 } else { x = 0 }
+  	if (c) { x = 1 } else { x = 0 }
+  	if (c) { x = 1 } else { x = 0 }
+  	if (d) { x = 1 } else { x = 0 }
+  	if (d) { x = 1 } else { x = 0 }
+  	if (d) { x = 1 } else { x = 0 }
+  }
+  print x
+}
+`, b.N)
+}
+
+func BenchmarkCondExpr(b *testing.B) {
+	benchmarkProgram(b, "", "0", `
+BEGIN {
+  c = 1
+  d = 0
+  for (i = 0; i < %d; i++) {
+  	x = c ? 1 : 0
+  	x = c ? 1 : 0
+  	x = c ? 1 : 0
+  	x = d ? 1 : 0
+  	x = d ? 1 : 0
+  	x = d ? 1 : 0
+  }
+  print x
 }
 `, b.N)
 }
@@ -576,10 +629,10 @@ func BenchmarkSimplePattern(b *testing.B) {
 	}
 	input := strings.Join(inputLines, "\n")
 	expected := strings.Join(expectedLines, "\n")
-	benchmarkProgram(b, 1, input, expected, "$0")
+	benchmarkProgram(b, input, expected, "$0")
 }
 
-func BenchmarkFields(b *testing.B) {
+func BenchmarkGetField(b *testing.B) {
 	b.StopTimer()
 	inputLines := []string{}
 	expectedLines := []string{}
@@ -589,7 +642,111 @@ func BenchmarkFields(b *testing.B) {
 	}
 	input := strings.Join(inputLines, "\n")
 	expected := strings.Join(expectedLines, "\n")
-	benchmarkProgram(b, 1, input, expected, "{ print $1, $3 }")
+	benchmarkProgram(b, input, expected, "{ print $1, $3 }")
+}
+
+func BenchmarkSetField(b *testing.B) {
+	benchmarkProgram(b, "1 2 3", "one 2 three", `
+{
+  for (i = 0; i < %d; i++) {
+    $1 = "one"; $3 = "three"
+    $1 = "one"; $3 = "three"
+    $1 = "one"; $3 = "three"
+    $1 = "one"; $3 = "three"
+    $1 = "one"; $3 = "three"
+  }
+}
+END {
+	print $0
+}
+`, b.N)
+}
+
+func BenchmarkRegexMatch(b *testing.B) {
+	benchmarkProgram(b, "", "1", `
+BEGIN {
+  s = "The quick brown fox jumps over the lazy dog"
+  for (i = 0; i < %d; i++) {
+  	x = s ~ /j[a-z]+p/
+  	x = s ~ /j[a-z]+p/
+  	x = s ~ /j[a-z]+p/
+  	x = s ~ /j[a-z]+p/
+  	x = s ~ /j[a-z]+p/
+  }
+  print x
+}
+`, b.N)
+}
+
+func BenchmarkBinaryOperators(b *testing.B) {
+	benchmarkProgram(b, "", "5.0293", `
+BEGIN {
+  for (i = 0; i < %d; i++) {
+    res = (1+2*3/4^5) + (1+2*3/4^5) + (1+2*3/4^5) + (1+2*3/4^5) + (1+2*3/4^5)
+  }
+  print res
+}
+`, b.N)
+}
+
+func BenchmarkConcatSmall(b *testing.B) {
+	b.StopTimer()
+	benchmarkProgram(b, "", "100", `
+BEGIN {
+  x = "0123456789"
+  for (i = 0; i < %d; i++) {
+  	y = x x x x x x x x x x
+  }
+  print length(y)
+}
+`, b.N)
+}
+
+func BenchmarkConcatLarge(b *testing.B) {
+	b.StopTimer()
+	benchmarkProgram(b, "", "1000000", `
+BEGIN {
+  x = "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789"
+  for (i = 0; i < %d; i++) {
+  	y = x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x \
+  	    x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x
+    z = y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y \
+        y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y
+  }
+  print length(z)
+}
+`, b.N)
+}
+
+func BenchmarkComparisons(b *testing.B) {
+	b.StopTimer()
+	benchmarkProgram(b, "", "1", `
+BEGIN {
+  for (i = 0; i < %d; i++) {
+  	x = ((((((1 < 2) <= 3) > 4) >= 5) == 6) != 7)
+  	x = ((((((1 < 2) <= 3) > 4) >= 5) == 6) != 7)
+  	x = ((((((1 < 2) <= 3) > 4) >= 5) == 6) != 7)
+  }
+  print x
+}
+`, b.N)
+}
+
+func BenchmarkArrayOperations(b *testing.B) {
+	b.StopTimer()
+	benchmarkProgram(b, "", "243", `
+BEGIN {
+  for (i = 0; i < %d; i++) {
+  	a[0] = 1
+  	a[0] = a[0] + a[0] + a[0]
+  	a[0] = a[0] + a[0] + a[0]
+  	a[0] = a[0] + a[0] + a[0]
+  	a[0] = a[0] + a[0] + a[0]
+  	a[0] = a[0] + a[0] + a[0]
+  }
+  print a[0]
+}
+`, b.N)
 }
 
 func Example_simple() {
