@@ -507,6 +507,246 @@ func benchmarkProgram(b *testing.B, input, expected, srcFormat string, args ...i
 	}
 }
 
+func BenchmarkGlobalVars(b *testing.B) {
+	benchmarkProgram(b, "", "a 1", `
+BEGIN {
+  for (i = 0; i < %d; i++) {
+  	x = 1; y = "a"; t = x; x = y; y = t
+  	x = 1; y = "a"; t = x; x = y; y = t
+  	x = 1; y = "a"; t = x; x = y; y = t
+  	x = 1; y = "a"; t = x; x = y; y = t
+  	x = 1; y = "a"; t = x; x = y; y = t
+  }
+  print x, y
+}
+`, b.N)
+}
+
+func BenchmarkLocalVars(b *testing.B) {
+	benchmarkProgram(b, "", "b 2", `
+function f(i, x, y, t) {
+  for (i = 0; i < %d; i++) {
+  	x = 2; y = "b"; t = x; x = y; y = t
+  	x = 2; y = "b"; t = x; x = y; y = t
+  	x = 2; y = "b"; t = x; x = y; y = t
+  	x = 2; y = "b"; t = x; x = y; y = t
+  	x = 2; y = "b"; t = x; x = y; y = t
+  }
+  print x, y
+}
+
+BEGIN {
+  f()
+}
+`, b.N)
+}
+
+func BenchmarkIncrDecr(b *testing.B) {
+	benchmarkProgram(b, "", "0 10", `
+BEGIN {
+  for (i = 0; i < %d; i++) {
+  	x++; x++; x++; x++; x++; x++; x++; x++; x++; x++
+  	y = x
+  	x--; x--; x--; x--; x--; x--; x--; x--; x--; x--
+  }
+  print x, y
+}
+`, b.N)
+}
+
+func BenchmarkSimpleBuiltins(b *testing.B) {
+	benchmarkProgram(b, "", "", `
+BEGIN {
+  for (i = 0; i < %d; i++) {
+  	sin(0); cos(0); exp(0); log(1); sqrt(2); int("x");
+  	sin(0); cos(0); exp(0); log(1); sqrt(2); int("x");
+  	sin(0); cos(0); exp(0); log(1); sqrt(2); int("x");
+  	sin(0); cos(0); exp(0); log(1); sqrt(2); int("x");
+  	sin(0); cos(0); exp(0); log(1); sqrt(2); int("x");
+  }
+}
+`, b.N)
+}
+
+func BenchmarkBuiltinMatch(b *testing.B) {
+	benchmarkProgram(b, "", "21", `
+BEGIN {
+  s = "The quick brown fox jumps over the lazy dog"
+  for (i = 0; i < %d; i++) {
+  	match(s, /j[a-z]+p/); match(s, /j[a-z]+p/)
+  	match(s, /j[a-z]+p/); match(s, /j[a-z]+p/)
+  	match(s, /j[a-z]+p/); match(s, /j[a-z]+p/)
+  	match(s, /j[a-z]+p/); match(s, /j[a-z]+p/)
+  	match(s, /j[a-z]+p/); x = match(s, /j[a-z]+p/)
+  }
+  print x
+}
+`, b.N)
+}
+
+func BenchmarkBuiltinLength(b *testing.B) {
+	benchmarkProgram(b, "", "134", `
+BEGIN {
+  s = "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog."
+  for (i = 0; i < %d; i++) {
+  	length(s); length(s); length(s); length(s); length(s);
+  	length(s); length(s); length(s); length(s); length(s);
+  	length(s); length(s); length(s); length(s); length(s);
+  	length(s); length(s); length(s); length(s); length(s);
+  	length(s); length(s); length(s); length(s); x = length(s);
+  }
+  print x
+}
+`, b.N)
+}
+
+func BenchmarkBuiltinIndex(b *testing.B) {
+	benchmarkProgram(b, "", "134", `
+BEGIN {
+  s = "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog!?!"
+  for (i = 0; i < %d; i++) {
+  	index(s, "!?!"); index(s, "!?!"); index(s, "!?!"); index(s, "!?!"); index(s, "!?!")
+  	index(s, "!?!"); index(s, "!?!"); index(s, "!?!"); index(s, "!?!"); index(s, "!?!")
+  	index(s, "!?!"); index(s, "!?!"); index(s, "!?!"); index(s, "!?!"); index(s, "!?!")
+  	index(s, "!?!"); index(s, "!?!"); index(s, "!?!"); index(s, "!?!"); index(s, "!?!")
+  	index(s, "!?!"); index(s, "!?!"); index(s, "!?!"); index(s, "!?!"); x = index(s, "!?!")
+  }
+  print x
+}
+`, b.N)
+}
+
+func BenchmarkBuiltinSubstr(b *testing.B) {
+	benchmarkProgram(b, "", " brown fox", `
+BEGIN {
+  s = "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog!?!"
+  for (i = 0; i < %d; i++) {
+  	substr(s, 100, 10); substr(s, 100, 10); substr(s, 100, 10); substr(s, 100, 10); substr(s, 100, 10)
+  	substr(s, 100, 10); substr(s, 100, 10); substr(s, 100, 10); substr(s, 100, 10); substr(s, 100, 10)
+  	substr(s, 100, 10); substr(s, 100, 10); substr(s, 100, 10); substr(s, 100, 10); substr(s, 100, 10)
+  	substr(s, 100, 10); substr(s, 100, 10); substr(s, 100, 10); substr(s, 100, 10); substr(s, 100, 10)
+  	substr(s, 100, 10); substr(s, 100, 10); substr(s, 100, 10); substr(s, 100, 10); x = substr(s, 100, 10)
+  }
+  print x
+}
+`, b.N)
+}
+
+func BenchmarkBuiltinSplitSpace(b *testing.B) {
+	benchmarkProgram(b, "", "27", `
+BEGIN {
+  s = "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog!?!"
+  for (i = 0; i < %d; i++) {
+  	split(s, a, " "); split(s, a, " "); split(s, a, " ")
+  	split(s, a, " "); split(s, a, " "); split(s, a, " ")
+  	split(s, a, " "); split(s, a, " "); split(s, a, " ")
+  	split(s, a, " "); split(s, a, " "); split(s, a, " ")
+  	split(s, a, " "); split(s, a, " "); split(s, a, " ")
+  }
+  for (k in a) n++
+  print n
+}
+`, b.N)
+}
+
+func BenchmarkBuiltinSplitRegex(b *testing.B) {
+	benchmarkProgram(b, "", "22", `
+BEGIN {
+  s = "a fox ab fax abc fix a fox ab fax abc fix a fox ab fax abc fix a fox ab fax abc fix a fox ab fax abc fix a fox ab fax abc fix a fox ab fax abc fix"
+  for (i = 0; i < %d; i++) {
+  	split(s, a, "f[a-z]x"); split(s, a, "f[a-z]x"); split(s, a, "f[a-z]x")
+  	split(s, a, "f[a-z]x"); split(s, a, "f[a-z]x"); split(s, a, "f[a-z]x")
+  	split(s, a, "f[a-z]x"); split(s, a, "f[a-z]x"); split(s, a, "f[a-z]x")
+  	split(s, a, "f[a-z]x"); split(s, a, "f[a-z]x"); split(s, a, "f[a-z]x")
+  	split(s, a, "f[a-z]x"); split(s, a, "f[a-z]x"); split(s, a, "f[a-z]x")
+  }
+  for (k in a) n++
+  print n
+}
+`, b.N)
+}
+
+func BenchmarkBuiltinSub(b *testing.B) {
+	benchmarkProgram(b, "", "1 164", `
+BEGIN {
+  for (i = 0; i < %d; i++) {
+    s = "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog."
+  	sub(/f[a-z]x/, "foxes", s); sub(/f[a-z]x/, "foxes", s); sub(/f[a-z]x/, "foxes", s)
+  	sub(/f[a-z]x/, "foxes", s); sub(/f[a-z]x/, "foxes", s); sub(/f[a-z]x/, "foxes", s)
+  	sub(/f[a-z]x/, "foxes", s); sub(/f[a-z]x/, "foxes", s); sub(/f[a-z]x/, "foxes", s)
+  	sub(/f[a-z]x/, "foxes", s); sub(/f[a-z]x/, "foxes", s); sub(/f[a-z]x/, "foxes", s)
+  	sub(/f[a-z]x/, "foxes", s); sub(/f[a-z]x/, "foxes", s); x = sub(/f[a-z]x/, "foxes", s)
+  }
+  print x, length(s)
+}
+`, b.N)
+}
+
+func BenchmarkBuiltinSubAmpersand(b *testing.B) {
+	benchmarkProgram(b, "", "1 164", `
+BEGIN {
+  for (i = 0; i < %d; i++) {
+    s = "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog."
+  	sub(/f[a-z]x/, "&es", s); sub(/f[a-z]x/, "&es", s); sub(/f[a-z]x/, "&es", s)
+  	sub(/f[a-z]x/, "&es", s); sub(/f[a-z]x/, "&es", s); sub(/f[a-z]x/, "&es", s)
+  	sub(/f[a-z]x/, "&es", s); sub(/f[a-z]x/, "&es", s); sub(/f[a-z]x/, "&es", s)
+  	sub(/f[a-z]x/, "&es", s); sub(/f[a-z]x/, "&es", s); sub(/f[a-z]x/, "&es", s)
+  	sub(/f[a-z]x/, "&es", s); sub(/f[a-z]x/, "&es", s); x = sub(/f[a-z]x/, "&es", s)
+  }
+  print x, length(s)
+}
+`, b.N)
+}
+
+func BenchmarkBuiltinGsub(b *testing.B) {
+	benchmarkProgram(b, "", "3 224", `
+BEGIN {
+  for (i = 0; i < %d; i++) {
+    s = "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog."
+  	gsub(/f[a-z]x/, "foxes", s); gsub(/f[a-z]x/, "foxes", s); gsub(/f[a-z]x/, "foxes", s)
+  	gsub(/f[a-z]x/, "foxes", s); gsub(/f[a-z]x/, "foxes", s); gsub(/f[a-z]x/, "foxes", s)
+  	gsub(/f[a-z]x/, "foxes", s); gsub(/f[a-z]x/, "foxes", s); gsub(/f[a-z]x/, "foxes", s)
+  	gsub(/f[a-z]x/, "foxes", s); gsub(/f[a-z]x/, "foxes", s); gsub(/f[a-z]x/, "foxes", s)
+  	gsub(/f[a-z]x/, "foxes", s); gsub(/f[a-z]x/, "foxes", s); x = gsub(/f[a-z]x/, "foxes", s)
+  }
+  print x, length(s)
+}
+`, b.N)
+}
+
+func BenchmarkBuiltinGsubAmpersand(b *testing.B) {
+	benchmarkProgram(b, "", "3 224", `
+BEGIN {
+  for (i = 0; i < %d; i++) {
+    s = "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog."
+  	gsub(/f[a-z]x/, "&es", s); gsub(/f[a-z]x/, "&es", s); gsub(/f[a-z]x/, "&es", s)
+  	gsub(/f[a-z]x/, "&es", s); gsub(/f[a-z]x/, "&es", s); gsub(/f[a-z]x/, "&es", s)
+  	gsub(/f[a-z]x/, "&es", s); gsub(/f[a-z]x/, "&es", s); gsub(/f[a-z]x/, "&es", s)
+  	gsub(/f[a-z]x/, "&es", s); gsub(/f[a-z]x/, "&es", s); gsub(/f[a-z]x/, "&es", s)
+  	gsub(/f[a-z]x/, "&es", s); gsub(/f[a-z]x/, "&es", s); x = gsub(/f[a-z]x/, "&es", s)
+  }
+  print x, length(s)
+}
+`, b.N)
+}
+
+func BenchmarkBuiltinSprintf(b *testing.B) {
+	benchmarkProgram(b, "", "A 123   foo 3.14", `
+BEGIN {
+  x = "foo"
+  y = 3.14159
+  for (i = 0; i < %d; i++) {
+  	sprintf("%%c %%d %%5s %%.3g", 65, 123, x, y); sprintf("%%c %%d %%5s %%.3g", 65, 123, x, y); sprintf("%%c %%d %%5s %%.3g", 65, 123, x, y)
+  	sprintf("%%c %%d %%5s %%.3g", 65, 123, x, y); sprintf("%%c %%d %%5s %%.3g", 65, 123, x, y); sprintf("%%c %%d %%5s %%.3g", 65, 123, x, y)
+  	sprintf("%%c %%d %%5s %%.3g", 65, 123, x, y); sprintf("%%c %%d %%5s %%.3g", 65, 123, x, y); sprintf("%%c %%d %%5s %%.3g", 65, 123, x, y)
+  	sprintf("%%c %%d %%5s %%.3g", 65, 123, x, y); sprintf("%%c %%d %%5s %%.3g", 65, 123, x, y); sprintf("%%c %%d %%5s %%.3g", 65, 123, x, y)
+  	sprintf("%%c %%d %%5s %%.3g", 65, 123, x, y); sprintf("%%c %%d %%5s %%.3g", 65, 123, x, y); s = sprintf("%%c %%d %%5s %%.3g", 65, 123, x, y)
+  }
+  print s
+}
+`, b.N)
+}
+
 func BenchmarkRecursiveFunc(b *testing.B) {
 	benchmarkProgram(b, "", "55", `
 function fib(n) {
@@ -526,19 +766,18 @@ BEGIN {
 }
 
 func BenchmarkFuncCall(b *testing.B) {
-	b.StopTimer()
-	sum := 0
-	for i := 0; i < b.N; i++ {
-		sum += i
-	}
-	benchmarkProgram(b, "", fmt.Sprintf("%d", sum), `
+	benchmarkProgram(b, "", "75", `
 function add(a, b) {
   return a + b
 }
 
 BEGIN {
   for (i = 0; i < %d; i++) {
-    sum = add(sum, i)
+    sum = add(0, add(1, add(2, add(3, add(4, 5)))))
+    sum = add(sum, add(1, add(2, add(3, add(4, 5)))))
+    sum = add(sum, add(1, add(2, add(3, add(4, 5)))))
+    sum = add(sum, add(1, add(2, add(3, add(4, 5)))))
+    sum = add(sum, add(1, add(2, add(3, add(4, 5)))))
   }
   print sum
 }
@@ -546,34 +785,22 @@ BEGIN {
 }
 
 func BenchmarkForLoop(b *testing.B) {
-	b.StopTimer()
-	sum := 0
-	for i := 0; i < b.N; i++ {
-		sum += i
-	}
-	benchmarkProgram(b, "", fmt.Sprintf("%d", sum), `
+	benchmarkProgram(b, "", "", `
 BEGIN {
-  for (i = 0; i < %d; i++) {
-    sum += i
-  }
-  print sum
+  for (i = 0; i < %d; i++);
 }
 `, b.N)
 }
 
 func BenchmarkForInLoop(b *testing.B) {
-	benchmarkProgram(b, "", "4950", `
+	benchmarkProgram(b, "", "", `
 BEGIN {
   for (j = 0; j < 100; j++) {
   	a[j] = j
   }
   for (i = 0; i < %d; i++) {
-  	sum = 0
-    for (k in a) {
-    	sum += a[k]
-    }
+    for (k in a);
   }
-  print sum
 }
 `, b.N)
 }
