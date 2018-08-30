@@ -110,7 +110,10 @@ type Interp struct {
 	matchStart      int
 }
 
-const maxCachedRegexes = 100
+const (
+	maxCachedRegexes = 100
+	maxRecordLength  = 10 * 1024 * 1024 // 10MB seems like plenty
+)
 
 // New creates and sets up a new interpeter and sets the output and
 // error output writers to the given values (if nil, they're set to
@@ -564,21 +567,19 @@ func (p *Interp) getInputScanner(name string, isFile bool) *bufio.Scanner {
 }
 
 func (p *Interp) newScanner(input io.Reader) *bufio.Scanner {
+	scanner := bufio.NewScanner(input)
 	switch p.recordSep {
 	case "\n":
 		// Scanner default is to split on newlines
-		return bufio.NewScanner(input)
 	case "":
 		// Empty string for RS means split on newline and skip blank lines
-		scanner := bufio.NewScanner(input)
 		scanner.Split(scanLinesSkipBlank)
-		return scanner
 	default:
-		scanner := bufio.NewScanner(input)
 		splitter := byteSplitter{p.recordSep[0]}
 		scanner.Split(splitter.scan)
-		return scanner
 	}
+	scanner.Buffer(nil, maxRecordLength)
+	return scanner
 }
 
 func dropCR(data []byte) []byte {

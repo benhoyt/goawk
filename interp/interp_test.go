@@ -27,6 +27,8 @@ func TestMain(m *testing.M) {
 
 // Note: a lot of these are really parser tests too.
 func TestInterp(t *testing.T) {
+	longLine := strings.Repeat("x", 70000)
+
 	tests := []struct {
 		src    string
 		in     string
@@ -397,6 +399,9 @@ BEGIN { early() }
 
 		// Ensure syntax errors result in errors
 		// {`{ $1 = substr($1, 1, 3) print $1 }`, "", "", "ERROR", "syntax error"},
+
+		// Ensure very long lines work (> 64KB)
+		{`{ print length() }`, longLine, fmt.Sprintf("%d\n", len(longLine)), "", ""},
 	}
 	for _, test := range tests {
 		testName := test.src
