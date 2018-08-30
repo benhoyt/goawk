@@ -35,7 +35,6 @@ TODO:
   https://github.com/benhoyt/goawk/issues/2#issuecomment-415314000
 - get goawk_test.go working in TravisCI
 - performance testing: I/O, allocations, CPU
-  + faster to do switch+case for binary funcs instead of map of funcs?
   + getVar/setVar overhead -- can resolve stuff at compile-time
   + defer in eval/exec -- will this help?
 

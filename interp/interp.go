@@ -664,7 +664,7 @@ func (p *Interp) eval(expr Expr) value {
 	switch e := expr.(type) {
 	case *UnaryExpr:
 		value := p.eval(e.Value)
-		return unaryFuncs[e.Op](p, value)
+		return p.evalUnary(e.Op, value)
 	case *BinaryExpr:
 		left := p.eval(e.Left)
 		switch e.Op {
@@ -682,7 +682,7 @@ func (p *Interp) eval(expr Expr) value {
 			return boolean(right.boolean())
 		default:
 			right := p.eval(e.Right)
-			return binaryFuncs[e.Op](p, left, right)
+			return p.evalBinary(e.Op, left, right)
 		}
 	case *InExpr:
 		index := p.evalIndex(e.Index)
@@ -719,6 +719,7 @@ func (p *Interp) eval(expr Expr) value {
 		right := p.eval(e.Right)
 		if e.Op != ASSIGN {
 			left := p.eval(e.Left)
+			// TODO: can/should we do this in the parser?
 			var op Token
 			switch e.Op {
 			case ADD_ASSIGN:
@@ -736,7 +737,7 @@ func (p *Interp) eval(expr Expr) value {
 			default:
 				panic(fmt.Sprintf("unexpected assignment operator: %s", e.Op))
 			}
-			right = binaryFuncs[op](p, left, right)
+			right = p.evalBinary(op, left, right)
 		}
 		p.assign(e.Left, right)
 		return right
@@ -1112,94 +1113,93 @@ func (p *Interp) mustCompile(regex string) *regexp.Regexp {
 	return re
 }
 
-type binaryFunc func(p *Interp, l, r value) value
-
-var binaryFuncs = map[Token]binaryFunc{
-	EQUALS: (*Interp).equal,
-	NOT_EQUALS: func(p *Interp, l, r value) value {
-		return p.not(p.equal(l, r))
-	},
-	LESS: (*Interp).lessThan,
-	LTE: func(p *Interp, l, r value) value {
-		return p.not(p.lessThan(r, l))
-	},
-	GREATER: func(p *Interp, l, r value) value {
-		return p.lessThan(r, l)
-	},
-	GTE: func(p *Interp, l, r value) value {
-		return p.not(p.lessThan(l, r))
-	},
-	ADD: func(p *Interp, l, r value) value {
+func (p *Interp) evalBinary(op Token, l, r value) value {
+	// Note: cases are ordered (very roughly) in order of frequency
+	// of occurence for performance reasons. Benchmark on common code
+	// before changing the order.
+	switch op {
+	case ADD:
 		return num(l.num() + r.num())
-	},
-	SUB: func(p *Interp, l, r value) value {
+	case SUB:
 		return num(l.num() - r.num())
-	},
-	MUL: func(p *Interp, l, r value) value {
+	case EQUALS:
+		if l.isTrueStr() || r.isTrueStr() {
+			return boolean(p.toString(l) == p.toString(r))
+		} else {
+			return boolean(l.n == r.n)
+		}
+	case LESS:
+		if l.isTrueStr() || r.isTrueStr() {
+			return boolean(p.toString(l) < p.toString(r))
+		} else {
+			return boolean(l.n < r.n)
+		}
+	case LTE:
+		if l.isTrueStr() || r.isTrueStr() {
+			return boolean(p.toString(l) <= p.toString(r))
+		} else {
+			return boolean(l.n <= r.n)
+		}
+	case CONCAT:
+		return str(p.toString(l) + p.toString(r))
+	case MUL:
 		return num(l.num() * r.num())
-	},
-	POW: func(p *Interp, l, r value) value {
-		return num(math.Pow(l.num(), r.num()))
-	},
-	DIV: func(p *Interp, l, r value) value {
+	case DIV:
 		rf := r.num()
 		if rf == 0.0 {
 			panic(newError("division by zero"))
 		}
 		return num(l.num() / rf)
-	},
-	MOD: func(p *Interp, l, r value) value {
+	case GREATER:
+		if l.isTrueStr() || r.isTrueStr() {
+			return boolean(p.toString(l) > p.toString(r))
+		} else {
+			return boolean(l.n > r.n)
+		}
+	case GTE:
+		if l.isTrueStr() || r.isTrueStr() {
+			return boolean(p.toString(l) >= p.toString(r))
+		} else {
+			return boolean(l.n >= r.n)
+		}
+	case NOT_EQUALS:
+		if l.isTrueStr() || r.isTrueStr() {
+			return boolean(p.toString(l) != p.toString(r))
+		} else {
+			return boolean(l.n != r.n)
+		}
+	case MATCH:
+		re := p.mustCompile(p.toString(r))
+		matched := re.MatchString(p.toString(l))
+		return boolean(matched)
+	case NOT_MATCH:
+		re := p.mustCompile(p.toString(r))
+		matched := re.MatchString(p.toString(l))
+		return boolean(!matched)
+	case POW:
+		return num(math.Pow(l.num(), r.num()))
+	case MOD:
 		rf := r.num()
 		if rf == 0.0 {
 			panic(newError("division by zero in mod"))
 		}
 		return num(math.Mod(l.num(), rf))
-	},
-	CONCAT: func(p *Interp, l, r value) value {
-		return str(p.toString(l) + p.toString(r))
-	},
-	MATCH: (*Interp).regexMatch,
-	NOT_MATCH: func(p *Interp, l, r value) value {
-		return p.not(p.regexMatch(l, r))
-	},
-}
-
-func (p *Interp) equal(l, r value) value {
-	if l.isTrueStr() || r.isTrueStr() {
-		return boolean(p.toString(l) == p.toString(r))
-	} else {
-		return boolean(l.n == r.n)
+	default:
+		panic(fmt.Sprintf("unexpected binary operation: %s", op))
 	}
 }
 
-func (p *Interp) lessThan(l, r value) value {
-	if l.isTrueStr() || r.isTrueStr() {
-		return boolean(p.toString(l) < p.toString(r))
-	} else {
-		return boolean(l.n < r.n)
-	}
-}
-
-func (p *Interp) regexMatch(l, r value) value {
-	re := p.mustCompile(p.toString(r))
-	matched := re.MatchString(p.toString(l))
-	return boolean(matched)
-}
-
-type unaryFunc func(p *Interp, v value) value
-
-var unaryFuncs = map[Token]unaryFunc{
-	NOT: (*Interp).not,
-	ADD: func(p *Interp, v value) value {
-		return num(v.num())
-	},
-	SUB: func(p *Interp, v value) value {
+func (p *Interp) evalUnary(op Token, v value) value {
+	switch op {
+	case SUB:
 		return num(-v.num())
-	},
-}
-
-func (p *Interp) not(v value) value {
-	return boolean(!v.boolean())
+	case NOT:
+		return boolean(!v.boolean())
+	case ADD:
+		return num(v.num())
+	default:
+		panic(fmt.Sprintf("unexpected unary operation: %s", op))
+	}
 }
 
 func (p *Interp) call(op Token, args []value) value {
