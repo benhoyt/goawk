@@ -68,6 +68,10 @@ Things AWK has over GoAWK:
 * The GoAWK interpreter is significantly slower. (TODO: benchmarks)
 * GoAWK has a couple of known syntax quirks, but most real code shouldn't run into them (commented-out tests in interp/interp_test.go). I intend to fix these soon.
 
+## Stability
+
+This is a beta, pre-1.0 version of GoAWK. It's working quite well and is fairly thoroughly tested, but I'm free to change the exported API if it makes sense. It shouldn't change *too* much, but there may be small changes in the signature of a few functions. I intend to publish a v1.0 with a stable API around October 2018.
+
 ## The end
 
 Have fun, and please [contact me](https://benhoyt.com/) if you're using GoAWK or have any feedback!
