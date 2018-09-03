@@ -145,9 +145,12 @@ func parseGoAWK(srcPath string) (*parser.Program, error) {
 func interpGoAWK(prog *parser.Program, inputPath string) ([]byte, error) {
 	outBuf := &bytes.Buffer{}
 	errBuf := &bytes.Buffer{}
-	p := interp.New(outBuf, errBuf)
-	p.SetArgs([]string{"goawk_test", inputPath})
-	err := p.Exec(prog, nil, []string{inputPath})
+	config := &interp.Config{
+		Output: outBuf,
+		Error:  errBuf,
+		Args:   []string{inputPath},
+	}
+	_, err := interp.ExecProgram(prog, config)
 	result := outBuf.Bytes()
 	result = append(result, errBuf.Bytes()...)
 	return result, err
@@ -227,6 +230,7 @@ func TestCommandLine(t *testing.T) {
 		{[]string{"-v", "A=1", "-f", "testdata/g.3", "B=2", "/dev/null"}, "",
 			"A=1, B=0\n\tARGV[1] = B=2\n\tARGV[2] = /dev/null\nA=1, B=2\n"},
 		{[]string{`END { print (x==42) }`, "x=42.0"}, "", "1\n"},
+		{[]string{"-v", "x=42.0", `BEGIN { print (x==42) }`}, "", "1\n"},
 	}
 	for _, test := range tests {
 		testName := strings.Join(test.args, " ")

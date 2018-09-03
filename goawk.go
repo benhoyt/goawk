@@ -1,6 +1,6 @@
 // Package goawk is an implementation of AWK written in Go.
 //
-// You can use the command-line "goawk" command or call AWK from your
+// You can use the command-line "goawk" command or run AWK from your
 // Go programs using the "interp" package. The command-line program
 // has the same interface as regular awk:
 //
@@ -30,13 +30,18 @@ package main
 /*
 
 TODO:
-- break up interp.go?
+- performance testing: I/O, allocations, CPU
+  + defer in eval/exec -- will this help?
+  + other TODOs in interp.go and parser.go
+  + resolve array variables at parse time (by index instead of name)
+  + resolve array parameters to functions at parse time and clean up userCall
+- move ast (except Program) to "internal" package?
+- break up interp.go? structure it better and add comments
 - think about length() and substr() chars vs bytes:
   https://github.com/benhoyt/goawk/issues/2#issuecomment-415314000
 - get goawk_test.go working in TravisCI
-- performance testing: I/O, allocations, CPU
-  + getVar/setVar overhead -- can resolve stuff at compile-time
-  + defer in eval/exec -- will this help?
+- try out Go 2 error handling proposal with the GoAWK codebase:
+  https://go.googlesource.com/proposal/+/master/design/go2draft-error-handling.md
 
 NICE TO HAVE:
 - fix broken (commented-out) interp tests due to syntax handling
@@ -131,18 +136,20 @@ func main() {
 		}
 	}
 
-	p := interp.New(nil, nil)
-	p.SetVar("FS", *fieldSep)
+	config := &interp.Config{
+		Argv0: filepath.Base(os.Args[0]),
+		Args:  args,
+		Vars:  []string{"FS", *fieldSep},
+	}
 	for _, v := range vars {
 		parts := strings.SplitN(v, "=", 2)
 		if len(parts) != 2 {
 			errorExit("-v flag must be in format name=value")
 		}
-		p.SetVar(parts[0], parts[1])
+		config.Vars = append(config.Vars, parts[0], parts[1])
 	}
-	p.SetArgv0(filepath.Base(os.Args[0]))
 
-	err = p.Exec(prog, os.Stdin, args)
+	status, err := interp.ExecProgram(prog, config)
 	if err != nil {
 		errorExit("%s", err)
 	}
@@ -163,7 +170,7 @@ func main() {
 		f.Close()
 	}
 
-	os.Exit(p.ExitStatus())
+	os.Exit(status)
 }
 
 func showSourceLine(src []byte, pos lexer.Position, dividerLen int) {

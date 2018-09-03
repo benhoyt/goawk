@@ -17,6 +17,7 @@ type Program struct {
 	Actions   []Action
 	End       []Stmts
 	Functions map[string]Function
+	Globals   map[string]int
 }
 
 func (p *Program) String() string {
@@ -184,7 +185,8 @@ func (e *RegExpr) String() string {
 }
 
 type VarExpr struct {
-	Name string
+	Index int
+	Name  string
 }
 
 func (e *VarExpr) String() string {
@@ -267,9 +269,10 @@ func (e *MultiExpr) String() string {
 }
 
 type GetlineExpr struct {
-	Command Expr
-	Var     string
-	File    Expr
+	Command  Expr
+	VarIndex int
+	VarName  string
+	File     Expr
 }
 
 func (e *GetlineExpr) String() string {
@@ -278,8 +281,8 @@ func (e *GetlineExpr) String() string {
 		s += e.Command.String() + " |"
 	}
 	s += "getline"
-	if e.Var != "" {
-		s += " " + e.Var
+	if e.VarName != "" {
+		s += " " + e.VarName
 	}
 	if e.File != nil {
 		s += " <" + e.File.String()
@@ -397,13 +400,14 @@ func (s *ForStmt) String() string {
 }
 
 type ForInStmt struct {
-	Var   string
-	Array string
-	Body  Stmts
+	VarIndex int
+	VarName  string
+	Array    string
+	Body     Stmts
 }
 
 func (s *ForInStmt) String() string {
-	return "for (" + s.Var + " in " + s.Array + ") {\n" + s.Body.String() + "}"
+	return "for (" + s.VarName + " in " + s.Array + ") {\n" + s.Body.String() + "}"
 }
 
 type WhileStmt struct {

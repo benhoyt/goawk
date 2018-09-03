@@ -1,7 +1,7 @@
 // Package parser is an AWK parser and abstract syntax tree.
 //
-// You can parse an entire AWK program using ParseProgram, or parse a
-// single expression using ParseExpr.
+// Use the ParseProgram function to parse an AWK program, and then
+// give the result to one of the interp.Exec* functions to execute it.
 //
 package parser
 
@@ -34,28 +34,11 @@ func ParseProgram(src []byte) (prog *Program, err error) {
 		}
 	}()
 	lexer := NewLexer(src)
+	// TODO: put this in a newParser() function?
 	p := parser{lexer: lexer}
+	p.globals = make(map[string]int)
 	p.next()
 	return p.program(), nil
-}
-
-// ParseExpr parses a single AWK expression, returning the Expr
-// abstract syntax tree or a *ParseError on error.
-func ParseExpr(src []byte) (expr Expr, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			// Convert to ParseError or re-panic
-			err = r.(*ParseError)
-		}
-	}()
-	lexer := NewLexer(src)
-	p := parser{lexer: lexer}
-	p.next()
-	expr = p.expr()
-	if p.tok != EOF {
-		panic(p.error("expected EOF, not %v", p.tok))
-	}
-	return expr, nil
 }
 
 type parser struct {
@@ -66,7 +49,9 @@ type parser struct {
 	progState   progState
 	loopCount   int
 	inFunction  bool
+	locals      map[string]int
 	arrayParams map[string]bool
+	globals     map[string]int
 }
 
 type progState int
@@ -115,6 +100,7 @@ func (p *parser) program() *Program {
 		}
 		p.optionalNewlines()
 	}
+	prog.Globals = p.globals
 	return prog
 }
 
@@ -236,7 +222,8 @@ func (p *parser) stmt() Stmt {
 			}
 			p.arrayParam(inExpr.Array)
 			body := p.loopStmts()
-			s = &ForInStmt{varExpr.Name, inExpr.Array, body}
+			index := p.getVarIndex(varExpr.Name)
+			s = &ForInStmt{index, varExpr.Name, inExpr.Array, body}
 		} else {
 			// Match: for ([pre]; [cond]; [post]) body
 			p.expect(SEMICOLON)
@@ -326,6 +313,8 @@ func (p *parser) loopStmts() Stmts {
 
 func (p *parser) function(functions map[string]Function) Function {
 	if p.inFunction {
+		// Should never actually get here (FUNCTION token is only
+		// handled at the top level), but just in case.
 		panic(p.error("can't nest functions"))
 	}
 	p.inFunction = true
@@ -337,7 +326,7 @@ func (p *parser) function(functions map[string]Function) Function {
 	p.expect(NAME)
 	p.expect(LPAREN)
 	first := true
-	params := []string{}
+	params := make([]string, 0, 10) // TODO: arbitrary, re-use allocation?
 	for p.tok != RPAREN {
 		if !first {
 			p.commaNewlines()
@@ -346,6 +335,10 @@ func (p *parser) function(functions map[string]Function) Function {
 		param := p.val
 		p.expect(NAME)
 		params = append(params, param)
+	}
+	p.locals = make(map[string]int, len(params))
+	for i, param := range params {
+		p.locals[param] = -i - 1
 	}
 	p.arrayParams = make(map[string]bool, len(params))
 	p.expect(RPAREN)
@@ -360,6 +353,7 @@ func (p *parser) function(functions map[string]Function) Function {
 	}
 
 	p.arrayParams = nil
+	p.locals = nil
 	p.inFunction = false
 	return Function{name, params, arrays, body}
 }
@@ -397,11 +391,13 @@ func (p *parser) getLine() Expr {
 		p.next()
 		p.expect(GETLINE)
 		name := ""
+		index := 0
 		if p.tok == NAME {
 			name = p.val
+			index = p.getVarIndex(name)
 			p.next()
 		}
-		return &GetlineExpr{expr, name, nil}
+		return &GetlineExpr{expr, index, name, nil}
 	}
 	return expr
 }
@@ -607,7 +603,8 @@ func (p *parser) primary() Expr {
 			p.expect(RPAREN)
 			return &UserCallExpr{name, args}
 		}
-		return &VarExpr{name}
+		index := p.getVarIndex(name)
+		return &VarExpr{index, name}
 	case LPAREN:
 		p.next()
 		exprs := p.exprList(p.expr)
@@ -632,8 +629,10 @@ func (p *parser) primary() Expr {
 	case GETLINE:
 		p.next()
 		name := ""
+		index := 0
 		if p.tok == NAME {
 			name = p.val
+			index = p.getVarIndex(name)
 			p.next()
 		}
 		var file Expr
@@ -641,7 +640,7 @@ func (p *parser) primary() Expr {
 			p.next()
 			file = p.expr()
 		}
-		return &GetlineExpr{nil, name, file}
+		return &GetlineExpr{nil, index, name, file}
 	case F_SUB, F_GSUB:
 		op := p.tok
 		p.next()
@@ -668,7 +667,9 @@ func (p *parser) primary() Expr {
 		array := p.val
 		p.arrayParam(array)
 		p.expect(NAME)
-		args := []Expr{str, &VarExpr{array}}
+		// This is kind of an abuse of VarExpr just to represent an
+		// array name - TODO: change to use CallSplitExpr instead?
+		args := []Expr{str, &VarExpr{0, array}}
 		if p.tok == COMMA {
 			p.commaNewlines()
 			args = append(args, p.regexStr(p.expr))
@@ -845,4 +846,25 @@ func (p *parser) matches(operators ...Token) bool {
 func (p *parser) error(format string, args ...interface{}) error {
 	message := fmt.Sprintf(format, args...)
 	return &ParseError{p.pos, message}
+}
+
+func (p *parser) getVarIndex(name string) int {
+	index := p.locals[name]
+	if index != 0 {
+		return index
+	}
+	index = specialVars[name]
+	if index != 0 {
+		// Special variable like ARGC
+		return index
+	}
+	index = p.globals[name]
+	if index != 0 {
+		// Global variable that's already been seen
+		return index
+	}
+	// New global variable
+	index = len(p.globals) + V_LAST + 1
+	p.globals[name] = index
+	return index
 }

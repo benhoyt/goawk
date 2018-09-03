@@ -466,8 +466,12 @@ BEGIN { early() }
 			}
 			outBuf := &bytes.Buffer{}
 			errBuf := &bytes.Buffer{}
-			p := interp.New(outBuf, errBuf)
-			err = p.Exec(prog, strings.NewReader(test.in), nil)
+			config := &interp.Config{
+				Stdin:  strings.NewReader(test.in),
+				Output: outBuf,
+				Error:  errBuf,
+			}
+			_, err = interp.ExecProgram(prog, config)
 			if err != nil {
 				if test.err != "" {
 					if err.Error() == test.err {
@@ -497,15 +501,19 @@ func benchmarkProgram(b *testing.B, input, expected, srcFormat string, args ...i
 		b.Fatalf("error parsing %s: %v", b.Name(), err)
 	}
 	outBuf := &bytes.Buffer{}
-	p := interp.New(outBuf, ioutil.Discard)
-	if expected != "" {
-		expected += "\n"
+	config := &interp.Config{
+		Stdin:  strings.NewReader(input),
+		Output: outBuf,
+		Error:  ioutil.Discard,
 	}
 	b.StartTimer()
-	err = p.Exec(prog, strings.NewReader(input), nil)
+	_, err = interp.ExecProgram(prog, config)
 	b.StopTimer()
 	if err != nil {
 		b.Fatalf("error interpreting %s: %v", b.Name(), err)
+	}
+	if expected != "" {
+		expected += "\n"
 	}
 	if outBuf.String() != expected {
 		b.Fatalf("expected %q, got %q", expected, outBuf.String())
@@ -1004,9 +1012,11 @@ func Example_program() {
 		fmt.Println(err)
 		return
 	}
-	p := interp.New(nil, nil)
-	p.SetVar("FS", ",")
-	err = p.Exec(prog, bytes.NewReader([]byte(input)), nil)
+	config := &interp.Config{
+		Stdin: bytes.NewReader([]byte(input)),
+		Vars:  []string{"FS", ","},
+	}
+	_, err = interp.ExecProgram(prog, config)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -1015,23 +1025,4 @@ func Example_program() {
 	// 3
 	// 7
 	// 11
-}
-
-func Example_expression() {
-	src := "1 + 2 * 3 / 4"
-
-	expr, err := parser.ParseExpr([]byte(src))
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	p := interp.New(nil, nil)
-	n, err := p.EvalNum(expr)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println(n)
-	// Output:
-	// 2.5
 }
