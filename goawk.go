@@ -31,7 +31,6 @@ package main
 
 TODO:
 - performance testing: I/O, allocations, CPU
-  + defer in eval/exec -- will this help?
   + other TODOs in interp.go and parser.go
   + resolve array variables at parse time (by index instead of name)
   + resolve array parameters to functions at parse time and clean up userCall
