@@ -478,6 +478,16 @@ func (p *interp) execute(stmt Stmt) (execErr error) {
 				return err
 			}
 		}
+	case *ReturnStmt:
+		var value value
+		if s.Value != nil {
+			var err error
+			value, err = p.eval(s.Value)
+			if err != nil {
+				return err
+			}
+		}
+		return returnValue{value}
 	case *WhileStmt:
 		for {
 			v, err := p.eval(s.Cond)
@@ -533,16 +543,6 @@ func (p *interp) execute(stmt Stmt) (execErr error) {
 			p.exitStatus = int(status.num())
 		}
 		return errExit
-	case *ReturnStmt:
-		var value value
-		if s.Value != nil {
-			var err error
-			value, err = p.eval(s.Value)
-			if err != nil {
-				return err
-			}
-		}
-		return returnValue{value}
 	case *DeleteStmt:
 		index, err := p.evalIndex(s.Index)
 		if err != nil {
@@ -738,12 +738,29 @@ func (s byteSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, 
 
 func (p *interp) eval(expr Expr) (value, error) {
 	switch e := expr.(type) {
-	case *UnaryExpr:
-		v, err := p.eval(e.Value)
+	case *NumExpr:
+		return num(e.Value), nil
+	case *StrExpr:
+		return str(e.Value), nil
+	case *FieldExpr:
+		index, err := p.eval(e.Index)
 		if err != nil {
 			return value{}, err
 		}
-		return p.evalUnary(e.Op, v), nil
+		indexNum, err := index.numChecked()
+		if err != nil {
+			return value{}, newError("field index not a number: %q", p.toString(index))
+		}
+		return p.getField(int(indexNum))
+	case *VarExpr:
+		return p.getVar(e.Index), nil
+	case *RegExpr:
+		// Stand-alone /regex/ is equivalent to: $0 ~ /regex/
+		re, err := p.compileRegex(e.Regex)
+		if err != nil {
+			return value{}, err
+		}
+		return boolean(re.MatchString(p.line)), nil
 	case *BinaryExpr:
 		left, err := p.eval(e.Left)
 		if err != nil {
@@ -775,52 +792,29 @@ func (p *interp) eval(expr Expr) (value, error) {
 			}
 			return p.evalBinary(e.Op, left, right)
 		}
-	case *InExpr:
-		index, err := p.evalIndex(e.Index)
+	case *IncrExpr:
+		leftValue, err := p.eval(e.Left)
 		if err != nil {
 			return value{}, err
 		}
-		_, ok := p.arrays[p.getArrayName(e.Array)][index]
-		return boolean(ok), nil
-	case *CondExpr:
-		cond, err := p.eval(e.Cond)
+		left := leftValue.num()
+		var right float64
+		switch e.Op {
+		case INCR:
+			right = left + 1
+		case DECR:
+			right = left - 1
+		}
+		rightValue := num(right)
+		err = p.assign(e.Left, rightValue)
 		if err != nil {
 			return value{}, err
 		}
-		if cond.boolean() {
-			return p.eval(e.True)
+		if e.Pre {
+			return rightValue, nil
 		} else {
-			return p.eval(e.False)
+			return num(left), nil
 		}
-	case *NumExpr:
-		return num(e.Value), nil
-	case *StrExpr:
-		return str(e.Value), nil
-	case *RegExpr:
-		// Stand-alone /regex/ is equivalent to: $0 ~ /regex/
-		re, err := p.compileRegex(e.Regex)
-		if err != nil {
-			return value{}, err
-		}
-		return boolean(re.MatchString(p.line)), nil
-	case *FieldExpr:
-		index, err := p.eval(e.Index)
-		if err != nil {
-			return value{}, err
-		}
-		indexNum, err := index.numChecked()
-		if err != nil {
-			return value{}, newError("field index not a number: %q", p.toString(index))
-		}
-		return p.getField(int(indexNum))
-	case *VarExpr:
-		return p.getVar(e.Index), nil
-	case *IndexExpr:
-		index, err := p.evalIndex(e.Index)
-		if err != nil {
-			return value{}, err
-		}
-		return p.getArray(e.Name, index), nil
 	case *AssignExpr:
 		right, err := p.eval(e.Right)
 		if err != nil {
@@ -859,29 +853,22 @@ func (p *interp) eval(expr Expr) (value, error) {
 			return value{}, err
 		}
 		return right, nil
-	case *IncrExpr:
-		leftValue, err := p.eval(e.Left)
+	case *CondExpr:
+		cond, err := p.eval(e.Cond)
 		if err != nil {
 			return value{}, err
 		}
-		left := leftValue.num()
-		var right float64
-		switch e.Op {
-		case INCR:
-			right = left + 1
-		case DECR:
-			right = left - 1
-		}
-		rightValue := num(right)
-		err = p.assign(e.Left, rightValue)
-		if err != nil {
-			return value{}, err
-		}
-		if e.Pre {
-			return rightValue, nil
+		if cond.boolean() {
+			return p.eval(e.True)
 		} else {
-			return num(left), nil
+			return p.eval(e.False)
 		}
+	case *IndexExpr:
+		index, err := p.evalIndex(e.Index)
+		if err != nil {
+			return value{}, err
+		}
+		return p.getArray(e.Name, index), nil
 	case *CallExpr:
 		switch e.Func {
 		case F_SPLIT:
@@ -948,11 +935,21 @@ func (p *interp) eval(expr Expr) (value, error) {
 			}
 			return p.call(e.Func, args)
 		}
+	case *UnaryExpr:
+		v, err := p.eval(e.Value)
+		if err != nil {
+			return value{}, err
+		}
+		return p.evalUnary(e.Op, v), nil
+	case *InExpr:
+		index, err := p.evalIndex(e.Index)
+		if err != nil {
+			return value{}, err
+		}
+		_, ok := p.arrays[p.getArrayName(e.Array)][index]
+		return boolean(ok), nil
 	case *UserCallExpr:
 		return p.userCall(e.Name, e.Args)
-	case *MultiExpr:
-		// Note: should figure out a good way to make this a parse-time error
-		return value{}, newError("unexpected comma-separated expression: %s", expr)
 	case *GetlineExpr:
 		var line string
 		switch {
@@ -968,7 +965,6 @@ func (p *interp) eval(expr Expr) (value, error) {
 			}
 			if !scanner.Scan() {
 				if err := scanner.Err(); err != nil {
-					// TODO: report error to errorOutput?
 					return num(-1), nil
 				}
 				return num(0), nil
@@ -986,7 +982,6 @@ func (p *interp) eval(expr Expr) (value, error) {
 			}
 			if !scanner.Scan() {
 				if err := scanner.Err(); err != nil {
-					// TODO: report error to errorOutput?
 					return num(-1), nil
 				}
 				return num(0), nil
@@ -999,7 +994,6 @@ func (p *interp) eval(expr Expr) (value, error) {
 				return num(0), nil
 			}
 			if err != nil {
-				// TODO: report error to errorOutput?
 				return num(-1), nil
 			}
 		}
@@ -1012,6 +1006,9 @@ func (p *interp) eval(expr Expr) (value, error) {
 			p.setLine(line)
 		}
 		return num(1), nil
+	case *MultiExpr:
+		// Note: should figure out a good way to make this a parse-time error
+		return value{}, newError("unexpected comma-separated expression: %s", expr)
 	default:
 		panic(fmt.Sprintf("unexpected expr type: %T", expr))
 	}
@@ -1100,32 +1097,32 @@ func (p *interp) getVar(index int) value {
 	}
 	// Otherwise it's a special variable
 	switch index {
+	case V_NF:
+		return num(float64(p.numFields))
+	case V_NR:
+		return num(float64(p.lineNum))
+	case V_RLENGTH:
+		return num(float64(p.matchLength))
+	case V_RSTART:
+		return num(float64(p.matchStart))
+	case V_FNR:
+		return num(float64(p.fileLineNum))
 	case V_ARGC:
 		return num(float64(p.argc))
 	case V_CONVFMT:
 		return str(p.convertFormat)
 	case V_FILENAME:
 		return str(p.filename)
-	case V_FNR:
-		return num(float64(p.fileLineNum))
 	case V_FS:
 		return str(p.fieldSep)
-	case V_NF:
-		return num(float64(p.numFields))
-	case V_NR:
-		return num(float64(p.lineNum))
 	case V_OFMT:
 		return str(p.outputFormat)
 	case V_OFS:
 		return str(p.outputFieldSep)
 	case V_ORS:
 		return str(p.outputRecordSep)
-	case V_RLENGTH:
-		return num(float64(p.matchLength))
 	case V_RS:
 		return str(p.recordSep)
-	case V_RSTART:
-		return num(float64(p.matchStart))
 	case V_SUBSEP:
 		return str(p.subscriptSep)
 	default:
@@ -1157,25 +1154,7 @@ func (p *interp) setVar(index int, v value) error {
 		return nil
 	}
 	// Otherwise it's a special variable
-	// TODO: order cases according to frequency (also in getVar)
 	switch index {
-	case V_ARGC:
-		p.argc = int(v.num())
-	case V_CONVFMT:
-		p.convertFormat = p.toString(v)
-	case V_FILENAME:
-		p.filename = p.toString(v)
-	case V_FNR:
-		p.fileLineNum = int(v.num())
-	case V_FS:
-		p.fieldSep = p.toString(v)
-		if p.fieldSep != " " {
-			re, err := regexp.Compile(p.fieldSep)
-			if err != nil {
-				return newError("invalid regex %q: %s", p.fieldSep, err)
-			}
-			p.fieldSepRegex = re
-		}
 	case V_NF:
 		numFields := int(v.num())
 		if numFields < 0 {
@@ -1191,22 +1170,39 @@ func (p *interp) setVar(index int, v value) error {
 		p.line = strings.Join(p.fields, p.outputFieldSep)
 	case V_NR:
 		p.lineNum = int(v.num())
+	case V_RLENGTH:
+		p.matchLength = int(v.num())
+	case V_RSTART:
+		p.matchStart = int(v.num())
+	case V_FNR:
+		p.fileLineNum = int(v.num())
+	case V_ARGC:
+		p.argc = int(v.num())
+	case V_CONVFMT:
+		p.convertFormat = p.toString(v)
+	case V_FILENAME:
+		p.filename = p.toString(v)
+	case V_FS:
+		p.fieldSep = p.toString(v)
+		if p.fieldSep != " " {
+			re, err := regexp.Compile(p.fieldSep)
+			if err != nil {
+				return newError("invalid regex %q: %s", p.fieldSep, err)
+			}
+			p.fieldSepRegex = re
+		}
 	case V_OFMT:
 		p.outputFormat = p.toString(v)
 	case V_OFS:
 		p.outputFieldSep = p.toString(v)
 	case V_ORS:
 		p.outputRecordSep = p.toString(v)
-	case V_RLENGTH:
-		p.matchLength = int(v.num())
 	case V_RS:
 		sep := p.toString(v)
 		if len(sep) > 1 {
 			return newError("RS must be at most 1 char")
 		}
 		p.recordSep = sep
-	case V_RSTART:
-		p.matchStart = int(v.num())
 	case V_SUBSEP:
 		p.subscriptSep = p.toString(v)
 	default:
@@ -1386,29 +1382,6 @@ func (p *interp) evalUnary(op Token, v value) value {
 
 func (p *interp) call(op Token, args []value) (value, error) {
 	switch op {
-	case F_ATAN2:
-		return num(math.Atan2(args[0].num(), args[1].num())), nil
-	case F_CLOSE:
-		name := p.toString(args[0])
-		w, ok := p.streams[name]
-		if !ok {
-			return num(-1), nil
-		}
-		err := w.Close()
-		if err != nil {
-			return num(-1), nil
-		}
-		return num(0), nil
-	case F_COS:
-		return num(math.Cos(args[0].num())), nil
-	case F_EXP:
-		return num(math.Exp(args[0].num())), nil
-	case F_INDEX:
-		s := p.toString(args[0])
-		substr := p.toString(args[1])
-		return num(float64(strings.Index(s, substr) + 1)), nil
-	case F_INT:
-		return num(float64(int(args[0].num()))), nil
 	case F_LENGTH:
 		switch len(args) {
 		case 0:
@@ -1416,8 +1389,6 @@ func (p *interp) call(op Token, args []value) (value, error) {
 		default:
 			return num(float64(len(p.toString(args[0])))), nil
 		}
-	case F_LOG:
-		return num(math.Log(args[0].num())), nil
 	case F_MATCH:
 		re, err := p.compileRegex(p.toString(args[1]))
 		if err != nil {
@@ -1432,28 +1403,6 @@ func (p *interp) call(op Token, args []value) (value, error) {
 		p.matchStart = loc[0] + 1
 		p.matchLength = loc[1] - loc[0]
 		return num(float64(p.matchStart)), nil
-	case F_SPRINTF:
-		s, err := p.sprintf(p.toString(args[0]), args[1:])
-		if err != nil {
-			return value{}, err
-		}
-		return str(s), nil
-	case F_SQRT:
-		return num(math.Sqrt(args[0].num())), nil
-	case F_RAND:
-		return num(p.random.Float64()), nil
-	case F_SIN:
-		return num(math.Sin(args[0].num())), nil
-	case F_SRAND:
-		prevSeed := p.randSeed
-		switch len(args) {
-		case 0:
-			p.random.Seed(time.Now().UnixNano())
-		case 1:
-			p.randSeed = args[0].num()
-			p.random.Seed(int64(math.Float64bits(p.randSeed)))
-		}
-		return num(prevSeed), nil
 	case F_SUBSTR:
 		s := p.toString(args[0])
 		pos := int(args[1].num())
@@ -1475,10 +1424,46 @@ func (p *interp) call(op Token, args []value) (value, error) {
 			}
 		}
 		return str(s[pos-1 : pos-1+length]), nil
+	case F_SPRINTF:
+		s, err := p.sprintf(p.toString(args[0]), args[1:])
+		if err != nil {
+			return value{}, err
+		}
+		return str(s), nil
+	case F_INDEX:
+		s := p.toString(args[0])
+		substr := p.toString(args[1])
+		return num(float64(strings.Index(s, substr) + 1)), nil
 	case F_TOLOWER:
 		return str(strings.ToLower(p.toString(args[0]))), nil
 	case F_TOUPPER:
 		return str(strings.ToUpper(p.toString(args[0]))), nil
+	case F_ATAN2:
+		return num(math.Atan2(args[0].num(), args[1].num())), nil
+	case F_COS:
+		return num(math.Cos(args[0].num())), nil
+	case F_EXP:
+		return num(math.Exp(args[0].num())), nil
+	case F_INT:
+		return num(float64(int(args[0].num()))), nil
+	case F_LOG:
+		return num(math.Log(args[0].num())), nil
+	case F_SQRT:
+		return num(math.Sqrt(args[0].num())), nil
+	case F_RAND:
+		return num(p.random.Float64()), nil
+	case F_SIN:
+		return num(math.Sin(args[0].num())), nil
+	case F_SRAND:
+		prevSeed := p.randSeed
+		switch len(args) {
+		case 0:
+			p.random.Seed(time.Now().UnixNano())
+		case 1:
+			p.randSeed = args[0].num()
+			p.random.Seed(int64(math.Float64bits(p.randSeed)))
+		}
+		return num(prevSeed), nil
 	case F_SYSTEM:
 		cmdline := p.toString(args[0])
 		cmd := exec.Command("sh", "-c", cmdline)
@@ -1514,6 +1499,17 @@ func (p *interp) call(op Token, args []value) (value, error) {
 				fmt.Fprintf(p.errorOutput, "unexpected error running command %q: %v\n", cmdline, err)
 				return num(-1), nil
 			}
+		}
+		return num(0), nil
+	case F_CLOSE:
+		name := p.toString(args[0])
+		w, ok := p.streams[name]
+		if !ok {
+			return num(-1), nil
+		}
+		err := w.Close()
+		if err != nil {
+			return num(-1), nil
 		}
 		return num(0), nil
 	default:
@@ -1671,18 +1667,18 @@ func parseFmtTypes(s string) (format string, types []byte, err error) {
 			}
 			var t byte
 			switch s[i] {
+			case 's':
+				t = 's'
 			case 'd', 'i', 'o', 'x', 'X':
 				t = 'd'
+			case 'f', 'e', 'E', 'g', 'G':
+				t = 'f'
 			case 'u':
 				t = 'u'
 				out[i] = 'd'
 			case 'c':
 				t = 'c'
 				out[i] = 's'
-			case 'f', 'e', 'E', 'g', 'G':
-				t = 'f'
-			case 's':
-				t = 's'
 			default:
 				return "", nil, fmt.Errorf("invalid format type %q", s[i])
 			}
@@ -1705,8 +1701,12 @@ func (p *interp) sprintf(format string, args []value) (string, error) {
 		a := args[i]
 		var v interface{}
 		switch t {
+		case 's':
+			v = p.toString(a)
 		case 'd':
 			v = int(a.num())
+		case 'f':
+			v = a.num()
 		case 'u':
 			v = uint32(a.num())
 		case 'c':
@@ -1723,10 +1723,6 @@ func (p *interp) sprintf(format string, args []value) (string, error) {
 				c = []byte(string(r))
 			}
 			v = c
-		case 'f':
-			v = a.num()
-		case 's':
-			v = p.toString(a)
 		}
 		converted[i] = v
 	}

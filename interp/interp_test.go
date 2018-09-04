@@ -1003,6 +1003,20 @@ func Example_simple() {
 	// baz
 }
 
+func Example_fieldsep() {
+	// Use ',' as the field separator
+	input := bytes.NewReader([]byte("1,2\n3,4"))
+	err := interp.Exec("{ print $1, $2 }", ",", input, nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	// Output:
+	// 1 2
+	// 3 4
+}
+
+// TODO: maybe change this so it's not using fieldsep like the above
 func Example_program() {
 	src := "{ print $1+$2 }"
 	input := "1,2\n3,4\n5,6"
