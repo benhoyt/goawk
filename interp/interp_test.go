@@ -991,6 +991,39 @@ BEGIN {
 `, b.N)
 }
 
+func BenchmarkAssign(b *testing.B) {
+	b.StopTimer()
+	benchmarkProgram(b, "", "0 1 2 3 4", `
+BEGIN {
+  for (i = 0; i < %d; i++) {
+  	v=0; w=1; x=2; y=3; z=4
+  	v=0; w=1; x=2; y=3; z=4
+  	v=0; w=1; x=2; y=3; z=4
+  	v=0; w=1; x=2; y=3; z=4
+  	v=0; w=1; x=2; y=3; z=4
+  }
+  print v, w, x, y, z
+}
+`, b.N)
+}
+
+func BenchmarkAugAssign(b *testing.B) {
+	b.StopTimer()
+	benchmarkProgram(b, "", "5 -9 729 32 3.0536 2", `
+BEGIN {
+  for (i = 0; i < %d; i++) {
+  	a = 0; b = 1; c = 3; d = 1024; e = 2; f = 14
+  	a += 1; b -= 2; c *= 3; d /= 2; e ^= 1.1; f %%= 6
+  	a += 1; b -= 2; c *= 3; d /= 2; e ^= 1.1; f %%= 6
+  	a += 1; b -= 2; c *= 3; d /= 2; e ^= 1.1; f %%= 6
+  	a += 1; b -= 2; c *= 3; d /= 2; e ^= 1.1; f %%= 6
+  	a += 1; b -= 2; c *= 3; d /= 2; e ^= 1.1; f %%= 6
+  }
+  print a, b, c, d, e, f
+}
+`, b.N)
+}
+
 func Example_simple() {
 	input := bytes.NewReader([]byte("foo bar\n\nbaz buz"))
 	err := interp.Exec("$0 { print $1 }", " ", input, nil)
