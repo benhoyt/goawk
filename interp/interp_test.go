@@ -1016,10 +1016,9 @@ func Example_fieldsep() {
 	// 3 4
 }
 
-// TODO: maybe change this so it's not using fieldsep like the above
 func Example_program() {
-	src := "{ print $1+$2 }"
-	input := "1,2\n3,4\n5,6"
+	src := "{ print NR, tolower($0) }"
+	input := "A\naB\nAbC"
 
 	prog, err := parser.ParseProgram([]byte(src))
 	if err != nil {
@@ -1028,7 +1027,7 @@ func Example_program() {
 	}
 	config := &interp.Config{
 		Stdin: bytes.NewReader([]byte(input)),
-		Vars:  []string{"FS", ","},
+		Vars:  []string{"OFS", ":"},
 	}
 	_, err = interp.ExecProgram(prog, config)
 	if err != nil {
@@ -1036,7 +1035,7 @@ func Example_program() {
 		return
 	}
 	// Output:
-	// 3
-	// 7
-	// 11
+	// 1:a
+	// 2:ab
+	// 3:abc
 }

@@ -229,7 +229,6 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 // with the given field separator. Exec reads input from the given
 // reader (nil means use os.Stdin) and writes output to stdout (nil
 // means use a buffered version of os.Stdout).
-// TODO: add tests for this, because fieldSep was ignored before
 func Exec(source, fieldSep string, input io.Reader, output io.Writer) error {
 	prog, err := ParseProgram([]byte(source))
 	if err != nil {
