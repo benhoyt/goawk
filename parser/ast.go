@@ -83,22 +83,23 @@ type Expr interface {
 	String() string
 }
 
-func (e *FieldExpr) expr()    {}
-func (e *UnaryExpr) expr()    {}
-func (e *BinaryExpr) expr()   {}
-func (e *InExpr) expr()       {}
-func (e *CondExpr) expr()     {}
-func (e *NumExpr) expr()      {}
-func (e *StrExpr) expr()      {}
-func (e *RegExpr) expr()      {}
-func (e *VarExpr) expr()      {}
-func (e *IndexExpr) expr()    {}
-func (e *AssignExpr) expr()   {}
-func (e *IncrExpr) expr()     {}
-func (e *CallExpr) expr()     {}
-func (e *UserCallExpr) expr() {}
-func (e *MultiExpr) expr()    {}
-func (e *GetlineExpr) expr()  {}
+func (e *FieldExpr) expr()     {}
+func (e *UnaryExpr) expr()     {}
+func (e *BinaryExpr) expr()    {}
+func (e *InExpr) expr()        {}
+func (e *CondExpr) expr()      {}
+func (e *NumExpr) expr()       {}
+func (e *StrExpr) expr()       {}
+func (e *RegExpr) expr()       {}
+func (e *VarExpr) expr()       {}
+func (e *IndexExpr) expr()     {}
+func (e *AssignExpr) expr()    {}
+func (e *AugAssignExpr) expr() {}
+func (e *IncrExpr) expr()      {}
+func (e *CallExpr) expr()      {}
+func (e *UserCallExpr) expr()  {}
+func (e *MultiExpr) expr()     {}
+func (e *GetlineExpr) expr()   {}
 
 type FieldExpr struct {
 	Index Expr
@@ -208,12 +209,21 @@ func (e *IndexExpr) String() string {
 
 type AssignExpr struct {
 	Left  Expr // can be one of: var, array[x], $n
-	Op    Token
 	Right Expr
 }
 
 func (e *AssignExpr) String() string {
-	return e.Left.String() + " " + e.Op.String() + " " + e.Right.String()
+	return e.Left.String() + " = " + e.Right.String()
+}
+
+type AugAssignExpr struct {
+	Left  Expr // can be one of: var, array[x], $n
+	Op    Token
+	Right Expr
+}
+
+func (e *AugAssignExpr) String() string {
+	return e.Left.String() + " " + e.Op.String() + "= " + e.Right.String()
 }
 
 type IncrExpr struct {

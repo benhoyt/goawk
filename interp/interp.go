@@ -819,33 +819,23 @@ func (p *interp) eval(expr Expr) (value, error) {
 		if err != nil {
 			return value{}, err
 		}
-		if e.Op != ASSIGN {
-			left, err := p.eval(e.Left)
-			if err != nil {
-				return value{}, err
-			}
-			// TODO: can/should we do this in the parser?
-			var op Token
-			switch e.Op {
-			case ADD_ASSIGN:
-				op = ADD
-			case SUB_ASSIGN:
-				op = SUB
-			case DIV_ASSIGN:
-				op = DIV
-			case MOD_ASSIGN:
-				op = MOD
-			case MUL_ASSIGN:
-				op = MUL
-			case POW_ASSIGN:
-				op = POW
-			default:
-				panic(fmt.Sprintf("unexpected assignment operator: %s", e.Op))
-			}
-			right, err = p.evalBinary(op, left, right)
-			if err != nil {
-				return value{}, err
-			}
+		err = p.assign(e.Left, right)
+		if err != nil {
+			return value{}, err
+		}
+		return right, nil
+	case *AugAssignExpr:
+		right, err := p.eval(e.Right)
+		if err != nil {
+			return value{}, err
+		}
+		left, err := p.eval(e.Left)
+		if err != nil {
+			return value{}, err
+		}
+		right, err = p.evalBinary(e.Op, left, right)
+		if err != nil {
+			return value{}, err
 		}
 		err = p.assign(e.Left, right)
 		if err != nil {

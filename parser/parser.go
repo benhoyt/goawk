@@ -416,7 +416,23 @@ func (p *parser) _assign(higher func() Expr) Expr {
 		op := p.tok
 		p.next()
 		right := p._assign(higher)
-		return &AssignExpr{expr, op, right}
+		switch op {
+		case ASSIGN:
+			return &AssignExpr{expr, right}
+		case ADD_ASSIGN:
+			op = ADD
+		case DIV_ASSIGN:
+			op = DIV
+		case MOD_ASSIGN:
+			op = MOD
+		case MUL_ASSIGN:
+			op = MUL
+		case POW_ASSIGN:
+			op = POW
+		case SUB_ASSIGN:
+			op = SUB
+		}
+		return &AugAssignExpr{expr, op, right}
 	}
 	return expr
 }
