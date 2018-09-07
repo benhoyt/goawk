@@ -32,7 +32,6 @@ package main
 TODO:
 - performance testing: I/O, allocations, CPU
   + optimize lexer
-    - order cases in switch by most common first
     - wait, do we actually need handling of UTF-8 in source code? what about errors?
   + other TODOs in interp.go and parser.go
   + other uses of make() in interp.go

@@ -98,13 +98,11 @@ func (l *Lexer) scan() (Position, Token, string) {
 
 	// Names: keywords and functions
 	if isNameStart(ch) {
-		chars := make([]byte, 1, 16) // most won't require heap allocation
-		chars[0] = ch
+		start := l.offset - 2
 		for isNameStart(l.ch) || (l.ch >= '0' && l.ch <= '9') {
-			chars = append(chars, l.ch)
 			l.next()
 		}
-		name := string(chars)
+		name := string(l.src[start : l.offset-1])
 		tok, isKeyword := keywordTokens[name]
 		if !isKeyword {
 			tok = NAME
@@ -120,42 +118,35 @@ func (l *Lexer) scan() (Position, Token, string) {
 	case '$':
 		tok = DOLLAR
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.':
-		chars := make([]byte, 1, 16) // most won't require heap allocation
-		chars[0] = ch
+		start := l.offset - 2
 		gotDigit := false
 		if ch != '.' {
 			gotDigit = true
 			for l.ch >= '0' && l.ch <= '9' {
-				chars = append(chars, l.ch)
 				l.next()
 			}
 			if l.ch == '.' {
-				chars = append(chars, l.ch)
 				l.next()
 			}
 		}
 		for l.ch >= '0' && l.ch <= '9' {
 			gotDigit = true
-			chars = append(chars, l.ch)
 			l.next()
 		}
 		if !gotDigit {
 			return l.pos, ILLEGAL, "expected digits"
 		}
 		if l.ch == 'e' || l.ch == 'E' {
-			chars = append(chars, l.ch)
 			l.next()
 			if l.ch == '+' || l.ch == '-' {
-				chars = append(chars, l.ch)
 				l.next()
 			}
 			for l.ch >= '0' && l.ch <= '9' {
-				chars = append(chars, l.ch)
 				l.next()
 			}
 		}
 		tok = NUMBER
-		val = string(chars)
+		val = string(l.src[start : l.offset-1])
 	case '{':
 		tok = LBRACE
 	case '}':
@@ -340,7 +331,12 @@ func (l *Lexer) scanRegex() (Position, Token, string) {
 func (l *Lexer) next() {
 	l.pos = l.nextPos
 	if l.offset >= len(l.src) {
-		l.ch = 0
+		// For last character, move offset 1 past the end as it
+		// simplifies offset calculations in NAME and NUMBER
+		if l.ch != 0 {
+			l.ch = 0
+			l.offset++
+		}
 		return
 	}
 	ch := l.src[l.offset]

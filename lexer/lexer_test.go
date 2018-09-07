@@ -23,6 +23,7 @@ func TestLexer(t *testing.T) {
 		{"+\\-", `1:1 + "", 1:3 <illegal> "expected \\n after \\ line continuation", 1:3 - ""`},
 
 		// Names and keywords
+		{"x", `1:1 name "x"`},
 		{"x y0", `1:1 name "x", 1:3 name "y0"`},
 		{"x 0y", `1:1 name "x", 1:3 number "0", 1:4 name "y"`},
 		{"sub SUB", `1:1 sub "", 1:5 name "SUB"`},
