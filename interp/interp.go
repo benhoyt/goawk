@@ -367,7 +367,7 @@ func (p *interp) execute(stmt Stmt) (execErr error) {
 	case *PrintStmt:
 		var line string
 		if len(s.Args) > 0 {
-			strs := make([]string, len(s.Args))
+			strs := make([]string, len(s.Args)) // TODO: escapes to heap
 			for i, a := range s.Args {
 				value, err := p.eval(a)
 				if err != nil {
@@ -400,7 +400,7 @@ func (p *interp) execute(stmt Stmt) (execErr error) {
 			return err
 		}
 		format := p.toString(formatValue)
-		args := make([]value, len(s.Args)-1)
+		args := make([]value, len(s.Args)-1) // TODO: escapes to heap
 		for i, a := range s.Args[1:] {
 			args[i], err = p.eval(a)
 			if err != nil {
@@ -859,71 +859,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 		}
 		return p.getArray(e.Name, index), nil
 	case *CallExpr:
-		switch e.Func {
-		case F_SPLIT:
-			strValue, err := p.eval(e.Args[0])
-			if err != nil {
-				return value{}, err
-			}
-			str := p.toString(strValue)
-			var fieldSep string
-			if len(e.Args) == 3 {
-				sepValue, err := p.eval(e.Args[2])
-				if err != nil {
-					return value{}, err
-				}
-				fieldSep = p.toString(sepValue)
-			} else {
-				fieldSep = p.fieldSep
-			}
-			array := e.Args[1].(*VarExpr).Name
-			n, err := p.split(str, array, fieldSep)
-			if err != nil {
-				return value{}, err
-			}
-			return num(float64(n)), nil
-		case F_SUB, F_GSUB:
-			regexValue, err := p.eval(e.Args[0])
-			if err != nil {
-				return value{}, err
-			}
-			regex := p.toString(regexValue)
-			replValue, err := p.eval(e.Args[1])
-			if err != nil {
-				return value{}, err
-			}
-			repl := p.toString(replValue)
-			var in string
-			if len(e.Args) == 3 {
-				inValue, err := p.eval(e.Args[2])
-				if err != nil {
-					return value{}, err
-				}
-				in = p.toString(inValue)
-			} else {
-				in = p.line
-			}
-			out, n, err := p.sub(regex, repl, in, e.Func == F_GSUB)
-			if err != nil {
-				return value{}, err
-			}
-			if len(e.Args) == 3 {
-				p.assign(e.Args[2], str(out))
-			} else {
-				p.setLine(out)
-			}
-			return num(float64(n)), nil
-		default:
-			args := make([]value, len(e.Args))
-			for i, a := range e.Args {
-				var err error
-				args[i], err = p.eval(a)
-				if err != nil {
-					return value{}, err
-				}
-			}
-			return p.call(e.Func, args)
-		}
+		return p.callBuiltin(e.Func, e.Args)
 	case *UnaryExpr:
 		v, err := p.eval(e.Value)
 		if err != nil {
@@ -938,7 +874,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 		_, ok := p.arrays[p.getArrayName(e.Array)][index]
 		return boolean(ok), nil
 	case *UserCallExpr:
-		return p.userCall(e.Name, e.Args)
+		return p.callUser(e.Name, e.Args)
 	case *GetlineExpr:
 		var line string
 		switch {
@@ -1369,7 +1305,76 @@ func (p *interp) evalUnary(op Token, v value) value {
 	}
 }
 
-func (p *interp) call(op Token, args []value) (value, error) {
+func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
+	// split() has an array arg (not evaluated) and [g]sub() have
+	// an lvalue arg, so handle them as special cases
+	switch op {
+	case F_SPLIT:
+		strValue, err := p.eval(argExprs[0])
+		if err != nil {
+			return value{}, err
+		}
+		str := p.toString(strValue)
+		var fieldSep string
+		if len(argExprs) == 3 {
+			sepValue, err := p.eval(argExprs[2])
+			if err != nil {
+				return value{}, err
+			}
+			fieldSep = p.toString(sepValue)
+		} else {
+			fieldSep = p.fieldSep
+		}
+		array := argExprs[1].(*VarExpr).Name
+		n, err := p.split(str, array, fieldSep)
+		if err != nil {
+			return value{}, err
+		}
+		return num(float64(n)), nil
+	case F_SUB, F_GSUB:
+		regexValue, err := p.eval(argExprs[0])
+		if err != nil {
+			return value{}, err
+		}
+		regex := p.toString(regexValue)
+		replValue, err := p.eval(argExprs[1])
+		if err != nil {
+			return value{}, err
+		}
+		repl := p.toString(replValue)
+		var in string
+		if len(argExprs) == 3 {
+			inValue, err := p.eval(argExprs[2])
+			if err != nil {
+				return value{}, err
+			}
+			in = p.toString(inValue)
+		} else {
+			in = p.line
+		}
+		out, n, err := p.sub(regex, repl, in, op == F_GSUB)
+		if err != nil {
+			return value{}, err
+		}
+		if len(argExprs) == 3 {
+			p.assign(argExprs[2], str(out))
+		} else {
+			p.setLine(out)
+		}
+		return num(float64(n)), nil
+	}
+
+	// Now evaluate the argExprs (calls with up to 7 args don't
+	// require heap allocation)
+	args := make([]value, 0, 7)
+	for _, a := range argExprs {
+		arg, err := p.eval(a)
+		if err != nil {
+			return value{}, err
+		}
+		args = append(args, arg)
+	}
+
 	switch op {
 	case F_LENGTH:
 		switch len(args) {
@@ -1506,7 +1511,7 @@ func (p *interp) call(op Token, args []value) (value, error) {
 	}
 }
 
-func (p *interp) userCall(name string, args []Expr) (value, error) {
+func (p *interp) callUser(name string, args []Expr) (value, error) {
 	// TODO: should resolve function name to int index at parse time for speed
 	f, ok := p.program.Functions[name]
 	if !ok {
@@ -1607,7 +1612,7 @@ func (p *interp) sub(regex, repl, in string, global bool) (out string, num int, 
 		}
 		count++
 		// Handle & (ampersand) properly in replacement string
-		r := make([]byte, 0, len(repl))
+		r := make([]byte, 0, len(repl)) // TODO: escapes to heap
 		for i := 0; i < len(repl); i++ {
 			switch repl[i] {
 			case '&':
@@ -1685,7 +1690,7 @@ func (p *interp) sprintf(format string, args []value) (string, error) {
 	if len(types) > len(args) {
 		return "", newError("format error: got %d args, expected %d", len(args), len(types))
 	}
-	converted := make([]interface{}, len(types))
+	converted := make([]interface{}, len(types)) // TODO: escapes to heap
 	for i, t := range types {
 		a := args[i]
 		var v interface{}
@@ -1699,7 +1704,7 @@ func (p *interp) sprintf(format string, args []value) (string, error) {
 		case 'u':
 			v = uint32(a.num())
 		case 'c':
-			c := make([]byte, 0, 4)
+			var c []byte
 			if a.isTrueStr() {
 				s := p.toString(a)
 				if len(s) > 0 {
