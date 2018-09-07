@@ -17,7 +17,7 @@ import (
 type Lexer struct {
 	src      []byte
 	offset   int
-	ch       rune
+	ch       byte
 	errorMsg string
 	pos      Position
 	nextPos  Position
@@ -78,11 +78,11 @@ func (l *Lexer) scan() (Position, Token, string) {
 	if l.ch == '#' {
 		// Skip comment till end of line
 		l.next()
-		for l.ch != '\n' && l.ch >= 0 {
+		for l.ch != '\n' && l.ch != 0 {
 			l.next()
 		}
 	}
-	if l.ch < 0 {
+	if l.ch == 0 {
 		if l.errorMsg != "" {
 			return l.pos, ILLEGAL, l.errorMsg
 		}
@@ -98,12 +98,12 @@ func (l *Lexer) scan() (Position, Token, string) {
 
 	// Names: keywords and functions
 	if isNameStart(ch) {
-		runes := []rune{ch}
+		chars := []byte{ch}
 		for isNameStart(l.ch) || (l.ch >= '0' && l.ch <= '9') {
-			runes = append(runes, l.ch)
+			chars = append(chars, l.ch)
 			l.next()
 		}
-		name := string(runes)
+		name := string(chars)
 		tok, isKeyword := keywordTokens[name]
 		if !isKeyword {
 			tok = NAME
@@ -212,49 +212,49 @@ func (l *Lexer) scan() (Position, Token, string) {
 	case '|':
 		tok = l.choice('|', PIPE, OR)
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.':
-		runes := []rune{ch}
+		chars := []byte{ch}
 		gotDigit := false
 		if ch != '.' {
 			gotDigit = true
 			for l.ch >= '0' && l.ch <= '9' {
-				runes = append(runes, l.ch)
+				chars = append(chars, l.ch)
 				l.next()
 			}
 			if l.ch == '.' {
-				runes = append(runes, l.ch)
+				chars = append(chars, l.ch)
 				l.next()
 			}
 		}
 		for l.ch >= '0' && l.ch <= '9' {
 			gotDigit = true
-			runes = append(runes, l.ch)
+			chars = append(chars, l.ch)
 			l.next()
 		}
 		if !gotDigit {
 			return l.pos, ILLEGAL, "expected digits"
 		}
 		if l.ch == 'e' || l.ch == 'E' {
-			runes = append(runes, l.ch)
+			chars = append(chars, l.ch)
 			l.next()
 			if l.ch == '+' || l.ch == '-' {
-				runes = append(runes, l.ch)
+				chars = append(chars, l.ch)
 				l.next()
 			}
 			for l.ch >= '0' && l.ch <= '9' {
-				runes = append(runes, l.ch)
+				chars = append(chars, l.ch)
 				l.next()
 			}
 		}
 		tok = NUMBER
-		val = string(runes)
+		val = string(chars)
 	case '"', '\'':
 		// Note: POSIX awk spec doesn't allow single-quoted strings,
 		// but this helps without quoting, especially on Windows
 		// where the shell quote character is " (double quote).
-		runes := []rune{}
+		chars := []byte{}
 		for l.ch != ch {
 			c := l.ch
-			if c < 0 {
+			if c == 0 {
 				return l.pos, ILLEGAL, "didn't find end quote in string"
 			}
 			if c == '\r' || c == '\n' {
@@ -273,12 +273,12 @@ func (l *Lexer) scan() (Position, Token, string) {
 					c = l.ch
 				}
 			}
-			runes = append(runes, c)
+			chars = append(chars, c)
 			l.next()
 		}
 		l.next()
 		tok = STRING
-		val = string(runes)
+		val = string(chars)
 	default:
 		tok = ILLEGAL
 		val = fmt.Sprintf("unexpected %q", ch)
@@ -298,7 +298,7 @@ func (l *Lexer) ScanRegex() (Position, Token, string) {
 
 func (l *Lexer) scanRegex() (Position, Token, string) {
 	pos := l.pos
-	runes := []rune{}
+	chars := []byte{}
 	switch l.lastTok {
 	case DIV:
 		// Regex after '/' (the usual case)
@@ -306,13 +306,13 @@ func (l *Lexer) scanRegex() (Position, Token, string) {
 	case DIV_ASSIGN:
 		// Regex after '/=' (possible when regex starts with '=')
 		pos.Column -= 2
-		runes = append(runes, '=')
+		chars = append(chars, '=')
 	default:
 		return l.pos, ILLEGAL, fmt.Sprintf("unexpected %s preceding regex", l.lastTok)
 	}
 	for l.ch != '/' {
 		c := l.ch
-		if c < 0 {
+		if c == 0 {
 			return l.pos, ILLEGAL, "didn't find end slash in regex"
 		}
 		if c == '\r' || c == '\n' {
@@ -321,21 +321,21 @@ func (l *Lexer) scanRegex() (Position, Token, string) {
 		if c == '\\' {
 			l.next()
 			if l.ch != '/' {
-				runes = append(runes, '\\')
+				chars = append(chars, '\\')
 			}
 			c = l.ch
 		}
-		runes = append(runes, c)
+		chars = append(chars, c)
 		l.next()
 	}
 	l.next()
-	return pos, REGEX, string(runes)
+	return pos, REGEX, string(chars)
 }
 
 func (l *Lexer) next() {
 	l.pos = l.nextPos
 	if l.offset >= len(l.src) {
-		l.ch = -1
+		l.ch = 0
 		return
 	}
 	ch := l.src[l.offset]
@@ -345,15 +345,15 @@ func (l *Lexer) next() {
 	} else {
 		l.nextPos.Column++
 	}
-	l.ch = rune(ch)
+	l.ch = ch
 	l.offset++
 }
 
-func isNameStart(ch rune) bool {
+func isNameStart(ch byte) bool {
 	return ch == '_' || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')
 }
 
-func (l *Lexer) choice(ch rune, one, two Token) Token {
+func (l *Lexer) choice(ch byte, one, two Token) Token {
 	if l.ch == ch {
 		l.next()
 		return two
