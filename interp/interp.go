@@ -1745,13 +1745,23 @@ func (p *interp) assign(left Expr, right value) error {
 }
 
 func (p *interp) evalIndex(indexExprs []Expr) (string, error) {
-	indices := make([]string, len(indexExprs))
-	for i, expr := range indexExprs {
+	// Optimize the common case of a 1-dimensional index
+	if len(indexExprs) == 1 {
+		v, err := p.eval(indexExprs[0])
+		if err != nil {
+			return "", err
+		}
+		return p.toString(v), nil
+	}
+
+	// Up to 3-dimensional indices won't require heap allocation
+	indices := make([]string, 0, 3)
+	for _, expr := range indexExprs {
 		v, err := p.eval(expr)
 		if err != nil {
 			return "", err
 		}
-		indices[i] = p.toString(v)
+		indices = append(indices, p.toString(v))
 	}
 	return strings.Join(indices, p.subscriptSep), nil
 }
