@@ -98,7 +98,8 @@ func (l *Lexer) scan() (Position, Token, string) {
 
 	// Names: keywords and functions
 	if isNameStart(ch) {
-		chars := []byte{ch}
+		chars := make([]byte, 1, 16) // most won't require heap allocation
+		chars[0] = ch
 		for isNameStart(l.ch) || (l.ch >= '0' && l.ch <= '9') {
 			chars = append(chars, l.ch)
 			l.next()
@@ -212,7 +213,8 @@ func (l *Lexer) scan() (Position, Token, string) {
 	case '|':
 		tok = l.choice('|', PIPE, OR)
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.':
-		chars := []byte{ch}
+		chars := make([]byte, 1, 16) // most won't require heap allocation
+		chars[0] = ch
 		gotDigit := false
 		if ch != '.' {
 			gotDigit = true
@@ -251,7 +253,7 @@ func (l *Lexer) scan() (Position, Token, string) {
 		// Note: POSIX awk spec doesn't allow single-quoted strings,
 		// but this helps without quoting, especially on Windows
 		// where the shell quote character is " (double quote).
-		chars := []byte{}
+		chars := make([]byte, 0, 32) // most won't require heap allocation
 		for l.ch != ch {
 			c := l.ch
 			if c == 0 {
@@ -298,7 +300,7 @@ func (l *Lexer) ScanRegex() (Position, Token, string) {
 
 func (l *Lexer) scanRegex() (Position, Token, string) {
 	pos := l.pos
-	chars := []byte{}
+	chars := make([]byte, 0, 32) // most won't require heap allocation
 	switch l.lastTok {
 	case DIV:
 		// Regex after '/' (the usual case)

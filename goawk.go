@@ -31,13 +31,15 @@ package main
 
 TODO:
 - performance testing: I/O, allocations, CPU
+  + optimize lexer
+    - order cases in switch by most common first
+    - wait, do we actually need handling of UTF-8 in source code? what about errors?
   + other TODOs in interp.go and parser.go
   + other uses of make() in interp.go
   + resolve array variables at parse time (by index instead of name)
   + resolve array parameters to functions at parse time and clean up userCall
   + benchmark against awk/gawk with some real awk scripts
   + ways to optimize sub()/gsub()
-  + optimize lexer
   + optimize parser
 - move ast (except Program) to "internal" package?
 - break up interp.go? structure it better and add comments
