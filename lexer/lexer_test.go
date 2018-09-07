@@ -174,6 +174,70 @@ func TestAllTokens(t *testing.T) {
 	}
 }
 
+func benchmarkLexer(b *testing.B, repeat int, source string) {
+	fullSource := []byte(strings.Repeat(source+"\n", repeat))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		l := NewLexer(fullSource)
+		for {
+			_, tok, _ := l.Scan()
+			if tok == EOF || tok == ILLEGAL {
+				break
+			}
+		}
+	}
+}
+
+func BenchmarkProgram(b *testing.B) {
+	benchmarkLexer(b, 5, `{ print $1, ($3+$4)*$5 }`)
+}
+
+func BenchmarkNames(b *testing.B) {
+	benchmarkLexer(b, 5, `x y i foobar abcdefghij0123456789 _`)
+}
+
+func BenchmarkKeywords(b *testing.B) {
+	benchmarkLexer(b, 5, `BEGIN END print sub if length`)
+}
+
+func BenchmarkSimpleTokens(b *testing.B) {
+	benchmarkLexer(b, 5, "\n : , { [ ( } ] ) ~ ? ; $")
+}
+
+func BenchmarkChoiceTokens(b *testing.B) {
+	benchmarkLexer(b, 5, `/ /=  % %= + ++ += * ** **= *= = == ^ ^= ! != !~ < <= > >= >> && | ||`)
+}
+
+func BenchmarkNumbers(b *testing.B) {
+	benchmarkLexer(b, 5, `0 1 .5 1234 1234567890 1234.56789e-50`)
+}
+
+func BenchmarkStrings(b *testing.B) {
+	benchmarkLexer(b, 5, `"x" "y" "xyz" "foo" "foo bar baz" "foo\tbar\rbaz\n"`)
+}
+
+func BenchmarkRegex(b *testing.B) {
+	source := `/x/ /./ /foo/ /bar/ /=equals=/ /\/\/\/\//`
+	fullSource := []byte(strings.Repeat(source+" ", 5))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		l := NewLexer(fullSource)
+		for {
+			_, tok, _ := l.Scan()
+			if tok == EOF {
+				break
+			}
+			if tok != DIV && tok != DIV_ASSIGN {
+				b.Fatalf("expected / or /=, got %s", tok)
+			}
+			_, tok, _ = l.ScanRegex()
+			if tok != REGEX {
+				b.Fatalf("expected regex, got %s", tok)
+			}
+		}
+	}
+}
+
 func Example() {
 	lexer := NewLexer([]byte(`$0 { print $1 }`))
 	for {

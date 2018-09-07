@@ -10,7 +10,6 @@ package lexer
 
 import (
 	"fmt"
-	"unicode/utf8"
 )
 
 // Lexer tokenizes a byte string of AWK source code. Use NewLexer to
@@ -335,24 +334,19 @@ func (l *Lexer) scanRegex() (Position, Token, string) {
 
 func (l *Lexer) next() {
 	l.pos = l.nextPos
-	ch, size := utf8.DecodeRune(l.src[l.offset:])
-	if size == 0 {
+	if l.offset >= len(l.src) {
 		l.ch = -1
 		return
 	}
-	if ch == utf8.RuneError {
-		l.ch = -1
-		l.errorMsg = fmt.Sprintf("invalid UTF-8 byte 0x%02x", l.src[l.offset])
-		return
-	}
+	ch := l.src[l.offset]
 	if ch == '\n' {
 		l.nextPos.Line++
 		l.nextPos.Column = 1
 	} else {
 		l.nextPos.Column++
 	}
-	l.ch = ch
-	l.offset += size
+	l.ch = rune(ch)
+	l.offset++
 }
 
 func isNameStart(ch rune) bool {
