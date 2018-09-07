@@ -113,105 +113,12 @@ func (l *Lexer) scan() (Position, Token, string) {
 		return pos, tok, val
 	}
 
+	// These are ordered by my guess at frequency of use. TODO: run
+	// through a corpus of real AWK programs to determine actual
+	// frequency.
 	switch ch {
-	case '\n':
-		tok = NEWLINE
-	case ':':
-		tok = COLON
-	case ',':
-		tok = COMMA
-	case '/':
-		tok = l.choice('=', DIV, DIV_ASSIGN)
-	case '{':
-		tok = LBRACE
-	case '[':
-		tok = LBRACKET
-	case '(':
-		tok = LPAREN
-	case '-':
-		switch l.ch {
-		case '-':
-			l.next()
-			tok = DECR
-		case '=':
-			l.next()
-			tok = SUB_ASSIGN
-		default:
-			tok = SUB
-		}
-	case '%':
-		tok = l.choice('=', MOD, MOD_ASSIGN)
-	case '+':
-		switch l.ch {
-		case '+':
-			l.next()
-			tok = INCR
-		case '=':
-			l.next()
-			tok = ADD_ASSIGN
-		default:
-			tok = ADD
-		}
-	case '}':
-		tok = RBRACE
-	case ']':
-		tok = RBRACKET
-	case ')':
-		tok = RPAREN
-	case '*':
-		switch l.ch {
-		case '*':
-			l.next()
-			tok = l.choice('=', POW, POW_ASSIGN)
-		case '=':
-			l.next()
-			tok = MUL_ASSIGN
-		default:
-			tok = MUL
-		}
-	case '=':
-		tok = l.choice('=', ASSIGN, EQUALS)
-	case '^':
-		tok = l.choice('=', POW, POW_ASSIGN)
-	case '!':
-		switch l.ch {
-		case '=':
-			l.next()
-			tok = NOT_EQUALS
-		case '~':
-			l.next()
-			tok = NOT_MATCH
-		default:
-			tok = NOT
-		}
-	case '<':
-		tok = l.choice('=', LESS, LTE)
-	case '>':
-		switch l.ch {
-		case '=':
-			l.next()
-			tok = GTE
-		case '>':
-			l.next()
-			tok = APPEND
-		default:
-			tok = GREATER
-		}
-	case '~':
-		tok = MATCH
-	case '?':
-		tok = QUESTION
-	case ';':
-		tok = SEMICOLON
 	case '$':
 		tok = DOLLAR
-	case '&':
-		tok = l.choice('&', ILLEGAL, AND)
-		if tok == ILLEGAL {
-			return l.pos, ILLEGAL, fmt.Sprintf("unexpected %q after '&'", l.ch)
-		}
-	case '|':
-		tok = l.choice('|', PIPE, OR)
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.':
 		chars := make([]byte, 1, 16) // most won't require heap allocation
 		chars[0] = ch
@@ -249,6 +156,25 @@ func (l *Lexer) scan() (Position, Token, string) {
 		}
 		tok = NUMBER
 		val = string(chars)
+	case '{':
+		tok = LBRACE
+	case '}':
+		tok = RBRACE
+	case '=':
+		tok = l.choice('=', ASSIGN, EQUALS)
+	case '<':
+		tok = l.choice('=', LESS, LTE)
+	case '>':
+		switch l.ch {
+		case '=':
+			l.next()
+			tok = GTE
+		case '>':
+			l.next()
+			tok = APPEND
+		default:
+			tok = GREATER
+		}
 	case '"', '\'':
 		// Note: POSIX awk spec doesn't allow single-quoted strings,
 		// but this helps without quoting, especially on Windows
@@ -265,12 +191,12 @@ func (l *Lexer) scan() (Position, Token, string) {
 			if c == '\\' {
 				l.next()
 				switch l.ch {
+				case 'n':
+					c = '\n'
 				case 't':
 					c = '\t'
 				case 'r':
 					c = '\r'
-				case 'n':
-					c = '\n'
 				default:
 					c = l.ch
 				}
@@ -281,6 +207,83 @@ func (l *Lexer) scan() (Position, Token, string) {
 		l.next()
 		tok = STRING
 		val = string(chars)
+	case '(':
+		tok = LPAREN
+	case ')':
+		tok = RPAREN
+	case ',':
+		tok = COMMA
+	case ';':
+		tok = SEMICOLON
+	case '+':
+		switch l.ch {
+		case '+':
+			l.next()
+			tok = INCR
+		case '=':
+			l.next()
+			tok = ADD_ASSIGN
+		default:
+			tok = ADD
+		}
+	case '-':
+		switch l.ch {
+		case '-':
+			l.next()
+			tok = DECR
+		case '=':
+			l.next()
+			tok = SUB_ASSIGN
+		default:
+			tok = SUB
+		}
+	case '*':
+		switch l.ch {
+		case '*':
+			l.next()
+			tok = l.choice('=', POW, POW_ASSIGN)
+		case '=':
+			l.next()
+			tok = MUL_ASSIGN
+		default:
+			tok = MUL
+		}
+	case '/':
+		tok = l.choice('=', DIV, DIV_ASSIGN)
+	case '%':
+		tok = l.choice('=', MOD, MOD_ASSIGN)
+	case '[':
+		tok = LBRACKET
+	case ']':
+		tok = RBRACKET
+	case '\n':
+		tok = NEWLINE
+	case '^':
+		tok = l.choice('=', POW, POW_ASSIGN)
+	case '!':
+		switch l.ch {
+		case '=':
+			l.next()
+			tok = NOT_EQUALS
+		case '~':
+			l.next()
+			tok = NOT_MATCH
+		default:
+			tok = NOT
+		}
+	case '~':
+		tok = MATCH
+	case '?':
+		tok = QUESTION
+	case ':':
+		tok = COLON
+	case '&':
+		tok = l.choice('&', ILLEGAL, AND)
+		if tok == ILLEGAL {
+			return l.pos, ILLEGAL, fmt.Sprintf("unexpected %q after '&'", l.ch)
+		}
+	case '|':
+		tok = l.choice('|', PIPE, OR)
 	default:
 		tok = ILLEGAL
 		val = fmt.Sprintf("unexpected %q", ch)
