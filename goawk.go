@@ -31,8 +31,6 @@ package main
 
 TODO:
 - performance testing: I/O, allocations, CPU
-  + optimize lexer
-    - wait, do we actually need handling of UTF-8 in source code? what about errors?
   + other TODOs in interp.go and parser.go
   + other uses of make() in interp.go
   + resolve array variables at parse time (by index instead of name)
@@ -178,6 +176,13 @@ func main() {
 	os.Exit(status)
 }
 
+// TODO: this doesn't show the right position in the presence of UTF-8 chars, eg:
+// $ go run goawk.go 'BEGIN { x="µ"; print x@ }'
+// ------------------------------------
+// BEGIN { x="µ"; print x@ }
+//                        ^
+// ------------------------------------
+// parse error at 1:24: unexpected char
 func showSourceLine(src []byte, pos lexer.Position, dividerLen int) {
 	divider := strings.Repeat("-", dividerLen)
 	if divider != "" {

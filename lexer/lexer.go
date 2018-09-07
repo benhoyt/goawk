@@ -271,13 +271,13 @@ func (l *Lexer) scan() (Position, Token, string) {
 	case '&':
 		tok = l.choice('&', ILLEGAL, AND)
 		if tok == ILLEGAL {
-			return l.pos, ILLEGAL, fmt.Sprintf("unexpected %q after '&'", l.ch)
+			return l.pos, ILLEGAL, "unexpected char after '&'"
 		}
 	case '|':
 		tok = l.choice('|', PIPE, OR)
 	default:
 		tok = ILLEGAL
-		val = fmt.Sprintf("unexpected %q", ch)
+		val = "unexpected char"
 	}
 	return pos, tok, val
 }
