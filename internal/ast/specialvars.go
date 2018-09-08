@@ -1,6 +1,6 @@
 // Special variable constants
 
-package parser
+package ast
 
 const (
 	V_ILLEGAL = iota

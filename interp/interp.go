@@ -25,6 +25,7 @@ import (
 	"syscall"
 	"time"
 
+	. "github.com/benhoyt/goawk/internal/ast"
 	. "github.com/benhoyt/goawk/lexer"
 	. "github.com/benhoyt/goawk/parser"
 )

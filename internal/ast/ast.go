@@ -1,47 +1,14 @@
 // GoAWK parser - abstract syntax tree structs
 
-package parser
+package ast
 
 import (
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
 
 	. "github.com/benhoyt/goawk/lexer"
 )
-
-// Program is the abstract syntax tree for an entire AWK program.
-type Program struct {
-	Begin     []Stmts
-	Actions   []Action
-	End       []Stmts
-	Functions map[string]Function
-	Globals   map[string]int
-}
-
-func (p *Program) String() string {
-	parts := []string{}
-	for _, ss := range p.Begin {
-		parts = append(parts, "BEGIN {\n"+ss.String()+"}")
-	}
-	for _, a := range p.Actions {
-		parts = append(parts, a.String())
-	}
-	for _, ss := range p.End {
-		parts = append(parts, "END {\n"+ss.String()+"}")
-	}
-	funcNames := make([]string, 0, len(p.Functions))
-	for name := range p.Functions {
-		funcNames = append(funcNames, name)
-	}
-	sort.Strings(funcNames)
-	for _, name := range funcNames {
-		function := p.Functions[name]
-		parts = append(parts, function.String())
-	}
-	return strings.Join(parts, "\n\n")
-}
 
 // Stmts is a block containing multiple statements.
 type Stmts []Stmt

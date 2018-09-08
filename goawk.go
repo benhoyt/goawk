@@ -39,7 +39,6 @@ TODO:
   + resolve array parameters to functions at parse time and clean up userCall
   + benchmark against awk/gawk with some real awk scripts
   + optimize parser
-- move ast (except Program) to "internal" package?
 - break up interp.go? structure it better and add comments
 - think about length() and substr() chars vs bytes:
   https://github.com/benhoyt/goawk/issues/2#issuecomment-415314000

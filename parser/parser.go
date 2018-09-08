@@ -7,19 +7,25 @@ package parser
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
+	. "github.com/benhoyt/goawk/internal/ast"
 	. "github.com/benhoyt/goawk/lexer"
 )
 
-// ParseError is the type of error returned by the parse functions
-// (actually *ParseError).
+// ParseError (actually *ParseError) is the type of error returned by
+// ParseProgram.
 type ParseError struct {
+	// Source line/column position where the error occurred.
 	Position Position
-	Message  string
+	// Error message.
+	Message string
 }
 
+// Error returns a formatted version of the error, including the line
+// and column numbers.
 func (e *ParseError) Error() string {
 	return fmt.Sprintf("parse error at %d:%d: %s", e.Position.Line, e.Position.Column, e.Message)
 }
@@ -42,6 +48,40 @@ func ParseProgram(src []byte) (prog *Program, err error) {
 	p.globals = make(map[string]int)
 	p.next() // initialize p.tok
 	return p.program(), nil
+}
+
+// Program is the abstract syntax tree for an entire AWK program.
+type Program struct {
+	Begin     []Stmts
+	Actions   []Action
+	End       []Stmts
+	Functions map[string]Function
+	Globals   map[string]int
+}
+
+// String returns an indented, pretty-printed version of the parsed
+// program.
+func (p *Program) String() string {
+	parts := []string{}
+	for _, ss := range p.Begin {
+		parts = append(parts, "BEGIN {\n"+ss.String()+"}")
+	}
+	for _, a := range p.Actions {
+		parts = append(parts, a.String())
+	}
+	for _, ss := range p.End {
+		parts = append(parts, "END {\n"+ss.String()+"}")
+	}
+	funcNames := make([]string, 0, len(p.Functions))
+	for name := range p.Functions {
+		funcNames = append(funcNames, name)
+	}
+	sort.Strings(funcNames)
+	for _, name := range funcNames {
+		function := p.Functions[name]
+		parts = append(parts, function.String())
+	}
+	return strings.Join(parts, "\n\n")
 }
 
 // Parser state
@@ -911,7 +951,7 @@ func (p *parser) getVarIndex(name string) int {
 	if index != 0 {
 		return index
 	}
-	index = specialVars[name]
+	index = SpecialVarIndex(name)
 	if index != 0 {
 		// Special variable like ARGC
 		return index
