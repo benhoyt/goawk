@@ -31,7 +31,6 @@ package main
 
 TODO:
 - performance testing: I/O, allocations, CPU
-  + move ExprStmt to top of switch?
   + try using a typ and index for getVarIndex instead of just int?
   + other TODOs in interp.go and parser.go
   + other uses of make() in interp.go

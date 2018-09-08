@@ -365,6 +365,9 @@ func (p *interp) executes(stmts Stmts) error {
 
 func (p *interp) execute(stmt Stmt) (execErr error) {
 	switch s := stmt.(type) {
+	case *ExprStmt:
+		_, err := p.eval(s.Expr)
+		return err
 	case *PrintStmt:
 		var line string
 		if len(s.Args) > 0 {
@@ -551,9 +554,6 @@ func (p *interp) execute(stmt Stmt) (execErr error) {
 		delete(p.arrays[p.getArrayName(s.Array)], index)
 	case *BlockStmt:
 		return p.executes(s.Body)
-	case *ExprStmt:
-		_, err := p.eval(s.Expr)
-		return err
 	default:
 		panic(fmt.Sprintf("unexpected stmt type: %T", stmt))
 	}
