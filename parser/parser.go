@@ -415,9 +415,8 @@ func (p *parser) function(functions map[string]Function) Function {
 
 // When inside a function, signal that this variable is being used as
 // an array.
-// TODO: hmm, what if the array is a global array, will this do the wrong thing?
 func (p *parser) arrayParam(name string) {
-	if p.inFunction {
+	if p.inFunction && p.locals[name] != 0 {
 		p.arrayParams[name] = true
 	}
 }
