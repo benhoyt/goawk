@@ -549,6 +549,8 @@ func (p *interp) execute(stmt Stmt) (execErr error) {
 			return err
 		}
 		delete(p.arrays[p.getArrayName(s.Array)], index)
+	case *BlockStmt:
+		return p.executes(s.Body)
 	case *ExprStmt:
 		_, err := p.eval(s.Expr)
 		return err

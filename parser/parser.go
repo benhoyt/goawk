@@ -340,6 +340,9 @@ func (p *parser) stmt() Stmt {
 			value = p.expr()
 		}
 		s = &ReturnStmt{value}
+	case LBRACE:
+		body := p.stmtsBrace()
+		s = &BlockStmt{body}
 	default:
 		s = p.simpleStmt()
 	}

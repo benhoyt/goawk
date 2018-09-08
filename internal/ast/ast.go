@@ -323,6 +323,7 @@ func (s *NextStmt) stmt()     {}
 func (s *ExitStmt) stmt()     {}
 func (s *DeleteStmt) stmt()   {}
 func (s *ReturnStmt) stmt()   {}
+func (s *BlockStmt) stmt()    {}
 
 // Print statement like print $1, $3.
 type PrintStmt struct {
@@ -497,6 +498,15 @@ func (s *ReturnStmt) String() string {
 		valueStr = " " + s.Value.String()
 	}
 	return "return" + valueStr
+}
+
+// Stand-alone block like { print "x" }.
+type BlockStmt struct {
+	Body Stmts
+}
+
+func (s *BlockStmt) String() string {
+	return "{\n" + s.Body.String() + "}"
 }
 
 // Function is the AST for a user-defined function.

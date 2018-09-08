@@ -139,6 +139,10 @@ $0 {
     close("file")
     atan2(x, y)
     index(haystack, needle)
+    {
+        print "block statement"
+        f()
+    }
 }
 
 (NR == 1), (NR == 2) {

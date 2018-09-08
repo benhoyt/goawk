@@ -398,7 +398,7 @@ BEGIN { early() }
 
 		// Grammar should allow blocks wherever statements are allowed
 		{`BEGIN { if (1) printf "x"; else printf "y" }`, "", "x", "", ""},
-		// {`BEGIN { printf "x"; { printf "y"; printf "z" } }`, "", "xyz", "", ""},
+		{`BEGIN { printf "x"; { printf "y"; printf "z" } }`, "", "xyz", "", ""},
 
 		// Ensure certain odd syntax matches awk behaviour
 		// {`BEGIN { printf "x" }; BEGIN { printf "y" }`, "", "xy", "", ""},
