@@ -64,6 +64,7 @@ import (
 	"runtime"
 	"runtime/pprof"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/benhoyt/goawk/interp"
 	"github.com/benhoyt/goawk/lexer"
@@ -175,13 +176,6 @@ func main() {
 	os.Exit(status)
 }
 
-// TODO: this doesn't show the right position in the presence of UTF-8 chars, eg:
-// $ go run goawk.go 'BEGIN { x="µ"; print x@ }'
-// ------------------------------------
-// BEGIN { x="µ"; print x@ }
-//                        ^
-// ------------------------------------
-// parse error at 1:24: unexpected char
 func showSourceLine(src []byte, pos lexer.Position, dividerLen int) {
 	divider := strings.Repeat("-", dividerLen)
 	if divider != "" {
@@ -190,8 +184,9 @@ func showSourceLine(src []byte, pos lexer.Position, dividerLen int) {
 	lines := bytes.Split(src, []byte{'\n'})
 	srcLine := string(lines[pos.Line-1])
 	numTabs := strings.Count(srcLine[:pos.Column-1], "\t")
+	runeColumn := utf8.RuneCountInString(srcLine[:pos.Column-1])
 	fmt.Fprintln(os.Stderr, strings.Replace(srcLine, "\t", "    ", -1))
-	fmt.Fprintln(os.Stderr, strings.Repeat(" ", pos.Column-1)+strings.Repeat("   ", numTabs)+"^")
+	fmt.Fprintln(os.Stderr, strings.Repeat(" ", runeColumn)+strings.Repeat("   ", numTabs)+"^")
 	if divider != "" {
 		fmt.Fprintln(os.Stderr, divider)
 	}
