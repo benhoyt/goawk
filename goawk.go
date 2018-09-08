@@ -30,6 +30,7 @@ package main
 /*
 
 TODO:
+- add tests of parser/AST String()
 - performance testing: I/O, allocations, CPU
   + try using a typ and index for getVarIndex instead of just int?
   + other TODOs in interp.go and parser.go

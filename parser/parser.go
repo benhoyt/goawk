@@ -57,9 +57,10 @@ type parser struct {
 	inFunction bool
 	loopCount  int
 
-	locals      map[string]int
-	arrayParams map[string]bool
-	globals     map[string]int
+	// Variable tracking
+	globals     map[string]int  // map of global var name to index
+	locals      map[string]int  // map of local var name to index
+	arrayParams map[string]bool // true if function param is an array
 }
 
 // Parse an entire AWK program.
@@ -103,6 +104,7 @@ func (p *parser) program() *Program {
 	return prog
 }
 
+// Parse a list of statements.
 func (p *parser) stmts() Stmts {
 	switch p.tok {
 	case SEMICOLON:
@@ -115,6 +117,7 @@ func (p *parser) stmts() Stmts {
 	}
 }
 
+// Parse a list of statements surrounded in {...} braces.
 func (p *parser) stmtsBrace() Stmts {
 	p.expect(LBRACE)
 	p.optionalNewlines()
@@ -126,6 +129,7 @@ func (p *parser) stmtsBrace() Stmts {
 	return ss
 }
 
+// Parse a "simple" statement (eg: allowed in a for loop init clause).
 func (p *parser) simpleStmt() Stmt {
 	switch p.tok {
 	case PRINT, PRINTF:
@@ -133,6 +137,7 @@ func (p *parser) simpleStmt() Stmt {
 		p.next()
 		args := p.exprList(p.printExpr)
 		if len(args) == 1 {
+			// This allows parens around all the print args
 			if m, ok := args[0].(*MultiExpr); ok {
 				args = m.Exprs
 			}
@@ -158,13 +163,14 @@ func (p *parser) simpleStmt() Stmt {
 		index := p.exprList(p.expr)
 		p.expect(RBRACKET)
 		return &DeleteStmt{array, index}
-	case IF, FOR, WHILE, DO, BREAK, CONTINUE, NEXT, EXIT:
+	case IF, FOR, WHILE, DO, BREAK, CONTINUE, NEXT, EXIT, RETURN:
 		panic(p.error("expected print/printf, delete, or expression"))
 	default:
 		return &ExprStmt{p.expr()}
 	}
 }
 
+// Parse any top-level statement.
 func (p *parser) stmt() Stmt {
 	for p.matches(SEMICOLON, NEWLINE) {
 		p.next()
@@ -303,6 +309,8 @@ func (p *parser) stmt() Stmt {
 	return s
 }
 
+// Same as stmts(), but tracks that we're in a loop (as break and
+// continue can only occur inside a loop).
 func (p *parser) loopStmts() Stmts {
 	p.loopCount++
 	ss := p.stmts()
@@ -310,6 +318,9 @@ func (p *parser) loopStmts() Stmts {
 	return ss
 }
 
+// Parse a function definition and body. As it goes, this resolves
+// the local variable indexes and tracks which parameters are array
+// parameters.
 func (p *parser) function(functions map[string]Function) Function {
 	if p.inFunction {
 		// Should never actually get here (FUNCTION token is only
@@ -343,6 +354,7 @@ func (p *parser) function(functions map[string]Function) Function {
 	p.expect(RPAREN)
 	p.optionalNewlines()
 
+	// Parse the body, resolving local vars and tracking arrays
 	body := p.stmtsBrace()
 
 	arrays := make([]bool, len(params))
@@ -357,12 +369,17 @@ func (p *parser) function(functions map[string]Function) Function {
 	return Function{name, params, arrays, body}
 }
 
+// When inside a function, signal that this variable is being used as
+// an array.
+// TODO: hmm, what if the array is a global array, will this do the wrong thing?
 func (p *parser) arrayParam(name string) {
 	if p.inFunction {
 		p.arrayParams[name] = true
 	}
 }
 
+// Parse expressions separated by commas: args to print(f) or user
+// function call, or multi-dimensional index.
 func (p *parser) exprList(parse func() Expr) []Expr {
 	exprs := []Expr{}
 	first := true
@@ -375,6 +392,13 @@ func (p *parser) exprList(parse func() Expr) []Expr {
 	}
 	return exprs
 }
+
+// Here's where things get slightly interesting: only certain
+// expression types are allowed in print/printf statements,
+// presumably so `print a, b > "file"` is a file redirect instead of
+// a greater-than comparsion. So we kind of have two ways to recurse
+// down here: expr(), which parses all expressions, and printExpr(),
+// which skips GETLINE and GREATER expressions.
 
 // Parse a single expression.
 func (p *parser) expr() Expr      { return p.getLine() }
@@ -594,6 +618,8 @@ func (p *parser) primary() Expr {
 		p.next()
 		return &StrExpr{s}
 	case DIV, DIV_ASSIGN:
+		// If we get to DIV or DIV_ASSIGN as a primary expression,
+		// it's actually a regex.
 		regex := p.nextRegex()
 		return &RegExpr{regex}
 	case DOLLAR:
@@ -607,12 +633,16 @@ func (p *parser) primary() Expr {
 		name := p.val
 		p.next()
 		if p.tok == LBRACKET {
+			// a[x] or a[x, y] array index expression
 			p.next()
 			index := p.exprList(p.expr)
 			p.expect(RBRACKET)
 			p.arrayParam(name)
 			return &IndexExpr{name, index}
 		} else if p.tok == LPAREN && !p.lexer.HadSpace() {
+			// Grammar requires no space between function name and
+			// left paren for user function calls, hence the funky
+			// lexer.HadSpace() method.
 			p.next()
 			args := p.exprList(p.expr)
 			p.expect(RPAREN)
@@ -639,6 +669,8 @@ func (p *parser) primary() Expr {
 				p.expect(NAME)
 				return &InExpr{exprs, array}
 			}
+			// MultiExpr is used as a "covering grammar" and handled
+			// by print/printf parsing.
 			return &MultiExpr{exprs}
 		}
 	case GETLINE:
@@ -656,6 +688,10 @@ func (p *parser) primary() Expr {
 			file = p.expr()
 		}
 		return &GetlineExpr{nil, index, name, file}
+	// Below is the parsing of all the builtin function calls. We
+	// could unify these but several of them have special handling
+	// (array/lvalue/regex params, optional arguments, etc), and
+	// doing it this way means we can check more at parse time.
 	case F_SUB, F_GSUB:
 		op := p.tok
 		p.next()
@@ -749,7 +785,7 @@ func (p *parser) primary() Expr {
 		p.expect(RPAREN)
 		return &CallExpr{F_SPRINTF, args}
 	case F_COS, F_SIN, F_EXP, F_LOG, F_SQRT, F_INT, F_TOLOWER, F_TOUPPER, F_SYSTEM, F_CLOSE:
-		// 1-argument functions
+		// Simple 1-argument functions
 		op := p.tok
 		p.next()
 		p.expect(LPAREN)
@@ -757,7 +793,7 @@ func (p *parser) primary() Expr {
 		p.expect(RPAREN)
 		return &CallExpr{op, []Expr{arg}}
 	case F_ATAN2, F_INDEX:
-		// 2-argument functions
+		// Simple 2-argument functions
 		op := p.tok
 		p.next()
 		p.expect(LPAREN)
@@ -829,7 +865,10 @@ func (p *parser) next() {
 	}
 }
 
+// Parse next regex and return it (must only be called after DIV or
+// DIV_ASSIGN token).
 func (p *parser) nextRegex() string {
+	// TODO: should we check that the regex is legal at parse time, here or in the lexer?
 	p.pos, p.tok, p.val = p.lexer.ScanRegex()
 	if p.tok == ILLEGAL {
 		panic(p.error("%s", p.val))
@@ -858,11 +897,16 @@ func (p *parser) matches(operators ...Token) bool {
 	return false
 }
 
+// Format given string and args with Sprintf and return *ParseError
+// with that message and the current position.
 func (p *parser) error(format string, args ...interface{}) error {
 	message := fmt.Sprintf(format, args...)
 	return &ParseError{p.pos, message}
 }
 
+// Return the index of the given variable. Locals are denoted as a
+// negative index, special variables like ARGC between 1 and V_LAST,
+// and globals as greater than V_LAST.
 func (p *parser) getVarIndex(name string) int {
 	index := p.locals[name]
 	if index != 0 {
