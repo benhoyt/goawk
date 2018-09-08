@@ -56,6 +56,8 @@ func TestLexer(t *testing.T) {
 		{"1e3foo", `1:1 number "1e3", 1:4 name "foo"`},
 		{"1e3+", `1:1 number "1e3", 1:4 + ""`},
 		{"1e3.4", `1:1 number "1e3", 1:4 number ".4"`},
+		{"1e-", `1:4 <illegal> "expected digits"`},
+		{"1e+", `1:4 <illegal> "expected digits"`},
 		{"42@", `1:1 number "42", 1:3 <illegal> "unexpected char"`},
 		{"0..", `1:1 number "0.", 1:4 <illegal> "expected digits"`},
 		{".", `1:2 <illegal> "expected digits"`},

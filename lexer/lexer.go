@@ -18,7 +18,6 @@ type Lexer struct {
 	src      []byte
 	offset   int
 	ch       byte
-	errorMsg string
 	pos      Position
 	nextPos  Position
 	hadSpace bool
@@ -27,7 +26,10 @@ type Lexer struct {
 
 // Position stores the source line and column where a token starts.
 type Position struct {
-	Line   int
+	// Line number of the token (starts at 1).
+	Line int
+	// Column on the line (starts at 1). Note that this is the byte
+	// offset into the line, not rune offset.
 	Column int
 }
 
@@ -60,7 +62,10 @@ func (l *Lexer) Scan() (Position, Token, string) {
 	return pos, tok, val
 }
 
+// Does the real work of scanning. Scan() wraps this to more easily
+// set lastTok.
 func (l *Lexer) scan() (Position, Token, string) {
+	// Skip whitespace (except newline, which is a token)
 	l.hadSpace = false
 	for l.ch == ' ' || l.ch == '\t' || l.ch == '\r' || l.ch == '\\' {
 		l.hadSpace = true
@@ -83,9 +88,7 @@ func (l *Lexer) scan() (Position, Token, string) {
 		}
 	}
 	if l.ch == 0 {
-		if l.errorMsg != "" {
-			return l.pos, ILLEGAL, l.errorMsg
-		}
+		// l.next() reached end of input
 		return l.pos, EOF, ""
 	}
 
@@ -118,6 +121,7 @@ func (l *Lexer) scan() (Position, Token, string) {
 	case '$':
 		tok = DOLLAR
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.':
+		// Avoid make/append and use l.offset directly for performance
 		start := l.offset - 2
 		gotDigit := false
 		if ch != '.' {
@@ -138,11 +142,19 @@ func (l *Lexer) scan() (Position, Token, string) {
 		}
 		if l.ch == 'e' || l.ch == 'E' {
 			l.next()
+			gotSign := false
 			if l.ch == '+' || l.ch == '-' {
+				gotSign = true
 				l.next()
 			}
+			gotDigit = false
 			for l.ch >= '0' && l.ch <= '9' {
 				l.next()
+				gotDigit = true
+			}
+			// Per awk/gawk, "1e" is allowed, but not "1e+"
+			if gotSign && !gotDigit {
+				return l.pos, ILLEGAL, "expected digits"
 			}
 		}
 		tok = NUMBER
@@ -292,6 +304,8 @@ func (l *Lexer) ScanRegex() (Position, Token, string) {
 	return pos, tok, val
 }
 
+// Does the real work of scanning a regex. ScanRegex() wraps this to
+// more easily set lastTok.
 func (l *Lexer) scanRegex() (Position, Token, string) {
 	pos := l.pos
 	chars := make([]byte, 0, 32) // most won't require heap allocation
@@ -300,7 +314,7 @@ func (l *Lexer) scanRegex() (Position, Token, string) {
 		// Regex after '/' (the usual case)
 		pos.Column -= 1
 	case DIV_ASSIGN:
-		// Regex after '/=' (possible when regex starts with '=')
+		// Regex after '/=' (happens when regex starts with '=')
 		pos.Column -= 2
 		chars = append(chars, '=')
 	default:
@@ -328,6 +342,8 @@ func (l *Lexer) scanRegex() (Position, Token, string) {
 	return pos, REGEX, string(chars)
 }
 
+// Load the next character into l.ch (or 0 on end of input) and update
+// line and column position.
 func (l *Lexer) next() {
 	l.pos = l.nextPos
 	if l.offset >= len(l.src) {
