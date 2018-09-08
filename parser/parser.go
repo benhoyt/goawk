@@ -7,6 +7,7 @@ package parser
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -910,12 +911,15 @@ func (p *parser) next() {
 // Parse next regex and return it (must only be called after DIV or
 // DIV_ASSIGN token).
 func (p *parser) nextRegex() string {
-	// TODO: should we check that the regex is legal at parse time, here or in the lexer?
 	p.pos, p.tok, p.val = p.lexer.ScanRegex()
 	if p.tok == ILLEGAL {
 		panic(p.error("%s", p.val))
 	}
 	regex := p.val
+	_, err := regexp.Compile(regex)
+	if err != nil {
+		panic(p.error("%v", err))
+	}
 	p.next()
 	return regex
 }
