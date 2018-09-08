@@ -7,7 +7,6 @@ import (
 	"math"
 	"strconv"
 	"strings"
-	"text/scanner"
 )
 
 const (
@@ -83,39 +82,72 @@ func (v value) num() float64 {
 	return f
 }
 
-func (v value) numChecked() (float64, error) {
+func (v value) numChecked() (float64, bool) {
 	switch v.typ {
 	case typeNum:
-		return v.n, nil
+		return v.n, true
 	case typeStr:
 		if v.isNumStr {
 			// If it's a numeric string, we already have the float
 			// value from the numStr() call
-			return v.n, nil
+			return v.n, true
 		}
-		// TODO: scanner is relatively slow and allocates a bunch, do this by hand
-		// Note that converting to number directly (in constrast to
-		// "numeric strings") allows things like "1.5foo"
-		var scan scanner.Scanner
-		scan.Init(strings.NewReader(v.s))
-		scan.Error = func(*scanner.Scanner, string) {}
-		tok := scan.Scan()
-		negative := tok == '-'
-		if tok == '-' || tok == '+' {
-			tok = scan.Scan()
-		}
-		if scan.ErrorCount != 0 || (tok != scanner.Float && tok != scanner.Int) {
-			return 0, fmt.Errorf("invalid number %q", v.s)
-		}
-		// Scanner allows trailing 'e', ParseFloat doesn't
-		text := scan.TokenText()
-		text = strings.TrimRight(text, "eE")
-		f, _ := strconv.ParseFloat(text, 64)
-		if negative {
-			f = -f
-		}
-		return f, nil
+		// Otherwise ensure string starts with a float and convert it
+		return parseFloatPrefix(v.s)
 	default:
-		return 0, nil
+		return 0, true
 	}
+}
+
+// Like strconv.ParseFloat, but parses at the start of string and
+// allows things like "1.5foo"
+func parseFloatPrefix(s string) (float64, bool) {
+	// Skip whitespace at start
+	i := 0
+	for i < len(s) && (s[i] == ' ' || s[i] == '\t' || s[i] == '\n' || s[i] == '\r') {
+		i++
+	}
+	start := i
+
+	// Parse mantissa: optional sign, initial digit(s), optional '.',
+	// then more digits
+	gotDigit := false
+	if i < len(s) && (s[i] == '+' || s[i] == '-') {
+		i++
+	}
+	for i < len(s) && s[i] >= '0' && s[i] <= '9' {
+		gotDigit = true
+		i++
+	}
+	if i < len(s) && s[i] == '.' {
+		i++
+	}
+	for i < len(s) && s[i] >= '0' && s[i] <= '9' {
+		gotDigit = true
+		i++
+	}
+	if !gotDigit {
+		return 0, false
+	}
+
+	// Parse exponent ("1e" and similar are allowed, but ParseFloat
+	// rejects them)
+	end := i
+	if i < len(s) && (s[i] == 'e' || s[i] == 'E') {
+		i++
+		if i < len(s) && (s[i] == '+' || s[i] == '-') {
+			i++
+		}
+		for i < len(s) && s[i] >= '0' && s[i] <= '9' {
+			i++
+			end = i
+		}
+	}
+
+	floatStr := s[start:end]
+	f, err := strconv.ParseFloat(floatStr, 64)
+	if err != nil {
+		panic(fmt.Sprintf("unexpected error parsing %q: %v", floatStr, err))
+	}
+	return f, true
 }

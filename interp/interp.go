@@ -746,8 +746,8 @@ func (p *interp) eval(expr Expr) (value, error) {
 		if err != nil {
 			return value{}, err
 		}
-		indexNum, err := index.numChecked()
-		if err != nil {
+		indexNum, ok := index.numChecked()
+		if !ok {
 			return value{}, newError("field index not a number: %q", p.toString(index))
 		}
 		return p.getField(int(indexNum))
@@ -1739,8 +1739,8 @@ func (p *interp) assign(left Expr, right value) error {
 		if err != nil {
 			return err
 		}
-		indexNum, err := index.numChecked()
-		if err != nil {
+		indexNum, ok := index.numChecked()
+		if !ok {
 			return newError("field index not a number: %q", p.toString(index))
 		}
 		return p.setField(int(indexNum), p.toString(right))
