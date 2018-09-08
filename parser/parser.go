@@ -34,7 +34,6 @@ func ParseProgram(src []byte) (prog *Program, err error) {
 		}
 	}()
 	lexer := NewLexer(src)
-	// TODO: put this in a newParser() function?
 	p := parser{lexer: lexer}
 	p.globals = make(map[string]int)
 	p.next()
@@ -326,7 +325,7 @@ func (p *parser) function(functions map[string]Function) Function {
 	p.expect(NAME)
 	p.expect(LPAREN)
 	first := true
-	params := make([]string, 0, 10) // TODO: arbitrary, re-use allocation?
+	params := make([]string, 0, 7) // pre-allocate some to reduce allocations
 	for p.tok != RPAREN {
 		if !first {
 			p.commaNewlines()
@@ -684,7 +683,7 @@ func (p *parser) primary() Expr {
 		p.arrayParam(array)
 		p.expect(NAME)
 		// This is kind of an abuse of VarExpr just to represent an
-		// array name - TODO: change to use CallSplitExpr instead?
+		// array name, but no big deal
 		args := []Expr{str, &VarExpr{0, array}}
 		if p.tok == COMMA {
 			p.commaNewlines()
