@@ -1607,12 +1607,13 @@ func (p *interp) sub(regex, repl, in string, global bool) (out string, num int, 
 	}
 	count := 0
 	out = re.ReplaceAllStringFunc(in, func(s string) string {
+		// Only do the first replacement for sub(), or all for gsub()
 		if !global && count > 0 {
 			return s
 		}
 		count++
 		// Handle & (ampersand) properly in replacement string
-		r := make([]byte, 0, len(repl)) // TODO: escapes to heap
+		r := make([]byte, 0, 64) // Up to 64 byte replacement won't require heap allocation
 		for i := 0; i < len(repl); i++ {
 			switch repl[i] {
 			case '&':

@@ -36,7 +36,6 @@ TODO:
   + resolve array variables at parse time (by index instead of name)
   + resolve array parameters to functions at parse time and clean up userCall
   + benchmark against awk/gawk with some real awk scripts
-  + ways to optimize sub()/gsub()
   + optimize parser
 - move ast (except Program) to "internal" package?
 - break up interp.go? structure it better and add comments
