@@ -31,6 +31,7 @@ package main
 
 TODO:
 - performance testing: I/O, allocations, CPU
+  + value.go: scanner is relatively slow and produces garbage for our purposes
   + other TODOs in interp.go and parser.go
   + other uses of make() in interp.go
   + resolve array variables at parse time (by index instead of name)

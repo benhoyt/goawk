@@ -88,6 +88,12 @@ func (v value) numChecked() (float64, error) {
 	case typeNum:
 		return v.n, nil
 	case typeStr:
+		if v.isNumStr {
+			// If it's a numeric string, we already have the float
+			// value from the numStr() call
+			return v.n, nil
+		}
+		// TODO: scanner is relatively slow and allocates a bunch, do this by hand
 		// Note that converting to number directly (in constrast to
 		// "numeric strings") allows things like "1.5foo"
 		var scan scanner.Scanner
