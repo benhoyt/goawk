@@ -4,12 +4,178 @@ package parser_test
 
 import (
 	"fmt"
+	"strings"
+	"testing"
 
 	"github.com/benhoyt/goawk/parser"
 )
 
-// NOTE: parser doesn't have its own tests, as the idea is to test
-// the parser in the interp tests.
+// NOTE: apart from TestParseAndString, the parser doesn't have
+// extensive tests of its own; the idea is to test the parser in the
+// interp tests.
+
+func TestParseAndString(t *testing.T) {
+	// This program should have one of every AST element to ensure
+	// we can parse and String()ify each.
+	source := strings.TrimSpace(`
+BEGIN {
+    print "begin one"
+}
+
+BEGIN {
+    print "begin two"
+}
+
+{
+    print "empty pattern"
+}
+
+$0 {
+    print "normal pattern"
+    print 1, 2, 3
+    printf "%.3f", 3.14159
+    print "x" >"file"
+    print "x" >>"append"
+    print "y" |"prog"
+    delete a[k]
+    if (c) {
+        get(a, k)
+    }
+    if (1 + 2) {
+        get(a, k)
+    } else {
+        set(a, k, v)
+    }
+    for (i = 0; i < 10; i++) {
+        print i
+        continue
+    }
+    for (k in a) {
+        break
+    }
+    while (0) {
+        print "x"
+    }
+    do {
+        print "y"
+        exit status
+    } while (x)
+    next
+    "cmd" |getline
+    "cmd" |getline x
+    getline
+    getline x
+    getline <"file"
+    getline x <"file"
+    x = 0
+    y = z = 0
+    a += 1
+    b -= 2
+    c *= 3
+    d /= 4
+    e ^= 5
+    f %= 6
+    (x ? "t" : "f")
+    ((a && b) || c)
+    (k in a)
+    ((x, y, z) in a)
+    (s ~ "foo")
+    (a < 1)
+    (b <= 2)
+    (c > 3)
+    (d >= 4)
+    (e == 5)
+    (f != 6)
+    ((x y) z)
+    ((a + b) + c)
+    ((a * b) * c)
+    ((a - b) - c)
+    ((a / b) / c)
+    (a ^ (b ^ c))
+    x++
+    x--
+    ++y
+    --y
+    1234
+    1.5
+    "This is a string"
+    if (/a.b/) {
+        print "match"
+    }
+    $1
+    $(1 + 2)
+    !x
+    +x
+    -x
+    var
+    array[key]
+    array[x, y, z]
+    f()
+    set(a, k, v)
+    sub(regex, repl)
+    sub(regex, repl, s)
+    gsub(regex, repl)
+    gsub(regex, repl, s)
+    split(s, a)
+    split(s, a, regex)
+    match(s, regex)
+    rand()
+    srand()
+    srand(1)
+    length()
+    length($1)
+    sprintf("")
+    sprintf("%.3f", 3.14159)
+    sprintf("%.3f %d", 3.14159, 42)
+    cos(1)
+    sin(1)
+    exp(1)
+    log(1)
+    sqrt(1)
+    int("42")
+    tolower("FOO")
+    toupper("foo")
+    system("ls")
+    close("file")
+    atan2(x, y)
+    index(haystack, needle)
+}
+
+(NR == 1), (NR == 2) {
+    print "range pattern"
+}
+
+($1 == "foo")
+
+END {
+    print "end one"
+}
+
+END {
+    print "end two"
+}
+
+function f() {
+}
+
+function get(a, k) {
+    return a[k]
+}
+
+function set(a, k, v) {
+    a[k] = v
+    return
+}
+`)
+	prog, err := parser.ParseProgram([]byte(source))
+	if err != nil {
+		t.Fatalf("error parsing program: %v", err)
+	}
+	progStr := prog.String()
+	if progStr != source {
+		t.Fatalf("expected first, got second:\n%s\n----------\n%s", source, progStr)
+	}
+}
 
 func Example_valid() {
 	prog, err := parser.ParseProgram([]byte("$0 { print $1 }"))

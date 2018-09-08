@@ -36,7 +36,7 @@ func (a *Action) String() string {
 		patterns[i] = p.String()
 	}
 	sep := ""
-	if len(patterns) > 0 {
+	if len(patterns) > 0 && a.Stmts != nil {
 		sep = " "
 	}
 	stmtsStr := ""
