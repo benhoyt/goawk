@@ -43,6 +43,7 @@ func (p *Program) String() string {
 	return strings.Join(parts, "\n\n")
 }
 
+// Stmts is a block containing multiple statements.
 type Stmts []Stmt
 
 func (ss Stmts) String() string {
@@ -56,6 +57,7 @@ func (ss Stmts) String() string {
 	return strings.Join(lines, "")
 }
 
+// Action is pattern-action section of a program.
 type Action struct {
 	Pattern []Expr
 	Stmts   Stmts
@@ -83,6 +85,7 @@ type Expr interface {
 	String() string
 }
 
+// All these types implement the Expr interface.
 func (e *FieldExpr) expr()     {}
 func (e *UnaryExpr) expr()     {}
 func (e *BinaryExpr) expr()    {}
@@ -101,6 +104,7 @@ func (e *UserCallExpr) expr()  {}
 func (e *MultiExpr) expr()     {}
 func (e *GetlineExpr) expr()   {}
 
+// Field expression like $0.
 type FieldExpr struct {
 	Index Expr
 }
@@ -109,6 +113,7 @@ func (e *FieldExpr) String() string {
 	return "$" + e.Index.String()
 }
 
+// Unary expression like -1234.
 type UnaryExpr struct {
 	Op    Token
 	Value Expr
@@ -118,6 +123,7 @@ func (e *UnaryExpr) String() string {
 	return e.Op.String() + e.Value.String()
 }
 
+// Binary expression like 1 + 2.
 type BinaryExpr struct {
 	Left  Expr
 	Op    Token
@@ -134,6 +140,7 @@ func (e *BinaryExpr) String() string {
 	return "(" + e.Left.String() + opStr + e.Right.String() + ")"
 }
 
+// In expression like (index in array).
 type InExpr struct {
 	Index []Expr
 	Array string
@@ -150,6 +157,7 @@ func (e *InExpr) String() string {
 	return "((" + strings.Join(indices, ", ") + ") in " + e.Array + ")"
 }
 
+// Conditional expression like cond ? 1 : 0.
 type CondExpr struct {
 	Cond  Expr
 	True  Expr
@@ -160,6 +168,7 @@ func (e *CondExpr) String() string {
 	return "(" + e.Cond.String() + " ? " + e.True.String() + " : " + e.False.String() + ")"
 }
 
+// Literal number like 1234.
 type NumExpr struct {
 	Value float64
 }
@@ -168,6 +177,7 @@ func (e *NumExpr) String() string {
 	return fmt.Sprintf("%.6g", e.Value)
 }
 
+// Literal string like "foo".
 type StrExpr struct {
 	Value string
 }
@@ -176,6 +186,7 @@ func (e *StrExpr) String() string {
 	return strconv.Quote(e.Value)
 }
 
+// Stand-alone regex expression, equivalent to: $0 ~ /regex/.
 type RegExpr struct {
 	Regex string
 }
@@ -185,6 +196,9 @@ func (e *RegExpr) String() string {
 	return "/" + escaped + "/"
 }
 
+// Variable reference (global or local). Index is the resolved
+// variable index used by the interpreter; Name is the original name
+// used by String().
 type VarExpr struct {
 	Index int
 	Name  string
@@ -194,6 +208,7 @@ func (e *VarExpr) String() string {
 	return e.Name
 }
 
+// Index expression like a[k] (rvalue or lvalue).
 type IndexExpr struct {
 	Name  string
 	Index []Expr
@@ -207,6 +222,7 @@ func (e *IndexExpr) String() string {
 	return e.Name + "[" + strings.Join(indices, ", ") + "]"
 }
 
+// Assignment expression like x = 1234.
 type AssignExpr struct {
 	Left  Expr // can be one of: var, array[x], $n
 	Right Expr
@@ -216,6 +232,7 @@ func (e *AssignExpr) String() string {
 	return e.Left.String() + " = " + e.Right.String()
 }
 
+// Augmented assignment expression like x += 5.
 type AugAssignExpr struct {
 	Left  Expr // can be one of: var, array[x], $n
 	Op    Token
@@ -226,6 +243,7 @@ func (e *AugAssignExpr) String() string {
 	return e.Left.String() + " " + e.Op.String() + "= " + e.Right.String()
 }
 
+// Increment or decrement expression like x++ or --y.
 type IncrExpr struct {
 	Left Expr
 	Op   Token
@@ -240,6 +258,7 @@ func (e *IncrExpr) String() string {
 	}
 }
 
+// Builtin function call like length($1).
 type CallExpr struct {
 	Func Token
 	Args []Expr
@@ -253,6 +272,7 @@ func (e *CallExpr) String() string {
 	return e.Func.String() + "(" + strings.Join(args, ", ") + ")"
 }
 
+// User-defined function call like my_func(1, 2, 3).
 type UserCallExpr struct {
 	Name string
 	Args []Expr
@@ -266,6 +286,8 @@ func (e *UserCallExpr) String() string {
 	return e.Name + "(" + strings.Join(args, ", ") + ")"
 }
 
+// MultiExpr isn't an interpretable expression, but it's used as a
+// pseudo-expression for print[f] parsing.
 type MultiExpr struct {
 	Exprs []Expr
 }
@@ -278,6 +300,7 @@ func (e *MultiExpr) String() string {
 	return "(" + strings.Join(exprs, ", ") + ")"
 }
 
+// Getline expression (read from file or pipe input).
 type GetlineExpr struct {
 	Command  Expr
 	VarIndex int
@@ -312,11 +335,13 @@ func IsLValue(expr Expr) bool {
 	}
 }
 
+// Stmt is the abstract syntax tree for any AWK statement.
 type Stmt interface {
 	stmt()
 	String() string
 }
 
+// All these types implement the Stmt interface.
 func (s *PrintStmt) stmt()    {}
 func (s *PrintfStmt) stmt()   {}
 func (s *ExprStmt) stmt()     {}
@@ -332,6 +357,7 @@ func (s *ExitStmt) stmt()     {}
 func (s *DeleteStmt) stmt()   {}
 func (s *ReturnStmt) stmt()   {}
 
+// Print statement like print $1, $3.
 type PrintStmt struct {
 	Args     []Expr
 	Redirect Token
@@ -354,6 +380,7 @@ func printString(f string, args []Expr, redirect Token, dest Expr) string {
 	return str
 }
 
+// Printf statement like printf "%3d", 1234.
 type PrintfStmt struct {
 	Args     []Expr
 	Redirect Token
@@ -364,6 +391,7 @@ func (s *PrintfStmt) String() string {
 	return printString("printf", s.Args, s.Redirect, s.Dest)
 }
 
+// Expression statement like a bare function call: my_func(x).
 type ExprStmt struct {
 	Expr Expr
 }
@@ -372,6 +400,7 @@ func (s *ExprStmt) String() string {
 	return s.Expr.String()
 }
 
+// If or if-else statement.
 type IfStmt struct {
 	Cond Expr
 	Body Stmts
@@ -386,6 +415,7 @@ func (s *IfStmt) String() string {
 	return str
 }
 
+// C-like for loop: for (i=0; i<10; i++) print i.
 type ForStmt struct {
 	Pre  Stmt
 	Cond Expr
@@ -409,6 +439,7 @@ func (s *ForStmt) String() string {
 	return "for (" + preStr + ";" + condStr + ";" + postStr + ") {\n" + s.Body.String() + "}"
 }
 
+// For-in loop: for (k in a) print k, a[k].
 type ForInStmt struct {
 	VarIndex int
 	VarName  string
@@ -420,6 +451,7 @@ func (s *ForInStmt) String() string {
 	return "for (" + s.VarName + " in " + s.Array + ") {\n" + s.Body.String() + "}"
 }
 
+// While loop.
 type WhileStmt struct {
 	Cond Expr
 	Body Stmts
@@ -429,6 +461,7 @@ func (s *WhileStmt) String() string {
 	return "while (" + trimParens(s.Cond.String()) + ") {\n" + s.Body.String() + "}"
 }
 
+// Do-while loop.
 type DoWhileStmt struct {
 	Body Stmts
 	Cond Expr
@@ -438,24 +471,28 @@ func (s *DoWhileStmt) String() string {
 	return "do {\n" + s.Body.String() + "} while (" + trimParens(s.Cond.String()) + ")"
 }
 
+// Break statement.
 type BreakStmt struct{}
 
 func (s *BreakStmt) String() string {
 	return "break"
 }
 
+// Continue statement.
 type ContinueStmt struct{}
 
 func (s *ContinueStmt) String() string {
 	return "continue"
 }
 
+// Next statement.
 type NextStmt struct{}
 
 func (s *NextStmt) String() string {
 	return "next"
 }
 
+// Exit statement.
 type ExitStmt struct {
 	Status Expr
 }
@@ -468,6 +505,7 @@ func (s *ExitStmt) String() string {
 	return "exit" + statusStr
 }
 
+// Delete statement like delete a[k].
 type DeleteStmt struct {
 	Array string
 	Index []Expr
@@ -481,6 +519,7 @@ func (s *DeleteStmt) String() string {
 	return "delete " + s.Array + "[" + strings.Join(indices, ", ") + "]"
 }
 
+// Return statement.
 type ReturnStmt struct {
 	Value Expr
 }
@@ -493,6 +532,7 @@ func (s *ReturnStmt) String() string {
 	return "return" + valueStr
 }
 
+// Function is the AST for a user-defined function.
 type Function struct {
 	Name   string
 	Params []string

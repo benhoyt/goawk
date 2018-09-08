@@ -378,7 +378,7 @@ func (p *parser) arrayParam(name string) {
 	}
 }
 
-// Parse expressions separated by commas: args to print(f) or user
+// Parse expressions separated by commas: args to print[f] or user
 // function call, or multi-dimensional index.
 func (p *parser) exprList(parse func() Expr) []Expr {
 	exprs := []Expr{}
@@ -669,8 +669,7 @@ func (p *parser) primary() Expr {
 				p.expect(NAME)
 				return &InExpr{exprs, array}
 			}
-			// MultiExpr is used as a "covering grammar" and handled
-			// by print/printf parsing.
+			// MultiExpr is used as a pseudo-expression for print[f] parsing.
 			return &MultiExpr{exprs}
 		}
 	case GETLINE:
