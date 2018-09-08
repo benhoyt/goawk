@@ -108,6 +108,11 @@ BEGIN {
 }
 `, "", "0 0\n", "", ""},
 
+		// next statement
+		{`{ if (NR==2) next; print }`, "a\nb\nc", "a\nc\n", "", ""},
+		{`BEGIN { next }`, "", "", "parse error at 1:9: next can't be in BEGIN or END", "BEGIN"},
+		{`END { next }`, "", "", "parse error at 1:7: next can't be in BEGIN or END", "END"},
+
 		// Arrays, "in", and delete
 		{`BEGIN { a["x"] = 3; print "x" in a, "y" in a }`, "", "1 0\n", "", ""},
 		{`BEGIN { a["x"] = 3; a["y"] = 4; delete a["x"]; for (k in a) print k, a[k] }`, "", "y 4\n", "", ""},

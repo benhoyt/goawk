@@ -28,6 +28,10 @@ func (e *ParseError) Error() string {
 // abstract syntax tree or a *ParseError on error.
 func ParseProgram(src []byte) (prog *Program, err error) {
 	defer func() {
+		// The parser uses panic with a *ParseError to signal parsing
+		// errors internally, and they're caught here. This
+		// significantly simplifies the recursive descent calls as
+		// we don't have to check errors everywhere.
 		if r := recover(); r != nil {
 			// Convert to ParseError or re-panic
 			err = r.(*ParseError)
@@ -36,30 +40,27 @@ func ParseProgram(src []byte) (prog *Program, err error) {
 	lexer := NewLexer(src)
 	p := parser{lexer: lexer}
 	p.globals = make(map[string]int)
-	p.next()
+	p.next() // initialize p.tok
 	return p.program(), nil
 }
 
+// Parser state
 type parser struct {
-	lexer       *Lexer
-	pos         Position
-	tok         Token
-	val         string
-	progState   progState
-	loopCount   int
-	inFunction  bool
+	// Lexer instance and current token values
+	lexer *Lexer
+	pos   Position
+	tok   Token
+	val   string
+
+	// Parsing state / context
+	inAction   bool
+	inFunction bool
+	loopCount  int
+
 	locals      map[string]int
 	arrayParams map[string]bool
 	globals     map[string]int
 }
-
-type progState int
-
-const (
-	beginState progState = iota
-	endState
-	actionState
-)
 
 // Parse an entire AWK program.
 func (p *parser) program() *Program {
@@ -70,17 +71,15 @@ func (p *parser) program() *Program {
 		switch p.tok {
 		case BEGIN:
 			p.next()
-			p.progState = beginState
 			prog.Begin = append(prog.Begin, p.stmtsBrace())
 		case END:
 			p.next()
-			p.progState = endState
 			prog.End = append(prog.End, p.stmtsBrace())
 		case FUNCTION:
 			function := p.function(prog.Functions)
 			prog.Functions[function.Name] = function
 		default:
-			p.progState = actionState
+			p.inAction = true
 			// Allow empty pattern, normal pattern, or range pattern
 			pattern := []Expr{}
 			if !p.matches(LBRACE, EOF) {
@@ -96,6 +95,7 @@ func (p *parser) program() *Program {
 				action.Stmts = p.stmtsBrace()
 			}
 			prog.Actions = append(prog.Actions, action)
+			p.inAction = false
 		}
 		p.optionalNewlines()
 	}
@@ -272,7 +272,7 @@ func (p *parser) stmt() Stmt {
 		p.next()
 		s = &ContinueStmt{}
 	case NEXT:
-		if p.progState != actionState {
+		if !p.inAction {
 			panic(p.error("next can't be in BEGIN or END"))
 		}
 		p.next()
