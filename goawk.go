@@ -42,6 +42,8 @@ TODO:
 - think about length() and substr() chars vs bytes:
   https://github.com/benhoyt/goawk/issues/2#issuecomment-415314000
 - get goawk_test.go working in TravisCI
+- consider adding non-POSIX behaviour: length(array)
+- error if array is used as scalar and vice-versa
 - try out Go 2 error handling proposal with the GoAWK codebase:
   https://go.googlesource.com/proposal/+/master/design/go2draft-error-handling.md
 
