@@ -113,6 +113,9 @@ const (
 	maxCachedRegexes = 100
 	maxRecordLength  = 10 * 1024 * 1024 // 10MB seems like plenty
 	initialStackSize = 100
+	outputBufSize    = 64 * 1024
+	stderrBufSize    = 4 * 1024
+	inputBufSize     = 64 * 1024
 )
 
 // Config defines the interpreter configuration for ExecProgram.
@@ -192,12 +195,12 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	}
 	p.output = config.Output
 	if p.output == nil {
-		p.output = bufio.NewWriterSize(os.Stdout, 64*1024)
+		p.output = bufio.NewWriterSize(os.Stdout, outputBufSize)
 		p.flushOutput = true
 	}
 	p.errorOutput = config.Error
 	if p.errorOutput == nil {
-		p.errorOutput = bufio.NewWriterSize(os.Stderr, 4*1024)
+		p.errorOutput = bufio.NewWriterSize(os.Stderr, stderrBufSize)
 		p.flushError = true
 	}
 	p.streams = make(map[string]io.Closer)
@@ -584,6 +587,7 @@ func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
 		} else {
 			flags |= os.O_APPEND
 		}
+		// TODO: this is slow, need to buffer it!
 		w, err := os.OpenFile(name, flags, 0644)
 		if err != nil {
 			return nil, newError("output redirection error: %s", err)
@@ -685,7 +689,8 @@ func (p *interp) newScanner(input io.Reader) *bufio.Scanner {
 		splitter := byteSplitter{p.recordSep[0]}
 		scanner.Split(splitter.scan)
 	}
-	scanner.Buffer(nil, maxRecordLength)
+	buffer := make([]byte, inputBufSize)
+	scanner.Buffer(buffer, maxRecordLength)
 	return scanner
 }
 
@@ -1778,6 +1783,7 @@ func (p *interp) evalIndex(indexExprs []Expr) (string, error) {
 func writeOutput(w io.Writer, s string) error {
 	if crlfNewline {
 		// First normalize to \n, then convert all newlines to \r\n (on Windows)
+		// TODO: creating two new strings is almost certainly slow, better to create a custom Writer
 		s = strings.Replace(s, "\r\n", "\n", -1)
 		s = strings.Replace(s, "\n", "\r\n", -1)
 	}

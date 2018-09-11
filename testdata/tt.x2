@@ -1,0 +1,6 @@
+BEGIN {
+    for (i=0; i<10000000; i++) {
+        sum += i*2
+    }
+    print sum
+}
