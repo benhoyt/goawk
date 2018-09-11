@@ -60,12 +60,12 @@ The intention is for GoAWK to conform to the [POSIX AWK spec](http://pubs.opengr
 Additional features GoAWK has over AWK:
 
 * It's embeddable in your Go programs. :-)
-* I/O is a little bit faster. (TODO: benchmarks)
+* I/O-bound AWK scripts (i.e., most of them) are significantly faster than awk, and on a par with gawk.
 * The parser supports `'single-quoted strings'` in addition to `"double-quoted strings"`, primarily to make Windows one-liners easier (the Windows `cmd.exe` shell uses `"` as the quote character).
 
 Things AWK has over GoAWK:
 
-* The GoAWK interpreter is significantly slower. (TODO: benchmarks)
+* CPU-bound AWK scripts are slightly slower than awk, and about twice as slow as gawk.
 * GoAWK has a couple of known syntax quirks, but most real code shouldn't run into them (commented-out tests in interp/interp_test.go). I intend to fix these soon.
 
 ## Stability

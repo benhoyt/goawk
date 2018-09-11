@@ -31,13 +31,15 @@ package main
 
 TODO:
 - performance testing: I/O, allocations, CPU
-  + try using a typ and index for getVarIndex instead of just int?
   + other TODOs in interp.go and parser.go
   + other uses of make() in interp.go
   + resolve array variables at parse time (by index instead of name)
   + resolve array parameters to functions at parse time and clean up userCall
+  + try using a typ and index for getVarIndex instead of just int?
   + benchmark against awk/gawk with some real awk scripts
+  + why does writing output take 180ms with script '$0', but 630ms with script '/.$/'?
   + optimize parser
+- convert benchmark_awks.py to Python 3
 - break up interp.go? structure it better and add comments
 - think about length() and substr() chars vs bytes:
   https://github.com/benhoyt/goawk/issues/2#issuecomment-415314000
