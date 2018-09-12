@@ -30,11 +30,13 @@ package main
 /*
 
 TODO:
+- add tests for undefined function and already-defined function
 - performance testing: I/O, allocations, CPU
-  + other TODOs in interp.go and parser.go
-  + other uses of make() in interp.go
   + resolve array variables at parse time (by index instead of name)
   + resolve array parameters to functions at parse time and clean up userCall
+  + buffer > and >> output (see TODO in getOutputStream)
+  + other "escapes to heap" uses of make() in interp.go
+  + writeOutput crlfNewline handling is probably slow
   + try using a typ and index for getVarIndex instead of just int?
   + benchmark against awk/gawk with some real awk scripts
   + why does writing output take 180ms with script '$0', but 630ms with script '/.$/'?

@@ -882,7 +882,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 		_, ok := p.arrays[p.getArrayName(e.Array)][index]
 		return boolean(ok), nil
 	case *UserCallExpr:
-		return p.callUser(e.Name, e.Args)
+		return p.callUser(e.Index, e.Args)
 	case *GetlineExpr:
 		var line string
 		switch {
@@ -1519,14 +1519,10 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 	}
 }
 
-func (p *interp) callUser(name string, args []Expr) (value, error) {
-	// TODO: should resolve function name to int index at parse time for speed
-	f, ok := p.program.Functions[name]
-	if !ok {
-		return value{}, newError("undefined function %q", name)
-	}
+func (p *interp) callUser(index int, args []Expr) (value, error) {
+	f := p.program.Functions[index]
 	if len(args) > len(f.Params) {
-		return value{}, newError("%q called with more arguments than declared", name)
+		return value{}, newError("%q called with more arguments than declared", f.Name)
 	}
 
 	// TODO: this whole thing is quite messy and complex, how can we simplify?
@@ -1538,7 +1534,7 @@ func (p *interp) callUser(name string, args []Expr) (value, error) {
 		if f.Arrays[i] {
 			a, ok := arg.(*VarExpr)
 			if !ok {
-				return value{}, newError("%s() argument %q must be an array", name, f.Params[i])
+				return value{}, newError("%s() argument %q must be an array", f.Name, f.Params[i])
 			}
 			if arrays == nil {
 				arrays = make(map[string]string, len(f.Params))

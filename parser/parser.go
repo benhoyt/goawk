@@ -8,7 +8,6 @@ package parser
 import (
 	"fmt"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -47,6 +46,7 @@ func ParseProgram(src []byte) (prog *Program, err error) {
 	lexer := NewLexer(src)
 	p := parser{lexer: lexer}
 	p.globals = make(map[string]int)
+	p.functions = make(map[string]int)
 	p.next() // initialize p.tok
 	return p.program(), nil
 }
@@ -56,7 +56,7 @@ type Program struct {
 	Begin     []Stmts
 	Actions   []Action
 	End       []Stmts
-	Functions map[string]Function
+	Functions []Function
 	Globals   map[string]int
 }
 
@@ -73,13 +73,7 @@ func (p *Program) String() string {
 	for _, ss := range p.End {
 		parts = append(parts, "END {\n"+ss.String()+"}")
 	}
-	funcNames := make([]string, 0, len(p.Functions))
-	for name := range p.Functions {
-		funcNames = append(funcNames, name)
-	}
-	sort.Strings(funcNames)
-	for _, name := range funcNames {
-		function := p.Functions[name]
+	for _, function := range p.Functions {
 		parts = append(parts, function.String())
 	}
 	return strings.Join(parts, "\n\n")
@@ -102,12 +96,21 @@ type parser struct {
 	globals     map[string]int  // map of global var name to index
 	locals      map[string]int  // map of local var name to index
 	arrayParams map[string]bool // true if function param is an array
+
+	// Function tracking
+	functions    map[string]int // map of function name to index
+	callsToPatch []callToPatch  // tracks calls that occur before function is defined
+}
+
+type callToPatch struct {
+	name string
+	call *UserCallExpr
+	pos  Position
 }
 
 // Parse an entire AWK program.
 func (p *parser) program() *Program {
 	prog := &Program{}
-	prog.Functions = make(map[string]Function)
 	p.optionalNewlines()
 	for p.tok != EOF {
 		switch p.tok {
@@ -118,8 +121,9 @@ func (p *parser) program() *Program {
 			p.next()
 			prog.End = append(prog.End, p.stmtsBrace())
 		case FUNCTION:
-			function := p.function(prog.Functions)
-			prog.Functions[function.Name] = function
+			function := p.function()
+			p.functions[function.Name] = len(prog.Functions)
+			prog.Functions = append(prog.Functions, function)
 		default:
 			p.inAction = true
 			// Allow empty pattern, normal pattern, or range pattern
@@ -142,6 +146,16 @@ func (p *parser) program() *Program {
 		p.optionalNewlines()
 	}
 	prog.Globals = p.globals
+
+	// Patch calls that occurred before the called function was defined
+	for _, c := range p.callsToPatch {
+		index, ok := p.functions[c.name]
+		if !ok {
+			panic(&ParseError{c.pos, fmt.Sprintf("undefined function %q", c.name)})
+		}
+		c.call.Index = index
+	}
+
 	return prog
 }
 
@@ -365,7 +379,7 @@ func (p *parser) loopStmts() Stmts {
 // Parse a function definition and body. As it goes, this resolves
 // the local variable indexes and tracks which parameters are array
 // parameters.
-func (p *parser) function(functions map[string]Function) Function {
+func (p *parser) function() Function {
 	if p.inFunction {
 		// Should never actually get here (FUNCTION token is only
 		// handled at the top level), but just in case.
@@ -374,7 +388,7 @@ func (p *parser) function(functions map[string]Function) Function {
 	p.inFunction = true
 	p.next()
 	name := p.val
-	if _, ok := functions[name]; ok {
+	if _, ok := p.functions[name]; ok {
 		panic(p.error("function %q already defined", name))
 	}
 	p.expect(NAME)
@@ -674,6 +688,7 @@ func (p *parser) primary() Expr {
 		return &UnaryExpr{op, p.primary()}
 	case NAME:
 		name := p.val
+		namePos := p.pos
 		p.next()
 		if p.tok == LBRACKET {
 			// a[x] or a[x, y] array index expression
@@ -689,7 +704,13 @@ func (p *parser) primary() Expr {
 			p.next()
 			args := p.exprList(p.expr)
 			p.expect(RPAREN)
-			return &UserCallExpr{name, args}
+			index, ok := p.functions[name]
+			call := &UserCallExpr{index, name, args}
+			if !ok {
+				c := callToPatch{name, call, namePos}
+				p.callsToPatch = append(p.callsToPatch, c)
+			}
+			return call
 		}
 		index := p.getVarIndex(name)
 		return &VarExpr{index, name}

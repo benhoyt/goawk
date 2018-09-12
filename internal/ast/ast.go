@@ -239,10 +239,13 @@ func (e *CallExpr) String() string {
 	return e.Func.String() + "(" + strings.Join(args, ", ") + ")"
 }
 
-// User-defined function call like my_func(1, 2, 3).
+// User-defined function call like my_func(1, 2, 3). Index is the
+// resolved function index used by the interpreter; Name is the
+// original name used by String().
 type UserCallExpr struct {
-	Name string
-	Args []Expr
+	Index int
+	Name  string
+	Args  []Expr
 }
 
 func (e *UserCallExpr) String() string {
