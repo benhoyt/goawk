@@ -30,7 +30,6 @@ package main
 /*
 
 TODO:
-- add tests for undefined function and already-defined function
 - performance testing: I/O, allocations, CPU
   + resolve array variables at parse time (by index instead of name)
   + resolve array parameters to functions at parse time and clean up userCall
