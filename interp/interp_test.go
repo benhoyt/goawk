@@ -30,11 +30,11 @@ func TestInterp(t *testing.T) {
 	longLine := strings.Repeat("x", 70000)
 
 	tests := []struct {
-		src    string
+		src    string // if this includes "!awk" or "!gawk" those interpreters won't be run
 		in     string
 		out    string
-		err    string
-		awkErr string
+		err    string // error from GoAWK must equal this
+		awkErr string // error from gawk must contain this
 	}{
 		// BEGIN and END work correctly
 		{`BEGIN { print "b" }`, "", "b\n", "", ""},
@@ -158,6 +158,10 @@ BEGIN {
 		{`/[a-/`, "foo", "", "parse error at 1:1: error parsing regexp: missing closing ]: `[a-`", "terminated"},
 		{`BEGIN { print "-12"+0, "+12"+0, " \t\r\n7foo"+0, ".5"+0, "5."+0, "+."+0 }`, "", "-12 12 7 0.5 5 0\n", "", ""},
 		{`BEGIN { print "1e3"+0, "1.2e-1"+0, "1e+1"+0, "1e"+0, "1e+"+0 }`, "", "1000 0.12 10 1 1\n", "", ""},
+		{`BEGIN { print -(11102200000000000000000000000000000000 1040000) }  # !gawk - gawk supports big numbers`,
+			"", "-inf\n", "", ""},
+		{`BEGIN { print atan2(0, 8020020000000e20G-0)}`, "", "0\n", "", ""},
+		{`BEGIN { print 1e1000, -1e1000 }`, "", "inf -inf\n", "", ""},
 
 		// Conditional ?: expression
 		{`{ print /x/?"t":"f" }`, "x\ny\nxx\nz\n", "t\nf\nt\nf\n", "", ""},
@@ -222,7 +226,8 @@ BEGIN {
 		{`{ print; $0="x y z"; print; print $1, $3 }`, "a b c", "a b c\nx y z\nx z\n", "", ""},
 		{`{ print $1^2 }`, "10", "100\n", "", ""},
 		{`{ print $-1 }`, "x", "", "field index negative: -1", "field -1"},
-		{`{ NF=-1; }`, "x", "", "NF set to negative value: -1", "negative value"},
+		{`{ NF=-1; }  # !awk - awk allows setting negative NF`,
+			"x", "", "NF set to negative value: -1", "negative value"},
 
 		// Lots of NF tests with different combinations of NF, $, and number
 		// of input fields. Some of these cause segmentation faults on awk
@@ -234,8 +239,10 @@ BEGIN {
 		{`{ NF=1; $2="x"; print $0; print NF }`, "a b", "a x\n2\n", "", ""},
 		{`{ NF=1; $2="x"; print $0; print NF }`, "a b c", "a x\n2\n", "", ""},
 		{`{ NF=1; $3="x"; print $0; print NF }`, "a", "a  x\n3\n", "", ""},
-		{`{ NF=1; $3="x"; print $0; print NF }`, "a b", "a  x\n3\n", "", ""},
-		{`{ NF=1; $3="x"; print $0; print NF }`, "a b c", "a  x\n3\n", "", ""},
+		{`{ NF=1; $3="x"; print $0; print NF }  # !awk - awk differs from gawk (but gawk seems right)`,
+			"a b", "a  x\n3\n", "", ""},
+		{`{ NF=1; $3="x"; print $0; print NF }  # !awk - awk differs from gawk (but gawk seems right)`,
+			"a b c", "a  x\n3\n", "", ""},
 		{`{ NF=2; $1="x"; print $0; print NF }`, "a", "x \n2\n", "", ""},
 		{`{ NF=2; $1="x"; print $0; print NF }`, "a b", "x b\n2\n", "", ""},
 		{`{ NF=2; $1="x"; print $0; print NF }`, "a b c", "x b\n2\n", "", ""},
@@ -245,11 +252,15 @@ BEGIN {
 		{`{ NF=2; $3="x"; print $0; print NF }`, "a", "a  x\n3\n", "", ""},
 		{`{ NF=2; $3="x"; print $0; print NF }`, "a b", "a b x\n3\n", "", ""},
 		{`{ NF=2; $3="x"; print $0; print NF }`, "a b c", "a b x\n3\n", "", ""},
-		{`{ NF=3; $1="x"; print $0; print NF }`, "a", "x  \n3\n", "", ""},
-		{`{ NF=3; $1="x"; print $0; print NF }`, "a b", "x b \n3\n", "", ""},
+		{`{ NF=3; $1="x"; print $0; print NF }  # !awk - segmentation fault`,
+			"a", "x  \n3\n", "", ""},
+		{`{ NF=3; $1="x"; print $0; print NF }  # !awk - segmentation fault`,
+			"a b", "x b \n3\n", "", ""},
 		{`{ NF=3; $1="x"; print $0; print NF }`, "a b c", "x b c\n3\n", "", ""},
-		{`{ NF=3; $2="x"; print $0; print NF }`, "a", "a x \n3\n", "", ""},
-		{`{ NF=3; $2="x"; print $0; print NF }`, "a b", "a x \n3\n", "", ""},
+		{`{ NF=3; $2="x"; print $0; print NF }  # !awk - segmentation fault`,
+			"a", "a x \n3\n", "", ""},
+		{`{ NF=3; $2="x"; print $0; print NF }  # !awk - segmentation fault`,
+			"a b", "a x \n3\n", "", ""},
 		{`{ NF=3; $2="x"; print $0; print NF }`, "a b c", "a x c\n3\n", "", ""},
 		{`{ NF=3; $3="x"; print $0; print NF }`, "a", "a  x\n3\n", "", ""},
 		{`{ NF=3; $3="x"; print $0; print NF }`, "a b", "a b x\n3\n", "", ""},
@@ -419,7 +430,7 @@ BEGIN { early() }
 			testName = testName[:70]
 		}
 
-		if awkExe != "" {
+		if awkExe != "" && !strings.Contains(test.src, "!"+awkExe) {
 			// Run it through external awk program first
 			t.Run("awk_"+testName, func(t *testing.T) {
 				srcFile, err := ioutil.TempFile("", "goawktest_")

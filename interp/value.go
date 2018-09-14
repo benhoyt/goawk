@@ -146,8 +146,5 @@ func parseFloatPrefix(s string) (float64, bool) {
 
 	floatStr := s[start:end]
 	f, err := strconv.ParseFloat(floatStr, 64)
-	if err != nil {
-		panic(fmt.Sprintf("unexpected error parsing %q: %v", floatStr, err))
-	}
-	return f, true
+	return f, err == nil // May be "value out of range" error
 }
