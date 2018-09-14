@@ -13,3 +13,6 @@ build_script:
 test_script:
   - go test ./...
   - git diff
+
+artifacts:
+  - path: goawk.exe
