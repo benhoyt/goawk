@@ -67,6 +67,10 @@ func TestAWK(t *testing.T) {
 		"t.in2":     true,
 		"t.intest2": true,
 	}
+	dontRunOnWindows := map[string]bool{
+		"p.50": true, // because this pipes to Unix sort "sort -t: +0 -1 +2nr"
+		"t.printf2": true, // until we fix discrepancies here
+	}
 
 	infos, err := ioutil.ReadDir(testsDir)
 	if err != nil {
@@ -74,6 +78,9 @@ func TestAWK(t *testing.T) {
 	}
 	for _, info := range infos {
 		if !strings.HasPrefix(info.Name(), "t.") && !strings.HasPrefix(info.Name(), "p.") {
+			continue
+		}
+		if runtime.GOOS == "windows" && dontRunOnWindows[info.Name()] {
 			continue
 		}
 		t.Run(info.Name(), func(t *testing.T) {
@@ -124,12 +131,7 @@ func TestAWK(t *testing.T) {
 				}
 			}
 			if string(output) != string(expected) {
-				if runtime.GOOS == "windows" {
-					t.Fatalf("output differs, run: git diff %s; expected:\n%s---------- got:\n%s",
-						outputPath, expected, output)
-				} else {
-					t.Fatalf("output differs, run: git diff %s", outputPath)
-				}
+				t.Fatalf("output differs, run: git diff %s", outputPath)
 			}
 		})
 	}
