@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"testing"
@@ -123,7 +124,12 @@ func TestAWK(t *testing.T) {
 				}
 			}
 			if string(output) != string(expected) {
-				t.Fatalf("output differs, run: git diff %s", outputPath)
+				if runtime.GOOS == "windows" {
+					t.Fatalf("output differs, run: git diff %s; expected:\n%s---------- got:\n%s",
+						outputPath, expected, output)
+				} else {
+					t.Fatalf("output differs, run: git diff %s", outputPath)
+				}
 			}
 		})
 	}
