@@ -228,8 +228,8 @@ func TestCommandLine(t *testing.T) {
 				ARGC = 3
 			}
 			$0`, "testdata/g.1", "-", "testdata/g.2"}, "c\nd", "ONE\nc\nd\n"},
-		{[]string{"-v", "A=1", "-f", "testdata/g.3", "B=2", "/dev/null"}, "",
-			"A=1, B=0\n\tARGV[1] = B=2\n\tARGV[2] = /dev/null\nA=1, B=2\n"},
+		{[]string{"-v", "A=1", "-f", "testdata/g.3", "B=2", "testdata/test.countries"}, "",
+			"A=1, B=0\n\tARGV[1] = B=2\n\tARGV[2] = testdata/test.countries\nA=1, B=2\n"},
 		{[]string{`END { print (x==42) }`, "x=42.0"}, "", "1\n"},
 		{[]string{"-v", "x=42.0", `BEGIN { print (x==42) }`}, "", "1\n"},
 	}
