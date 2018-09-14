@@ -86,6 +86,7 @@ func TestAWK(t *testing.T) {
 				t.Fatalf("error running %s: %v", awkExe, err)
 			}
 			expected = bytes.Replace(expected, []byte{0}, []byte("<00>"), -1)
+			expected = normalizeNewlines(expected)
 			if sortLines[info.Name()] {
 				expected = sortedLines(expected)
 			}
@@ -105,6 +106,7 @@ func TestAWK(t *testing.T) {
 				t.Fatal(err)
 			}
 			output = bytes.Replace(output, []byte{0}, []byte("<00>"), -1)
+			output = normalizeNewlines(output)
 			if randTests[info.Name()] || knownDifferent[info.Name()] {
 				// For tests that use rand(), run them to ensure they
 				// parse and interpret, but can't compare the output,
@@ -244,6 +246,7 @@ func TestCommandLine(t *testing.T) {
 			if err != nil {
 				t.Fatalf("error running %s: %v: %s", awkExe, err, stderr.String())
 			}
+			output = normalizeNewlines(output)
 			if string(output) != test.output {
 				t.Fatalf("expected AWK to give %q, got %q", test.output, output)
 			}
@@ -258,9 +261,14 @@ func TestCommandLine(t *testing.T) {
 			if err != nil {
 				t.Fatalf("error running %s: %v: %s", goAWKExe, err, stderr.String())
 			}
+			output = normalizeNewlines(output)
 			if string(output) != test.output {
 				t.Fatalf("expected GoAWK to give %q, got %q", test.output, output)
 			}
 		})
 	}
+}
+
+func normalizeNewlines(b []byte) []byte {
+	return bytes.Replace(b, []byte("\r\n"), []byte{'\n'}, -1)
 }

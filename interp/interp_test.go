@@ -467,8 +467,9 @@ BEGIN { early() }
 				if test.awkErr != "" {
 					t.Fatalf(`expected error %q, got ""`, test.awkErr)
 				}
-				if string(out) != test.out {
-					t.Fatalf("expected %q, got %q", test.out, out)
+				normalized := normalizeNewlines(string(out))
+				if normalized != test.out {
+					t.Fatalf("expected %q, got %q", test.out, normalized)
 				}
 			})
 		}
@@ -506,8 +507,9 @@ BEGIN { early() }
 				t.Fatalf(`expected error %q, got ""`, test.err)
 			}
 			out := outBuf.String() + errBuf.String()
-			if out != test.out {
-				t.Fatalf("expected %q, got %q", test.out, out)
+			normalized := normalizeNewlines(out)
+			if normalized != test.out {
+				t.Fatalf("expected %q, got %q", test.out, normalized)
 			}
 		})
 	}
@@ -1092,4 +1094,8 @@ func Example_program() {
 	// 1:a
 	// 2:ab
 	// 3:abc
+}
+
+func normalizeNewlines(s string) string {
+	return strings.Replace(s, "\r\n", "\n", -1)
 }
