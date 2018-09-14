@@ -1,7 +1,8 @@
 # GoAWK: an AWK interpreter written in Go
 
 [![GoDoc](https://godoc.org/github.com/benhoyt/goawk?status.png)](https://godoc.org/github.com/benhoyt/goawk)
-[![Build Status](https://travis-ci.org/benhoyt/goawk.svg)](https://travis-ci.org/benhoyt/goawk)
+[![TravisCI Build](https://travis-ci.org/benhoyt/goawk.svg)](https://travis-ci.org/benhoyt/goawk)
+[![AppVeyor Build](https://ci.appveyor.com/api/projects/status/github/benhoyt/scandir?branch=master&svg=true)](https://ci.appveyor.com/project/benhoyt/scandir)
 
 AWK is a fascinating text-processing language, and somehow after reading the delightfully-terse [*The AWK Programming Language*](https://ia802309.us.archive.org/25/items/pdfy-MgN0H1joIoDVoIC7/The_AWK_Programming_Language.pdf) I was inspired to write an interpreter for it in Go. So here it is, pretty much feature-complete and tested against "the one true AWK" test suite.
 
