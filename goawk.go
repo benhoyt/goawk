@@ -29,7 +29,12 @@ package main
 
 /*
 
+
 TODO:
+- fix crash with: BEGIN { print |"1"; getline <"1" }  # also print >"1"
+  + add tests for print pipe/redirect/getline
+- timeout / infinite loop why?
+  BEGIN { x[x[x[x[--x[FS = (FS FS)]]--]--]--]-- }
 - performance testing: I/O, allocations, CPU
   + resolve array variables at parse time (by index instead of name)
   + resolve array parameters to functions at parse time and clean up userCall
@@ -81,7 +86,7 @@ ISSUE - discrepancy against gawk on Windows:
             %: scj ... 10409     10409        scj 0 0 0 ⢩ s
             %: rhm ... 10252     10252        rhm 0 0 0 ⠌ r
 
-*/
+*/// This comment intentionally left blank
 
 import (
 	"bytes"

@@ -68,7 +68,7 @@ func TestAWK(t *testing.T) {
 		"t.intest2": true,
 	}
 	dontRunOnWindows := map[string]bool{
-		"p.50": true, // because this pipes to Unix sort "sort -t: +0 -1 +2nr"
+		"p.50":      true, // because this pipes to Unix sort "sort -t: +0 -1 +2nr"
 		"t.printf2": true, // until we fix discrepancies here
 	}
 

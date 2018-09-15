@@ -112,6 +112,7 @@ type interp struct {
 const (
 	maxCachedRegexes = 100
 	maxRecordLength  = 10 * 1024 * 1024 // 10MB seems like plenty
+	maxFieldIndex    = 1000000
 	initialStackSize = 100
 	outputBufSize    = 64 * 1024
 	stderrBufSize    = 4 * 1024
@@ -1093,6 +1094,9 @@ func (p *interp) setVar(index int, v value) error {
 		if numFields < 0 {
 			return newError("NF set to negative value: %d", numFields)
 		}
+		if numFields > maxFieldIndex {
+			return newError("NF set too large: %d", numFields)
+		}
 		p.numFields = numFields
 		if p.numFields < len(p.fields) {
 			p.fields = p.fields[:p.numFields]
@@ -1183,12 +1187,15 @@ func (p *interp) getField(index int) (value, error) {
 
 // setField sets a single field, equivalent to "$index = value".
 func (p *interp) setField(index int, value string) error {
-	if index < 0 {
-		return newError("field index negative: %d", index)
-	}
 	if index == 0 {
 		p.setLine(value)
 		return nil
+	}
+	if index < 0 {
+		return newError("field index negative: %d", index)
+	}
+	if index > maxFieldIndex {
+		return newError("field index too large: %d", index)
 	}
 	for i := len(p.fields); i < index; i++ {
 		p.fields = append(p.fields, "")

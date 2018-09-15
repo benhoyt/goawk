@@ -228,6 +228,8 @@ BEGIN {
 		{`{ print $-1 }`, "x", "", "field index negative: -1", "field -1"},
 		{`{ NF=-1; }  # !awk - awk allows setting negative NF`,
 			"x", "", "NF set to negative value: -1", "negative value"},
+		{`{ NF=1234567; }`, "x", "", "NF set too large: 1234567", ""},
+		{`BEGIN { $1234567=1 }`, "", "", "field index too large: 1234567", ""},
 
 		// Lots of NF tests with different combinations of NF, $, and number
 		// of input fields. Some of these cause segmentation faults on awk
