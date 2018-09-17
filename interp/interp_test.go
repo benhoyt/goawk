@@ -403,6 +403,11 @@ function early() {
 BEGIN { early() }
 `, "", "x\n", "", ""},
 
+		// Redirected I/O
+		// TODO: these tests currently panic() due to bug with s.(io.Reader) in interp.go
+		//{`BEGIN { print >"out"; getline <"out" }`, "", "", "can't read from writer stream", ""},
+		//{`BEGIN { print |"out"; getline <"out" }`, "", "", "", ""},
+
 		// Greater than operator requires parentheses in print statement,
 		// otherwise it's a redirection directive
 		{`BEGIN { print "x" > "out" }`, "", "", "", ""},
