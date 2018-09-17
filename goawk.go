@@ -32,7 +32,6 @@ package main
 
 TODO:
 - fix crash with: BEGIN { print |"1"; getline <"1" }  # also print >"1"
-  + add tests for print pipe/redirect/getline
 - timeout / infinite loop why?
   BEGIN { x[x[x[x[--x[FS = (FS FS)]]--]--]--]-- }
 - performance testing: I/O, allocations, CPU
