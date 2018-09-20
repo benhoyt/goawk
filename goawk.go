@@ -31,6 +31,7 @@ package main
 
 
 TODO:
+- fix bug with handling of RS=""
 - fix crash with: BEGIN { print |"1"; getline <"1" }  # also print >"1"
 - timeout / infinite loop why?
   BEGIN { x[x[x[x[--x[FS = (FS FS)]]--]--]--]-- }

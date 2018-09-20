@@ -195,10 +195,12 @@ BEGIN {
 		// OFS and ORS are tested above
 		{`BEGIN { print RSTART, RLENGTH; RSTART=5; RLENGTH=42; print RSTART, RLENGTH; } `, "",
 			"0 0\n5 42\n", "", ""},
-		{`BEGIN { print RS; }`, "", "\n\n", "", ""},
+		{`BEGIN { print RS }`, "", "\n\n", "", ""},
 		{`BEGIN { print RS; RS="|"; print RS }  { print }`, "a b|c d|", "\n\n|\na b\nc d\n", "", ""},
-		{`BEGIN { RS=""; }  { print }`, "a\n\nb\nc", "a\nb\nc\n", "", ""},
-		{`BEGIN { RS="\n"; }  { print }`, "a\n\nb\nc", "a\n\nb\nc\n", "", ""},
+		{`BEGIN { RS="" }  { print }`, "a\n\nb\nc", "a\nb\nc\n", "", ""},
+		// TODO: there's a bug in RS handling right now
+		// {`BEGIN { RS="" }  { print $1 }`, "1\n2\n\na\nb", "1\na\n", "", ""},
+		{`BEGIN { RS="\n" }  { print }`, "a\n\nb\nc", "a\n\nb\nc\n", "", ""},
 		{`
 BEGIN {
 	print SUBSEP
