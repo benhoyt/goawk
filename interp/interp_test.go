@@ -404,6 +404,7 @@ function early() {
 }
 BEGIN { early() }
 `, "", "x\n", "", ""},
+		{`BEGIN { return }`, "", "", "parse error at 1:9: return must be inside a function", "return"},
 
 		// Redirected I/O
 		// TODO: these tests currently panic() due to bug with s.(io.Reader) in interp.go
