@@ -98,12 +98,11 @@ type parser struct {
 	arrayParams map[string]bool // true if function param is an array
 
 	// Function tracking
-	functions    map[string]int // map of function name to index
-	callsToPatch []callToPatch  // tracks calls that occur before function is defined
+	functions map[string]int // map of function name to index
+	userCalls []userCall     // record calls so we can resolve them later
 }
 
-type callToPatch struct {
-	name string
+type userCall struct {
 	call *UserCallExpr
 	pos  Position
 }
@@ -147,16 +146,19 @@ func (p *parser) program() *Program {
 	}
 	prog.Globals = p.globals
 
-	// Patch calls that occurred before the called function was defined
-	for _, c := range p.callsToPatch {
-		index, ok := p.functions[c.name]
+	p.resolveUserCalls()
+
+	return prog
+}
+
+func (p *parser) resolveUserCalls() {
+	for _, c := range p.userCalls {
+		index, ok := p.functions[c.call.Name]
 		if !ok {
-			panic(&ParseError{c.pos, fmt.Sprintf("undefined function %q", c.name)})
+			panic(&ParseError{c.pos, fmt.Sprintf("undefined function %q", c.call.Name)})
 		}
 		c.call.Index = index
 	}
-
-	return prog
 }
 
 // Parse a list of statements.
@@ -704,12 +706,8 @@ func (p *parser) primary() Expr {
 			p.next()
 			args := p.exprList(p.expr)
 			p.expect(RPAREN)
-			index, ok := p.functions[name]
-			call := &UserCallExpr{index, name, args}
-			if !ok {
-				c := callToPatch{name, call, namePos}
-				p.callsToPatch = append(p.callsToPatch, c)
-			}
+			call := &UserCallExpr{-1, name, args} // index is resolved later
+			p.userCalls = append(p.userCalls, userCall{call, namePos})
 			return call
 		}
 		index := p.getVarIndex(name)
