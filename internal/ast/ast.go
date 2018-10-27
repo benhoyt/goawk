@@ -56,6 +56,7 @@ type Expr interface {
 func (e *FieldExpr) expr()     {}
 func (e *UnaryExpr) expr()     {}
 func (e *BinaryExpr) expr()    {}
+func (e *ArrayExpr) expr()     {}
 func (e *InExpr) expr()        {}
 func (e *CondExpr) expr()      {}
 func (e *NumExpr) expr()       {}
@@ -107,21 +108,43 @@ func (e *BinaryExpr) String() string {
 	return "(" + e.Left.String() + opStr + e.Right.String() + ")"
 }
 
+// Array reference. Not really a stand-alone expression, except as
+// an argument to split() or a user function call.
+type ArrayExpr struct {
+	Scope VarScope
+	Index int
+	Name  string
+}
+
+func (e *ArrayExpr) String() string {
+	return e.Name // TODO
+	var scope string
+	switch e.Scope {
+	case ScopeGlobal:
+		scope = "G"
+	case ScopeLocal:
+		scope = "L"
+	default:
+		scope = "S"
+	}
+	return fmt.Sprintf("%s_a%s%d", e.Name, scope, e.Index)
+}
+
 // In expression like (index in array).
 type InExpr struct {
 	Index []Expr
-	Array string
+	Array *ArrayExpr
 }
 
 func (e *InExpr) String() string {
 	if len(e.Index) == 1 {
-		return "(" + e.Index[0].String() + " in " + e.Array + ")"
+		return "(" + e.Index[0].String() + " in " + e.Array.String() + ")"
 	}
 	indices := make([]string, len(e.Index))
 	for i, index := range e.Index {
 		indices[i] = index.String()
 	}
-	return "((" + strings.Join(indices, ", ") + ") in " + e.Array + ")"
+	return "((" + strings.Join(indices, ", ") + ") in " + e.Array.String() + ")"
 }
 
 // Conditional expression like cond ? 1 : 0.
@@ -163,21 +186,40 @@ func (e *RegExpr) String() string {
 	return "/" + escaped + "/"
 }
 
-// Variable reference (global or local). Index is the resolved
-// variable index used by the interpreter; Name is the original name
-// used by String().
+type VarScope int
+
+const (
+	ScopeSpecial VarScope = iota
+	ScopeGlobal
+	ScopeLocal
+)
+
+// Variable reference (special var, global, or local). Index is the
+// resolved variable index used by the interpreter; Name is the
+// original name used by String().
 type VarExpr struct {
+	Scope VarScope
 	Index int
 	Name  string
 }
 
 func (e *VarExpr) String() string {
-	return e.Name
+	return e.Name // TODO
+	var scope string
+	switch e.Scope {
+	case ScopeGlobal:
+		scope = "G"
+	case ScopeLocal:
+		scope = "L"
+	default:
+		scope = "S"
+	}
+	return fmt.Sprintf("%s_v%s%d", e.Name, scope, e.Index)
 }
 
 // Index expression like a[k] (rvalue or lvalue).
 type IndexExpr struct {
-	Name  string
+	Array *ArrayExpr
 	Index []Expr
 }
 
@@ -186,7 +228,7 @@ func (e *IndexExpr) String() string {
 	for i, index := range e.Index {
 		indices[i] = index.String()
 	}
-	return e.Name + "[" + strings.Join(indices, ", ") + "]"
+	return e.Array.String() + "[" + strings.Join(indices, ", ") + "]"
 }
 
 // Assignment expression like x = 1234.
@@ -272,10 +314,9 @@ func (e *MultiExpr) String() string {
 
 // Getline expression (read from file or pipe input).
 type GetlineExpr struct {
-	Command  Expr
-	VarIndex int
-	VarName  string
-	File     Expr
+	Command Expr
+	Var     *VarExpr
+	File    Expr
 }
 
 func (e *GetlineExpr) String() string {
@@ -284,8 +325,8 @@ func (e *GetlineExpr) String() string {
 		s += e.Command.String() + " |"
 	}
 	s += "getline"
-	if e.VarName != "" {
-		s += " " + e.VarName
+	if e.Var != nil {
+		s += " " + e.Var.String()
 	}
 	if e.File != nil {
 		s += " <" + e.File.String()
@@ -412,14 +453,13 @@ func (s *ForStmt) String() string {
 
 // For-in loop: for (k in a) print k, a[k].
 type ForInStmt struct {
-	VarIndex int
-	VarName  string
-	Array    string
-	Body     Stmts
+	Var   *VarExpr
+	Array *ArrayExpr
+	Body  Stmts
 }
 
 func (s *ForInStmt) String() string {
-	return "for (" + s.VarName + " in " + s.Array + ") {\n" + s.Body.String() + "}"
+	return "for (" + s.Var.String() + " in " + s.Array.String() + ") {\n" + s.Body.String() + "}"
 }
 
 // While loop.
@@ -478,7 +518,7 @@ func (s *ExitStmt) String() string {
 
 // Delete statement like delete a[k].
 type DeleteStmt struct {
-	Array string
+	Array *ArrayExpr
 	Index []Expr
 }
 
@@ -487,7 +527,7 @@ func (s *DeleteStmt) String() string {
 	for i, index := range s.Index {
 		indices[i] = index.String()
 	}
-	return "delete " + s.Array + "[" + strings.Join(indices, ", ") + "]"
+	return "delete " + s.Array.String() + "[" + strings.Join(indices, ", ") + "]"
 }
 
 // Return statement.

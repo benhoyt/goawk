@@ -45,8 +45,7 @@ func ParseProgram(src []byte) (prog *Program, err error) {
 	}()
 	lexer := NewLexer(src)
 	p := parser{lexer: lexer}
-	p.globals = make(map[string]int)
-	p.functions = make(map[string]int)
+	p.initResolve()
 	p.next() // initialize p.tok
 	return p.program(), nil
 }
@@ -57,7 +56,8 @@ type Program struct {
 	Actions   []Action
 	End       []Stmts
 	Functions []Function
-	Globals   map[string]int
+	Scalars   map[string]int
+	Arrays    map[string]int
 }
 
 // String returns an indented, pretty-printed version of the parsed
@@ -83,28 +83,24 @@ func (p *Program) String() string {
 type parser struct {
 	// Lexer instance and current token values
 	lexer *Lexer
-	pos   Position
-	tok   Token
-	val   string
+	pos   Position // position of last token (tok)
+	tok   Token    // last lexed token
+	val   string   // string value of last token (or "")
 
-	// Parsing state / context
-	inAction   bool
-	inFunction bool
-	loopCount  int
+	// Parsing state
+	inAction  bool   // true if parsing an action (false in BEGIN or END)
+	funcName  string // function name if parsing a func, else ""
+	loopDepth int    // current loop depth (0 if not in any loops)
 
-	// Variable tracking
-	globals     map[string]int  // map of global var name to index
-	locals      map[string]int  // map of local var name to index
-	arrayParams map[string]bool // true if function param is an array
+	// Variable tracking and resolving
+	locals    map[string]bool                // current function's locals (for determining scope)
+	varTypes  map[string]map[string]typeInfo // map of func name to var name to type
+	varRefs   []varRef                       // all variable references (usually scalars)
+	arrayRefs []arrayRef                     // all array references
 
 	// Function tracking
 	functions map[string]int // map of function name to index
 	userCalls []userCall     // record calls so we can resolve them later
-}
-
-type userCall struct {
-	call *UserCallExpr
-	pos  Position
 }
 
 // Parse an entire AWK program.
@@ -121,7 +117,7 @@ func (p *parser) program() *Program {
 			prog.End = append(prog.End, p.stmtsBrace())
 		case FUNCTION:
 			function := p.function()
-			p.functions[function.Name] = len(prog.Functions)
+			p.addFunction(function.Name, len(prog.Functions))
 			prog.Functions = append(prog.Functions, function)
 		default:
 			p.inAction = true
@@ -144,21 +140,11 @@ func (p *parser) program() *Program {
 		}
 		p.optionalNewlines()
 	}
-	prog.Globals = p.globals
 
-	p.resolveUserCalls()
+	p.resolveUserCalls(prog)
+	p.resolveVars(prog)
 
 	return prog
-}
-
-func (p *parser) resolveUserCalls() {
-	for _, c := range p.userCalls {
-		index, ok := p.functions[c.call.Name]
-		if !ok {
-			panic(&ParseError{c.pos, fmt.Sprintf("undefined function %q", c.call.Name)})
-		}
-		c.call.Index = index
-	}
 }
 
 // Parse a list of statements.
@@ -214,12 +200,11 @@ func (p *parser) simpleStmt() Stmt {
 	case DELETE:
 		p.next()
 		array := p.val
-		p.arrayParam(array)
 		p.expect(NAME)
 		p.expect(LBRACKET)
 		index := p.exprList(p.expr)
 		p.expect(RBRACKET)
-		return &DeleteStmt{array, index}
+		return &DeleteStmt{p.arrayRef(array), index}
 	case IF, FOR, WHILE, DO, BREAK, CONTINUE, NEXT, EXIT, RETURN:
 		panic(p.error("expected print/printf, delete, or expression"))
 	default:
@@ -282,10 +267,8 @@ func (p *parser) stmt() Stmt {
 			if !ok {
 				panic(p.error("expected 'for (var in array) ...'"))
 			}
-			p.arrayParam(inExpr.Array)
 			body := p.loopStmts()
-			index := p.getVarIndex(varExpr.Name)
-			s = &ForInStmt{index, varExpr.Name, inExpr.Array, body}
+			s = &ForInStmt{p.varRef(varExpr.Name), inExpr.Array, body}
 		} else {
 			// Match: for ([pre]; [cond]; [post]) body
 			p.expect(SEMICOLON)
@@ -323,13 +306,13 @@ func (p *parser) stmt() Stmt {
 		p.expect(RPAREN)
 		s = &DoWhileStmt{body, cond}
 	case BREAK:
-		if p.loopCount == 0 {
+		if p.loopDepth == 0 {
 			panic(p.error("break must be inside a loop body"))
 		}
 		p.next()
 		s = &BreakStmt{}
 	case CONTINUE:
-		if p.loopCount == 0 {
+		if p.loopDepth == 0 {
 			panic(p.error("continue must be inside a loop body"))
 		}
 		p.next()
@@ -348,7 +331,7 @@ func (p *parser) stmt() Stmt {
 		}
 		s = &ExitStmt{status}
 	case RETURN:
-		if !p.inFunction {
+		if p.funcName == "" {
 			panic(p.error("return must be inside a function"))
 		}
 		p.next()
@@ -372,9 +355,9 @@ func (p *parser) stmt() Stmt {
 // Same as stmts(), but tracks that we're in a loop (as break and
 // continue can only occur inside a loop).
 func (p *parser) loopStmts() Stmts {
-	p.loopCount++
+	p.loopDepth++
 	ss := p.stmts()
-	p.loopCount--
+	p.loopDepth--
 	return ss
 }
 
@@ -382,12 +365,11 @@ func (p *parser) loopStmts() Stmts {
 // the local variable indexes and tracks which parameters are array
 // parameters.
 func (p *parser) function() Function {
-	if p.inFunction {
+	if p.funcName != "" {
 		// Should never actually get here (FUNCTION token is only
 		// handled at the top level), but just in case.
 		panic(p.error("can't nest functions"))
 	}
-	p.inFunction = true
 	p.next()
 	name := p.val
 	if _, ok := p.functions[name]; ok {
@@ -406,35 +388,15 @@ func (p *parser) function() Function {
 		p.expect(NAME)
 		params = append(params, param)
 	}
-	p.locals = make(map[string]int, len(params))
-	for i, param := range params {
-		p.locals[param] = -i - 1
-	}
-	p.arrayParams = make(map[string]bool, len(params))
 	p.expect(RPAREN)
 	p.optionalNewlines()
 
-	// Parse the body, resolving local vars and tracking arrays
+	// Parse the body
+	p.startFunction(name, params)
 	body := p.stmtsBrace()
+	p.stopFunction()
 
-	arrays := make([]bool, len(params))
-	for i, name := range params {
-		_, isArray := p.arrayParams[name]
-		arrays[i] = isArray
-	}
-
-	p.arrayParams = nil
-	p.locals = nil
-	p.inFunction = false
-	return Function{name, params, arrays, body}
-}
-
-// When inside a function, signal that this variable is being used as
-// an array.
-func (p *parser) arrayParam(name string) {
-	if p.inFunction && p.locals[name] != 0 {
-		p.arrayParams[name] = true
-	}
+	return Function{name, params, nil, body}
 }
 
 // Parse expressions separated by commas: args to print[f] or user
@@ -472,14 +434,12 @@ func (p *parser) getLine() Expr {
 	if p.tok == PIPE {
 		p.next()
 		p.expect(GETLINE)
-		name := ""
-		index := 0
+		var varExpr *VarExpr
 		if p.tok == NAME {
-			name = p.val
-			index = p.getVarIndex(name)
+			varExpr = p.varRef(p.val)
 			p.next()
 		}
-		return &GetlineExpr{expr, index, name, nil}
+		return &GetlineExpr{expr, varExpr, nil}
 	}
 	return expr
 }
@@ -566,9 +526,8 @@ func (p *parser) _in(higher func() Expr) Expr {
 	for p.tok == IN {
 		p.next()
 		array := p.val
-		p.arrayParam(array)
 		p.expect(NAME)
-		expr = &InExpr{[]Expr{expr}, array}
+		expr = &InExpr{[]Expr{expr}, p.arrayRef(array)}
 	}
 	return expr
 }
@@ -697,21 +656,14 @@ func (p *parser) primary() Expr {
 			p.next()
 			index := p.exprList(p.expr)
 			p.expect(RBRACKET)
-			p.arrayParam(name)
-			return &IndexExpr{name, index}
+			return &IndexExpr{p.arrayRef(name), index}
 		} else if p.tok == LPAREN && !p.lexer.HadSpace() {
 			// Grammar requires no space between function name and
 			// left paren for user function calls, hence the funky
 			// lexer.HadSpace() method.
-			p.next()
-			args := p.exprList(p.expr)
-			p.expect(RPAREN)
-			call := &UserCallExpr{-1, name, args} // index is resolved later
-			p.userCalls = append(p.userCalls, userCall{call, namePos})
-			return call
+			return p.userCall(name, namePos)
 		}
-		index := p.getVarIndex(name)
-		return &VarExpr{index, name}
+		return p.varRef(name)
 	case LPAREN:
 		p.next()
 		exprs := p.exprList(p.expr)
@@ -727,20 +679,17 @@ func (p *parser) primary() Expr {
 			if p.tok == IN {
 				p.next()
 				array := p.val
-				p.arrayParam(array)
 				p.expect(NAME)
-				return &InExpr{exprs, array}
+				return &InExpr{exprs, p.arrayRef(array)}
 			}
 			// MultiExpr is used as a pseudo-expression for print[f] parsing.
 			return &MultiExpr{exprs}
 		}
 	case GETLINE:
 		p.next()
-		name := ""
-		index := 0
+		var varExpr *VarExpr
 		if p.tok == NAME {
-			name = p.val
-			index = p.getVarIndex(name)
+			varExpr = p.varRef(p.val)
 			p.next()
 		}
 		var file Expr
@@ -748,7 +697,7 @@ func (p *parser) primary() Expr {
 			p.next()
 			file = p.expr()
 		}
-		return &GetlineExpr{nil, index, name, file}
+		return &GetlineExpr{nil, varExpr, file}
 	// Below is the parsing of all the builtin function calls. We
 	// could unify these but several of them have special handling
 	// (array/lvalue/regex params, optional arguments, etc), and
@@ -777,11 +726,8 @@ func (p *parser) primary() Expr {
 		str := p.expr()
 		p.commaNewlines()
 		array := p.val
-		p.arrayParam(array)
 		p.expect(NAME)
-		// This is kind of an abuse of VarExpr just to represent an
-		// array name, but no big deal
-		args := []Expr{str, &VarExpr{0, array}}
+		args := []Expr{str, p.arrayRef(array)}
 		if p.tok == COMMA {
 			p.commaNewlines()
 			args = append(args, p.regexStr(p.expr))
@@ -968,26 +914,23 @@ func (p *parser) error(format string, args ...interface{}) error {
 	return &ParseError{p.pos, message}
 }
 
-// Return the index of the given variable. Locals are denoted as a
-// negative index, special variables like ARGC between 1 and V_LAST,
-// and globals as greater than V_LAST.
-func (p *parser) getVarIndex(name string) int {
-	index := p.locals[name]
-	if index != 0 {
-		return index
+// Parse call to a user-defined function (and record call site for
+// resolving later).
+func (p *parser) userCall(name string, pos Position) *UserCallExpr {
+	p.expect(LPAREN)
+	args := []Expr{}
+	i := 0
+	for !p.matches(NEWLINE, RPAREN) {
+		if i > 0 {
+			p.commaNewlines()
+		}
+		arg := p.expr()
+		p.processUserCallArg(name, arg, i)
+		args = append(args, arg)
+		i++
 	}
-	index = SpecialVarIndex(name)
-	if index != 0 {
-		// Special variable like ARGC
-		return index
-	}
-	index = p.globals[name]
-	if index != 0 {
-		// Global variable that's already been seen
-		return index
-	}
-	// New global variable
-	index = len(p.globals) + V_LAST + 1
-	p.globals[name] = index
-	return index
+	p.expect(RPAREN)
+	call := &UserCallExpr{-1, name, args} // index is resolved later
+	p.recordUserCall(call, pos)
+	return call
 }

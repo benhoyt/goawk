@@ -69,29 +69,29 @@ $0 {
     getline x <"file"
     x = 0
     y = z = 0
-    a += 1
-    b -= 2
-    c *= 3
-    d /= 4
-    e ^= 5
-    f %= 6
+    b += 1
+    c -= 2
+    d *= 3
+    e /= 4
+    g ^= 5
+    h %= 6
     (x ? "t" : "f")
     ((a && b) || c)
     (k in a)
     ((x, y, z) in a)
     (s ~ "foo")
-    (a < 1)
-    (b <= 2)
-    (c > 3)
-    (d >= 4)
-    (e == 5)
-    (f != 6)
+    (b < 1)
+    (c <= 2)
+    (d > 3)
+    (e >= 4)
+    (g == 5)
+    (h != 6)
     ((x y) z)
-    ((a + b) + c)
-    ((a * b) * c)
-    ((a - b) - c)
-    ((a / b) / c)
-    (a ^ (b ^ c))
+    ((b + c) + d)
+    ((b * c) * d)
+    ((b - c) - d)
+    ((b / c) / d)
+    (b ^ (c ^ d))
     x++
     x--
     ++y
@@ -108,8 +108,8 @@ $0 {
     +x
     -x
     var
-    array[key]
-    array[x, y, z]
+    a[key]
+    a[x, y, z]
     f()
     set(a, k, v)
     sub(regex, repl)

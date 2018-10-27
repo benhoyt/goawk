@@ -548,8 +548,9 @@ func benchmarkProgram(b *testing.B, input, expected, srcFormat string, args ...i
 	if expected != "" {
 		expected += "\n"
 	}
-	if outBuf.String() != expected {
-		b.Fatalf("expected %q, got %q", expected, outBuf.String())
+	outStr := strings.Replace(outBuf.String(), "\r\n", "\n", -1)
+	if outStr != expected {
+		b.Fatalf("expected %q, got %q", expected, outStr)
 	}
 }
 

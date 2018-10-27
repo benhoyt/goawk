@@ -68,8 +68,6 @@ type interp struct {
 	flushOutput bool
 	errorOutput io.Writer
 	flushError  bool
-	globals     []value
-	arrays      map[string]map[string]value
 	argc        int
 	random      *rand.Rand
 	randSeed    float64
@@ -85,10 +83,11 @@ type interp struct {
 	hadFiles      bool
 	input         io.Reader
 
-	stack         []value
-	frameStart    int
-	localArrays   []map[string]string
-	nilLocalArray int
+	globals     []value
+	stack       []value
+	frame       []value
+	arrays      []map[string]value
+	localArrays [][]int
 
 	line        string
 	fields      []string
@@ -157,12 +156,13 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 
 	p := &interp{program: program}
 
-	// Allocate memory for variables; initialize defaults
-	p.globals = make([]value, len(program.Globals))
-	p.arrays = make(map[string]map[string]value)
-	p.regexCache = make(map[string]*regexp.Regexp, 10)
+	// Allocate memory for variables
+	p.globals = make([]value, len(program.Scalars))
 	p.stack = make([]value, 0, initialStackSize)
-	p.localArrays = make([]map[string]string, 0, initialStackSize)
+	p.arrays = make([]map[string]value, len(program.Arrays)) // TODO: add initialStackSize to cap?
+
+	// Initialize defaults
+	p.regexCache = make(map[string]*regexp.Regexp, 10)
 	p.randSeed = 1.0
 	seed := math.Float64bits(p.randSeed)
 	p.random = rand.New(rand.NewSource(int64(seed)))
@@ -175,10 +175,11 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	p.subscriptSep = "\x1c"
 
 	// Setup ARGV and other variables from config
-	p.setArray("ARGV", "0", str(config.Argv0))
+	argvIndex := program.Arrays["ARGV"]
+	p.setArray(ScopeGlobal, argvIndex, "0", str(config.Argv0))
 	p.argc = len(config.Args) + 1
 	for i, arg := range config.Args {
-		p.setArray("ARGV", strconv.Itoa(i+1), str(arg))
+		p.setArray(ScopeGlobal, argvIndex, strconv.Itoa(i+1), str(arg))
 	}
 	p.filenameIndex = 1
 	p.hadFiles = false
@@ -469,8 +470,9 @@ func (p *interp) execute(stmt Stmt) (execErr error) {
 			}
 		}
 	case *ForInStmt:
-		for index := range p.arrays[p.getArrayName(s.Array)] {
-			err := p.setVar(s.VarIndex, str(index))
+		array := p.arrays[p.getArrayIndex(s.Array.Scope, s.Array.Index)]
+		for index := range array {
+			err := p.setVar(s.Var.Scope, s.Var.Index, str(index))
 			if err != nil {
 				return err
 			}
@@ -555,7 +557,8 @@ func (p *interp) execute(stmt Stmt) (execErr error) {
 		if err != nil {
 			return err
 		}
-		delete(p.arrays[p.getArrayName(s.Array)], index)
+		array := p.arrays[p.getArrayIndex(s.Array.Scope, s.Array.Index)]
+		delete(array, index)
 	case *BlockStmt:
 		return p.executes(s.Body)
 	default:
@@ -761,7 +764,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 		}
 		return p.getField(int(indexNum))
 	case *VarExpr:
-		return p.getVar(e.Index), nil
+		return p.getVar(e.Scope, e.Index), nil
 	case *RegExpr:
 		// Stand-alone /regex/ is equivalent to: $0 ~ /regex/
 		re, err := p.compileRegex(e.Regex)
@@ -866,7 +869,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 		if err != nil {
 			return value{}, err
 		}
-		return p.getArray(e.Name, index), nil
+		return p.getArray(e.Array.Scope, e.Array.Index, index), nil
 	case *CallExpr:
 		return p.callBuiltin(e.Func, e.Args)
 	case *UnaryExpr:
@@ -880,7 +883,8 @@ func (p *interp) eval(expr Expr) (value, error) {
 		if err != nil {
 			return value{}, err
 		}
-		_, ok := p.arrays[p.getArrayName(e.Array)][index]
+		array := p.arrays[p.getArrayIndex(e.Array.Scope, e.Array.Index)]
+		_, ok := array[index]
 		return boolean(ok), nil
 	case *UserCallExpr:
 		return p.callUser(e.Index, e.Args)
@@ -931,8 +935,8 @@ func (p *interp) eval(expr Expr) (value, error) {
 				return num(-1), nil
 			}
 		}
-		if e.VarIndex != 0 {
-			err := p.setVar(e.VarIndex, str(line))
+		if e.Var != nil {
+			err := p.setVar(e.Var.Scope, e.Var.Index, str(line))
 			if err != nil {
 				return value{}, err
 			}
@@ -980,7 +984,8 @@ func (p *interp) nextLine() (string, error) {
 					return "", io.EOF
 				}
 				index := strconv.Itoa(p.filenameIndex)
-				filename := p.toString(p.getArray("ARGV", index))
+				argvIndex := p.program.Arrays["ARGV"]
+				filename := p.toString(p.getArray(ScopeGlobal, argvIndex, index))
 				p.filenameIndex++
 				matches := varRegex.FindStringSubmatch(filename)
 				if len(matches) >= 3 {
@@ -1020,154 +1025,149 @@ func (p *interp) nextLine() (string, error) {
 	return p.scanner.Text(), nil
 }
 
-func (p *interp) getVar(index int) value {
-	if index > V_LAST {
-		// Ordinary global variable
-		return p.globals[index-V_LAST-1]
-	}
-	if index < 0 {
-		// Negative index signals local variable
-		return p.stack[p.frameStart-index-1]
-	}
-	// Otherwise it's a special variable
-	switch index {
-	case V_NF:
-		return num(float64(p.numFields))
-	case V_NR:
-		return num(float64(p.lineNum))
-	case V_RLENGTH:
-		return num(float64(p.matchLength))
-	case V_RSTART:
-		return num(float64(p.matchStart))
-	case V_FNR:
-		return num(float64(p.fileLineNum))
-	case V_ARGC:
-		return num(float64(p.argc))
-	case V_CONVFMT:
-		return str(p.convertFormat)
-	case V_FILENAME:
-		return str(p.filename)
-	case V_FS:
-		return str(p.fieldSep)
-	case V_OFMT:
-		return str(p.outputFormat)
-	case V_OFS:
-		return str(p.outputFieldSep)
-	case V_ORS:
-		return str(p.outputRecordSep)
-	case V_RS:
-		return str(p.recordSep)
-	case V_SUBSEP:
-		return str(p.subscriptSep)
-	default:
-		panic(fmt.Sprintf("unexpected special variable index: %d", index))
+func (p *interp) getVar(scope VarScope, index int) value {
+	switch scope {
+	case ScopeGlobal:
+		return p.globals[index]
+	case ScopeLocal:
+		return p.frame[index]
+	default: // ScopeSpecial
+		switch index {
+		case V_NF:
+			return num(float64(p.numFields))
+		case V_NR:
+			return num(float64(p.lineNum))
+		case V_RLENGTH:
+			return num(float64(p.matchLength))
+		case V_RSTART:
+			return num(float64(p.matchStart))
+		case V_FNR:
+			return num(float64(p.fileLineNum))
+		case V_ARGC:
+			return num(float64(p.argc))
+		case V_CONVFMT:
+			return str(p.convertFormat)
+		case V_FILENAME:
+			return str(p.filename)
+		case V_FS:
+			return str(p.fieldSep)
+		case V_OFMT:
+			return str(p.outputFormat)
+		case V_OFS:
+			return str(p.outputFieldSep)
+		case V_ORS:
+			return str(p.outputRecordSep)
+		case V_RS:
+			return str(p.recordSep)
+		case V_SUBSEP:
+			return str(p.subscriptSep)
+		default:
+			panic(fmt.Sprintf("unexpected special variable index: %d", index))
+		}
 	}
 }
 
 func (p *interp) setVarByName(name, value string) error {
 	index := SpecialVarIndex(name)
-	if index == 0 {
-		index = p.program.Globals[name]
-		if index == 0 {
-			// Ignore variables that aren't defined in program
-			return nil
-		}
+	if index > 0 {
+		return p.setVar(ScopeSpecial, index, numStr(value))
 	}
-	return p.setVar(index, numStr(value))
-}
-
-func (p *interp) setVar(index int, v value) error {
-	if index > V_LAST {
-		// Ordinary global variable
-		p.globals[index-V_LAST-1] = v
-		return nil
+	index, ok := p.program.Scalars[name]
+	if ok {
+		return p.setVar(ScopeGlobal, index, numStr(value))
 	}
-	if index < 0 {
-		// Negative index signals local variable
-		p.stack[p.frameStart-index-1] = v
-		return nil
-	}
-	// Otherwise it's a special variable
-	switch index {
-	case V_NF:
-		numFields := int(v.num())
-		if numFields < 0 {
-			return newError("NF set to negative value: %d", numFields)
-		}
-		if numFields > maxFieldIndex {
-			return newError("NF set too large: %d", numFields)
-		}
-		p.numFields = numFields
-		if p.numFields < len(p.fields) {
-			p.fields = p.fields[:p.numFields]
-		}
-		for i := len(p.fields); i < p.numFields; i++ {
-			p.fields = append(p.fields, "")
-		}
-		p.line = strings.Join(p.fields, p.outputFieldSep)
-	case V_NR:
-		p.lineNum = int(v.num())
-	case V_RLENGTH:
-		p.matchLength = int(v.num())
-	case V_RSTART:
-		p.matchStart = int(v.num())
-	case V_FNR:
-		p.fileLineNum = int(v.num())
-	case V_ARGC:
-		p.argc = int(v.num())
-	case V_CONVFMT:
-		p.convertFormat = p.toString(v)
-	case V_FILENAME:
-		p.filename = p.toString(v)
-	case V_FS:
-		p.fieldSep = p.toString(v)
-		if p.fieldSep != " " {
-			re, err := regexp.Compile(p.fieldSep)
-			if err != nil {
-				return newError("invalid regex %q: %s", p.fieldSep, err)
-			}
-			p.fieldSepRegex = re
-		}
-	case V_OFMT:
-		p.outputFormat = p.toString(v)
-	case V_OFS:
-		p.outputFieldSep = p.toString(v)
-	case V_ORS:
-		p.outputRecordSep = p.toString(v)
-	case V_RS:
-		sep := p.toString(v)
-		if len(sep) > 1 {
-			return newError("RS must be at most 1 char")
-		}
-		p.recordSep = sep
-	case V_SUBSEP:
-		p.subscriptSep = p.toString(v)
-	default:
-		panic(fmt.Sprintf("unexpected special variable index: %d", index))
-	}
+	// Ignore variables that aren't defined in program
 	return nil
 }
 
-func (p *interp) getArrayName(name string) string {
-	if len(p.localArrays) > 0 {
-		n, ok := p.localArrays[len(p.localArrays)-1][name]
-		if ok {
-			return n
+func (p *interp) setVar(scope VarScope, index int, v value) error {
+	switch scope {
+	case ScopeGlobal:
+		p.globals[index] = v
+		return nil
+	case ScopeLocal:
+		p.frame[index] = v
+		return nil
+	default: // ScopeSpecial
+		switch index {
+		case V_NF:
+			numFields := int(v.num())
+			if numFields < 0 {
+				return newError("NF set to negative value: %d", numFields)
+			}
+			if numFields > maxFieldIndex {
+				return newError("NF set too large: %d", numFields)
+			}
+			p.numFields = numFields
+			if p.numFields < len(p.fields) {
+				p.fields = p.fields[:p.numFields]
+			}
+			for i := len(p.fields); i < p.numFields; i++ {
+				p.fields = append(p.fields, "")
+			}
+			p.line = strings.Join(p.fields, p.outputFieldSep)
+		case V_NR:
+			p.lineNum = int(v.num())
+		case V_RLENGTH:
+			p.matchLength = int(v.num())
+		case V_RSTART:
+			p.matchStart = int(v.num())
+		case V_FNR:
+			p.fileLineNum = int(v.num())
+		case V_ARGC:
+			p.argc = int(v.num())
+		case V_CONVFMT:
+			p.convertFormat = p.toString(v)
+		case V_FILENAME:
+			p.filename = p.toString(v)
+		case V_FS:
+			p.fieldSep = p.toString(v)
+			if p.fieldSep != " " {
+				re, err := regexp.Compile(p.fieldSep)
+				if err != nil {
+					return newError("invalid regex %q: %s", p.fieldSep, err)
+				}
+				p.fieldSepRegex = re
+			}
+		case V_OFMT:
+			p.outputFormat = p.toString(v)
+		case V_OFS:
+			p.outputFieldSep = p.toString(v)
+		case V_ORS:
+			p.outputRecordSep = p.toString(v)
+		case V_RS:
+			sep := p.toString(v)
+			if len(sep) > 1 {
+				return newError("RS must be at most 1 char")
+			}
+			p.recordSep = sep
+		case V_SUBSEP:
+			p.subscriptSep = p.toString(v)
+		default:
+			panic(fmt.Sprintf("unexpected special variable index: %d", index))
 		}
+		return nil
 	}
-	return name
 }
 
-func (p *interp) getArray(name, index string) value {
-	return p.arrays[p.getArrayName(name)][index]
+func (p *interp) getArrayIndex(scope VarScope, index int) int {
+	if scope == ScopeGlobal {
+		return index
+	} else {
+		return p.localArrays[len(p.localArrays)-1][index]
+	}
 }
 
-func (p *interp) setArray(name, index string, v value) {
-	name = p.getArrayName(name)
-	array, ok := p.arrays[name]
-	if !ok {
+func (p *interp) getArray(scope VarScope, arrayIndex int, index string) value {
+	return p.arrays[p.getArrayIndex(scope, arrayIndex)][index]
+}
+
+func (p *interp) setArray(scope VarScope, arrayIndex int, index string, v value) {
+	resolvedIndex := p.getArrayIndex(scope, arrayIndex)
+	array := p.arrays[resolvedIndex]
+	if array == nil {
 		array = make(map[string]value)
-		p.arrays[name] = array
+		p.arrays[resolvedIndex] = array
 	}
 	array[index] = v
 }
@@ -1340,8 +1340,8 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 		} else {
 			fieldSep = p.fieldSep
 		}
-		array := argExprs[1].(*VarExpr).Name
-		n, err := p.split(str, array, fieldSep)
+		arrayExpr := argExprs[1].(*ArrayExpr)
+		n, err := p.split(str, arrayExpr.Scope, arrayExpr.Index, fieldSep)
 		if err != nil {
 			return value{}, err
 		}
@@ -1526,28 +1526,27 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 	}
 }
 
+// TODO: add tests for passing an array down twice through a function, hmmm...
+/*
+function f(a, x) { return a[x] }  function g(b, y) { f(b, y) }  BEGIN { c[1]=2; print f(c, 1); print g(c, 1) }
+*/
 func (p *interp) callUser(index int, args []Expr) (value, error) {
 	f := p.program.Functions[index]
-	if len(args) > len(f.Params) {
-		return value{}, newError("%q called with more arguments than declared", f.Name)
-	}
 
 	// TODO: this whole thing is quite messy and complex, how can we simplify?
 	// Evaluate the arguments and push them onto the locals stack
-	oldFrameStart := p.frameStart
+	oldFrame := p.frame
 	newFrameStart := len(p.stack)
-	var arrays map[string]string
+	var arrays []int
 	for i, arg := range args {
 		if f.Arrays[i] {
 			a, ok := arg.(*VarExpr)
 			if !ok {
+				// TODO: add test for this
+				// TODO: can we get rid of this now that we have resolve.go?
 				return value{}, newError("%s() argument %q must be an array", f.Name, f.Params[i])
 			}
-			if arrays == nil {
-				arrays = make(map[string]string, len(f.Params))
-			}
-			arrays[f.Params[i]] = a.Name
-			p.stack = append(p.stack, value{}) // empty stack slot so locals resolve right
+			arrays = append(arrays, a.Index)
 		} else {
 			argValue, err := p.eval(arg)
 			if err != nil {
@@ -1558,20 +1557,16 @@ func (p *interp) callUser(index int, args []Expr) (value, error) {
 	}
 	// Push zero value for any additional parameters (it's valid to
 	// call a function with fewer arguments than it has parameters)
-	oldNilLocalArray := p.nilLocalArray
+	oldArraysLen := len(p.arrays)
 	for i := len(args); i < len(f.Params); i++ {
 		if f.Arrays[i] {
-			if arrays == nil {
-				arrays = make(map[string]string, len(f.Params))
-			}
-			arrays[f.Params[i]] = "__nla" + strconv.Itoa(p.nilLocalArray)
-			p.nilLocalArray++
-			p.stack = append(p.stack, value{}) // empty stack slot so locals resolve right
+			arrays = append(arrays, len(p.arrays))
+			p.arrays = append(p.arrays, nil)
 		} else {
 			p.stack = append(p.stack, value{})
 		}
 	}
-	p.frameStart = newFrameStart
+	p.frame = p.stack[newFrameStart:]
 	p.localArrays = append(p.localArrays, arrays)
 
 	// Execute the function!
@@ -1579,9 +1574,9 @@ func (p *interp) callUser(index int, args []Expr) (value, error) {
 
 	// Pop the locals off the stack
 	p.stack = p.stack[:newFrameStart]
-	p.frameStart = oldFrameStart
+	p.frame = oldFrame
 	p.localArrays = p.localArrays[:len(p.localArrays)-1]
-	p.nilLocalArray = oldNilLocalArray
+	p.arrays = p.arrays[:oldArraysLen]
 
 	if r, ok := err.(returnValue); ok {
 		return r.Value, nil
@@ -1592,7 +1587,7 @@ func (p *interp) callUser(index int, args []Expr) (value, error) {
 	return value{}, nil
 }
 
-func (p *interp) split(s, arrayName, fs string) (int, error) {
+func (p *interp) split(s string, scope VarScope, index int, fs string) (int, error) {
 	var parts []string
 	if fs == " " {
 		parts = strings.Fields(s)
@@ -1607,7 +1602,7 @@ func (p *interp) split(s, arrayName, fs string) (int, error) {
 	for i, part := range parts {
 		array[strconv.Itoa(i+1)] = numStr(part)
 	}
-	p.arrays[p.getArrayName(arrayName)] = array
+	p.arrays[p.getArrayIndex(scope, index)] = array
 	return len(array), nil
 }
 
@@ -1738,13 +1733,13 @@ func (p *interp) sprintf(format string, args []value) (string, error) {
 func (p *interp) assign(left Expr, right value) error {
 	switch left := left.(type) {
 	case *VarExpr:
-		return p.setVar(left.Index, right)
+		return p.setVar(left.Scope, left.Index, right)
 	case *IndexExpr:
 		index, err := p.evalIndex(left.Index)
 		if err != nil {
 			return err
 		}
-		p.setArray(left.Name, index, right)
+		p.setArray(left.Array.Scope, left.Array.Index, index, right)
 		return nil
 	case *FieldExpr:
 		index, err := p.eval(left.Index)
