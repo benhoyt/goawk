@@ -171,7 +171,7 @@ function set(a, k, v) {
     return
 }
 `)
-	prog, err := parser.ParseProgram([]byte(source))
+	prog, err := parser.ParseProgram([]byte(source), nil)
 	if err != nil {
 		t.Fatalf("error parsing program: %v", err)
 	}
@@ -182,7 +182,7 @@ function set(a, k, v) {
 }
 
 func Example_valid() {
-	prog, err := parser.ParseProgram([]byte("$0 { print $1 }"))
+	prog, err := parser.ParseProgram([]byte("$0 { print $1 }"), nil)
 	if err != nil {
 		fmt.Println(err)
 	} else {
@@ -195,7 +195,7 @@ func Example_valid() {
 }
 
 func Example_error() {
-	prog, err := parser.ParseProgram([]byte("{ for if }"))
+	prog, err := parser.ParseProgram([]byte("{ for if }"), nil)
 	if err != nil {
 		fmt.Println(err)
 	} else {

@@ -7,6 +7,7 @@ package parser
 
 import (
 	"fmt"
+	"io"
 	"regexp"
 	"strconv"
 	"strings"
@@ -30,9 +31,16 @@ func (e *ParseError) Error() string {
 	return fmt.Sprintf("parse error at %d:%d: %s", e.Position.Line, e.Position.Column, e.Message)
 }
 
+// Parser configuration
+type ParserConfig struct {
+	DebugTypes  bool
+	DebugWriter io.Writer
+}
+
 // ParseProgram parses an entire AWK program, returning the *Program
-// abstract syntax tree or a *ParseError on error.
-func ParseProgram(src []byte) (prog *Program, err error) {
+// abstract syntax tree or a *ParseError on error. "config" describes
+// the parser configuration (and is allowed to be nil).
+func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	defer func() {
 		// The parser uses panic with a *ParseError to signal parsing
 		// errors internally, and they're caught here. This
@@ -45,6 +53,10 @@ func ParseProgram(src []byte) (prog *Program, err error) {
 	}()
 	lexer := NewLexer(src)
 	p := parser{lexer: lexer}
+	if config != nil {
+		p.debugTypes = config.DebugTypes
+		p.debugWriter = config.DebugWriter
+	}
 	p.initResolve()
 	p.next() // initialize p.tok
 	return p.program(), nil
@@ -101,6 +113,10 @@ type parser struct {
 	// Function tracking
 	functions map[string]int // map of function name to index
 	userCalls []userCall     // record calls so we can resolve them later
+
+	// Configuration and debugging
+	debugTypes  bool      // show variable types for debugging
+	debugWriter io.Writer // where the debug output goes
 }
 
 // Parse an entire AWK program.

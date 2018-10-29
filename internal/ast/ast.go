@@ -117,17 +117,7 @@ type ArrayExpr struct {
 }
 
 func (e *ArrayExpr) String() string {
-	return e.Name // TODO
-	var scope string
-	switch e.Scope {
-	case ScopeGlobal:
-		scope = "G"
-	case ScopeLocal:
-		scope = "L"
-	default:
-		scope = "S"
-	}
-	return fmt.Sprintf("%s_a%s%d", e.Name, scope, e.Index)
+	return e.Name
 }
 
 // In expression like (index in array).
@@ -204,17 +194,7 @@ type VarExpr struct {
 }
 
 func (e *VarExpr) String() string {
-	return e.Name // TODO
-	var scope string
-	switch e.Scope {
-	case ScopeGlobal:
-		scope = "G"
-	case ScopeLocal:
-		scope = "L"
-	default:
-		scope = "S"
-	}
-	return fmt.Sprintf("%s_v%s%d", e.Name, scope, e.Index)
+	return e.Name
 }
 
 // Index expression like a[k] (rvalue or lvalue).

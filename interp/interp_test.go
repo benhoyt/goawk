@@ -397,6 +397,16 @@ BEGIN {
 }
 `, "", "1 1 2 3 5 8 13 ", "", ""},
 		{`
+function f(a, x) { return a[x] }
+function g(b, y) { f(b, y) }
+BEGIN { c[1]=2; print f(c, 1); print g(c, 1) }
+`, "", "2\n\n", "", ""},
+		{`
+function get(a, x) { return a[x] }
+BEGIN { a[1]=2; print get(a, x); print get(1, 2); }
+# !awk - awk doesn't detect this
+`, "", "", `get() argument "a" must be an array`, "attempt to use scalar"},
+		{`
 function early() {
 	print "x"
 	return
@@ -486,7 +496,7 @@ BEGIN { early() }
 
 		// Then test it in GoAWK
 		t.Run(testName, func(t *testing.T) {
-			prog, err := parser.ParseProgram([]byte(test.src))
+			prog, err := parser.ParseProgram([]byte(test.src), nil)
 			if err != nil {
 				if test.err != "" {
 					if err.Error() == test.err {
@@ -529,7 +539,7 @@ BEGIN { early() }
 func benchmarkProgram(b *testing.B, input, expected, srcFormat string, args ...interface{}) {
 	b.StopTimer()
 	src := fmt.Sprintf(srcFormat, args...)
-	prog, err := parser.ParseProgram([]byte(src))
+	prog, err := parser.ParseProgram([]byte(src), nil)
 	if err != nil {
 		b.Fatalf("error parsing %s: %v", b.Name(), err)
 	}

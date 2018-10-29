@@ -159,7 +159,8 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	// Allocate memory for variables
 	p.globals = make([]value, len(program.Scalars))
 	p.stack = make([]value, 0, initialStackSize)
-	p.arrays = make([]map[string]value, len(program.Arrays)) // TODO: add initialStackSize to cap?
+	p.arrays = make([]map[string]value, len(program.Arrays),
+		len(program.Arrays)+initialStackSize)
 
 	// Initialize defaults
 	p.regexCache = make(map[string]*regexp.Regexp, 10)
@@ -236,7 +237,7 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 // reader (nil means use os.Stdin) and writes output to stdout (nil
 // means use a buffered version of os.Stdout).
 func Exec(source, fieldSep string, input io.Reader, output io.Writer) error {
-	prog, err := ParseProgram([]byte(source))
+	prog, err := ParseProgram([]byte(source), nil)
 	if err != nil {
 		return err
 	}
@@ -1526,14 +1527,9 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 	}
 }
 
-// TODO: add tests for passing an array down twice through a function, hmmm...
-/*
-function f(a, x) { return a[x] }  function g(b, y) { f(b, y) }  BEGIN { c[1]=2; print f(c, 1); print g(c, 1) }
-*/
 func (p *interp) callUser(index int, args []Expr) (value, error) {
 	f := p.program.Functions[index]
 
-	// TODO: this whole thing is quite messy and complex, how can we simplify?
 	// Evaluate the arguments and push them onto the locals stack
 	oldFrame := p.frame
 	newFrameStart := len(p.stack)
@@ -1542,8 +1538,7 @@ func (p *interp) callUser(index int, args []Expr) (value, error) {
 		if f.Arrays[i] {
 			a, ok := arg.(*VarExpr)
 			if !ok {
-				// TODO: add test for this
-				// TODO: can we get rid of this now that we have resolve.go?
+				// TODO: can we do this at parse time now that we have resolve.go?
 				return value{}, newError("%s() argument %q must be an array", f.Name, f.Params[i])
 			}
 			arrays = append(arrays, a.Index)

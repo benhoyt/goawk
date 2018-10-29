@@ -1,7 +1,5 @@
 // Resolve function calls and variable types
 
-// TODO: comment this file
-
 package parser
 
 import (
@@ -20,6 +18,7 @@ const (
 	typeArray
 )
 
+// typeInfo records type information for a single variable
 type typeInfo struct {
 	typ      varType
 	ref      *VarExpr
@@ -29,7 +28,8 @@ type typeInfo struct {
 	argIndex int
 }
 
-func (t typeInfo) String() string { // TODO: only needed for debugging
+// Used by printVarTypes when debugTypes is turned on
+func (t typeInfo) String() string {
 	var typ string
 	switch t.typ {
 	case typeScalar:
@@ -48,20 +48,23 @@ func (t typeInfo) String() string { // TODO: only needed for debugging
 	default:
 		scope = "Special"
 	}
-	return fmt.Sprintf("typeInfo{typ: %s, ref: %p, scope: %s, index: %d, callName: %q, argIndex: %d}",
+	return fmt.Sprintf("typ=%s ref=%p scope=%s index=%d callName=%q argIndex=%d",
 		typ, t.ref, scope, t.index, t.callName, t.argIndex)
 }
 
+// A single variable reference (normally scalar)
 type varRef struct {
 	funcName string
 	ref      *VarExpr
 }
 
+// A single array reference
 type arrayRef struct {
 	funcName string
 	ref      *ArrayExpr
 }
 
+// Initialize the resolver
 func (p *parser) initResolve() {
 	p.varTypes = make(map[string]map[string]typeInfo)
 	p.varTypes[""] = make(map[string]typeInfo) // globals
@@ -69,6 +72,8 @@ func (p *parser) initResolve() {
 	p.arrayRef("ARGV") // interpreter relies on ARGV being present
 }
 
+// Signal the start of a function: records the function name and
+// local variables so variable references can determine scope
 func (p *parser) startFunction(name string, params []string) {
 	p.funcName = name
 	p.varTypes[name] = make(map[string]typeInfo)
@@ -78,24 +83,31 @@ func (p *parser) startFunction(name string, params []string) {
 	}
 }
 
+// Signal the end of a function
 func (p *parser) stopFunction() {
 	p.funcName = ""
 	p.locals = nil
 }
 
+// Add function by name with given index
 func (p *parser) addFunction(name string, index int) {
 	p.functions[name] = index
 }
 
+// Records a call to a user function (for resolving indexes later)
 type userCall struct {
 	call *UserCallExpr
 	pos  Position
 }
 
+// Record a user call site
 func (p *parser) recordUserCall(call *UserCallExpr, pos Position) {
 	p.userCalls = append(p.userCalls, userCall{call, pos})
 }
 
+// After parsing, resolve all user calls to their indexes. Also
+// ensures functions called have actually been defined, and that
+// they're not being called with too many arguments.
 func (p *parser) resolveUserCalls(prog *Program) {
 	for _, c := range p.userCalls {
 		index, ok := p.functions[c.call.Name]
@@ -110,16 +122,22 @@ func (p *parser) resolveUserCalls(prog *Program) {
 	}
 }
 
+// For arguments that are variable references, we don't know the
+// type based on context, so mark the types for these as unknown.
 func (p *parser) processUserCallArg(funcName string, arg Expr, index int) {
 	if varExpr, ok := arg.(*VarExpr); ok {
 		ref := p.varTypes[p.funcName][varExpr.Name].ref
 		if ref == varExpr {
+			// Only applies if this is the first reference to this
+			// variable (other we know the type already)
 			scope := p.varTypes[p.funcName][varExpr.Name].scope
 			p.varTypes[p.funcName][varExpr.Name] = typeInfo{typeUnknown, ref, scope, 0, funcName, index}
 		}
 	}
 }
 
+// Determine scope of given variable reference (and funcName if it's
+// a local, otherwise empty string)
 func (p *parser) getScope(name string) (VarScope, string) {
 	switch {
 	case p.funcName != "" && p.locals[name]:
@@ -131,6 +149,8 @@ func (p *parser) getScope(name string) (VarScope, string) {
 	}
 }
 
+// Record a variable (scalar) reference and return the *VarExpr (but
+// VarExpr.Index won't be set till later)
 func (p *parser) varRef(name string) *VarExpr {
 	scope, funcName := p.getScope(name)
 	expr := &VarExpr{scope, 0, name}
@@ -142,6 +162,8 @@ func (p *parser) varRef(name string) *VarExpr {
 	return expr
 }
 
+// Record an array reference and return the *ArrayExpr (but
+// ArrayExpr.Index won't be set till later)
 func (p *parser) arrayRef(name string) *ArrayExpr {
 	scope, funcName := p.getScope(name)
 	expr := &ArrayExpr{scope, 0, name}
@@ -153,7 +175,8 @@ func (p *parser) arrayRef(name string) *ArrayExpr {
 	return expr
 }
 
-func (p *parser) printVarTypes() { // TODO: only needed for debugging
+// Print variable type information (for debugging) on p.debugWriter
+func (p *parser) printVarTypes() {
 	funcNames := []string{}
 	for funcName := range p.varTypes {
 		funcNames = append(funcNames, funcName)
@@ -161,9 +184,9 @@ func (p *parser) printVarTypes() { // TODO: only needed for debugging
 	sort.Strings(funcNames)
 	for _, funcName := range funcNames {
 		if funcName != "" {
-			fmt.Printf("function %s\n", funcName)
+			fmt.Fprintf(p.debugWriter, "function %s\n", funcName)
 		} else {
-			fmt.Printf("globals\n")
+			fmt.Fprintf(p.debugWriter, "globals\n")
 		}
 		varNames := []string{}
 		for name := range p.varTypes[funcName] {
@@ -172,21 +195,25 @@ func (p *parser) printVarTypes() { // TODO: only needed for debugging
 		sort.Strings(varNames)
 		for _, name := range varNames {
 			info := p.varTypes[funcName][name]
-			fmt.Printf("    %s: %s\n", name, info)
+			fmt.Fprintf(p.debugWriter, "  %s: %s\n", name, info)
 		}
 	}
 }
 
+// Resolve unknown variables types and generate variable indexes and
+// name-to-index mappings for interpreter
 func (p *parser) resolveVars(prog *Program) {
-	// p.printVarTypes()
+	// First go through all unknown types and try to determine the
+	// type from the parameter type in that function definition. May
+	// need multiple passes depending on the order of functions. This
+	// is not particularly efficient, but on realistic programs it's
+	// not an issue.
 	for i := 0; i < 5; i++ {
-		// fmt.Println("ITERATION", i)
 		numUnknowns := 0
 		for funcName, infos := range p.varTypes {
 			for name, info := range infos {
 				if info.typ == typeUnknown {
 					numUnknowns++
-					// fmt.Printf("LOCAL UNKNOWN in function %s: %s (calling %s)\n", funcName, name, info.callName)
 					paramName := prog.Functions[p.functions[info.callName]].Params[info.argIndex]
 					typ := p.varTypes[info.callName][paramName].typ
 					if typ != typeUnknown {
@@ -204,9 +231,6 @@ func (p *parser) resolveVars(prog *Program) {
 		}
 		// TODO: only continue if we've "made progress" instead?
 	}
-
-	// TODO: oh wait, local indexes should be ordered by param position;
-	// currently the order of argument passing is kinda random!
 
 	// Resolve global variables (iteration order is undefined, so
 	// assign indexes basically randomly)
@@ -259,12 +283,9 @@ func (p *parser) resolveVars(prog *Program) {
 		prog.Functions[functionIndex].Arrays = arrays
 	}
 
-	// p.printVarTypes()
-	// fmt.Printf("prog.Scalars = %v\n", prog.Scalars)
-	// fmt.Printf("prog.Arrays = %v\n", prog.Arrays)
-
-	// TODO: should we change array VarExpr in UserCallExprs to ArrayExpr,
-	// or just handle in interpreter?
+	if p.debugTypes {
+		p.printVarTypes()
+	}
 
 	// TODO: would be nice to add errors for "can't use array as scalar"
 	// and "can't use scalar as array"

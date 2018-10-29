@@ -145,7 +145,7 @@ func parseGoAWK(srcPath string) (*parser.Program, error) {
 	if err != nil {
 		return nil, err
 	}
-	prog, err := parser.ParseProgram(src)
+	prog, err := parser.ParseProgram(src, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -38,12 +38,9 @@ TODO:
 - timeout / infinite loop why?
   BEGIN { x[x[x[x[--x[FS = (FS FS)]]--]--]--]-- }
 - performance testing: I/O, allocations, CPU
-  + resolve array variables at parse time (by index instead of name)
-  + resolve array parameters to functions at parse time and clean up userCall
   + buffer > and >> output (see TODO in getOutputStream)
   + other "escapes to heap" uses of make() in interp.go
   + writeOutput crlfNewline handling is probably slow
-  + try using a typ and index for getVarIndex instead of just int?
   + benchmark against awk/gawk with some real awk scripts
   + why does writing output take 180ms with script '$0', but 630ms with script '/.$/'?
   + optimize parser
@@ -52,15 +49,11 @@ TODO:
 - think about length() and substr() chars vs bytes:
   https://github.com/benhoyt/goawk/issues/2#issuecomment-415314000
 - get goawk_test.go working in TravisCI
-- error if array is used as scalar and vice-versa
-- try out Go 2 error handling proposal with the GoAWK codebase:
-  https://go.googlesource.com/proposal/+/master/design/go2draft-error-handling.md
 
 NICE TO HAVE:
 - fix broken (commented-out) interp tests due to syntax handling
 - think about proper CSV support: https://news.ycombinator.com/item?id=17788471
 - think about linear time string concat: https://news.ycombinator.com/item?id=17788028
-- support for calling Go functions: https://news.ycombinator.com/item?id=17788915
 - interp: flag "unexpected comma-separated expression" at parse time
 
 ISSUE - discrepancy against gawk on Windows:
@@ -112,6 +105,7 @@ func main() {
 	flag.Var(&vars, "v", "name=value variable `assignment` (multiple allowed)")
 
 	debug := flag.Bool("d", false, "debug mode (print parsed AST to stderr)")
+	debugTypes := flag.Bool("dt", false, "show variable types debug info")
 	cpuprofile := flag.String("cpuprofile", "", "write CPU profile to `file`")
 	memprofile := flag.String("memprofile", "", "write memory profile to `file`")
 
@@ -150,7 +144,11 @@ func main() {
 		args = args[1:]
 	}
 
-	prog, err := parser.ParseProgram(src)
+	parserConfig := &parser.ParserConfig{
+		DebugTypes:  *debugTypes,
+		DebugWriter: os.Stderr,
+	}
+	prog, err := parser.ParseProgram(src, parserConfig)
 	if err != nil {
 		errMsg := fmt.Sprintf("%s", err)
 		if err, ok := err.(*parser.ParseError); ok {

@@ -42,7 +42,7 @@ func Example_program() {
 	src := "{ print NR, tolower($0) }"
 	input := "A\naB\nAbC"
 
-	prog, err := parser.ParseProgram([]byte(src))
+	prog, err := parser.ParseProgram([]byte(src), nil)
 	if err != nil {
 		fmt.Println(err)
 		return
