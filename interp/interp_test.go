@@ -402,6 +402,12 @@ function g(b, y) { f(b, y) }
 BEGIN { c[1]=2; print f(c, 1); print g(c, 1) }
 `, "", "2\n\n", "", ""},
 		{`
+function h(b, y) { g(b, y) }
+function g(b, y) { f(b, y) }
+function f(a, x) { return a[x] }
+BEGIN { c[1]=2; print f(c, 1); print g(c, 1) }
+`, "", "2\n\n", "", ""},
+		{`
 function get(a, x) { return a[x] }
 BEGIN { a[1]=2; print get(a, x); print get(1, 2); }
 # !awk - awk doesn't detect this

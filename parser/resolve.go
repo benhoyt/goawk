@@ -200,6 +200,9 @@ func (p *parser) printVarTypes() {
 	}
 }
 
+// If we can't finish resolving after this many iterations, give up
+const maxResolveIterations = 10000
+
 // Resolve unknown variables types and generate variable indexes and
 // name-to-index mappings for interpreter
 func (p *parser) resolveVars(prog *Program) {
@@ -208,17 +211,17 @@ func (p *parser) resolveVars(prog *Program) {
 	// need multiple passes depending on the order of functions. This
 	// is not particularly efficient, but on realistic programs it's
 	// not an issue.
-	for i := 0; i < 5; i++ {
-		numUnknowns := 0
+	for i := 0; ; i++ {
+		progressed := false
 		for funcName, infos := range p.varTypes {
 			for name, info := range infos {
 				if info.typ == typeUnknown {
-					numUnknowns++
 					paramName := prog.Functions[p.functions[info.callName]].Params[info.argIndex]
 					typ := p.varTypes[info.callName][paramName].typ
 					if typ != typeUnknown {
 						info.typ = typ
 						p.varTypes[funcName][name] = info
+						progressed = true
 					}
 				}
 				// TODO: should check here that a variable that's used
@@ -226,10 +229,14 @@ func (p *parser) resolveVars(prog *Program) {
 				// vice versa
 			}
 		}
-		if numUnknowns == 0 {
+		if !progressed {
+			// If we didn't progress we're done (or trying again is
+			// not going to help)
 			break
 		}
-		// TODO: only continue if we've "made progress" instead?
+		if i >= maxResolveIterations {
+			panic(p.error("too many iterations trying to resolve variable types"))
+		}
 	}
 
 	// Resolve global variables (iteration order is undefined, so
