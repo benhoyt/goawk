@@ -56,12 +56,15 @@ func (t typeInfo) String() string {
 type varRef struct {
 	funcName string
 	ref      *VarExpr
+	isArg    bool
+	pos      Position
 }
 
 // A single array reference
 type arrayRef struct {
 	funcName string
 	ref      *ArrayExpr
+	pos      Position
 }
 
 // Initialize the resolver
@@ -69,7 +72,7 @@ func (p *parser) initResolve() {
 	p.varTypes = make(map[string]map[string]typeInfo)
 	p.varTypes[""] = make(map[string]typeInfo) // globals
 	p.functions = make(map[string]int)
-	p.arrayRef("ARGV") // interpreter relies on ARGV being present
+	p.arrayRef("ARGV", Position{1, 1}) // interpreter relies on ARGV being present
 }
 
 // Signal the start of a function: records the function name and
@@ -129,10 +132,13 @@ func (p *parser) processUserCallArg(funcName string, arg Expr, index int) {
 		ref := p.varTypes[p.funcName][varExpr.Name].ref
 		if ref == varExpr {
 			// Only applies if this is the first reference to this
-			// variable (other we know the type already)
+			// variable (otherwise we know the type already)
 			scope := p.varTypes[p.funcName][varExpr.Name].scope
 			p.varTypes[p.funcName][varExpr.Name] = typeInfo{typeUnknown, ref, scope, 0, funcName, index}
 		}
+		// Mark the last related varRef (the most recent one) as a
+		// call argument for later error handling
+		p.varRefs[len(p.varRefs)-1].isArg = true
 	}
 }
 
@@ -151,10 +157,10 @@ func (p *parser) getScope(name string) (VarScope, string) {
 
 // Record a variable (scalar) reference and return the *VarExpr (but
 // VarExpr.Index won't be set till later)
-func (p *parser) varRef(name string) *VarExpr {
+func (p *parser) varRef(name string, pos Position) *VarExpr {
 	scope, funcName := p.getScope(name)
 	expr := &VarExpr{scope, 0, name}
-	p.varRefs = append(p.varRefs, varRef{funcName, expr})
+	p.varRefs = append(p.varRefs, varRef{funcName, expr, false, pos})
 	typ := p.varTypes[funcName][name].typ
 	if typ == typeUnknown {
 		p.varTypes[funcName][name] = typeInfo{typeScalar, expr, scope, 0, "", 0}
@@ -164,10 +170,10 @@ func (p *parser) varRef(name string) *VarExpr {
 
 // Record an array reference and return the *ArrayExpr (but
 // ArrayExpr.Index won't be set till later)
-func (p *parser) arrayRef(name string) *ArrayExpr {
+func (p *parser) arrayRef(name string, pos Position) *ArrayExpr {
 	scope, funcName := p.getScope(name)
 	expr := &ArrayExpr{scope, 0, name}
-	p.arrayRefs = append(p.arrayRefs, arrayRef{funcName, expr})
+	p.arrayRefs = append(p.arrayRefs, arrayRef{funcName, expr, pos})
 	typ := p.varTypes[funcName][name].typ
 	if typ == typeUnknown {
 		p.varTypes[funcName][name] = typeInfo{typeArray, nil, scope, 0, "", 0}
@@ -301,10 +307,18 @@ func (p *parser) resolveVars(prog *Program) {
 	// the name for more efficient lookups)
 	for _, varRef := range p.varRefs {
 		info := p.varTypes[varRef.funcName][varRef.ref.Name]
+		if info.typ == typeArray && !varRef.isArg {
+			message := fmt.Sprintf("can't use array %q as scalar", varRef.ref.Name)
+			panic(&ParseError{varRef.pos, message})
+		}
 		varRef.ref.Index = info.index
 	}
 	for _, arrayRef := range p.arrayRefs {
 		info := p.varTypes[arrayRef.funcName][arrayRef.ref.Name]
+		if info.typ == typeScalar {
+			message := fmt.Sprintf("can't use scalar %q as array", arrayRef.ref.Name)
+			panic(&ParseError{arrayRef.pos, message})
+		}
 		arrayRef.ref.Index = info.index
 	}
 }

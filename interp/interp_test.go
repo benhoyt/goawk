@@ -422,6 +422,10 @@ BEGIN { early() }
 `, "", "x\n", "", ""},
 		{`BEGIN { return }`, "", "", "parse error at 1:9: return must be inside a function", "return"},
 
+		// Type checking / resolver tests
+		{`BEGIN { a[x]; a=42 }`, "", "", `parse error at 1:15: can't use array "a" as scalar`, "array"},
+		{`BEGIN { s=42; s[x] }`, "", "", `parse error at 1:15: can't use scalar "s" as array`, "array"},
+
 		// Redirected I/O
 		// TODO: these tests currently panic() due to bug with s.(io.Reader) in interp.go
 		//{`BEGIN { print >"out"; getline <"out" }`, "", "", "can't read from writer stream", ""},

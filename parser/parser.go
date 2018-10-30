@@ -215,12 +215,12 @@ func (p *parser) simpleStmt() Stmt {
 		}
 	case DELETE:
 		p.next()
-		array := p.val
+		ref := p.arrayRef(p.val, p.pos)
 		p.expect(NAME)
 		p.expect(LBRACKET)
 		index := p.exprList(p.expr)
 		p.expect(RBRACKET)
-		return &DeleteStmt{p.arrayRef(array), index}
+		return &DeleteStmt{ref, index}
 	case IF, FOR, WHILE, DO, BREAK, CONTINUE, NEXT, EXIT, RETURN:
 		panic(p.error("expected print/printf, delete, or expression"))
 	default:
@@ -284,7 +284,7 @@ func (p *parser) stmt() Stmt {
 				panic(p.error("expected 'for (var in array) ...'"))
 			}
 			body := p.loopStmts()
-			s = &ForInStmt{p.varRef(varExpr.Name), inExpr.Array, body}
+			s = &ForInStmt{varExpr, inExpr.Array, body}
 		} else {
 			// Match: for ([pre]; [cond]; [post]) body
 			p.expect(SEMICOLON)
@@ -452,7 +452,7 @@ func (p *parser) getLine() Expr {
 		p.expect(GETLINE)
 		var varExpr *VarExpr
 		if p.tok == NAME {
-			varExpr = p.varRef(p.val)
+			varExpr = p.varRef(p.val, p.pos)
 			p.next()
 		}
 		return &GetlineExpr{expr, varExpr, nil}
@@ -541,9 +541,9 @@ func (p *parser) _in(higher func() Expr) Expr {
 	expr := higher()
 	for p.tok == IN {
 		p.next()
-		array := p.val
+		ref := p.arrayRef(p.val, p.pos)
 		p.expect(NAME)
-		expr = &InExpr{[]Expr{expr}, p.arrayRef(array)}
+		expr = &InExpr{[]Expr{expr}, ref}
 	}
 	return expr
 }
@@ -672,14 +672,14 @@ func (p *parser) primary() Expr {
 			p.next()
 			index := p.exprList(p.expr)
 			p.expect(RBRACKET)
-			return &IndexExpr{p.arrayRef(name), index}
+			return &IndexExpr{p.arrayRef(name, namePos), index}
 		} else if p.tok == LPAREN && !p.lexer.HadSpace() {
 			// Grammar requires no space between function name and
 			// left paren for user function calls, hence the funky
 			// lexer.HadSpace() method.
 			return p.userCall(name, namePos)
 		}
-		return p.varRef(name)
+		return p.varRef(name, namePos)
 	case LPAREN:
 		p.next()
 		exprs := p.exprList(p.expr)
@@ -694,9 +694,9 @@ func (p *parser) primary() Expr {
 			p.expect(RPAREN)
 			if p.tok == IN {
 				p.next()
-				array := p.val
+				ref := p.arrayRef(p.val, p.pos)
 				p.expect(NAME)
-				return &InExpr{exprs, p.arrayRef(array)}
+				return &InExpr{exprs, ref}
 			}
 			// MultiExpr is used as a pseudo-expression for print[f] parsing.
 			return &MultiExpr{exprs}
@@ -705,7 +705,7 @@ func (p *parser) primary() Expr {
 		p.next()
 		var varExpr *VarExpr
 		if p.tok == NAME {
-			varExpr = p.varRef(p.val)
+			varExpr = p.varRef(p.val, p.pos)
 			p.next()
 		}
 		var file Expr
@@ -741,9 +741,9 @@ func (p *parser) primary() Expr {
 		p.expect(LPAREN)
 		str := p.expr()
 		p.commaNewlines()
-		array := p.val
+		ref := p.arrayRef(p.val, p.pos)
 		p.expect(NAME)
-		args := []Expr{str, p.arrayRef(array)}
+		args := []Expr{str, ref}
 		if p.tok == COMMA {
 			p.commaNewlines()
 			args = append(args, p.regexStr(p.expr))
