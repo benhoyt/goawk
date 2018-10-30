@@ -379,11 +379,11 @@ func (p *interp) execute(stmt Stmt) (execErr error) {
 		if len(s.Args) > 0 {
 			strs := make([]string, len(s.Args)) // TODO: escapes to heap
 			for i, a := range s.Args {
-				value, err := p.eval(a)
+				v, err := p.eval(a)
 				if err != nil {
 					return err
 				}
-				strs[i] = value.str(p.outputFormat)
+				strs[i] = v.str(p.outputFormat)
 			}
 			line = strings.Join(strs, p.outputFieldSep)
 		} else {
@@ -489,15 +489,15 @@ func (p *interp) execute(stmt Stmt) (execErr error) {
 			}
 		}
 	case *ReturnStmt:
-		var value value
+		var v value
 		if s.Value != nil {
 			var err error
-			value, err = p.eval(s.Value)
+			v, err = p.eval(s.Value)
 			if err != nil {
 				return err
 			}
 		}
-		return returnValue{value}
+		return returnValue{v}
 	case *WhileStmt:
 		for {
 			v, err := p.eval(s.Cond)
