@@ -411,7 +411,7 @@ BEGIN { c[1]=2; print f(c, 1); print g(c, 1) }
 function get(a, x) { return a[x] }
 BEGIN { a[1]=2; print get(a, x); print get(1, 2); }
 # !awk - awk doesn't detect this
-`, "", "", `get() argument "a" must be an array`, "attempt to use scalar"},
+`, "", "", `parse error at 3:40: can't pass scalar 1 as array param`, "attempt to use scalar"},
 		{`
 function early() {
 	print "x"
@@ -425,6 +425,10 @@ BEGIN { early() }
 		// Type checking / resolver tests
 		{`BEGIN { a[x]; a=42 }`, "", "", `parse error at 1:15: can't use array "a" as scalar`, "array"},
 		{`BEGIN { s=42; s[x] }`, "", "", `parse error at 1:15: can't use scalar "s" as array`, "array"},
+		{`function get(a, k) { return a[k] }  BEGIN { a = 42; print get(a, 1); }  # !awk - doesn't error in awk`,
+			"", "", `parse error at 1:59: can't pass scalar "a" as array param`, "attempt to use scalar parameter `a' as an array"},
+		{`function get(a, k) { return a+k } BEGIN { a[42]; print get(a, 1); }`,
+			"", "", `parse error at 1:56: can't pass array "a" as scalar param`, "array"},
 
 		// Redirected I/O
 		// TODO: these tests currently panic() due to bug with s.(io.Reader) in interp.go

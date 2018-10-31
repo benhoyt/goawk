@@ -1536,11 +1536,7 @@ func (p *interp) callUser(index int, args []Expr) (value, error) {
 	var arrays []int
 	for i, arg := range args {
 		if f.Arrays[i] {
-			a, ok := arg.(*VarExpr)
-			if !ok {
-				// TODO: can we do this at parse time now that we have resolve.go?
-				return value{}, newError("%s() argument %q must be an array", f.Name, f.Params[i])
-			}
+			a := arg.(*VarExpr)
 			arrays = append(arrays, a.Index)
 		} else {
 			argValue, err := p.eval(arg)

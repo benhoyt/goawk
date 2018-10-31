@@ -99,13 +99,14 @@ func (p *parser) addFunction(name string, index int) {
 
 // Records a call to a user function (for resolving indexes later)
 type userCall struct {
-	call *UserCallExpr
-	pos  Position
+	call   *UserCallExpr
+	pos    Position
+	inFunc string
 }
 
 // Record a user call site
 func (p *parser) recordUserCall(call *UserCallExpr, pos Position) {
-	p.userCalls = append(p.userCalls, userCall{call, pos})
+	p.userCalls = append(p.userCalls, userCall{call, pos, p.funcName})
 }
 
 // After parsing, resolve all user calls to their indexes. Also
@@ -230,9 +231,6 @@ func (p *parser) resolveVars(prog *Program) {
 						progressed = true
 					}
 				}
-				// TODO: should check here that a variable that's used
-				// as a scalar isn't an array param to a user call, and
-				// vice versa
 			}
 		}
 		if !progressed {
@@ -296,12 +294,34 @@ func (p *parser) resolveVars(prog *Program) {
 		prog.Functions[functionIndex].Arrays = arrays
 	}
 
+	// Check that variables passed to functions are the correct type
+	for _, c := range p.userCalls {
+		function := prog.Functions[c.call.Index]
+		for i, arg := range c.call.Args {
+			varExpr, ok := arg.(*VarExpr)
+			if !ok {
+				if function.Arrays[i] {
+					message := fmt.Sprintf("can't pass scalar %s as array param", arg)
+					panic(&ParseError{c.pos, message})
+				}
+				continue
+			}
+			info := p.varTypes[c.inFunc][varExpr.Name]
+			typ := info.typ
+			if typ == typeArray && !function.Arrays[i] {
+				message := fmt.Sprintf("can't pass array %q as scalar param", varExpr.Name)
+				panic(&ParseError{c.pos, message})
+			}
+			if typ != typeArray && function.Arrays[i] {
+				message := fmt.Sprintf("can't pass scalar %q as array param", varExpr.Name)
+				panic(&ParseError{c.pos, message})
+			}
+		}
+	}
+
 	if p.debugTypes {
 		p.printVarTypes()
 	}
-
-	// TODO: would be nice to add errors for "can't use array as scalar"
-	// and "can't use scalar as array"
 
 	// Patch up variable indexes (interpreter uses an index instead
 	// the name for more efficient lookups)
