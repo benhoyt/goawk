@@ -429,6 +429,7 @@ BEGIN { early() }
 			"", "", `parse error at 1:59: can't pass scalar "a" as array param`, "attempt to use scalar parameter `a' as an array"},
 		{`function get(a, k) { return a+k } BEGIN { a[42]; print get(a, 1); }`,
 			"", "", `parse error at 1:56: can't pass array "a" as scalar param`, "array"},
+		{`{ f(z) }  function f(x) { print NR }`, "abc", "1\n", "", ""},
 
 		// Redirected I/O
 		// TODO: these tests currently panic() due to bug with s.(io.Reader) in interp.go

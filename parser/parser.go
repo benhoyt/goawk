@@ -31,9 +31,12 @@ func (e *ParseError) Error() string {
 	return fmt.Sprintf("parse error at %d:%d: %s", e.Position.Line, e.Position.Column, e.Message)
 }
 
-// Parser configuration
+// ParseConfig lets you specify configuration for the parsing process
+// (for example printing type information for debugging).
 type ParserConfig struct {
+	// Enable printing of type information
 	DebugTypes  bool
+	// io.Writer to print type information on (for example, os.Stderr)
 	DebugWriter io.Writer
 }
 

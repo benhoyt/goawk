@@ -183,7 +183,9 @@ func (p *parser) arrayRef(name string, pos Position) *ArrayExpr {
 }
 
 // Print variable type information (for debugging) on p.debugWriter
-func (p *parser) printVarTypes() {
+func (p *parser) printVarTypes(prog *Program) {
+	fmt.Fprintf(p.debugWriter, "scalars: %v\n", prog.Scalars)
+	fmt.Fprintf(p.debugWriter, "arrays: %v\n", prog.Arrays)
 	funcNames := []string{}
 	for funcName := range p.varTypes {
 		funcNames = append(funcNames, funcName)
@@ -251,12 +253,12 @@ func (p *parser) resolveVars(prog *Program) {
 		var index int
 		if info.scope == ScopeSpecial {
 			index = SpecialVarIndex(name)
-		} else if info.typ == typeScalar {
-			index = len(prog.Scalars)
-			prog.Scalars[name] = index
-		} else {
+		} else if info.typ == typeArray {
 			index = len(prog.Arrays)
 			prog.Arrays[name] = index
+		} else {
+			index = len(prog.Scalars)
+			prog.Scalars[name] = index
 		}
 		info.index = index
 		p.varTypes[""][name] = info
@@ -320,7 +322,7 @@ func (p *parser) resolveVars(prog *Program) {
 	}
 
 	if p.debugTypes {
-		p.printVarTypes()
+		p.printVarTypes(prog)
 	}
 
 	// Patch up variable indexes (interpreter uses an index instead

@@ -29,10 +29,7 @@ package main
 
 /*
 
-
-
 TODO:
-- resolving (should work): { f(z) }  function f(x) { print NR }
 - fix bug with handling of RS=""
 - fix crash with: BEGIN { print |"1"; getline <"1" }  # also print >"1"
 - timeout / infinite loop why?
