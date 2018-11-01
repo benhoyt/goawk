@@ -9,7 +9,6 @@ package interp
 
 import (
 	"bufio"
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -22,8 +21,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"syscall"
-	"time"
 
 	. "github.com/benhoyt/goawk/internal/ast"
 	. "github.com/benhoyt/goawk/lexer"
@@ -63,39 +60,37 @@ func (r returnValue) Error() string {
 }
 
 type interp struct {
-	program     *Program
-	output      io.Writer
-	flushOutput bool
-	errorOutput io.Writer
-	flushError  bool
-	argc        int
-	random      *rand.Rand
-	randSeed    float64
-	exitStatus  int
-	streams     map[string]io.Closer
-	commands    map[string]*exec.Cmd
-	regexCache  map[string]*regexp.Regexp
-
+	// Input/output
+	output        io.Writer
+	flushOutput   bool
+	errorOutput   io.Writer
+	flushError    bool
 	scanner       *bufio.Scanner
 	scanners      map[string]*bufio.Scanner
 	stdin         io.Reader
 	filenameIndex int
 	hadFiles      bool
 	input         io.Reader
+	streams       map[string]io.Closer
+	commands      map[string]*exec.Cmd
 
+	// Scalars and arrays
 	globals     []value
 	stack       []value
 	frame       []value
 	arrays      []map[string]value
 	localArrays [][]int
 
+	// File, line, and field handling
+	filename    string
 	line        string
+	lineNum     int
+	fileLineNum int
 	fields      []string
 	numFields   int
-	lineNum     int
-	filename    string
-	fileLineNum int
 
+	// Built-in variables
+	argc            int
 	convertFormat   string
 	outputFormat    string
 	fieldSep        string
@@ -106,8 +101,17 @@ type interp struct {
 	subscriptSep    string
 	matchLength     int
 	matchStart      int
+
+	// Misc pieces of state
+	program    *Program
+	random     *rand.Rand
+	randSeed   float64
+	exitStatus int
+	regexCache map[string]*regexp.Regexp
 }
 
+// Various const configuration. Could make these part of Config if
+// we wanted to, but no need for now.
 const (
 	maxCachedRegexes = 100
 	maxRecordLength  = 10 * 1024 * 1024 // 10MB seems like plenty
@@ -177,10 +181,10 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 
 	// Setup ARGV and other variables from config
 	argvIndex := program.Arrays["ARGV"]
-	p.setArray(ScopeGlobal, argvIndex, "0", str(config.Argv0))
+	p.setArrayValue(ScopeGlobal, argvIndex, "0", str(config.Argv0))
 	p.argc = len(config.Args) + 1
 	for i, arg := range config.Args {
-		p.setArray(ScopeGlobal, argvIndex, strconv.Itoa(i+1), str(arg))
+		p.setArrayValue(ScopeGlobal, argvIndex, strconv.Itoa(i+1), str(arg))
 	}
 	p.filenameIndex = 1
 	p.hadFiles = false
@@ -251,24 +255,7 @@ func Exec(source, fieldSep string, input io.Reader, output io.Writer) error {
 	return err
 }
 
-func (p *interp) closeAll() {
-	if prevInput, ok := p.input.(io.Closer); ok {
-		prevInput.Close()
-	}
-	for _, w := range p.streams {
-		_ = w.Close()
-	}
-	for _, cmd := range p.commands {
-		_ = cmd.Wait()
-	}
-	if p.flushOutput {
-		p.output.(*bufio.Writer).Flush()
-	}
-	if p.flushError {
-		p.errorOutput.(*bufio.Writer).Flush()
-	}
-}
-
+// Execute BEGIN blocks (may be multiple)
 func (p *interp) execBegin(begin []Stmts) error {
 	for _, statements := range begin {
 		err := p.executes(statements)
@@ -279,10 +266,12 @@ func (p *interp) execBegin(begin []Stmts) error {
 	return nil
 }
 
+// Execute pattern-action blocks (may be multiple)
 func (p *interp) execActions(actions []Action) error {
 	inRange := make([]bool, len(actions))
 lineLoop:
 	for {
+		// Read and setup next line of input
 		line, err := p.nextLine()
 		if err == io.EOF {
 			break
@@ -291,7 +280,10 @@ lineLoop:
 			return err
 		}
 		p.setLine(line)
+
+		// Execute all the pattern-action blocks for each line
 		for i, action := range actions {
+			// First determine whether the pattern matches
 			matched := false
 			switch len(action.Pattern) {
 			case 0:
@@ -325,20 +317,20 @@ lineLoop:
 			if !matched {
 				continue
 			}
+
 			// No action is equivalent to { print $0 }
 			if action.Stmts == nil {
-				err := writeOutput(p.output, p.line)
-				if err != nil {
-					return err
-				}
-				err = writeOutput(p.output, p.outputRecordSep)
+				err := p.printLine(p.output, p.line)
 				if err != nil {
 					return err
 				}
 				continue
 			}
+
+			// Execute the body statements
 			err := p.executes(action.Stmts)
 			if err == errNext {
+				// "next" statement skips straight to next line
 				continue lineLoop
 			}
 			if err != nil {
@@ -349,6 +341,7 @@ lineLoop:
 	return nil
 }
 
+// Execute END blocks (may be multiple)
 func (p *interp) execEnd(end []Stmts) error {
 	for _, statements := range end {
 		err := p.executes(statements)
@@ -359,6 +352,7 @@ func (p *interp) execEnd(end []Stmts) error {
 	return nil
 }
 
+// Execute a block of multiple statements
 func (p *interp) executes(stmts Stmts) error {
 	for _, s := range stmts {
 		err := p.execute(s)
@@ -369,12 +363,16 @@ func (p *interp) executes(stmts Stmts) error {
 	return nil
 }
 
-func (p *interp) execute(stmt Stmt) (execErr error) {
+// Execute a single statement
+func (p *interp) execute(stmt Stmt) error {
 	switch s := stmt.(type) {
 	case *ExprStmt:
+		// Expression statement: simply throw away the expression value
 		_, err := p.eval(s.Expr)
 		return err
+
 	case *PrintStmt:
+		// Print OFS-separated args followed by ORS (usually newline)
 		var line string
 		if len(s.Args) > 0 {
 			strs := make([]string, len(s.Args)) // TODO: escapes to heap
@@ -387,21 +385,18 @@ func (p *interp) execute(stmt Stmt) (execErr error) {
 			}
 			line = strings.Join(strs, p.outputFieldSep)
 		} else {
+			// "print" with no args is equivalent to "print $0"
 			line = p.line
 		}
 		output, err := p.getOutputStream(s.Redirect, s.Dest)
 		if err != nil {
 			return err
 		}
-		err = writeOutput(output, line)
-		if err != nil {
-			return err
-		}
-		err = writeOutput(output, p.outputRecordSep)
-		if err != nil {
-			return err
-		}
+		return p.printLine(output, line)
+
 	case *PrintfStmt:
+		// printf(fmt, arg1, arg2, ...): uses our version of sprintf
+		// to build the formatted string and then print that
 		if len(s.Args) == 0 {
 			break
 		}
@@ -429,6 +424,7 @@ func (p *interp) execute(stmt Stmt) (execErr error) {
 		if err != nil {
 			return err
 		}
+
 	case *IfStmt:
 		v, err := p.eval(s.Cond)
 		if err != nil {
@@ -437,9 +433,12 @@ func (p *interp) execute(stmt Stmt) (execErr error) {
 		if v.boolean() {
 			return p.executes(s.Body)
 		} else {
+			// Doesn't do anything if s.Else is nil
 			return p.executes(s.Else)
 		}
+
 	case *ForStmt:
+		// C-like for loop with pre-statement, cond, and post-statement
 		if s.Pre != nil {
 			err := p.execute(s.Pre)
 			if err != nil {
@@ -470,7 +469,9 @@ func (p *interp) execute(stmt Stmt) (execErr error) {
 				}
 			}
 		}
+
 	case *ForInStmt:
+		// Foreach-style "for (key in array)" loop
 		array := p.arrays[p.getArrayIndex(s.Array.Scope, s.Array.Index)]
 		for index := range array {
 			err := p.setVar(s.Var.Scope, s.Var.Index, str(index))
@@ -488,7 +489,10 @@ func (p *interp) execute(stmt Stmt) (execErr error) {
 				return err
 			}
 		}
+
 	case *ReturnStmt:
+		// Return statement uses special error value which is "caught"
+		// by the callUser function
 		var v value
 		if s.Value != nil {
 			var err error
@@ -498,7 +502,9 @@ func (p *interp) execute(stmt Stmt) (execErr error) {
 			}
 		}
 		return returnValue{v}
+
 	case *WhileStmt:
+		// Simple "while (cond)" loop
 		for {
 			v, err := p.eval(s.Cond)
 			if err != nil {
@@ -518,7 +524,9 @@ func (p *interp) execute(stmt Stmt) (execErr error) {
 				return err
 			}
 		}
+
 	case *DoWhileStmt:
+		// Do-while loop (tests condition after executing body)
 		for {
 			err := p.executes(s.Body)
 			if err == errBreak {
@@ -538,6 +546,8 @@ func (p *interp) execute(stmt Stmt) (execErr error) {
 				break
 			}
 		}
+
+	// Break, continue, next, and exit statements
 	case *BreakStmt:
 		return errBreak
 	case *ContinueStmt:
@@ -552,209 +562,42 @@ func (p *interp) execute(stmt Stmt) (execErr error) {
 			}
 			p.exitStatus = int(status.num())
 		}
+		// Return special errExit value "caught" by top-level executor
 		return errExit
+
 	case *DeleteStmt:
+		// Delete key from array
 		index, err := p.evalIndex(s.Index)
 		if err != nil {
 			return err
 		}
 		array := p.arrays[p.getArrayIndex(s.Array.Scope, s.Array.Index)]
-		delete(array, index)
+		delete(array, index) // Does nothing if key isn't present
+
 	case *BlockStmt:
+		// Nested block (just syntax, doesn't do anything)
 		return p.executes(s.Body)
+
 	default:
+		// Should never happen
 		panic(fmt.Sprintf("unexpected stmt type: %T", stmt))
 	}
 	return nil
 }
 
-func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
-	if redirect == ILLEGAL {
-		// This means send to standard output
-		return p.output, nil
-	}
-	destValue, err := p.eval(dest)
-	if err != nil {
-		return nil, err
-	}
-	name := p.toString(destValue)
-	if s, ok := p.streams[name]; ok {
-		if w, ok := s.(io.Writer); ok {
-			return w, nil
-		}
-		return nil, newError("can't write to reader stream")
-	}
-	switch redirect {
-	case GREATER, APPEND:
-		flags := os.O_CREATE | os.O_WRONLY
-		if redirect == GREATER {
-			flags |= os.O_TRUNC
-		} else {
-			flags |= os.O_APPEND
-		}
-		// TODO: this is slow, need to buffer it!
-		w, err := os.OpenFile(name, flags, 0644)
-		if err != nil {
-			return nil, newError("output redirection error: %s", err)
-		}
-		p.streams[name] = w
-		return w, nil
-	case PIPE:
-		cmd := exec.Command("sh", "-c", name)
-		w, err := cmd.StdinPipe()
-		if err != nil {
-			return nil, newError("error connecting to stdin pipe: %v", err)
-		}
-		stdout, err := cmd.StdoutPipe()
-		if err != nil {
-			return nil, newError("error connecting to stdout pipe: %v", err)
-		}
-		stderr, err := cmd.StderrPipe()
-		if err != nil {
-			return nil, newError("error connecting to stderr pipe: %v", err)
-		}
-		err = cmd.Start()
-		if err != nil {
-			fmt.Fprintln(p.errorOutput, err)
-			return ioutil.Discard, nil
-		}
-		go func() {
-			io.Copy(p.output, stdout)
-		}()
-		go func() {
-			io.Copy(p.errorOutput, stderr)
-		}()
-		p.commands[name] = cmd
-		p.streams[name] = w
-		return w, nil
-	default:
-		panic(fmt.Sprintf("unexpected redirect type %s", redirect))
-	}
-}
-
-func (p *interp) getInputScanner(name string, isFile bool) (*bufio.Scanner, error) {
-	if s, ok := p.streams[name]; ok {
-		if _, ok := s.(io.Reader); ok {
-			return p.scanners[name], nil
-		}
-		return nil, newError("can't read from writer stream")
-	}
-	if isFile {
-		r, err := os.Open(name)
-		if err != nil {
-			return nil, newError("input redirection error: %s", err)
-		}
-		scanner := p.newScanner(r)
-		p.scanners[name] = scanner
-		p.streams[name] = r
-		return scanner, nil
-	} else {
-		cmd := exec.Command("sh", "-c", name)
-		stdin, err := cmd.StdinPipe()
-		if err != nil {
-			return nil, newError("error connecting to stdin pipe: %v", err)
-		}
-		r, err := cmd.StdoutPipe()
-		if err != nil {
-			return nil, newError("error connecting to stdout pipe: %v", err)
-		}
-		stderr, err := cmd.StderrPipe()
-		if err != nil {
-			return nil, newError("error connecting to stderr pipe: %v", err)
-		}
-		err = cmd.Start()
-		if err != nil {
-			fmt.Fprintln(p.errorOutput, err)
-			return bufio.NewScanner(strings.NewReader("")), nil
-		}
-		go func() {
-			io.Copy(stdin, p.stdin)
-			stdin.Close()
-		}()
-		go func() {
-			io.Copy(p.errorOutput, stderr)
-		}()
-		scanner := p.newScanner(r)
-		p.commands[name] = cmd
-		p.streams[name] = r
-		p.scanners[name] = scanner
-		return scanner, nil
-	}
-}
-
-func (p *interp) newScanner(input io.Reader) *bufio.Scanner {
-	scanner := bufio.NewScanner(input)
-	switch p.recordSep {
-	case "\n":
-		// Scanner default is to split on newlines
-	case "":
-		// Empty string for RS means split on newline and skip blank lines
-		scanner.Split(scanLinesSkipBlank)
-	default:
-		splitter := byteSplitter{p.recordSep[0]}
-		scanner.Split(splitter.scan)
-	}
-	buffer := make([]byte, inputBufSize)
-	scanner.Buffer(buffer, maxRecordLength)
-	return scanner
-}
-
-func dropCR(data []byte) []byte {
-	if len(data) > 0 && data[len(data)-1] == '\r' {
-		return data[0 : len(data)-1]
-	}
-	return data
-}
-
-// Copied from bufio/scan.go in the standard library
-func scanLinesSkipBlank(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	if atEOF && len(data) == 0 {
-		return 0, nil, nil
-	}
-	if i := bytes.IndexByte(data, '\n'); i >= 0 {
-		// Skip additional newlines
-		j := i + 1
-		for j < len(data) && (data[j] == '\n' || data[j] == '\r') {
-			j++
-		}
-		// We have a full newline-terminated line.
-		return j, dropCR(data[0:i]), nil
-	}
-	// If we're at EOF, we have a final, non-terminated line. Return it.
-	if atEOF {
-		return len(data), dropCR(data), nil
-	}
-	// Request more data.
-	return 0, nil, nil
-}
-
-type byteSplitter struct {
-	sep byte
-}
-
-func (s byteSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	if atEOF && len(data) == 0 {
-		return 0, nil, nil
-	}
-	if i := bytes.IndexByte(data, s.sep); i >= 0 {
-		// We have a full sep-terminated record
-		return i + 1, data[0:i], nil
-	}
-	// If at EOF, we have a final, non-terminated record; return it
-	if atEOF {
-		return len(data), data, nil
-	}
-	// Request more data
-	return 0, nil, nil
-}
-
+// Evaluate a single expression, return expression value and error
 func (p *interp) eval(expr Expr) (value, error) {
 	switch e := expr.(type) {
 	case *NumExpr:
+		// Number literal
 		return num(e.Value), nil
+
 	case *StrExpr:
+		// String literal
 		return str(e.Value), nil
+
 	case *FieldExpr:
+		// $n field expression
 		index, err := p.eval(e.Index)
 		if err != nil {
 			return value{}, err
@@ -764,8 +607,11 @@ func (p *interp) eval(expr Expr) (value, error) {
 			return value{}, newError("field index not a number: %q", p.toString(index))
 		}
 		return p.getField(int(indexNum))
+
 	case *VarExpr:
+		// Variable read expression (scope is global, local, or special)
 		return p.getVar(e.Scope, e.Index), nil
+
 	case *RegExpr:
 		// Stand-alone /regex/ is equivalent to: $0 ~ /regex/
 		re, err := p.compileRegex(e.Regex)
@@ -773,7 +619,10 @@ func (p *interp) eval(expr Expr) (value, error) {
 			return value{}, err
 		}
 		return boolean(re.MatchString(p.line)), nil
+
 	case *BinaryExpr:
+		// Binary expression. Note that && and || are special cases
+		// as they're short-circuit operators.
 		left, err := p.eval(e.Left)
 		if err != nil {
 			return value{}, err
@@ -804,7 +653,9 @@ func (p *interp) eval(expr Expr) (value, error) {
 			}
 			return p.evalBinary(e.Op, left, right)
 		}
+
 	case *IncrExpr:
+		// Pre-increment, post-increment, pre-decrement, post-decrement
 		leftValue, err := p.eval(e.Left)
 		if err != nil {
 			return value{}, err
@@ -827,7 +678,9 @@ func (p *interp) eval(expr Expr) (value, error) {
 		} else {
 			return num(left), nil
 		}
+
 	case *AssignExpr:
+		// Assignment expression (returns right-hand side)
 		right, err := p.eval(e.Right)
 		if err != nil {
 			return value{}, err
@@ -837,7 +690,9 @@ func (p *interp) eval(expr Expr) (value, error) {
 			return value{}, err
 		}
 		return right, nil
+
 	case *AugAssignExpr:
+		// Augmented assignment like += (returns right-hand side)
 		right, err := p.eval(e.Right)
 		if err != nil {
 			return value{}, err
@@ -855,7 +710,9 @@ func (p *interp) eval(expr Expr) (value, error) {
 			return value{}, err
 		}
 		return right, nil
+
 	case *CondExpr:
+		// C-like ?: ternary conditional operator
 		cond, err := p.eval(e.Cond)
 		if err != nil {
 			return value{}, err
@@ -865,21 +722,29 @@ func (p *interp) eval(expr Expr) (value, error) {
 		} else {
 			return p.eval(e.False)
 		}
+
 	case *IndexExpr:
+		// Read value from array by index
 		index, err := p.evalIndex(e.Index)
 		if err != nil {
 			return value{}, err
 		}
-		return p.getArray(e.Array.Scope, e.Array.Index, index), nil
+		return p.getArrayValue(e.Array.Scope, e.Array.Index, index), nil
+
 	case *CallExpr:
+		// Call a builtin function
 		return p.callBuiltin(e.Func, e.Args)
+
 	case *UnaryExpr:
+		// Unary ! or + or -
 		v, err := p.eval(e.Value)
 		if err != nil {
 			return value{}, err
 		}
 		return p.evalUnary(e.Op, v), nil
+
 	case *InExpr:
+		// "key in array" expression
 		index, err := p.evalIndex(e.Index)
 		if err != nil {
 			return value{}, err
@@ -887,9 +752,13 @@ func (p *interp) eval(expr Expr) (value, error) {
 		array := p.arrays[p.getArrayIndex(e.Array.Scope, e.Array.Index)]
 		_, ok := array[index]
 		return boolean(ok), nil
+
 	case *UserCallExpr:
+		// Call user-defined function
 		return p.callUser(e.Index, e.Args)
+
 	case *GetlineExpr:
+		// Getline: read line from input
 		var line string
 		switch {
 		case e.Command != nil:
@@ -945,87 +814,18 @@ func (p *interp) eval(expr Expr) (value, error) {
 			p.setLine(line)
 		}
 		return num(1), nil
+
 	case *MultiExpr:
 		// Note: should figure out a good way to make this a parse-time error
 		return value{}, newError("unexpected comma-separated expression: %s", expr)
+
 	default:
+		// Should never happen
 		panic(fmt.Sprintf("unexpected expr type: %T", expr))
 	}
 }
 
-func (p *interp) setFile(filename string) {
-	p.filename = filename
-	p.fileLineNum = 0
-}
-
-func (p *interp) setLine(line string) {
-	p.line = line
-	if p.fieldSep == " " {
-		p.fields = strings.Fields(line)
-	} else if line == "" {
-		p.fields = nil
-	} else {
-		p.fields = p.fieldSepRegex.Split(line, -1)
-	}
-	p.numFields = len(p.fields)
-}
-
-func (p *interp) nextLine() (string, error) {
-	for {
-		if p.scanner == nil {
-			if prevInput, ok := p.input.(io.Closer); ok && p.input != p.stdin {
-				prevInput.Close()
-			}
-			if p.filenameIndex >= p.argc && !p.hadFiles {
-				p.input = p.stdin
-				p.setFile("")
-				p.hadFiles = true
-			} else {
-				if p.filenameIndex >= p.argc {
-					return "", io.EOF
-				}
-				index := strconv.Itoa(p.filenameIndex)
-				argvIndex := p.program.Arrays["ARGV"]
-				filename := p.toString(p.getArray(ScopeGlobal, argvIndex, index))
-				p.filenameIndex++
-				matches := varRegex.FindStringSubmatch(filename)
-				if len(matches) >= 3 {
-					err := p.setVarByName(matches[1], matches[2])
-					if err != nil {
-						return "", err
-					}
-					continue
-				} else if filename == "" {
-					p.input = nil
-					continue
-				} else if filename == "-" {
-					p.input = p.stdin
-					p.setFile("")
-				} else {
-					input, err := os.Open(filename)
-					if err != nil {
-						return "", err
-					}
-					p.input = input
-					p.setFile(filename)
-					p.hadFiles = true
-				}
-			}
-			p.scanner = p.newScanner(p.input)
-		}
-		if p.scanner.Scan() {
-			break
-		}
-		if err := p.scanner.Err(); err != nil {
-			return "", fmt.Errorf("error reading from input: %s", err)
-		}
-		p.scanner = nil
-	}
-	p.lineNum++
-	p.fileLineNum++
-	return p.scanner.Text(), nil
-}
-
+// Get a variable's value by index in given scope
 func (p *interp) getVar(scope VarScope, index int) value {
 	switch scope {
 	case ScopeGlobal:
@@ -1068,6 +868,7 @@ func (p *interp) getVar(scope VarScope, index int) value {
 	}
 }
 
+// Set a variable by name (specials and globals only)
 func (p *interp) setVarByName(name, value string) error {
 	index := SpecialVarIndex(name)
 	if index > 0 {
@@ -1081,6 +882,7 @@ func (p *interp) setVarByName(name, value string) error {
 	return nil
 }
 
+// Set a variable by index in given scope to given value
 func (p *interp) setVar(scope VarScope, index int, v value) error {
 	switch scope {
 	case ScopeGlobal:
@@ -1151,6 +953,9 @@ func (p *interp) setVar(scope VarScope, index int, v value) error {
 	}
 }
 
+// Determine the index of given array into the p.arrays slice. Global
+// arrays are just at p.arrays[index], local arrays have to be looked
+// up indirectly.
 func (p *interp) getArrayIndex(scope VarScope, index int) int {
 	if scope == ScopeGlobal {
 		return index
@@ -1159,11 +964,13 @@ func (p *interp) getArrayIndex(scope VarScope, index int) int {
 	}
 }
 
-func (p *interp) getArray(scope VarScope, arrayIndex int, index string) value {
+// Get a value from given array by key (index)
+func (p *interp) getArrayValue(scope VarScope, arrayIndex int, index string) value {
 	return p.arrays[p.getArrayIndex(scope, arrayIndex)][index]
 }
 
-func (p *interp) setArray(scope VarScope, arrayIndex int, index string, v value) {
+// Set a value in given array by key (index)
+func (p *interp) setArrayValue(scope VarScope, arrayIndex int, index string, v value) {
 	resolvedIndex := p.getArrayIndex(scope, arrayIndex)
 	array := p.arrays[resolvedIndex]
 	if array == nil {
@@ -1173,6 +980,7 @@ func (p *interp) setArray(scope VarScope, arrayIndex int, index string, v value)
 	array[index] = v
 }
 
+// Get the value of given numbered field, equivalent to "$index"
 func (p *interp) getField(index int) (value, error) {
 	if index < 0 {
 		return value{}, newError("field index negative: %d", index)
@@ -1186,7 +994,7 @@ func (p *interp) getField(index int) (value, error) {
 	return numStr(p.fields[index-1]), nil
 }
 
-// setField sets a single field, equivalent to "$index = value".
+// Sets a single field, equivalent to "$index = value"
 func (p *interp) setField(index int, value string) error {
 	if index == 0 {
 		p.setLine(value)
@@ -1198,6 +1006,7 @@ func (p *interp) setField(index int, value string) error {
 	if index > maxFieldIndex {
 		return newError("field index too large: %d", index)
 	}
+	// If there aren't enough fields, add empty string fields in between
 	for i := len(p.fields); i < index; i++ {
 		p.fields = append(p.fields, "")
 	}
@@ -1207,10 +1016,12 @@ func (p *interp) setField(index int, value string) error {
 	return nil
 }
 
+// Convert value to string using current CONVFMT
 func (p *interp) toString(v value) string {
 	return v.str(p.convertFormat)
 }
 
+// Compile regex string (or fetch from regex cache)
 func (p *interp) compileRegex(regex string) (*regexp.Regexp, error) {
 	if re, ok := p.regexCache[regex]; ok {
 		return re, nil
@@ -1226,6 +1037,7 @@ func (p *interp) compileRegex(regex string) (*regexp.Regexp, error) {
 	return re, nil
 }
 
+// Evaluate simple binary expression and return result
 func (p *interp) evalBinary(op Token, l, r value) (value, error) {
 	// Note: cases are ordered (very roughly) in order of frequency
 	// of occurence for performance reasons. Benchmark on common code
@@ -1308,6 +1120,7 @@ func (p *interp) evalBinary(op Token, l, r value) (value, error) {
 	}
 }
 
+// Evaluate unary expression and return result
 func (p *interp) evalUnary(op Token, v value) value {
 	switch op {
 	case SUB:
@@ -1321,406 +1134,7 @@ func (p *interp) evalUnary(op Token, v value) value {
 	}
 }
 
-func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
-	// split() has an array arg (not evaluated) and [g]sub() have
-	// an lvalue arg, so handle them as special cases
-	switch op {
-	case F_SPLIT:
-		strValue, err := p.eval(argExprs[0])
-		if err != nil {
-			return value{}, err
-		}
-		str := p.toString(strValue)
-		var fieldSep string
-		if len(argExprs) == 3 {
-			sepValue, err := p.eval(argExprs[2])
-			if err != nil {
-				return value{}, err
-			}
-			fieldSep = p.toString(sepValue)
-		} else {
-			fieldSep = p.fieldSep
-		}
-		arrayExpr := argExprs[1].(*ArrayExpr)
-		n, err := p.split(str, arrayExpr.Scope, arrayExpr.Index, fieldSep)
-		if err != nil {
-			return value{}, err
-		}
-		return num(float64(n)), nil
-	case F_SUB, F_GSUB:
-		regexValue, err := p.eval(argExprs[0])
-		if err != nil {
-			return value{}, err
-		}
-		regex := p.toString(regexValue)
-		replValue, err := p.eval(argExprs[1])
-		if err != nil {
-			return value{}, err
-		}
-		repl := p.toString(replValue)
-		var in string
-		if len(argExprs) == 3 {
-			inValue, err := p.eval(argExprs[2])
-			if err != nil {
-				return value{}, err
-			}
-			in = p.toString(inValue)
-		} else {
-			in = p.line
-		}
-		out, n, err := p.sub(regex, repl, in, op == F_GSUB)
-		if err != nil {
-			return value{}, err
-		}
-		if len(argExprs) == 3 {
-			p.assign(argExprs[2], str(out))
-		} else {
-			p.setLine(out)
-		}
-		return num(float64(n)), nil
-	}
-
-	// Now evaluate the argExprs (calls with up to 7 args don't
-	// require heap allocation)
-	args := make([]value, 0, 7)
-	for _, a := range argExprs {
-		arg, err := p.eval(a)
-		if err != nil {
-			return value{}, err
-		}
-		args = append(args, arg)
-	}
-
-	switch op {
-	case F_LENGTH:
-		switch len(args) {
-		case 0:
-			return num(float64(len(p.line))), nil
-		default:
-			return num(float64(len(p.toString(args[0])))), nil
-		}
-	case F_MATCH:
-		re, err := p.compileRegex(p.toString(args[1]))
-		if err != nil {
-			return value{}, err
-		}
-		loc := re.FindStringIndex(p.toString(args[0]))
-		if loc == nil {
-			p.matchStart = 0
-			p.matchLength = -1
-			return num(0), nil
-		}
-		p.matchStart = loc[0] + 1
-		p.matchLength = loc[1] - loc[0]
-		return num(float64(p.matchStart)), nil
-	case F_SUBSTR:
-		s := p.toString(args[0])
-		pos := int(args[1].num())
-		if pos > len(s) {
-			pos = len(s) + 1
-		}
-		if pos < 1 {
-			pos = 1
-		}
-		maxLength := len(s) - pos + 1
-		length := maxLength
-		if len(args) == 3 {
-			length = int(args[2].num())
-			if length < 0 {
-				length = 0
-			}
-			if length > maxLength {
-				length = maxLength
-			}
-		}
-		return str(s[pos-1 : pos-1+length]), nil
-	case F_SPRINTF:
-		s, err := p.sprintf(p.toString(args[0]), args[1:])
-		if err != nil {
-			return value{}, err
-		}
-		return str(s), nil
-	case F_INDEX:
-		s := p.toString(args[0])
-		substr := p.toString(args[1])
-		return num(float64(strings.Index(s, substr) + 1)), nil
-	case F_TOLOWER:
-		return str(strings.ToLower(p.toString(args[0]))), nil
-	case F_TOUPPER:
-		return str(strings.ToUpper(p.toString(args[0]))), nil
-	case F_ATAN2:
-		return num(math.Atan2(args[0].num(), args[1].num())), nil
-	case F_COS:
-		return num(math.Cos(args[0].num())), nil
-	case F_EXP:
-		return num(math.Exp(args[0].num())), nil
-	case F_INT:
-		return num(float64(int(args[0].num()))), nil
-	case F_LOG:
-		return num(math.Log(args[0].num())), nil
-	case F_SQRT:
-		return num(math.Sqrt(args[0].num())), nil
-	case F_RAND:
-		return num(p.random.Float64()), nil
-	case F_SIN:
-		return num(math.Sin(args[0].num())), nil
-	case F_SRAND:
-		prevSeed := p.randSeed
-		switch len(args) {
-		case 0:
-			p.random.Seed(time.Now().UnixNano())
-		case 1:
-			p.randSeed = args[0].num()
-			p.random.Seed(int64(math.Float64bits(p.randSeed)))
-		}
-		return num(prevSeed), nil
-	case F_SYSTEM:
-		cmdline := p.toString(args[0])
-		cmd := exec.Command("sh", "-c", cmdline)
-		stdout, err := cmd.StdoutPipe()
-		if err != nil {
-			return num(-1), nil
-		}
-		stderr, err := cmd.StderrPipe()
-		if err != nil {
-			return num(-1), nil
-		}
-		err = cmd.Start()
-		if err != nil {
-			fmt.Fprintln(p.errorOutput, err)
-			return num(-1), nil
-		}
-		go func() {
-			io.Copy(p.output, stdout)
-		}()
-		go func() {
-			io.Copy(p.errorOutput, stderr)
-		}()
-		err = cmd.Wait()
-		if err != nil {
-			if exitErr, ok := err.(*exec.ExitError); ok {
-				if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
-					return num(float64(status.ExitStatus())), nil
-				} else {
-					fmt.Fprintf(p.errorOutput, "couldn't get exit status for %q: %v\n", cmdline, err)
-					return num(-1), nil
-				}
-			} else {
-				fmt.Fprintf(p.errorOutput, "unexpected error running command %q: %v\n", cmdline, err)
-				return num(-1), nil
-			}
-		}
-		return num(0), nil
-	case F_CLOSE:
-		name := p.toString(args[0])
-		w, ok := p.streams[name]
-		if !ok {
-			return num(-1), nil
-		}
-		err := w.Close()
-		if err != nil {
-			return num(-1), nil
-		}
-		return num(0), nil
-	default:
-		panic(fmt.Sprintf("unexpected function: %s", op))
-	}
-}
-
-func (p *interp) callUser(index int, args []Expr) (value, error) {
-	f := p.program.Functions[index]
-
-	// Evaluate the arguments and push them onto the locals stack
-	oldFrame := p.frame
-	newFrameStart := len(p.stack)
-	var arrays []int
-	for i, arg := range args {
-		if f.Arrays[i] {
-			a := arg.(*VarExpr)
-			arrays = append(arrays, a.Index)
-		} else {
-			argValue, err := p.eval(arg)
-			if err != nil {
-				return value{}, err
-			}
-			p.stack = append(p.stack, argValue)
-		}
-	}
-	// Push zero value for any additional parameters (it's valid to
-	// call a function with fewer arguments than it has parameters)
-	oldArraysLen := len(p.arrays)
-	for i := len(args); i < len(f.Params); i++ {
-		if f.Arrays[i] {
-			arrays = append(arrays, len(p.arrays))
-			p.arrays = append(p.arrays, nil)
-		} else {
-			p.stack = append(p.stack, value{})
-		}
-	}
-	p.frame = p.stack[newFrameStart:]
-	p.localArrays = append(p.localArrays, arrays)
-
-	// Execute the function!
-	err := p.executes(f.Body)
-
-	// Pop the locals off the stack
-	p.stack = p.stack[:newFrameStart]
-	p.frame = oldFrame
-	p.localArrays = p.localArrays[:len(p.localArrays)-1]
-	p.arrays = p.arrays[:oldArraysLen]
-
-	if r, ok := err.(returnValue); ok {
-		return r.Value, nil
-	}
-	if err != nil {
-		return value{}, err
-	}
-	return value{}, nil
-}
-
-func (p *interp) split(s string, scope VarScope, index int, fs string) (int, error) {
-	var parts []string
-	if fs == " " {
-		parts = strings.Fields(s)
-	} else if s != "" {
-		re, err := p.compileRegex(fs)
-		if err != nil {
-			return 0, err
-		}
-		parts = re.Split(s, -1)
-	}
-	array := make(map[string]value)
-	for i, part := range parts {
-		array[strconv.Itoa(i+1)] = numStr(part)
-	}
-	p.arrays[p.getArrayIndex(scope, index)] = array
-	return len(array), nil
-}
-
-func (p *interp) sub(regex, repl, in string, global bool) (out string, num int, err error) {
-	re, err := p.compileRegex(regex)
-	if err != nil {
-		return "", 0, err
-	}
-	count := 0
-	out = re.ReplaceAllStringFunc(in, func(s string) string {
-		// Only do the first replacement for sub(), or all for gsub()
-		if !global && count > 0 {
-			return s
-		}
-		count++
-		// Handle & (ampersand) properly in replacement string
-		r := make([]byte, 0, 64) // Up to 64 byte replacement won't require heap allocation
-		for i := 0; i < len(repl); i++ {
-			switch repl[i] {
-			case '&':
-				r = append(r, s...)
-			case '\\':
-				i++
-				if i < len(repl) {
-					switch repl[i] {
-					case '&':
-						r = append(r, repl[i])
-					default:
-						r = append(r, '\\', repl[i])
-					}
-				} else {
-					r = append(r, '\\')
-				}
-			default:
-				r = append(r, repl[i])
-			}
-		}
-		return string(r)
-	})
-	return out, count, nil
-}
-
-func parseFmtTypes(s string) (format string, types []byte, err error) {
-	out := []byte(s)
-	for i := 0; i < len(s); i++ {
-		if s[i] == '%' {
-			i++
-			if i >= len(s) {
-				return "", nil, errors.New("expected type specifier after %")
-			}
-			if s[i] == '%' {
-				i++
-				continue
-			}
-			for i < len(s) && bytes.IndexByte([]byte(".-+*#0123456789"), s[i]) >= 0 {
-				if s[i] == '*' {
-					types = append(types, 'd')
-				}
-				i++
-			}
-			if i >= len(s) {
-				return "", nil, errors.New("expected type specifier after %")
-			}
-			var t byte
-			switch s[i] {
-			case 's':
-				t = 's'
-			case 'd', 'i', 'o', 'x', 'X':
-				t = 'd'
-			case 'f', 'e', 'E', 'g', 'G':
-				t = 'f'
-			case 'u':
-				t = 'u'
-				out[i] = 'd'
-			case 'c':
-				t = 'c'
-				out[i] = 's'
-			default:
-				return "", nil, fmt.Errorf("invalid format type %q", s[i])
-			}
-			types = append(types, t)
-		}
-	}
-	return string(out), types, nil
-}
-
-func (p *interp) sprintf(format string, args []value) (string, error) {
-	format, types, err := parseFmtTypes(format)
-	if err != nil {
-		return "", newError("format error: %s", err)
-	}
-	if len(types) > len(args) {
-		return "", newError("format error: got %d args, expected %d", len(args), len(types))
-	}
-	converted := make([]interface{}, len(types)) // TODO: escapes to heap
-	for i, t := range types {
-		a := args[i]
-		var v interface{}
-		switch t {
-		case 's':
-			v = p.toString(a)
-		case 'd':
-			v = int(a.num())
-		case 'f':
-			v = a.num()
-		case 'u':
-			v = uint32(a.num())
-		case 'c':
-			var c []byte
-			if a.isTrueStr() {
-				s := p.toString(a)
-				if len(s) > 0 {
-					c = []byte{s[0]}
-				} else {
-					c = []byte{0}
-				}
-			} else {
-				r := []rune{rune(a.num())}
-				c = []byte(string(r))
-			}
-			v = c
-		}
-		converted[i] = v
-	}
-	return fmt.Sprintf(format, converted...), nil
-}
-
+// Perform an assignment: can assign to var, array[key], or $field
 func (p *interp) assign(left Expr, right value) error {
 	switch left := left.(type) {
 	case *VarExpr:
@@ -1730,7 +1144,7 @@ func (p *interp) assign(left Expr, right value) error {
 		if err != nil {
 			return err
 		}
-		p.setArray(left.Array.Scope, left.Array.Index, index, right)
+		p.setArrayValue(left.Array.Scope, left.Array.Index, index, right)
 		return nil
 	case *FieldExpr:
 		index, err := p.eval(left.Index)
@@ -1743,10 +1157,13 @@ func (p *interp) assign(left Expr, right value) error {
 		}
 		return p.setField(int(indexNum), p.toString(right))
 	default:
+		// Shouldn't happen
 		panic(fmt.Sprintf("unexpected lvalue type: %T", left))
 	}
 }
 
+// Evaluate an index expression to a string. Multi-valued indexes are
+// separated by SUBSEP.
 func (p *interp) evalIndex(indexExprs []Expr) (string, error) {
 	// Optimize the common case of a 1-dimensional index
 	if len(indexExprs) == 1 {
@@ -1767,15 +1184,4 @@ func (p *interp) evalIndex(indexExprs []Expr) (string, error) {
 		indices = append(indices, p.toString(v))
 	}
 	return strings.Join(indices, p.subscriptSep), nil
-}
-
-func writeOutput(w io.Writer, s string) error {
-	if crlfNewline {
-		// First normalize to \n, then convert all newlines to \r\n (on Windows)
-		// TODO: creating two new strings is almost certainly slow, better to create a custom Writer
-		s = strings.Replace(s, "\r\n", "\n", -1)
-		s = strings.Replace(s, "\n", "\r\n", -1)
-	}
-	_, err := io.WriteString(w, s)
-	return err
 }

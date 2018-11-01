@@ -35,6 +35,8 @@ TODO:
 - timeout / infinite loop why?
   BEGIN { x[x[x[x[--x[FS = (FS FS)]]--]--]--]-- }
 - performance testing: I/O, allocations, CPU
+  + PoC: is interpreting via a "heavy AST" faster?
+    i.e., with execute functions on the AST elements instead of the switch/case
   + buffer > and >> output (see TODO in getOutputStream)
   + other "escapes to heap" uses of make() in interp.go
   + writeOutput crlfNewline handling is probably slow
@@ -42,7 +44,6 @@ TODO:
   + why does writing output take 180ms with script '$0', but 630ms with script '/.$/'?
   + optimize parser
 - convert benchmark_awks.py to Python 3
-- break up interp.go? structure it better and add comments
 - think about length() and substr() chars vs bytes:
   https://github.com/benhoyt/goawk/issues/2#issuecomment-415314000
 - get goawk_test.go working in TravisCI

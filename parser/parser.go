@@ -35,7 +35,7 @@ func (e *ParseError) Error() string {
 // (for example printing type information for debugging).
 type ParserConfig struct {
 	// Enable printing of type information
-	DebugTypes  bool
+	DebugTypes bool
 	// io.Writer to print type information on (for example, os.Stderr)
 	DebugWriter io.Writer
 }
