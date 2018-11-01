@@ -9,32 +9,40 @@ import (
 	"strings"
 )
 
+type valueType uint8
+
 const (
-	typeNil = iota
+	typeNil valueType = iota
 	typeStr
 	typeNum
 )
 
+// An AWK value (these are passed around by value)
 type value struct {
-	typ      uint8
-	isNumStr bool
-	s        string
-	n        float64
+	typ      valueType // Value type
+	isNumStr bool      // An AWK "numeric string" from user input
+	s        string    // String value (for typeStr)
+	n        float64   // Numeric value (for typeNum and numeric strings)
 }
 
+// Create a new number value
 func num(n float64) value {
 	return value{typ: typeNum, n: n}
 }
 
+// Create a new string value
 func str(s string) value {
 	return value{typ: typeStr, s: s}
 }
 
+// Create a new value for a "numeric string" context, converting the
+// string to a number if possible.
 func numStr(s string) value {
 	f, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
 	return value{typ: typeStr, isNumStr: err == nil, s: s, n: f}
 }
 
+// Create a numeric value from a Go bool
 func boolean(b bool) value {
 	if b {
 		return num(1)
@@ -42,10 +50,15 @@ func boolean(b bool) value {
 	return num(0)
 }
 
+// Return true if value is a "true string" (string but not a "numeric
+// string")
 func (v value) isTrueStr() bool {
 	return v.typ == typeStr && !v.isNumStr
 }
 
+// Return Go bool value of AWK value. For numbers or numeric strings,
+// zero is false and everything else is true. For strings, empty
+// string is false and everything else is true.
 func (v value) boolean() bool {
 	if v.isTrueStr() {
 		return v.s != ""
@@ -54,6 +67,9 @@ func (v value) boolean() bool {
 	}
 }
 
+// Return value's string value, or convert to a string using given
+// format if a number value. Integers are a special case and don't
+// use floatFormat.
 func (v value) str(floatFormat string) string {
 	switch v.typ {
 	case typeNum:
@@ -77,11 +93,14 @@ func (v value) str(floatFormat string) string {
 	}
 }
 
+// Return value's number value, converting from string if necessary
 func (v value) num() float64 {
 	f, _ := v.numChecked()
 	return f
 }
 
+// Return value's number value and a success flag, converting from a
+// string if necessary
 func (v value) numChecked() (float64, bool) {
 	switch v.typ {
 	case typeNum:
