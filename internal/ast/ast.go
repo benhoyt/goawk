@@ -234,16 +234,16 @@ func (e *AugAssignExpr) String() string {
 
 // Increment or decrement expression like x++ or --y.
 type IncrExpr struct {
-	Left Expr
+	Expr Expr
 	Op   Token
 	Pre  bool
 }
 
 func (e *IncrExpr) String() string {
 	if e.Pre {
-		return e.Op.String() + e.Left.String()
+		return e.Op.String() + e.Expr.String()
 	} else {
-		return e.Left.String() + e.Op.String()
+		return e.Expr.String() + e.Op.String()
 	}
 }
 

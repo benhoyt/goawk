@@ -656,7 +656,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 
 	case *IncrExpr:
 		// Pre-increment, post-increment, pre-decrement, post-decrement
-		leftValue, err := p.eval(e.Left)
+		leftValue, err := p.eval(e.Expr)
 		if err != nil {
 			return value{}, err
 		}
@@ -669,7 +669,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 			right = left - 1
 		}
 		rightValue := num(right)
-		err = p.assign(e.Left, rightValue)
+		err = p.assign(e.Expr, rightValue)
 		if err != nil {
 			return value{}, err
 		}
