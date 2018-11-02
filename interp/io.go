@@ -158,8 +158,8 @@ func (p *interp) newScanner(input io.Reader) *bufio.Scanner {
 	case "\n":
 		// Scanner default is to split on newlines
 	case "":
-		// Empty string for RS means split on newline and skip blank lines
-		scanner.Split(scanLinesSkipBlank)
+		// Empty string for RS means split on \n\n (blank lines)
+		scanner.Split(scanLinesBlank)
 	default:
 		splitter := byteSplitter{p.recordSep[0]}
 		scanner.Split(splitter.scan)
@@ -173,30 +173,58 @@ func (p *interp) newScanner(input io.Reader) *bufio.Scanner {
 // efficient than bytes.TrimSuffix(data, []byte("\r"))
 func dropCR(data []byte) []byte {
 	if len(data) > 0 && data[len(data)-1] == '\r' {
-		return data[0 : len(data)-1]
+		return data[:len(data)-1]
 	}
 	return data
 }
 
-// Copied from bufio/scan.go in the standard library
-func scanLinesSkipBlank(data []byte, atEOF bool) (advance int, token []byte, err error) {
+func dropLF(data []byte) []byte {
+	if len(data) > 0 && data[len(data)-1] == '\n' {
+		return data[:len(data)-1]
+	}
+	return data
+}
+
+func scanLinesBlank(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	if atEOF && len(data) == 0 {
 		return 0, nil, nil
 	}
-	if i := bytes.IndexByte(data, '\n'); i >= 0 {
-		// Skip additional newlines
-		j := i + 1
-		for j < len(data) && (data[j] == '\n' || data[j] == '\r') {
-			j++
+
+	// Skip newlines at beginning of data
+	i := 0
+	for i < len(data) && (data[i] == '\n' || data[i] == '\r') {
+		i++
+	}
+	start := i
+
+	// Try to find two consecutive newlines (or \n\r\n for Windows)
+	for ; i < len(data); i++ {
+		if data[i] != '\n' {
+			continue
 		}
-		// We have a full newline-terminated line.
-		return j, dropCR(data[0:i]), nil
+		end := i
+		if i+1 < len(data) && data[i+1] == '\n' {
+			i += 2
+			for i < len(data) && (data[i] == '\n' || data[i] == '\r') {
+				i++ // Skip newlines at end of record
+			}
+			return i, dropCR(data[start:end]), nil
+		}
+		if i+2 < len(data) && data[i+1] == '\r' && data[i+2] == '\n' {
+			i += 3
+			for i < len(data) && (data[i] == '\n' || data[i] == '\r') {
+				i++ // Skip newlines at end of record
+			}
+			return i, dropCR(data[start:end]), nil
+		}
 	}
-	// If we're at EOF, we have a final, non-terminated line. Return it.
+
+	// If we're at EOF, we have one final record; return it
 	if atEOF {
-		return len(data), dropCR(data), nil
+		return len(data), dropCR(dropLF(data)), nil
 	}
-	// Request more data.
+
+	// Request more data
 	return 0, nil, nil
 }
 
@@ -231,11 +259,28 @@ func (p *interp) setFile(filename string) {
 func (p *interp) setLine(line string) {
 	p.line = line
 	if p.fieldSep == " " {
+		// FS space (default) means split fields on any whitespace
 		p.fields = strings.Fields(line)
 	} else if line == "" {
 		p.fields = nil
 	} else {
+		// Split on FS as a regex
 		p.fields = p.fieldSepRegex.Split(line, -1)
+
+		// Special case for when RS=="" and FS is single character,
+		// split on newline in addition to FS. See more here:
+		// https://www.gnu.org/software/gawk/manual/html_node/Multiple-Line.html
+		if p.recordSep == "" && len(p.fieldSep) == 1 {
+			fields := make([]string, 0, len(p.fields))
+			for _, field := range p.fields {
+				lines := strings.Split(field, "\n")
+				for _, line := range lines {
+					trimmed := strings.TrimSuffix(line, "\r")
+					fields = append(fields, trimmed)
+				}
+			}
+			p.fields = fields
+		}
 	}
 	p.numFields = len(p.fields)
 }
