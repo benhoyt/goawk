@@ -297,9 +297,14 @@ BEGIN {
 		{`BEGIN { a[2] += 1; a["2"] *= 3; print a[2] }`, "", "3\n", "", ""},
 
 		// Incr/decr expressions
+		{`BEGIN { print x++; print x }`, "", "0\n1\n", "", ""},
 		{`BEGIN { print x; print x++; print ++x; print x }`, "", "\n0\n2\n2\n", "", ""},
 		{`BEGIN { print x; print x--; print --x; print x }`, "", "\n0\n-2\n-2\n", "", ""},
 		{`BEGIN { s++; s++; print s }`, "", "2\n", "", ""},
+		{`BEGIN { y=" "; --x[y = y y]; print length(y) }`, "", "2\n", "", ""},
+		{`BEGIN { x[y++]++; print y }`, "", "1\n", "", ""},
+		{`BEGIN { x[y++] += 3; print y }`, "", "1\n", "", ""},
+		{`BEGIN { $(y++)++; print y }`, "", "1\n", "", ""},
 
 		// Builtin functions
 		{`BEGIN { print sin(0), sin(0.5), sin(1), sin(-1) }`, "", "0 0.479426 0.841471 -0.841471\n", "", ""},

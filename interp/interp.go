@@ -656,27 +656,33 @@ func (p *interp) eval(expr Expr) (value, error) {
 
 	case *IncrExpr:
 		// Pre-increment, post-increment, pre-decrement, post-decrement
-		leftValue, err := p.eval(e.Expr)
+
+		// First evaluate the expression, but remember array or field
+		// index so we don't evaluate part of the expression twice
+		exprValue, arrayIndex, fieldIndex, err := p.evalForAugAssign(e.Expr)
 		if err != nil {
 			return value{}, err
 		}
-		left := leftValue.num()
-		var right float64
-		switch e.Op {
-		case INCR:
-			right = left + 1
-		case DECR:
-			right = left - 1
+
+		// Then convert to number and increment or decrement
+		exprNum := exprValue.num()
+		var incr float64
+		if e.Op == INCR {
+			incr = exprNum + 1
+		} else {
+			incr = exprNum - 1
 		}
-		rightValue := num(right)
-		err = p.assign(e.Expr, rightValue)
+		incrValue := num(incr)
+
+		// Finally assign back to expression and return the correct value
+		err = p.assignAug(e.Expr, arrayIndex, fieldIndex, incrValue)
 		if err != nil {
 			return value{}, err
 		}
 		if e.Pre {
-			return rightValue, nil
+			return incrValue, nil
 		} else {
-			return num(left), nil
+			return num(exprNum), nil
 		}
 
 	case *AssignExpr:
@@ -697,7 +703,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 		if err != nil {
 			return value{}, err
 		}
-		left, err := p.eval(e.Left)
+		left, arrayIndex, fieldIndex, err := p.evalForAugAssign(e.Left)
 		if err != nil {
 			return value{}, err
 		}
@@ -705,7 +711,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 		if err != nil {
 			return value{}, err
 		}
-		err = p.assign(e.Left, right)
+		err = p.assignAug(e.Left, arrayIndex, fieldIndex, right)
 		if err != nil {
 			return value{}, err
 		}
@@ -823,6 +829,46 @@ func (p *interp) eval(expr Expr) (value, error) {
 		// Should never happen
 		panic(fmt.Sprintf("unexpected expr type: %T", expr))
 	}
+}
+
+func (p *interp) evalForAugAssign(expr Expr) (v value, arrayIndex string, fieldIndex int, err error) {
+	switch expr := expr.(type) {
+	case *VarExpr:
+		v = p.getVar(expr.Scope, expr.Index)
+	case *IndexExpr:
+		arrayIndex, err = p.evalIndex(expr.Index)
+		if err != nil {
+			return value{}, "", 0, err
+		}
+		v = p.getArrayValue(expr.Array.Scope, expr.Array.Index, arrayIndex)
+	case *FieldExpr:
+		index, err := p.eval(expr.Index)
+		if err != nil {
+			return value{}, "", 0, err
+		}
+		indexNum, ok := index.numChecked()
+		if !ok {
+			return value{}, "", 0, newError("field index not a number: %q", p.toString(index))
+		}
+		fieldIndex = int(indexNum)
+		v, err = p.getField(fieldIndex)
+		if err != nil {
+			return value{}, "", 0, err
+		}
+	}
+	return v, arrayIndex, fieldIndex, nil
+}
+
+func (p *interp) assignAug(expr Expr, arrayIndex string, fieldIndex int, v value) error {
+	switch expr := expr.(type) {
+	case *VarExpr:
+		return p.setVar(expr.Scope, expr.Index, v)
+	case *IndexExpr:
+		p.setArrayValue(expr.Array.Scope, expr.Array.Index, arrayIndex, v)
+	default: // *FieldExpr
+		return p.setField(fieldIndex, p.toString(v))
+	}
+	return nil
 }
 
 // Get a variable's value by index in given scope
@@ -1156,10 +1202,9 @@ func (p *interp) assign(left Expr, right value) error {
 			return newError("field index not a number: %q", p.toString(index))
 		}
 		return p.setField(int(indexNum), p.toString(right))
-	default:
-		// Shouldn't happen
-		panic(fmt.Sprintf("unexpected lvalue type: %T", left))
 	}
+	// Shouldn't happen
+	panic(fmt.Sprintf("unexpected lvalue type: %T", left))
 }
 
 // Evaluate an index expression to a string. Multi-valued indexes are
