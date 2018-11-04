@@ -108,10 +108,11 @@ type parser struct {
 	loopDepth int    // current loop depth (0 if not in any loops)
 
 	// Variable tracking and resolving
-	locals    map[string]bool                // current function's locals (for determining scope)
-	varTypes  map[string]map[string]typeInfo // map of func name to var name to type
-	varRefs   []varRef                       // all variable references (usually scalars)
-	arrayRefs []arrayRef                     // all array references
+	locals     map[string]bool                // current function's locals (for determining scope)
+	varTypes   map[string]map[string]typeInfo // map of func name to var name to type
+	varRefs    []varRef                       // all variable references (usually scalars)
+	arrayRefs  []arrayRef                     // all array references
+	multiExprs map[*MultiExpr]Position        // tracks comma-separated expressions
 
 	// Function tracking
 	functions map[string]int // map of function name to index
@@ -162,6 +163,7 @@ func (p *parser) program() *Program {
 
 	p.resolveUserCalls(prog)
 	p.resolveVars(prog)
+	p.checkMultiExprs()
 
 	return prog
 }
@@ -202,6 +204,7 @@ func (p *parser) simpleStmt() Stmt {
 			// This allows parens around all the print args
 			if m, ok := args[0].(*MultiExpr); ok {
 				args = m.Exprs
+				p.useMultiExpr(m)
 			}
 		}
 		redirect := ILLEGAL
@@ -684,6 +687,7 @@ func (p *parser) primary() Expr {
 		}
 		return p.varRef(name, namePos)
 	case LPAREN:
+		parenPos := p.pos
 		p.next()
 		exprs := p.exprList(p.expr)
 		switch len(exprs) {
@@ -702,7 +706,7 @@ func (p *parser) primary() Expr {
 				return &InExpr{exprs, ref}
 			}
 			// MultiExpr is used as a pseudo-expression for print[f] parsing.
-			return &MultiExpr{exprs}
+			return p.multiExpr(exprs, parenPos)
 		}
 	case GETLINE:
 		p.next()

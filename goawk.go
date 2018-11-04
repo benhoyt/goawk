@@ -31,8 +31,6 @@ package main
 
 TODO:
 - fix crash with: BEGIN { print |"1"; getline <"1" }  # also print >"1"
-- timeout / infinite loop why?
-  BEGIN { x[x[x[x[--x[FS = (FS FS)]]--]--]--]-- }
 - performance testing: I/O, allocations, CPU
   + PoC: is interpreting via a "heavy AST" faster?
     i.e., with execute functions on the AST elements instead of the switch/case
@@ -51,7 +49,6 @@ NICE TO HAVE:
 - fix broken (commented-out) interp tests due to syntax handling
 - think about proper CSV support: https://news.ycombinator.com/item?id=17788471
 - think about linear time string concat: https://news.ycombinator.com/item?id=17788028
-- interp: flag "unexpected comma-separated expression" at parse time
 
 ISSUE - discrepancy against gawk on Windows:
    --- FAIL: TestAWK/t.printf2 (0.05s)

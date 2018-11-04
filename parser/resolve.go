@@ -73,6 +73,7 @@ func (p *parser) initResolve() {
 	p.varTypes[""] = make(map[string]typeInfo) // globals
 	p.functions = make(map[string]int)
 	p.arrayRef("ARGV", Position{1, 1}) // interpreter relies on ARGV being present
+	p.multiExprs = make(map[*MultiExpr]Position, 3)
 }
 
 // Signal the start of a function: records the function name and
@@ -343,4 +344,29 @@ func (p *parser) resolveVars(prog *Program) {
 		}
 		arrayRef.ref.Index = info.index
 	}
+}
+
+func (p *parser) multiExpr(exprs []Expr, pos Position) Expr {
+	expr := &MultiExpr{exprs}
+	p.multiExprs[expr] = pos
+	return expr
+}
+
+func (p *parser) useMultiExpr(expr *MultiExpr) {
+	delete(p.multiExprs, expr)
+}
+
+func (p *parser) checkMultiExprs() {
+	if len(p.multiExprs) == 0 {
+		return
+	}
+	// Show error on first comma-separated expression
+	min := Position{1000000000, 1000000000}
+	for _, pos := range p.multiExprs {
+		if pos.Line < min.Line || (pos.Line == min.Line && pos.Column < min.Column) {
+			min = pos
+		}
+	}
+	message := fmt.Sprintf("unexpected comma-separated expression")
+	panic(&ParseError{min, message})
 }

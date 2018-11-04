@@ -821,10 +821,6 @@ func (p *interp) eval(expr Expr) (value, error) {
 		}
 		return num(1), nil
 
-	case *MultiExpr:
-		// Note: should figure out a good way to make this a parse-time error
-		return value{}, newError("unexpected comma-separated expression: %s", expr)
-
 	default:
 		// Should never happen
 		panic(fmt.Sprintf("unexpected expr type: %T", expr))
