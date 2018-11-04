@@ -44,6 +44,7 @@ func TestInterp(t *testing.T) {
 		{`BEGIN { print "b"} END { print "e" }`, "", "b\ne\n", "", ""},
 		{`BEGIN { print "b"} END { print "e" }`, "foo", "b\ne\n", "", ""},
 		{`BEGIN { print "b"} $0 { print NR } END { print "e" }`, "foo", "b\n1\ne\n", "", ""},
+		{`BEGIN { printf "x" }; BEGIN { printf "y" }`, "", "xy", "", ""},
 
 		// Patterns
 		{`$0`, "foo\n\nbar", "foo\nbar\n", "", ""},
@@ -441,6 +442,7 @@ function early() {
 BEGIN { early() }
 `, "", "x\n", "", ""},
 		{`BEGIN { return }`, "", "", "parse error at 1:9: return must be inside a function", "return"},
+		{`function f() { printf "x" }; BEGIN { f() } `, "", "x", "", ""},
 
 		// Type checking / resolver tests
 		{`BEGIN { a[x]; a=42 }`, "", "", `parse error at 1:15: can't use array "a" as scalar`, "array"},
@@ -453,8 +455,8 @@ BEGIN { early() }
 
 		// Redirected I/O
 		// TODO: these tests currently panic() due to bug with s.(io.Reader) in interp.go
-		//{`BEGIN { print >"out"; getline <"out" }`, "", "", "can't read from writer stream", ""},
-		//{`BEGIN { print |"out"; getline <"out" }`, "", "", "", ""},
+		// {`BEGIN { print >"out"; getline <"out" }`, "", "", "can't read from writer stream", ""},
+		// {`BEGIN { print |"out"; getline <"out" }`, "", "", "", ""},
 
 		// Greater than operator requires parentheses in print statement,
 		// otherwise it's a redirection directive
@@ -466,10 +468,6 @@ BEGIN { early() }
 		// Grammar should allow blocks wherever statements are allowed
 		{`BEGIN { if (1) printf "x"; else printf "y" }`, "", "x", "", ""},
 		{`BEGIN { printf "x"; { printf "y"; printf "z" } }`, "", "xyz", "", ""},
-
-		// Ensure certain odd syntax matches awk behaviour
-		// {`BEGIN { printf "x" }; BEGIN { printf "y" }`, "", "xy", "", ""},
-		// {`BEGIN { printf "x" };; BEGIN { printf "y" }`, "", "xy", "", ""},
 
 		// Ensure syntax errors result in errors
 		// {`{ $1 = substr($1, 1, 3) print $1 }`, "", "", "ERROR", "syntax error"},

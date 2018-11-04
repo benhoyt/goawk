@@ -190,6 +190,9 @@ func (p *parser) stmtsBrace() Stmts {
 		ss = append(ss, p.stmt())
 	}
 	p.expect(RBRACE)
+	if p.tok == SEMICOLON {
+		p.next()
+	}
 	return ss
 }
 

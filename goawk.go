@@ -46,7 +46,6 @@ TODO:
 - get goawk_test.go working in TravisCI
 
 NICE TO HAVE:
-- fix broken (commented-out) interp tests due to syntax handling
 - think about proper CSV support: https://news.ycombinator.com/item?id=17788471
 - think about linear time string concat: https://news.ycombinator.com/item?id=17788028
 
