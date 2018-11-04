@@ -87,6 +87,7 @@ NR==3, NR==5 { print NR }
 		{`BEGIN { a["x"] = 3; a["y"] = 4; for (k in a) x += a[k]; print x }`, "", "7\n", "", ""},
 		{`BEGIN { while (i < 5) { print i; i++ } }`, "", "\n1\n2\n3\n4\n", "", ""},
 		{`BEGIN { do { print i; i++ } while (i < 5) }`, "", "\n1\n2\n3\n4\n", "", ""},
+		{`BEGIN { for (i=0; i<10; i++); printf "x" }`, "", "x", "", ""},
 		// regression tests for break and continue with nested loops
 		{`
 BEGIN {
@@ -470,7 +471,7 @@ BEGIN { early() }
 		{`BEGIN { printf "x"; { printf "y"; printf "z" } }`, "", "xyz", "", ""},
 
 		// Ensure syntax errors result in errors
-		// {`{ $1 = substr($1, 1, 3) print $1 }`, "", "", "ERROR", "syntax error"},
+		// TODO: {`{ $1 = substr($1, 1, 3) print $1 }`, "", "", "ERROR", "syntax error"},
 		{`BEGIN { f() }`, "", "", `parse error at 1:9: undefined function "f"`, "defined"},
 		{`function f() {} function f() {} BEGIN { }`, "", "", `parse error at 1:26: function "f" already defined`, "define"},
 		{`BEGIN { print (1,2),(3,4) }`, "", "", "parse error at 1:15: unexpected comma-separated expression", "syntax"},

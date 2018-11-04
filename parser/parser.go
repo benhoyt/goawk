@@ -172,6 +172,8 @@ func (p *parser) program() *Program {
 func (p *parser) stmts() Stmts {
 	switch p.tok {
 	case SEMICOLON:
+		// This is so things like this parse correctly:
+		// BEGIN { for (i=0; i<10; i++); print "x" }
 		p.next()
 		return nil
 	case LBRACE:
