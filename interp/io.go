@@ -26,6 +26,26 @@ func (p *interp) printLine(writer io.Writer, line string) error {
 	return writeOutput(writer, p.outputRecordSep)
 }
 
+// Implement a buffered version of WriteCloser so output is buffered
+// when redirecting to a file (eg: print >"out")
+type bufferedWriteCloser struct {
+	*bufio.Writer
+	io.Closer
+}
+
+func newBufferedWriteClose(w io.WriteCloser) *bufferedWriteCloser {
+	writer := bufio.NewWriterSize(w, outputBufSize)
+	return &bufferedWriteCloser{writer, w}
+}
+
+func (wc *bufferedWriteCloser) Close() error {
+	err := wc.Writer.Flush()
+	if err != nil {
+		return err
+	}
+	return wc.Closer.Close()
+}
+
 // Determine the output stream for given redirect token and
 // destination (file or pipe name)
 func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
@@ -55,13 +75,13 @@ func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
 		} else {
 			flags |= os.O_APPEND
 		}
-		// TODO: this is slow, need to buffer it!
 		w, err := os.OpenFile(name, flags, 0644)
 		if err != nil {
 			return nil, newError("output redirection error: %s", err)
 		}
-		p.outputStreams[name] = w
-		return w, nil
+		buffered := newBufferedWriteClose(w)
+		p.outputStreams[name] = buffered
+		return buffered, nil
 
 	case PIPE:
 		// Pipe to command

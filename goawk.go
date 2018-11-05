@@ -33,7 +33,6 @@ TODO:
 - performance testing: I/O, allocations, CPU
   + PoC: is interpreting via a "heavy AST" faster?
     i.e., with execute functions on the AST elements instead of the switch/case
-  + buffer > and >> output (see TODO in getOutputStream)
   + benchmark against awk/gawk with some real awk scripts
 - get goawk_test.go working in TravisCI
 - do some more fuzz testing
