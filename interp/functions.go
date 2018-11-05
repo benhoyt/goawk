@@ -445,8 +445,9 @@ func (p *interp) sprintf(format string, args []value) (string, error) {
 					c = []byte{0}
 				}
 			} else {
-				r := []rune{rune(a.num())}
-				c = []byte(string(r))
+				// Follow the behaviour of awk and mawk, where %c
+				// operates on bytes (0-255), not Unicode codepoints
+				c = []byte{byte(a.num())}
 			}
 			v = c
 		}

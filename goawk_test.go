@@ -52,7 +52,7 @@ func TestAWK(t *testing.T) {
 	}
 	// These programs have known different output
 	knownDifferent := map[string]bool{
-		// None right now (at least against gawk)
+		"t.printf2": true, // because awk is weird here (our behavior is like mawk)
 	}
 	// Can't really diff test rand() tests as we're using a totally
 	// different algorithm for random numbers

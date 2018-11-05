@@ -72,6 +72,15 @@ NR==3, NR==5 { print NR }
 		{`BEGIN { printf "%.1g", 42 }`, "", "4e+01", "", ""},
 		{`BEGIN { printf "%d", 12, 34 }`, "", "12", "", ""},
 		{`BEGIN { printf "%d" }`, "", "", "format error: got 0 args, expected 1", "not enough arg"},
+		// Our %c handling is mostly like awk's, except for multiples
+		// 256, where awk is weird and we're like mawk
+		{`BEGIN { printf "%c", 0 }`, "", "\x00", "", ""},
+		{`BEGIN { printf "%c", 127 }`, "", "\x7f", "", ""},
+		{`BEGIN { printf "%c", 128 }  # !gawk`, "", "\x80", "", ""},
+		{`BEGIN { printf "%c", 255 }  # !gawk`, "", "\xff", "", ""},
+		{`BEGIN { printf "%c", 256 }  # !awk !gawk`, "", "\x00", "", ""},
+		{`BEGIN { printf "%c", "xyz" }`, "", "x", "", ""},
+		{`BEGIN { printf "%c", "" }  # !awk`, "", "\x00", "", ""},
 
 		// if and loop statements
 		{`BEGIN { if (1) print "t"; }`, "", "t\n", "", ""},

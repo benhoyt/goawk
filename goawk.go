@@ -36,32 +36,7 @@ TODO:
     i.e., with execute functions on the AST elements instead of the switch/case
   + buffer > and >> output (see TODO in getOutputStream)
   + benchmark against awk/gawk with some real awk scripts
-- think about length() and substr() chars vs bytes:
-  https://github.com/benhoyt/goawk/issues/2#issuecomment-415314000
 - get goawk_test.go working in TravisCI
-
-ISSUE - discrepancy against gawk on Windows:
-   --- FAIL: TestAWK/t.printf2 (0.05s)
-        goawk_test.go:128: output differs, run: git diff testdata\output\t.printf2; expected:
-            %:  ... /dev/rrp3:         0            0 0 0 / <00>
-            %:  ...          0            0 0 0 <00> <00>
-            %: mel ... 17379     17379        mel 0 0 0 � m
-            %: bwk ... 16693     16693        bwk 0 0 0 5 b
-            %: ken ... 16116     16116        ken 0 0 0 � k
-            %: srb ... 15713     15713        srb 0 0 0 a s
-            %: lem ... 11895     11895        lem 0 0 0 w l
-            %: scj ... 10409     10409        scj 0 0 0 � s
-            %: rhm ... 10252     10252        rhm 0 0 0  r
-    --- got:
-            %:  ... /dev/rrp3:         0            0 0 0 / <00>
-            %:  ...          0            0 0 0 <00> <00>
-            %: mel ... 17379     17379        mel 0 0 0 䏣 m
-            %: bwk ... 16693     16693        bwk 0 0 0 䄵 b
-            %: ken ... 16116     16116        ken 0 0 0 㻴 k
-            %: srb ... 15713     15713        srb 0 0 0 㵡 s
-            %: lem ... 11895     11895        lem 0 0 0 ⹷ l
-            %: scj ... 10409     10409        scj 0 0 0 ⢩ s
-            %: rhm ... 10252     10252        rhm 0 0 0 ⠌ r
 
 */// This comment intentionally left blank
 
