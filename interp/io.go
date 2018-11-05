@@ -99,56 +99,62 @@ func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
 	}
 }
 
-// Get input Scanner to use for "getline" based on file or pipe name
-// TODO: this is basically two different functions switching on isFile -- split?
-func (p *interp) getInputScanner(name string, isFile bool) (*bufio.Scanner, error) {
+// Get input Scanner to use for "getline" based on file name
+func (p *interp) getInputScannerFile(name string) (*bufio.Scanner, error) {
 	if _, ok := p.outputStreams[name]; ok {
 		return nil, newError("can't read from writer stream")
 	}
 	if _, ok := p.inputStreams[name]; ok {
 		return p.scanners[name], nil
 	}
-	if isFile {
-		r, err := os.Open(name)
-		if err != nil {
-			return nil, newError("input redirection error: %s", err)
-		}
-		scanner := p.newScanner(r)
-		p.scanners[name] = scanner
-		p.inputStreams[name] = r
-		return scanner, nil
-	} else {
-		cmd := exec.Command("sh", "-c", name)
-		stdin, err := cmd.StdinPipe()
-		if err != nil {
-			return nil, newError("error connecting to stdin pipe: %v", err)
-		}
-		r, err := cmd.StdoutPipe()
-		if err != nil {
-			return nil, newError("error connecting to stdout pipe: %v", err)
-		}
-		stderr, err := cmd.StderrPipe()
-		if err != nil {
-			return nil, newError("error connecting to stderr pipe: %v", err)
-		}
-		err = cmd.Start()
-		if err != nil {
-			fmt.Fprintln(p.errorOutput, err)
-			return bufio.NewScanner(strings.NewReader("")), nil
-		}
-		go func() {
-			io.Copy(stdin, p.stdin)
-			stdin.Close()
-		}()
-		go func() {
-			io.Copy(p.errorOutput, stderr)
-		}()
-		scanner := p.newScanner(r)
-		p.commands[name] = cmd
-		p.inputStreams[name] = r
-		p.scanners[name] = scanner
-		return scanner, nil
+	r, err := os.Open(name)
+	if err != nil {
+		return nil, newError("input redirection error: %s", err)
 	}
+	scanner := p.newScanner(r)
+	p.scanners[name] = scanner
+	p.inputStreams[name] = r
+	return scanner, nil
+}
+
+// Get input Scanner to use for "getline" based on pipe name
+func (p *interp) getInputScannerPipe(name string) (*bufio.Scanner, error) {
+	if _, ok := p.outputStreams[name]; ok {
+		return nil, newError("can't read from writer stream")
+	}
+	if _, ok := p.inputStreams[name]; ok {
+		return p.scanners[name], nil
+	}
+	cmd := exec.Command("sh", "-c", name)
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return nil, newError("error connecting to stdin pipe: %v", err)
+	}
+	r, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, newError("error connecting to stdout pipe: %v", err)
+	}
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return nil, newError("error connecting to stderr pipe: %v", err)
+	}
+	err = cmd.Start()
+	if err != nil {
+		fmt.Fprintln(p.errorOutput, err)
+		return bufio.NewScanner(strings.NewReader("")), nil
+	}
+	go func() {
+		io.Copy(stdin, p.stdin)
+		stdin.Close()
+	}()
+	go func() {
+		io.Copy(p.errorOutput, stderr)
+	}()
+	scanner := p.newScanner(r)
+	p.commands[name] = cmd
+	p.inputStreams[name] = r
+	p.scanners[name] = scanner
+	return scanner, nil
 }
 
 // Create a new buffered Scanner for reading input records

@@ -779,7 +779,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 				return value{}, err
 			}
 			name := p.toString(nameValue)
-			scanner, err := p.getInputScanner(name, false)
+			scanner, err := p.getInputScannerPipe(name)
 			if err != nil {
 				return value{}, err
 			}
@@ -796,7 +796,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 				return value{}, err
 			}
 			name := p.toString(nameValue)
-			scanner, err := p.getInputScanner(name, true)
+			scanner, err := p.getInputScannerFile(name)
 			if err != nil {
 				return value{}, err
 			}
