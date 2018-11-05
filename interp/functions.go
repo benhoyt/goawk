@@ -222,11 +222,14 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 
 	case F_CLOSE:
 		name := p.toString(args[0])
-		w, ok := p.streams[name]
-		if !ok {
-			return num(-1), nil
+		var c io.Closer = p.inputStreams[name]
+		if c == nil {
+			c = p.outputStreams[name]
+			if c == nil {
+				return num(-1), nil
+			}
 		}
-		err := w.Close()
+		err := c.Close()
 		if err != nil {
 			return num(-1), nil
 		}

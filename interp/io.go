@@ -39,11 +39,11 @@ func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
 		return nil, err
 	}
 	name := p.toString(destValue)
-	if s, ok := p.streams[name]; ok {
-		if w, ok := s.(io.Writer); ok {
-			return w, nil
-		}
+	if _, ok := p.inputStreams[name]; ok {
 		return nil, newError("can't write to reader stream")
+	}
+	if w, ok := p.outputStreams[name]; ok {
+		return w, nil
 	}
 
 	switch redirect {
@@ -60,7 +60,7 @@ func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
 		if err != nil {
 			return nil, newError("output redirection error: %s", err)
 		}
-		p.streams[name] = w
+		p.outputStreams[name] = w
 		return w, nil
 
 	case PIPE:
@@ -90,7 +90,7 @@ func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
 			io.Copy(p.errorOutput, stderr)
 		}()
 		p.commands[name] = cmd
-		p.streams[name] = w
+		p.outputStreams[name] = w
 		return w, nil
 
 	default:
@@ -102,11 +102,11 @@ func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
 // Get input Scanner to use for "getline" based on file or pipe name
 // TODO: this is basically two different functions switching on isFile -- split?
 func (p *interp) getInputScanner(name string, isFile bool) (*bufio.Scanner, error) {
-	if s, ok := p.streams[name]; ok {
-		if _, ok := s.(io.Reader); ok {
-			return p.scanners[name], nil
-		}
+	if _, ok := p.outputStreams[name]; ok {
 		return nil, newError("can't read from writer stream")
+	}
+	if _, ok := p.inputStreams[name]; ok {
+		return p.scanners[name], nil
 	}
 	if isFile {
 		r, err := os.Open(name)
@@ -115,7 +115,7 @@ func (p *interp) getInputScanner(name string, isFile bool) (*bufio.Scanner, erro
 		}
 		scanner := p.newScanner(r)
 		p.scanners[name] = scanner
-		p.streams[name] = r
+		p.inputStreams[name] = r
 		return scanner, nil
 	} else {
 		cmd := exec.Command("sh", "-c", name)
@@ -145,7 +145,7 @@ func (p *interp) getInputScanner(name string, isFile bool) (*bufio.Scanner, erro
 		}()
 		scanner := p.newScanner(r)
 		p.commands[name] = cmd
-		p.streams[name] = r
+		p.inputStreams[name] = r
 		p.scanners[name] = scanner
 		return scanner, nil
 	}
@@ -377,7 +377,10 @@ func (p *interp) closeAll() {
 	if prevInput, ok := p.input.(io.Closer); ok {
 		prevInput.Close()
 	}
-	for _, w := range p.streams {
+	for _, r := range p.inputStreams {
+		_ = r.Close()
+	}
+	for _, w := range p.outputStreams {
 		_ = w.Close()
 	}
 	for _, cmd := range p.commands {

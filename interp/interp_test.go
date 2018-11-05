@@ -463,10 +463,11 @@ BEGIN { early() }
 			"", "", `parse error at 1:56: can't pass array "a" as scalar param`, "array"},
 		{`{ f(z) }  function f(x) { print NR }`, "abc", "1\n", "", ""},
 
-		// Redirected I/O
-		// TODO: these tests currently panic() due to bug with s.(io.Reader) in interp.go
-		// {`BEGIN { print >"out"; getline <"out" }`, "", "", "can't read from writer stream", ""},
-		// {`BEGIN { print |"out"; getline <"out" }`, "", "", "", ""},
+		// Redirected I/O (we give explicit errors, awk and gawk don't)
+		{`BEGIN { print >"out"; getline <"out" }  # !awk !gawk`, "", "", "can't read from writer stream", ""},
+		{`BEGIN { print |"out"; getline <"out" }  # !awk !gawk`, "", "", "can't read from writer stream", ""},
+		{`BEGIN { getline <"out"; print >"out" }  # !awk !gawk`, "", "", "can't write to reader stream", ""},
+		{`BEGIN { getline <"out"; print |"out" }  # !awk !gawk`, "", "", "can't write to reader stream", ""},
 
 		// Greater than operator requires parentheses in print statement,
 		// otherwise it's a redirection directive

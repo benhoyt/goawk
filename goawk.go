@@ -30,7 +30,6 @@ package main
 /*
 
 TODO:
-- fix crash with: BEGIN { print |"1"; getline <"1" }  # also print >"1"
 - performance testing: I/O, allocations, CPU
   + PoC: is interpreting via a "heavy AST" faster?
     i.e., with execute functions on the AST elements instead of the switch/case
@@ -38,7 +37,7 @@ TODO:
   + benchmark against awk/gawk with some real awk scripts
 - get goawk_test.go working in TravisCI
 
-*/// This comment intentionally left blank
+*/ // This comment intentionally left blank
 
 import (
 	"bytes"

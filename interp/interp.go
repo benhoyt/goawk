@@ -71,7 +71,8 @@ type interp struct {
 	filenameIndex int
 	hadFiles      bool
 	input         io.Reader
-	streams       map[string]io.Closer
+	inputStreams  map[string]io.ReadCloser
+	outputStreams map[string]io.WriteCloser
 	commands      map[string]*exec.Cmd
 
 	// Scalars and arrays
@@ -213,7 +214,8 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 		p.errorOutput = bufio.NewWriterSize(os.Stderr, stderrBufSize)
 		p.flushError = true
 	}
-	p.streams = make(map[string]io.Closer)
+	p.inputStreams = make(map[string]io.ReadCloser)
+	p.outputStreams = make(map[string]io.WriteCloser)
 	p.commands = make(map[string]*exec.Cmd)
 	p.scanners = make(map[string]*bufio.Scanner)
 	defer p.closeAll()
