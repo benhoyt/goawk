@@ -378,13 +378,13 @@ func (p *interp) execute(stmt Stmt) error {
 		// Print OFS-separated args followed by ORS (usually newline)
 		var line string
 		if len(s.Args) > 0 {
-			strs := make([]string, len(s.Args)) // TODO: escapes to heap
-			for i, a := range s.Args {
+			strs := make([]string, 0, 7) // Up to 7 args won't require heap allocation
+			for _, a := range s.Args {
 				v, err := p.eval(a)
 				if err != nil {
 					return err
 				}
-				strs[i] = v.str(p.outputFormat)
+				strs = append(strs, v.str(p.outputFormat))
 			}
 			line = strings.Join(strs, p.outputFieldSep)
 		} else {
@@ -408,12 +408,13 @@ func (p *interp) execute(stmt Stmt) error {
 			return err
 		}
 		format := p.toString(formatValue)
-		args := make([]value, len(s.Args)-1) // TODO: escapes to heap
-		for i, a := range s.Args[1:] {
-			args[i], err = p.eval(a)
+		args := make([]value, 0, 7) // Up to 7 args won't require heap allocation
+		for _, a := range s.Args[1:] {
+			arg, err := p.eval(a)
 			if err != nil {
 				return err
 			}
+			args = append(args, arg)
 		}
 		output, err := p.getOutputStream(s.Redirect, s.Dest)
 		if err != nil {
