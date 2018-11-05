@@ -36,8 +36,6 @@ TODO:
     i.e., with execute functions on the AST elements instead of the switch/case
   + buffer > and >> output (see TODO in getOutputStream)
   + benchmark against awk/gawk with some real awk scripts
-  + why does writing output take 180ms with script '$0', but 630ms with script '/.$/'?
-  + optimize parser
 - think about length() and substr() chars vs bytes:
   https://github.com/benhoyt/goawk/issues/2#issuecomment-415314000
 - get goawk_test.go working in TravisCI
