@@ -351,10 +351,19 @@ func (p *interp) sub(regex, repl, in string, global bool) (out string, num int, 
 	return out, count, nil
 }
 
+type cachedFormat struct {
+	format string
+	types  []byte
+}
+
 // Parse given sprintf format string into Go format string, along with
-// type conversion specifiers
-func parseFmtTypes(s string) (format string, types []byte, err error) {
-	// TODO: could memoize the result of this function for performance
+// type conversion specifiers. Output is memoized in a simple cache
+// for performance.
+func (p *interp) parseFmtTypes(s string) (format string, types []byte, err error) {
+	if item, ok := p.formatCache[s]; ok {
+		return item.format, item.types, nil
+	}
+
 	out := []byte(s)
 	for i := 0; i < len(s); i++ {
 		if s[i] == '%' {
@@ -395,19 +404,25 @@ func parseFmtTypes(s string) (format string, types []byte, err error) {
 			types = append(types, t)
 		}
 	}
-	return string(out), types, nil
+
+	// Dumb, non-LRU cache: just cache the first N formats
+	format = string(out)
+	if len(p.formatCache) < maxCachedFormats {
+		p.formatCache[s] = cachedFormat{format, types}
+	}
+	return format, types, nil
 }
 
 // Guts of sprintf() function (also used by "printf" statement)
 func (p *interp) sprintf(format string, args []value) (string, error) {
-	format, types, err := parseFmtTypes(format)
+	format, types, err := p.parseFmtTypes(format)
 	if err != nil {
 		return "", newError("format error: %s", err)
 	}
 	if len(types) > len(args) {
 		return "", newError("format error: got %d args, expected %d", len(args), len(types))
 	}
-	converted := make([]interface{}, len(types)) // TODO: escapes to heap
+	converted := make([]interface{}, len(types))
 	for i, t := range types {
 		a := args[i]
 		var v interface{}

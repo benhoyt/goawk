@@ -103,17 +103,19 @@ type interp struct {
 	matchStart      int
 
 	// Misc pieces of state
-	program    *Program
-	random     *rand.Rand
-	randSeed   float64
-	exitStatus int
-	regexCache map[string]*regexp.Regexp
+	program     *Program
+	random      *rand.Rand
+	randSeed    float64
+	exitStatus  int
+	regexCache  map[string]*regexp.Regexp
+	formatCache map[string]cachedFormat
 }
 
 // Various const configuration. Could make these part of Config if
 // we wanted to, but no need for now.
 const (
 	maxCachedRegexes = 100
+	maxCachedFormats = 100
 	maxRecordLength  = 10 * 1024 * 1024 // 10MB seems like plenty
 	maxFieldIndex    = 1000000
 	initialStackSize = 100
@@ -168,6 +170,7 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 
 	// Initialize defaults
 	p.regexCache = make(map[string]*regexp.Regexp, 10)
+	p.formatCache = make(map[string]cachedFormat, 10)
 	p.randSeed = 1.0
 	seed := math.Float64bits(p.randSeed)
 	p.random = rand.New(rand.NewSource(int64(seed)))
