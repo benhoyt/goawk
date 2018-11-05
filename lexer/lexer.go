@@ -114,7 +114,7 @@ func (l *Lexer) scan() (Position, Token, string) {
 		return pos, tok, val
 	}
 
-	// These are ordered by my guess at frequency of use. TODO: run
+	// These are ordered by my guess at frequency of use. Should run
 	// through a corpus of real AWK programs to determine actual
 	// frequency.
 	switch ch {

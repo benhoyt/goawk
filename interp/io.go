@@ -362,8 +362,9 @@ func (p *interp) nextLine() (string, error) {
 // on Windows (CR LF)
 func writeOutput(w io.Writer, s string) error {
 	if crlfNewline {
-		// First normalize to \n, then convert all newlines to \r\n (on Windows)
-		// TODO: creating two new strings is almost certainly slow, better to create a custom Writer
+		// First normalize to \n, then convert all newlines to \r\n
+		// (on Windows). NOTE: creating two new strings is almost
+		// certainly slow; would be better to create a custom Writer.
 		s = strings.Replace(s, "\r\n", "\n", -1)
 		s = strings.Replace(s, "\n", "\r\n", -1)
 	}

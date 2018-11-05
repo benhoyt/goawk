@@ -36,18 +36,12 @@ TODO:
     i.e., with execute functions on the AST elements instead of the switch/case
   + buffer > and >> output (see TODO in getOutputStream)
   + other "escapes to heap" uses of make() in interp.go
-  + writeOutput crlfNewline handling is probably slow
   + benchmark against awk/gawk with some real awk scripts
   + why does writing output take 180ms with script '$0', but 630ms with script '/.$/'?
   + optimize parser
-- convert benchmark_awks.py to Python 3
 - think about length() and substr() chars vs bytes:
   https://github.com/benhoyt/goawk/issues/2#issuecomment-415314000
 - get goawk_test.go working in TravisCI
-
-NICE TO HAVE:
-- think about proper CSV support: https://news.ycombinator.com/item?id=17788471
-- think about linear time string concat: https://news.ycombinator.com/item?id=17788028
 
 ISSUE - discrepancy against gawk on Windows:
    --- FAIL: TestAWK/t.printf2 (0.05s)
