@@ -40,7 +40,7 @@ import time
 
 AWKS = [
     './goawk',
-#    './goawk_slow', # GoAWK without perf improvements (commit 8ab5446)
+    './_slow', # GoAWK without perf improvements (commit 8ab5446)
     'awk',
     'gawk',
     'mawk',

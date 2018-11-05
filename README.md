@@ -67,7 +67,6 @@ Additional features GoAWK has over AWK:
 Things AWK has over GoAWK:
 
 * CPU-bound AWK scripts are slightly slower than awk, and about twice as slow as gawk.
-* GoAWK has a couple of known syntax quirks, but most real code shouldn't run into them (commented-out tests in interp/interp_test.go). I intend to fix these soon.
 
 ## Stability
 
