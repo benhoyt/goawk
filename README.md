@@ -4,7 +4,7 @@
 [![TravisCI Build](https://travis-ci.org/benhoyt/goawk.svg)](https://travis-ci.org/benhoyt/goawk)
 [![AppVeyor Build](https://ci.appveyor.com/api/projects/status/github/benhoyt/goawk?branch=master&svg=true)](https://ci.appveyor.com/project/benhoyt/goawk)
 
-AWK is a fascinating text-processing language, and somehow after reading the delightfully-terse [*The AWK Programming Language*](https://ia802309.us.archive.org/25/items/pdfy-MgN0H1joIoDVoIC7/The_AWK_Programming_Language.pdf) I was inspired to write an interpreter for it in Go. So here it is, pretty much feature-complete and tested against "the one true AWK" test suite.
+AWK is a fascinating text-processing language, and somehow after reading the delightfully-terse [*The AWK Programming Language*](https://ia802309.us.archive.org/25/items/pdfy-MgN0H1joIoDVoIC7/The_AWK_Programming_Language.pdf) I was inspired to write an interpreter for it in Go. So here it is, feature-complete and tested against "the one true AWK" test suite.
 
 <!-- [**Read more about how it works and performs here.**](TODO) -->
 
@@ -30,47 +30,50 @@ To use it in your Go programs, you can call `interp.Exec()` directly for simple 
     // foo
     // baz
 
-Or you can use the `parser` module and then `interp.New()` and `Interp.Exec()` to control execution, set variables, etc:
+Or you can use the `parser` module and then `interp.ExecProgram()` to control execution, set variables, etc:
 
-    src := "{ print $1+$2 }"
-    input := "1,2\n3,4\n5,6"
+    src := "{ print NR, tolower($0) }"
+    input := "A\naB\nAbC"
 
-    prog, err := parser.ParseProgram([]byte(src))
+    prog, err := parser.ParseProgram([]byte(src), nil)
     if err != nil {
         fmt.Println(err)
         return
     }
-    p := interp.New(nil, nil)
-    p.SetVar("FS", ",")
-    err = p.Exec(prog, bytes.NewReader([]byte(input)), nil)
+    config := &interp.Config{
+        Stdin: bytes.NewReader([]byte(input)),
+        Vars:  []string{"OFS", ":"},
+    }
+    _, err = interp.ExecProgram(prog, config)
     if err != nil {
         fmt.Println(err)
         return
     }
     // Output:
-    // 3
-    // 7
-    // 11
+    // 1:a
+    // 2:ab
+    // 3:abc
 
 Read the [GoDoc documentation](https://godoc.org/github.com/benhoyt/goawk) for more details.
 
 ## Differences from AWK
 
-The intention is for GoAWK to conform to the [POSIX AWK spec](http://pubs.opengroup.org/onlinepubs/9699919799/utilities/awk.html), but this section describes some areas where it's different.
+The intention is for GoAWK to conform to awk's behavior and to the [POSIX AWK spec](http://pubs.opengroup.org/onlinepubs/9699919799/utilities/awk.html), but this section describes some areas where it's different.
 
 Additional features GoAWK has over AWK:
 
-* It's embeddable in your Go programs. :-)
-* I/O-bound AWK scripts (i.e., most of them) are significantly faster than awk, and on a par with gawk.
+* It's embeddable in your Go programs!
+* I/O-bound AWK scripts (which is most of them) are significantly faster than awk, and on a par with gawk and mawk.
 * The parser supports `'single-quoted strings'` in addition to `"double-quoted strings"`, primarily to make Windows one-liners easier (the Windows `cmd.exe` shell uses `"` as the quote character).
 
 Things AWK has over GoAWK:
 
-* CPU-bound AWK scripts are slightly slower than awk, and about twice as slow as gawk.
+* CPU-bound AWK scripts are slightly slower than awk, and about twice as slow as gawk and mawk.
+* It's written by Brian Kernighan.
 
 ## Stability
 
-This is a beta, pre-1.0 version of GoAWK. It's working quite well and is fairly thoroughly tested, but I'm free to change the exported API if it makes sense. It shouldn't change *too* much, but there may be small changes in the signature of a few functions. I intend to publish a v1.0 with a stable API around October 2018.
+This is a beta, pre-1.0 version of GoAWK. It's working quite well and is fairly thoroughly tested, but I'm free to change the exported API if it makes sense. It shouldn't change *too* much, but there may be small changes in the signature of a few functions. I intend to publish a v1.0 with a stable API in November 2018.
 
 ## The end
 

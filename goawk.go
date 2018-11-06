@@ -36,6 +36,7 @@ TODO:
   + benchmark against awk/gawk with some real awk scripts
 - get goawk_test.go working in TravisCI
 - do some more fuzz testing
+- remove notice about "beta" from README.md
 
 */ // This comment intentionally left blank
 
@@ -56,12 +57,14 @@ import (
 )
 
 func main() {
+	// Main AWK arguments
 	var progFiles multiString
 	flag.Var(&progFiles, "f", "load AWK source from `progfile` (multiple allowed)")
 	fieldSep := flag.String("F", " ", "field separator")
 	var vars multiString
 	flag.Var(&vars, "v", "name=value variable `assignment` (multiple allowed)")
 
+	// Debugging and profiling arguments
 	debug := flag.Bool("d", false, "debug mode (print parsed AST to stderr)")
 	debugTypes := flag.Bool("dt", false, "show variable types debug info")
 	cpuprofile := flag.String("cpuprofile", "", "write CPU profile to `file`")
@@ -72,6 +75,7 @@ func main() {
 
 	var src []byte
 	if len(progFiles) > 0 {
+		// Read source: the concatenation of all source files specified
 		buf := &bytes.Buffer{}
 		for _, progFile := range progFiles {
 			if progFile == "-" {
@@ -91,6 +95,7 @@ func main() {
 				}
 				f.Close()
 			}
+			// Append newline to file in case it doesn't end with one
 			buf.WriteByte('\n')
 		}
 		src = buf.Bytes()
@@ -102,6 +107,7 @@ func main() {
 		args = args[1:]
 	}
 
+	// Parse source code and setup interpreter
 	parserConfig := &parser.ParserConfig{
 		DebugTypes:  *debugTypes,
 		DebugWriter: os.Stderr,
@@ -117,17 +123,6 @@ func main() {
 	if *debug {
 		fmt.Fprintln(os.Stderr, prog)
 	}
-
-	if *cpuprofile != "" {
-		f, err := os.Create(*cpuprofile)
-		if err != nil {
-			errorExit("could not create CPU profile: %v", err)
-		}
-		if err := pprof.StartCPUProfile(f); err != nil {
-			errorExit("could not start CPU profile: %v", err)
-		}
-	}
-
 	config := &interp.Config{
 		Argv0: filepath.Base(os.Args[0]),
 		Args:  args,
@@ -139,6 +134,16 @@ func main() {
 			errorExit("-v flag must be in format name=value")
 		}
 		config.Vars = append(config.Vars, parts[0], parts[1])
+	}
+
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			errorExit("could not create CPU profile: %v", err)
+		}
+		if err := pprof.StartCPUProfile(f); err != nil {
+			errorExit("could not start CPU profile: %v", err)
+		}
 	}
 
 	status, err := interp.ExecProgram(prog, config)
@@ -165,6 +170,14 @@ func main() {
 	os.Exit(status)
 }
 
+// For parse errors, show source line and position of error, eg:
+//
+// -----------------------------------------------------
+// BEGIN { x*; }
+//           ^
+// -----------------------------------------------------
+// parse error at 1:11: expected expression instead of ;
+//
 func showSourceLine(src []byte, pos lexer.Position, dividerLen int) {
 	divider := strings.Repeat("-", dividerLen)
 	if divider != "" {
@@ -186,6 +199,7 @@ func errorExit(format string, args ...interface{}) {
 	os.Exit(1)
 }
 
+// Helper type for flag parsing to allow multiple -f and -v arguments
 type multiString []string
 
 func (m *multiString) String() string {
