@@ -75,12 +75,13 @@ type interp struct {
 	outputStreams map[string]io.WriteCloser
 	commands      map[string]*exec.Cmd
 
-	// Scalars and arrays
+	// Scalars, arrays, and function state
 	globals     []value
 	stack       []value
 	frame       []value
 	arrays      []map[string]value
 	localArrays [][]int
+	callDepth   int
 
 	// File, line, and field handling
 	filename    string
@@ -119,6 +120,7 @@ const (
 	maxCachedFormats = 100
 	maxRecordLength  = 10 * 1024 * 1024 // 10MB seems like plenty
 	maxFieldIndex    = 1000000
+	maxCallDepth     = 1000
 	initialStackSize = 100
 	outputBufSize    = 64 * 1024
 	stderrBufSize    = 4 * 1024

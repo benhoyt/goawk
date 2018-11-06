@@ -464,6 +464,7 @@ BEGIN { early() }
 		{`function get(a, k) { return a+k } BEGIN { a[42]; print get(a, 1); }`,
 			"", "", `parse error at 1:56: can't pass array "a" as scalar param`, "array"},
 		{`{ f(z) }  function f(x) { print NR }`, "abc", "1\n", "", ""},
+		{`function f() { f() }  BEGIN { f() }  # !awk !gawk`, "", "", `calling "f" exceeded maximum call depth of 1000`, ""},
 
 		// Redirected I/O (we give explicit errors, awk and gawk don't)
 		{`BEGIN { print >"out"; getline <"out" }  # !awk !gawk`, "", "", "can't read from writer stream", ""},

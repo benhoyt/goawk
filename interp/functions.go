@@ -246,6 +246,11 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 func (p *interp) callUser(index int, args []Expr) (value, error) {
 	f := p.program.Functions[index]
 
+	if p.callDepth >= maxCallDepth {
+		return value{}, newError("calling %q exceeded maximum call depth of %d", f.Name, maxCallDepth)
+	}
+	p.callDepth++
+
 	// Evaluate the arguments and push them onto the locals stack
 	oldFrame := p.frame
 	newFrameStart := len(p.stack)
