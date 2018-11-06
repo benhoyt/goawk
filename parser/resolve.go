@@ -174,6 +174,9 @@ func (p *parser) varRef(name string, pos Position) *VarExpr {
 // ArrayExpr.Index won't be set till later)
 func (p *parser) arrayRef(name string, pos Position) *ArrayExpr {
 	scope, funcName := p.getScope(name)
+	if scope == ScopeSpecial {
+		panic(p.error("can't use scalar %q as array", name))
+	}
 	expr := &ArrayExpr{scope, 0, name}
 	p.arrayRefs = append(p.arrayRefs, arrayRef{funcName, expr, pos})
 	typ := p.varTypes[funcName][name].typ

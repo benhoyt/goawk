@@ -258,6 +258,8 @@ BEGIN {
 			"x", "", "NF set to negative value: -1", "negative value"},
 		{`{ NF=1234567; }`, "x", "", "NF set too large: 1234567", ""},
 		{`BEGIN { $1234567=1 }`, "", "", "field index too large: 1234567", ""},
+		{`0 in FS  # !awk - doesn't flag this as an error`, "x", "",
+			`parse error at 1:6: can't use scalar "FS" as array`, "array"},
 
 		// Lots of NF tests with different combinations of NF, $, and number
 		// of input fields. Some of these cause segmentation faults on awk
