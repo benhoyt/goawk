@@ -358,6 +358,8 @@ BEGIN {
 		{`{ print gsub(/[0-9]/, "(&)"); print $0 }`, "0123x. 42y", "6\n(0)(1)(2)(3)x. (4)(2)y\n", "", ""},
 		{`{ print gsub(/[0-9]+/, "(&)"); print $0 }`, "0123x. 42y", "2\n(0123)x. (42)y\n", "", ""},
 		{`{ print gsub(/[0-9]/, "\\&"); print $0 }`, "0123x. 42y", "6\n&&&&x. &&y\n", "", ""},
+		{`sub("", "\\e", FS)  # !awk !gawk`, "foo bar\nbaz buz\n", "",
+			"invalid regex \"\\\\e \": error parsing regexp: invalid escape sequence: `\\e`", ""},
 		{`BEGIN { print tolower("Foo BaR") }`, "", "foo bar\n", "", ""},
 		{`BEGIN { print toupper("Foo BaR") }`, "", "FOO BAR\n", "", ""},
 		{`

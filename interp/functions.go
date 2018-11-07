@@ -72,7 +72,10 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 			return value{}, err
 		}
 		if len(argExprs) == 3 {
-			p.assign(argExprs[2], str(out))
+			err := p.assign(argExprs[2], str(out))
+			if err != nil {
+				return value{}, err
+			}
 		} else {
 			p.setLine(out)
 		}
