@@ -230,6 +230,9 @@ func (p *parser) simpleStmt() Stmt {
 		p.expect(NAME)
 		p.expect(LBRACKET)
 		index := p.exprList(p.expr)
+		if len(index) == 0 {
+			panic(p.error("expected expression instead of ]"))
+		}
 		p.expect(RBRACKET)
 		return &DeleteStmt{ref, index}
 	case IF, FOR, WHILE, DO, BREAK, CONTINUE, NEXT, EXIT, RETURN:
@@ -682,6 +685,9 @@ func (p *parser) primary() Expr {
 			// a[x] or a[x, y] array index expression
 			p.next()
 			index := p.exprList(p.expr)
+			if len(index) == 0 {
+				panic(p.error("expected expression instead of ]"))
+			}
 			p.expect(RBRACKET)
 			return &IndexExpr{p.arrayRef(name, namePos), index}
 		} else if p.tok == LPAREN && !p.lexer.HadSpace() {
