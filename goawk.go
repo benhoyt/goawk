@@ -30,10 +30,6 @@ package main
 /*
 
 TODO:
-- why (before fix) does program '0 in FS' give error:
-	unexpected fault address 0xffffffffffffffe8
-	fatal error: fault
-  instead of "panic: runtime error: index out of range"?
 - performance testing: I/O, allocations, CPU
   + PoC: is interpreting via a "heavy AST" faster?
     i.e., with execute functions on the AST elements instead of the switch/case
