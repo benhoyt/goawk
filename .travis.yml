@@ -1,16 +1,15 @@
 language: go
 
 go:
-  - 1.10.x
+  - 1.11.x
 
-# Setting sudo access to false will let Travis CI use containers rather than
-# VMs to run the tests. For more details see:
-# - http://docs.travis-ci.com/user/workers/container-based-infrastructure/
-# - http://docs.travis-ci.com/user/workers/standard-infrastructure/
+# Setting sudo access to false will let Travis CI use containers
+# rather than VMs to run the tests. For more details see:
+# https://docs.travis-ci.com/user/reference/overview/
 sudo: false
 
 script:
-  - go test ./lexer
-  - go test ./parser
-  - go test ./interp
-  # NOTE: skip . tests for now as they're too finicky under Docker
+  - go version
+  - gawk --version
+  - go build
+  - go test ./...
