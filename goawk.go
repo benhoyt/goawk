@@ -34,7 +34,6 @@ TODO:
   + PoC: is interpreting via a "heavy AST" faster?
     i.e., with execute functions on the AST elements instead of the switch/case
   + benchmark against awk/gawk with some real awk scripts
-- get goawk_test.go working in TravisCI
 - do some more fuzz testing
 - remove notice about "beta" from README.md
 
