@@ -228,6 +228,9 @@ func (p *parser) resolveVars(prog *Program) {
 		progressed := false
 		for funcName, infos := range p.varTypes {
 			for name, info := range infos {
+				if info.scope == ScopeSpecial {
+					continue
+				}
 				if info.typ == typeUnknown {
 					paramName := prog.Functions[p.functions[info.callName]].Params[info.argIndex]
 					typ := p.varTypes[info.callName][paramName].typ

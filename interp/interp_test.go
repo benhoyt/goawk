@@ -469,6 +469,7 @@ BEGIN { early() }
 			"", "", `parse error at 1:56: can't pass array "a" as scalar param`, "array"},
 		{`{ f(z) }  function f(x) { print NR }`, "abc", "1\n", "", ""},
 		{`function f() { f() }  BEGIN { f() }  # !awk !gawk`, "", "", `calling "f" exceeded maximum call depth of 1000`, ""},
+		{`function f(x) { 0 in x }  BEGIN { f(FS) }  # !awk`, "", "", `parse error at 1:35: can't pass scalar "FS" as array param`, "attempt to use scalar parameter `x' as an array"},
 
 		// Redirected I/O (we give explicit errors, awk and gawk don't)
 		{`BEGIN { print >"out"; getline <"out" }  # !awk !gawk`, "", "", "can't read from writer stream", ""},
