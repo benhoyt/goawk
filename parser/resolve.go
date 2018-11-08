@@ -131,6 +131,8 @@ func (p *parser) resolveUserCalls(prog *Program) {
 // type based on context, so mark the types for these as unknown.
 func (p *parser) processUserCallArg(funcName string, arg Expr, index int) {
 	if varExpr, ok := arg.(*VarExpr); ok {
+		// TODO: It think p.funcName here is wrong! because it may be
+		// a global referenced inside a function
 		ref := p.varTypes[p.funcName][varExpr.Name].ref
 		if ref == varExpr {
 			// Only applies if this is the first reference to this
@@ -315,13 +317,21 @@ func (p *parser) resolveVars(prog *Program) {
 				}
 				continue
 			}
-			info := p.varTypes[c.inFunc][varExpr.Name]
-			typ := info.typ
-			if typ == typeArray && !function.Arrays[i] {
+			// If this VarExpr refers to a local, use caller name to
+			// look up in varTypes, otherwise use "" (meaning global).
+			funcName := ""
+			for _, p := range prog.Functions[p.functions[c.inFunc]].Params {
+				if varExpr.Name == p {
+					funcName = c.inFunc
+					break
+				}
+			}
+			info := p.varTypes[funcName][varExpr.Name]
+			if info.typ == typeArray && !function.Arrays[i] {
 				message := fmt.Sprintf("can't pass array %q as scalar param", varExpr.Name)
 				panic(&ParseError{c.pos, message})
 			}
-			if typ != typeArray && function.Arrays[i] {
+			if info.typ != typeArray && function.Arrays[i] {
 				message := fmt.Sprintf("can't pass scalar %q as array param", varExpr.Name)
 				panic(&ParseError{c.pos, message})
 			}
