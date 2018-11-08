@@ -131,8 +131,6 @@ func (p *parser) resolveUserCalls(prog *Program) {
 // type based on context, so mark the types for these as unknown.
 func (p *parser) processUserCallArg(funcName string, arg Expr, index int) {
 	if varExpr, ok := arg.(*VarExpr); ok {
-		// TODO: It think p.funcName here is wrong! because it may be
-		// a global referenced inside a function
 		ref := p.varTypes[p.funcName][varExpr.Name].ref
 		if ref == varExpr {
 			// Only applies if this is the first reference to this
