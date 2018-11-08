@@ -1,2 +1,0 @@
-#!/usr/bin/env bash
-go test | awk '{ sub(/goawk_test.go:[0-9]+: /, ""); sub(/.?\(?[0-9]+\.[0-9]+s\)?/, ""); print }' > testdata/failures
