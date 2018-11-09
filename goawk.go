@@ -34,7 +34,9 @@ TODO:
   + PoC: is interpreting via a "heavy AST" faster?
     i.e., with execute functions on the AST elements instead of the switch/case
   + benchmark against awk/gawk with some real awk scripts
+  + do a bit more cpu and mem profiling
 - do some more fuzz testing
+- release 1.0.0 (do anything for Go modules?)
 - remove notice about "beta" from README.md
 
 */ // This comment intentionally left blank
