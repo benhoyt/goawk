@@ -223,7 +223,7 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	defer p.closeAll()
 
 	// Execute the program! BEGIN, then pattern/actions, then END
-	err := p.execBegin(program.Begin)
+	err := p.execBeginEnd(program.Begin)
 	if err != nil && err != errExit {
 		return 0, err
 	}
@@ -236,7 +236,7 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 			return 0, err
 		}
 	}
-	err = p.execEnd(program.End)
+	err = p.execBeginEnd(program.End)
 	if err != nil && err != errExit {
 		return 0, err
 	}
@@ -262,9 +262,9 @@ func Exec(source, fieldSep string, input io.Reader, output io.Writer) error {
 	return err
 }
 
-// Execute BEGIN blocks (may be multiple)
-func (p *interp) execBegin(begin []Stmts) error {
-	for _, statements := range begin {
+// Execute BEGIN or END blocks (may be multiple)
+func (p *interp) execBeginEnd(beginEnd []Stmts) error {
+	for _, statements := range beginEnd {
 		err := p.executes(statements)
 		if err != nil {
 			return err
@@ -343,17 +343,6 @@ lineLoop:
 			if err != nil {
 				return err
 			}
-		}
-	}
-	return nil
-}
-
-// Execute END blocks (may be multiple)
-func (p *interp) execEnd(end []Stmts) error {
-	for _, statements := range end {
-		err := p.executes(statements)
-		if err != nil {
-			return err
 		}
 	}
 	return nil
