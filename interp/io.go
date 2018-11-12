@@ -50,7 +50,7 @@ func (wc *bufferedWriteCloser) Close() error {
 // destination (file or pipe name)
 func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
 	if redirect == ILLEGAL {
-		// "ILLEGAL" means send to standard output
+		// Token "ILLEGAL" means send to standard output
 		return p.output, nil
 	}
 

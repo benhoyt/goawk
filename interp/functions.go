@@ -276,6 +276,7 @@ func (p *interp) callUser(index int, args []Expr) (value, error) {
 	for i := len(args); i < len(f.Params); i++ {
 		if f.Arrays[i] {
 			arrays = append(arrays, len(p.arrays))
+			// TODO: worth doing make(map[string]value) here to avoid check in setArrayValue?
 			p.arrays = append(p.arrays, nil)
 		} else {
 			p.stack = append(p.stack, value{})

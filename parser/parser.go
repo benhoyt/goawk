@@ -449,7 +449,7 @@ func (p *parser) exprList(parse func() Expr) []Expr {
 // presumably so `print a, b > "file"` is a file redirect instead of
 // a greater-than comparsion. So we kind of have two ways to recurse
 // down here: expr(), which parses all expressions, and printExpr(),
-// which skips GETLINE and GREATER expressions.
+// which skips PIPE GETLINE and GREATER expressions.
 
 // Parse a single expression.
 func (p *parser) expr() Expr      { return p.getLine() }
