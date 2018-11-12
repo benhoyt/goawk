@@ -30,12 +30,15 @@ package main
 /*
 
 TODO:
+- make *.py Python 3
 - performance testing: I/O, allocations, CPU
+  + does it help to change (v value) methods to (v *value)?
   + PoC: is interpreting via a "heavy AST" faster?
     i.e., with execute functions on the AST elements instead of the switch/case
   + benchmark against awk/gawk with some real awk scripts
   + do a bit more cpu and mem profiling
 - do some more fuzz testing
+  + commit fuzz testing code and scripts to repo
 - release 1.0.0 (do anything for Go modules?)
 - remove notice about "beta" from README.md
 
@@ -119,7 +122,7 @@ func main() {
 		if err, ok := err.(*parser.ParseError); ok {
 			showSourceLine(src, err.Position, len(errMsg))
 		}
-		errorExit(errMsg)
+		errorExit("%s", errMsg)
 	}
 	if *debug {
 		fmt.Fprintln(os.Stderr, prog)
