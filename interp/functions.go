@@ -261,7 +261,7 @@ func (p *interp) callUser(index int, args []Expr) (value, error) {
 	for i, arg := range args {
 		if f.Arrays[i] {
 			a := arg.(*VarExpr)
-			arrays = append(arrays, a.Index)
+			arrays = append(arrays, p.getArrayIndex(a.Scope, a.Index))
 		} else {
 			argValue, err := p.eval(arg)
 			if err != nil {

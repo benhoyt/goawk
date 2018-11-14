@@ -18,6 +18,17 @@ const (
 	typeArray
 )
 
+func (t varType) String() string {
+	switch t {
+	case typeScalar:
+		return "Scalar"
+	case typeArray:
+		return "Array"
+	default:
+		return "Unknown"
+	}
+}
+
 // typeInfo records type information for a single variable
 type typeInfo struct {
 	typ      varType
@@ -30,15 +41,6 @@ type typeInfo struct {
 
 // Used by printVarTypes when debugTypes is turned on
 func (t typeInfo) String() string {
-	var typ string
-	switch t.typ {
-	case typeScalar:
-		typ = "Scalar"
-	case typeArray:
-		typ = "Array"
-	default:
-		typ = "Unknown"
-	}
 	var scope string
 	switch t.scope {
 	case ScopeGlobal:
@@ -49,7 +51,7 @@ func (t typeInfo) String() string {
 		scope = "Special"
 	}
 	return fmt.Sprintf("typ=%s ref=%p scope=%s index=%d callName=%q argIndex=%d",
-		typ, t.ref, scope, t.index, t.callName, t.argIndex)
+		t.typ, t.ref, scope, t.index, t.callName, t.argIndex)
 }
 
 // A single variable reference (normally scalar)
@@ -235,6 +237,10 @@ func (p *parser) resolveVars(prog *Program) {
 					paramName := prog.Functions[p.functions[info.callName]].Params[info.argIndex]
 					typ := p.varTypes[info.callName][paramName].typ
 					if typ != typeUnknown {
+						if p.debugTypes {
+							fmt.Fprintf(p.debugWriter, "resolving %s:%s to %s\n",
+								funcName, name, typ)
+						}
 						info.typ = typ
 						p.varTypes[funcName][name] = info
 						progressed = true

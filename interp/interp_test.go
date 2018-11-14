@@ -34,7 +34,7 @@ func TestInterp(t *testing.T) {
 		in     string
 		out    string
 		err    string // error from GoAWK must equal this
-		awkErr string // error from gawk must contain this
+		awkErr string // error from awk/gawk must contain this
 	}{
 		// BEGIN and END work correctly
 		{`BEGIN { print "b" }`, "", "b\n", "", ""},
@@ -439,11 +439,22 @@ function g(b, y) { f(b, y) }
 BEGIN { c[1]=2; print f(c, 1); print g(c, 1) }
 `, "", "2\n\n", "", ""},
 		{`
+function g(b, y) { return f(b, y) }
+function f(a, x) { return a[x] }
+BEGIN { c[1]=2; print f(c, 1); print g(c, 1) }
+`, "", "2\n2\n", "", ""},
+		{`
 function h(b, y) { g(b, y) }
 function g(b, y) { f(b, y) }
 function f(a, x) { return a[x] }
 BEGIN { c[1]=2; print f(c, 1); print g(c, 1) }
 `, "", "2\n\n", "", ""},
+		{`
+function h(b, y) { return g(b, y) }
+function g(b, y) { return f(b, y) }
+function f(a, x) { return a[x] }
+BEGIN { c[1]=2; print f(c, 1); print g(c, 1); print h(c, 1) }
+`, "", "2\n2\n2\n", "", ""},
 		{`
 function get(a, x) { return a[x] }
 BEGIN { a[1]=2; print get(a, x); print get(1, 2); }
