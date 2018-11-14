@@ -36,7 +36,6 @@ TODO:
   + benchmark against awk/gawk with some real awk scripts
   + do a bit more cpu and mem profiling
 - do some more fuzz testing
-  + commit fuzz testing code and scripts to repo
 - release 1.0.0 (do anything for Go modules?)
 - remove notice about "beta" from README.md
 

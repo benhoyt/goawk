@@ -1,10 +1,6 @@
 .DS_Store
 goawk
 _slow
-
-fuzz-interp.zip
-fuzz-parser.zip
-workdir-interp/
-workdir-parser/
-fuzz-interp/
-fuzz-parser/
+fuzz/interp/workdir
+fuzz/parser/workdir
+fuzz-fuzz.zip
