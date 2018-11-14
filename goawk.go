@@ -30,7 +30,6 @@ package main
 /*
 
 TODO:
-- what is correct #! line for benchmark_awks.py?
 - update benchmarks
 - see if stash'd pre-allocate changes actually helps
 - performance testing: I/O, allocations, CPU
