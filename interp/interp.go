@@ -168,8 +168,10 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	// Allocate memory for variables
 	p.globals = make([]value, len(program.Scalars))
 	p.stack = make([]value, 0, initialStackSize)
-	p.arrays = make([]map[string]value, len(program.Arrays),
-		len(program.Arrays)+initialStackSize)
+	p.arrays = make([]map[string]value, len(program.Arrays), len(program.Arrays)+initialStackSize)
+	for i := 0; i < len(program.Arrays); i++ {
+		p.arrays[i] = make(map[string]value)
+	}
 
 	// Initialize defaults
 	p.regexCache = make(map[string]*regexp.Regexp, 10)
@@ -1004,18 +1006,14 @@ func (p *interp) getArrayIndex(scope VarScope, index int) int {
 
 // Get a value from given array by key (index)
 func (p *interp) getArrayValue(scope VarScope, arrayIndex int, index string) value {
-	return p.arrays[p.getArrayIndex(scope, arrayIndex)][index]
+	resolved := p.getArrayIndex(scope, arrayIndex)
+	return p.arrays[resolved][index]
 }
 
 // Set a value in given array by key (index)
 func (p *interp) setArrayValue(scope VarScope, arrayIndex int, index string, v value) {
-	resolvedIndex := p.getArrayIndex(scope, arrayIndex)
-	array := p.arrays[resolvedIndex]
-	if array == nil {
-		array = make(map[string]value)
-		p.arrays[resolvedIndex] = array
-	}
-	array[index] = v
+	resolved := p.getArrayIndex(scope, arrayIndex)
+	p.arrays[resolved][index] = v
 }
 
 // Get the value of given numbered field, equivalent to "$index"

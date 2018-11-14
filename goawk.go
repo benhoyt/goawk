@@ -30,12 +30,9 @@ package main
 /*
 
 TODO:
-- update benchmarks
-- see if stash'd pre-allocate changes actually helps
 - performance testing: I/O, allocations, CPU
   + PoC: is interpreting via a "heavy AST" faster?
     i.e., with execute functions on the AST elements instead of the switch/case
-
   + benchmark against awk/gawk with some real awk scripts
   + do a bit more cpu and mem profiling
 - do some more fuzz testing
