@@ -30,9 +30,10 @@ package main
 /*
 
 TODO:
-- make *.py Python 3
+- what is correct #! line for benchmark_awks.py?
+- update benchmarks
+- see if stash'd pre-allocate changes actually helps
 - performance testing: I/O, allocations, CPU
-  + does it help to change (v value) methods to (v *value)?
   + PoC: is interpreting via a "heavy AST" faster?
     i.e., with execute functions on the AST elements instead of the switch/case
   + benchmark against awk/gawk with some real awk scripts
