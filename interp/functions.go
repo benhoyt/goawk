@@ -252,7 +252,6 @@ func (p *interp) callUser(index int, args []Expr) (value, error) {
 	if p.callDepth >= maxCallDepth {
 		return value{}, newError("calling %q exceeded maximum call depth of %d", f.Name, maxCallDepth)
 	}
-	p.callDepth++
 
 	// Evaluate the arguments and push them onto the locals stack
 	oldFrame := p.frame
@@ -286,7 +285,9 @@ func (p *interp) callUser(index int, args []Expr) (value, error) {
 	p.localArrays = append(p.localArrays, arrays)
 
 	// Execute the function!
+	p.callDepth++
 	err := p.executes(f.Body)
+	p.callDepth--
 
 	// Pop the locals off the stack
 	p.stack = p.stack[:newFrameStart]
