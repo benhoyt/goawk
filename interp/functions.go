@@ -315,7 +315,7 @@ func (p *interp) split(s string, scope VarScope, index int, fs string) (int, err
 		}
 		parts = re.Split(s, -1)
 	}
-	array := make(map[string]value)
+	array := make(map[string]value, len(parts))
 	for i, part := range parts {
 		array[strconv.Itoa(i+1)] = numStr(part)
 	}
