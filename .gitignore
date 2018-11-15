@@ -1,6 +1,6 @@
 .DS_Store
 goawk
-_slow
+orig
 fuzz/interp/workdir
 fuzz/parser/workdir
 fuzz-fuzz.zip
