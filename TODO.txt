@@ -1,5 +1,0 @@
-
-* address Travis build error:
-    --- FAIL: TestInterp/BEGIN_{_print_|"out";_getline_<"out"_}__#_!awk_!gawk (0.00s)
-        interp_test.go:590: expected error "can't read from writer stream", got "write |1: broken pipe"
-* release 1.0.0 (do anything for Go modules?)
