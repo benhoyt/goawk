@@ -44,14 +44,14 @@ import (
 )
 
 const (
-	version = "1.0.0"
+	version = "v1.0.0"
 )
 
 func main() {
 	// Main AWK arguments
 	var progFiles multiString
 	flag.Var(&progFiles, "f", "load AWK source from `progfile` (multiple allowed)")
-	fieldSep := flag.String("F", " ", "field separator")
+	fieldSep := flag.String("F", " ", "field `separator`")
 	var vars multiString
 	flag.Var(&vars, "v", "name=value variable `assignment` (multiple allowed)")
 	showVersion := flag.Bool("version", false, "show GoAWK version and exit")
@@ -66,7 +66,7 @@ func main() {
 	args := flag.Args()
 
 	if *showVersion {
-		fmt.Printf("GoAWK version %s - Copyright (c) 2018 Ben Hoyt\n", version)
+		fmt.Printf("GoAWK %s - Copyright (c) 2018 Ben Hoyt\n", version)
 		return
 	}
 
