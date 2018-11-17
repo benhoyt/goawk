@@ -27,22 +27,6 @@
 //
 package main
 
-/*
-
-TODO:
-- address Travis build error:
-    --- FAIL: TestInterp/BEGIN_{_print_|"out";_getline_<"out"_}__#_!awk_!gawk (0.00s)
-        interp_test.go:590: expected error "can't read from writer stream", got "write |1: broken pipe"
-- performance testing: I/O, allocations, CPU
-  + PoC: is interpreting via a "heavy AST" faster?
-    i.e., with execute functions on the AST elements instead of the switch/case
-  + profile goawk with some more real-world AWK scripts
-- do some more fuzz testing
-- release 1.0.0 (do anything for Go modules?)
-- remove notice about "beta" from README.md
-
-*/ // This comment intentionally left blank
-
 import (
 	"bytes"
 	"flag"
