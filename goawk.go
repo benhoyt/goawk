@@ -43,6 +43,10 @@ import (
 	"github.com/benhoyt/goawk/parser"
 )
 
+const (
+	version = "1.0.0"
+)
+
 func main() {
 	// Main AWK arguments
 	var progFiles multiString
@@ -50,6 +54,7 @@ func main() {
 	fieldSep := flag.String("F", " ", "field separator")
 	var vars multiString
 	flag.Var(&vars, "v", "name=value variable `assignment` (multiple allowed)")
+	showVersion := flag.Bool("version", false, "show GoAWK version and exit")
 
 	// Debugging and profiling arguments
 	debug := flag.Bool("d", false, "debug mode (print parsed AST to stderr)")
@@ -59,6 +64,11 @@ func main() {
 
 	flag.Parse()
 	args := flag.Args()
+
+	if *showVersion {
+		fmt.Printf("GoAWK version %s - Copyright (c) 2018 Ben Hoyt\n", version)
+		return
+	}
 
 	var src []byte
 	if len(progFiles) > 0 {
