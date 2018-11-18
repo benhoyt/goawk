@@ -1,4 +1,3 @@
-# Generate and display the Mandelbrot set
 
 BEGIN {
     # Constants to determine size and coordinates of grid
@@ -9,15 +8,15 @@ BEGIN {
 
     # "Colors", from '.' (diverges fastest) to '@' (diverges slowly),
     # and then ' ' for doesn't diverge within `iters` iterations.
-    colors[0] = "."
-    colors[1] = "-"
-    colors[2] = "+"
-    colors[3] = "*"
-    colors[4] = "%%"
-    colors[5] = "#"
-    colors[6] = "$"
-    colors[7] = "@"
-    colors[8] = " "
+    colors[0] = "🏴"
+    colors[1] = "🏳️‍🌈🏳️‍🌈"
+    colors[2] = "🍇"
+    colors[3] = "🏴‍☠️"
+    colors[4] = "🥩"
+    colors[5] = "🌇"
+    colors[6] = "🧀"
+    colors[7] = "🌭"
+    colors[8] = "🏴"
 
     # Loop from top to bottom, and for each line left to right
     inc_y = (max_y-min_y) / height
