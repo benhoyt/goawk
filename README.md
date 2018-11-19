@@ -12,47 +12,53 @@ AWK is a fascinating text-processing language, and somehow after reading the del
 
 To use the command-line version, simply use `go get` to install it, and then run it using `goawk` (assuming `$GOPATH/bin` is in your `PATH`):
 
-    $ go get github.com/benhoyt/goawk
-    $ goawk 'BEGIN { print "foo", 42 }'
-    foo 42
-    $ echo 1 2 3 | goawk '{ print $1 + $3 }'
-    4
+```shell
+$ go get github.com/benhoyt/goawk
+$ goawk 'BEGIN { print "foo", 42 }'
+foo 42
+$ echo 1 2 3 | goawk '{ print $1 + $3 }'
+4
+```
 
 To use it in your Go programs, you can call `interp.Exec()` directly for simple needs:
 
-    input := bytes.NewReader([]byte("foo bar\n\nbaz buz"))
-    err := interp.Exec("$0 { print $1 }", " ", input, nil)
-    if err != nil {
-        fmt.Println(err)
-        return
-    }
-    // Output:
-    // foo
-    // baz
+```go
+input := bytes.NewReader([]byte("foo bar\n\nbaz buz"))
+err := interp.Exec("$0 { print $1 }", " ", input, nil)
+if err != nil {
+    fmt.Println(err)
+    return
+}
+// Output:
+// foo
+// baz
+```
 
 Or you can use the `parser` module and then `interp.ExecProgram()` to control execution, set variables, etc:
 
-    src := "{ print NR, tolower($0) }"
-    input := "A\naB\nAbC"
+```go
+src := "{ print NR, tolower($0) }"
+input := "A\naB\nAbC"
 
-    prog, err := parser.ParseProgram([]byte(src), nil)
-    if err != nil {
-        fmt.Println(err)
-        return
-    }
-    config := &interp.Config{
-        Stdin: bytes.NewReader([]byte(input)),
-        Vars:  []string{"OFS", ":"},
-    }
-    _, err = interp.ExecProgram(prog, config)
-    if err != nil {
-        fmt.Println(err)
-        return
-    }
-    // Output:
-    // 1:a
-    // 2:ab
-    // 3:abc
+prog, err := parser.ParseProgram([]byte(src), nil)
+if err != nil {
+    fmt.Println(err)
+    return
+}
+config := &interp.Config{
+    Stdin: bytes.NewReader([]byte(input)),
+    Vars:  []string{"OFS", ":"},
+}
+_, err = interp.ExecProgram(prog, config)
+if err != nil {
+    fmt.Println(err)
+    return
+}
+// Output:
+// 1:a
+// 2:ab
+// 3:abc
+```
 
 Read the [GoDoc documentation](https://godoc.org/github.com/benhoyt/goawk) for more details.
 
