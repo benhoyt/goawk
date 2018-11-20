@@ -119,6 +119,35 @@ func TestRegex(t *testing.T) {
 	}
 }
 
+func TestHadSpace(t *testing.T) {
+	tests := []struct {
+		input  string
+		tokens []Token
+		spaces []bool
+	}{
+		{`foo(x)`, []Token{NAME, LPAREN, NAME, RPAREN}, []bool{false, false, false, false}},
+		{`foo (x) `, []Token{NAME, LPAREN, NAME, RPAREN}, []bool{false, true, false, false}},
+		{` foo ( x ) `, []Token{NAME, LPAREN, NAME, RPAREN}, []bool{true, true, true, true}},
+	}
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			l := NewLexer([]byte(test.input))
+			for i := 0; ; i++ {
+				_, tok, _ := l.Scan()
+				if tok == EOF {
+					break
+				}
+				if tok != test.tokens[i] {
+					t.Errorf("expected %s for token %d, got %s", test.tokens[i], i, tok)
+				}
+				if l.HadSpace() != test.spaces[i] {
+					t.Errorf("expected %v for space %d, got %v", test.spaces[i], i, l.HadSpace())
+				}
+			}
+		})
+	}
+}
+
 func TestAllTokens(t *testing.T) {
 	input := "# comment line\n" +
 		"+ += && = : , -- /\n/= $ == >= > >> ++ { [ < ( #\n" +
