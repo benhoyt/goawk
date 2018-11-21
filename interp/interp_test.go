@@ -98,8 +98,8 @@ NR==3, NR==5 { print NR }
 		{`BEGIN { a[1]=1; a[2]=1; a[3]=1; for (k in a) { if (k==2) continue; s++ } print s }`, "", "2\n", "", ""},
 		{`BEGIN { while (i<3) { i++; s++; break } print s }`, "", "1\n", "", ""},
 		{`BEGIN { while (i<3) { i++; if (i==2) continue; s++ } print s }`, "", "2\n", "", ""},
-		{`BEGIN { do { i++; s++; break } while (i<3) print s }`, "", "1\n", "", ""},
-		{`BEGIN { do { i++; if (i==2) continue; s++ } while (i<3) print s }`, "", "2\n", "", ""},
+		{`BEGIN { do { i++; s++; break } while (i<3); print s }`, "", "1\n", "", ""},
+		{`BEGIN { do { i++; if (i==2) continue; s++ } while (i<3); print s }`, "", "2\n", "", ""},
 		{`BEGIN { a["x"] = 3; a["y"] = 4; for (k in a) x += a[k]; print x }`, "", "7\n", "", ""},
 		{`BEGIN { while (i < 5) { print i; i++ } }`, "", "\n1\n2\n3\n4\n", "", ""},
 		{`BEGIN { do { print i; i++ } while (i < 5) }`, "", "\n1\n2\n3\n4\n", "", ""},
@@ -158,6 +158,28 @@ BEGIN {
 		{`{ print ($1>2) }`, "1\n1.0\n+1", "0\n0\n0\n", "", ""},
 		{`BEGIN { print (0>=1, 1>=1, 2>=1, "12">="2") }`, "", "0 1 1 0\n", "", ""},
 		{`{ print ($1>=2) }`, "1\n1.0\n+1", "0\n0\n0\n", "", ""},
+
+		// Short-circuit && and || operators
+		{`
+function t() { print "t"; return 1 }
+function f() { print "f"; return 0 }
+BEGIN {
+	print f() && f()
+	print f() && t()
+	print t() && f()
+	print t() && t()
+}
+`, "", "f\n0\nf\n0\nt\nf\n0\nt\nt\n1\n", "", ""},
+		{`
+function t() { print "t"; return 1 }
+function f() { print "f"; return 0 }
+BEGIN {
+	print f() || f()
+	print f() || t()
+	print t() || f()
+	print t() || t()
+}
+`, "", "f\nf\n0\nf\nt\n1\nt\n1\nt\n1\n", "", ""},
 
 		// Other binary expressions: + - * ^ / % CONCAT ~ !~
 		{`BEGIN { print 1+2, 1+2+3, 1+-2, -1+2, "1"+"2", 3+.14 }`, "", "3 6 -1 1 3 3.14\n", "", ""},
