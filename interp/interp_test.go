@@ -606,6 +606,24 @@ BEGIN { early() }
 	_ = os.Remove("out")
 }
 
+func TestConfigVarsCorrect(t *testing.T) {
+	prog, err := parser.ParseProgram([]byte(`BEGIN { print x }`), nil)
+	if err != nil {
+		t.Fatalf("error parsing: %v", err)
+	}
+	config := &interp.Config{
+		Stdin:  strings.NewReader(""),
+		Output: &bytes.Buffer{},
+		Error:  ioutil.Discard,
+		Vars:   []string{"FS"},
+	}
+	_, err = interp.ExecProgram(prog, config)
+	expected := "length of config.Vars must be a multiple of 2, not 1"
+	if err == nil || err.Error() != expected {
+		t.Fatalf("expected error %q, got: %v", expected, err)
+	}
+}
+
 func benchmarkProgram(b *testing.B, input, expected, srcFormat string, args ...interface{}) {
 	b.StopTimer()
 	src := fmt.Sprintf(srcFormat, args...)
