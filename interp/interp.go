@@ -373,7 +373,7 @@ func (p *interp) execute(stmt Stmt) error {
 		// Print OFS-separated args followed by ORS (usually newline)
 		var line string
 		if len(s.Args) > 0 {
-			strs := make([]string, len(s.Args)) // TODO: escapes to heap
+			strs := make([]string, len(s.Args))
 			for i, a := range s.Args {
 				v, err := p.eval(a)
 				if err != nil {
@@ -395,15 +395,12 @@ func (p *interp) execute(stmt Stmt) error {
 	case *PrintfStmt:
 		// printf(fmt, arg1, arg2, ...): uses our version of sprintf
 		// to build the formatted string and then print that
-		if len(s.Args) == 0 {
-			break
-		}
 		formatValue, err := p.eval(s.Args[0])
 		if err != nil {
 			return err
 		}
 		format := p.toString(formatValue)
-		args := make([]value, len(s.Args)-1) // TODO: escapes to heap
+		args := make([]value, len(s.Args)-1)
 		for i, a := range s.Args[1:] {
 			args[i], err = p.eval(a)
 			if err != nil {

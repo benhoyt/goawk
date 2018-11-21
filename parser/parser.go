@@ -222,6 +222,9 @@ func (p *parser) simpleStmt() Stmt {
 		if op == PRINT {
 			return &PrintStmt{args, redirect, dest}
 		} else {
+			if len(args) == 0 {
+				panic(p.error("expected printf args, got none"))
+			}
 			return &PrintfStmt{args, redirect, dest}
 		}
 	case DELETE:

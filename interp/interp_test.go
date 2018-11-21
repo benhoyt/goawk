@@ -81,6 +81,7 @@ NR==3, NR==5 { print NR }
 		{`BEGIN { printf "%c", 256 }  # !awk !gawk`, "", "\x00", "", ""},
 		{`BEGIN { printf "%c", "xyz" }`, "", "x", "", ""},
 		{`BEGIN { printf "%c", "" }  # !awk`, "", "\x00", "", ""},
+		{`BEGIN { printf }  # !awk - doesn't error on this`, "", "", "parse error at 1:16: expected printf args, got none", "printf: no arguments"},
 
 		// if and loop statements
 		{`BEGIN { if (1) print "t"; }`, "", "t\n", "", ""},
@@ -340,6 +341,7 @@ BEGIN {
 		{`BEGIN { print sprintf("%3d", 42) }`, "", " 42\n", "", ""},
 		{`BEGIN { print sprintf("%d", 12, 34) }`, "", "12\n", "", ""},
 		{`BEGIN { print sprintf("%d") }`, "", "", "format error: got 0 args, expected 1", "not enough arg"},
+		{`BEGIN { print sprintf("%d", 12, 34) }`, "", "12\n", "", ""},
 		{`BEGIN { print substr("food", 1) }`, "", "food\n", "", ""},
 		{`BEGIN { print substr("food", 1, 2) }`, "", "fo\n", "", ""},
 		{`BEGIN { print substr("food", 1, 4) }`, "", "food\n", "", ""},
