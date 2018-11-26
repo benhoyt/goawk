@@ -72,6 +72,11 @@ const (
 	RETURN
 	WHILE
 
+	// Syntax sugar
+	VAR        // indicate an array variable declared as JSON array or object
+	F_JARRAY   // [a, b, c]  -> _jarray_(a, b, c) -> _jobject_(1,a, 2,b, 3,c)
+	F_JOBJECT  // {a:1, b:2} -> _jobject_(a,1, b,2)
+
 	// Built-in functions
 	F_ATAN2
 	F_CLOSE
@@ -99,6 +104,8 @@ const (
 	NAME
 	NUMBER
 	STRING
+	TRUE
+	FALSE
 	REGEX
 
 	LAST       = REGEX
@@ -125,6 +132,9 @@ var keywordTokens = map[string]Token{
 	"printf":   PRINTF,
 	"return":   RETURN,
 	"while":    WHILE,
+	"true":     TRUE,
+	"false":    FALSE,
+	"var":      VAR,
 
 	"atan2":   F_ATAN2,
 	"close":   F_CLOSE,
@@ -213,6 +223,12 @@ var tokenNames = map[Token]string{
 	PRINTF:   "printf",
 	RETURN:   "return",
 	WHILE:    "while",
+	TRUE:     "true",
+	FALSE:    "false",
+	VAR:      "var",
+
+	F_JARRAY:  "_jarray_",
+	F_JOBJECT: "_jobject_",
 
 	F_ATAN2:   "atan2",
 	F_CLOSE:   "close",

@@ -80,6 +80,40 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 			p.setLine(out)
 		}
 		return num(float64(n)), nil
+
+	// for JSON sugar
+	case F_JARRAY:
+		arr := make(map[string]value, len(argExprs))
+		for i, a := range argExprs {
+			arg, err := p.eval(a)
+			if err != nil {
+				return value{}, err
+			}
+			arr[strconv.Itoa(i)] = arg
+		}
+		return jArray(arr), nil
+
+	case F_JOBJECT:
+		kvCount := len(argExprs)/2
+		arr := make(map[string]value, kvCount)
+		for i,j := 0,0; i<kvCount; i++ {
+			k, v := argExprs[j], argExprs[j+1]
+			j += 2
+
+			var key string
+			switch k.(type) {
+			case *StrExpr:
+				key = k.(*StrExpr).Value
+			default:
+				key = k.String()
+			}
+			val, err := p.eval(v)
+			if err != nil {
+				return value{}, err
+			}
+			arr[key] = val
+		}
+		return jArray(arr), nil
 	}
 
 	// Now evaluate the argExprs (calls with up to 7 args don't

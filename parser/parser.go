@@ -603,7 +603,7 @@ func (p *parser) _compare(ops ...Token) Expr {
 
 func (p *parser) concat() Expr {
 	expr := p.add()
-	for p.matches(DOLLAR, NOT, NAME, NUMBER, STRING, LPAREN) ||
+	for p.matches(DOLLAR, NOT, NAME, NUMBER, STRING, TRUE, FALSE, LPAREN) ||
 		(p.tok >= FIRST_FUNC && p.tok <= LAST_FUNC) {
 		right := p.add()
 		expr = &BinaryExpr{expr, CONCAT, right}
@@ -664,6 +664,12 @@ func (p *parser) primary() Expr {
 		n, _ := strconv.ParseFloat(s, 64)
 		p.next()
 		return &NumExpr{n}
+	case TRUE:
+		p.next()
+		return &NumExpr{1}
+	case FALSE:
+		p.next()
+		return &NumExpr{0}
 	case STRING:
 		s := p.val
 		p.next()
@@ -846,6 +852,63 @@ func (p *parser) primary() Expr {
 		arg2 := p.expr()
 		p.expect(RPAREN)
 		return &CallExpr{op, []Expr{arg1, arg2}}
+	case VAR:
+		// sugar for JSON declaration
+		p.next()
+		name := p.val
+		namePos := p.pos
+		p.expect(NAME)
+		return &IndexExpr{p.arrayRef(name, namePos), nil}
+	case LBRACKET:
+		// sugar for JSON Array
+		args := []Expr{}
+		p.next()
+		p.optionalNewlines()
+		if p.tok != RBRACKET {
+			args = append(args, p.expr())
+			for p.tok == COMMA {
+				p.commaNewlines()
+				args = append(args, p.expr())
+			}
+			p.optionalNewlines()
+		}
+		p.expect(RBRACKET)
+		return &CallExpr{F_JARRAY, args}
+	case LBRACE:
+		// sugar for JSON Object
+		args := []Expr{}
+		p.next()
+		p.optionalNewlines()
+		for p.tok != RBRACE {
+			switch p.tok {
+			case NAME:
+				args = append(args, &StrExpr{p.val})
+				p.next()
+			case STRING:
+				fallthrough
+			case NUMBER:
+				fallthrough
+			case TRUE:
+				fallthrough
+			case FALSE:
+				args = append(args, p.expr())
+			default:
+				panic(p.error("expected STRING/NUMBER/TRUE/FALSE/NAME as object key instead of %s", p.tok))
+			}
+
+			p.optionalNewlines()
+			p.expect(COLON)
+			p.optionalNewlines()
+
+			args = append(args, p.expr())
+			p.optionalNewlines()
+
+			if p.tok == COMMA {
+				p.commaNewlines()
+			}
+		}
+		p.expect(RBRACE)
+		return &CallExpr{F_JOBJECT, args}
 	default:
 		panic(p.error("expected expression instead of %s", p.tok))
 	}

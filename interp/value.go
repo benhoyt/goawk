@@ -7,6 +7,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"bytes"
 )
 
 type valueType uint8
@@ -15,6 +16,7 @@ const (
 	typeNil valueType = iota
 	typeStr
 	typeNum
+	typeJArray // added by Rosbit
 )
 
 // An AWK value (these are passed around by value)
@@ -23,6 +25,7 @@ type value struct {
 	isNumStr bool      // An AWK "numeric string" from user input
 	s        string    // String value (for typeStr)
 	n        float64   // Numeric value (for typeNum and numeric strings)
+	a        map[string]value
 }
 
 // Create a new number value
@@ -88,6 +91,22 @@ func (v value) str(floatFormat string) string {
 		}
 	case typeStr:
 		return v.s
+	case typeJArray:
+		var b bytes.Buffer
+		b.WriteString("{")
+		i := 0
+		for key, val := range v.a {
+			if i > 0 {
+				b.WriteString(",")
+			}
+			i++
+			b.WriteString("\"")
+			b.WriteString(key)
+			b.WriteString("\":")
+			b.WriteString(val.str(floatFormat))
+		}
+		b.WriteString("}")
+		return b.String()
 	default:
 		return ""
 	}
@@ -166,4 +185,21 @@ func parseFloatPrefix(s string) (float64, bool) {
 	floatStr := s[start:end]
 	f, err := strconv.ParseFloat(floatStr, 64)
 	return f, err == nil // May be "value out of range" error
+}
+
+// Create an array
+func jArray(val map[string]value) value {
+	return value{typ: typeJArray, a:val}
+}
+
+func (v value) isJArray() bool {
+	return v.typ == typeJArray
+}
+
+// Return value's array value
+func (v value) jArray() map[string]value {
+	if v.typ == typeJArray {
+		return v.a
+	}
+	return nil
 }

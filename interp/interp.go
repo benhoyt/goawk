@@ -1013,6 +1013,11 @@ func (p *interp) setArrayValue(scope VarScope, arrayIndex int, index string, v v
 	p.arrays[resolved][index] = v
 }
 
+func (p *interp) setJArray(scope VarScope, arrayIndex int, v value) {
+	resolved := p.getArrayIndex(scope, arrayIndex)
+	p.arrays[resolved] = v.jArray()
+}
+
 // Get the value of given numbered field, equivalent to "$index"
 func (p *interp) getField(index int) (value, error) {
 	if index < 0 {
@@ -1173,6 +1178,12 @@ func (p *interp) assign(left Expr, right value) error {
 	case *VarExpr:
 		return p.setVar(left.Scope, left.Index, right)
 	case *IndexExpr:
+		// for JSON object, added by rosbit
+		if right.isJArray() {
+			p.setJArray(left.Array.Scope, left.Array.Index, right)
+			return nil
+		}
+		// end for JSON object
 		index, err := p.evalIndex(left.Index)
 		if err != nil {
 			return err
