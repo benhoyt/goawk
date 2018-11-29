@@ -106,8 +106,8 @@ func (l *Lexer) scan() (Position, Token, string) {
 			l.next()
 		}
 		name := string(l.src[start : l.offset-1])
-		tok, isKeyword := keywordTokens[name]
-		if !isKeyword {
+		tok := KeywordToken(name)
+		if tok == ILLEGAL {
 			tok = NAME
 			val = name
 		}

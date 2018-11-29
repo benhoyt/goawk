@@ -814,6 +814,10 @@ BEGIN {
 			map[string]interface{}{
 				"f": func(n int) {},
 			}},
+		{`BEGIN { print split("x y", a) }`, "", "", `can't use keyword "split" as native function name`,
+			map[string]interface{}{
+				"split": func() {},
+			}},
 		// TODO: add tests for overriding native Funcs with AWK-defined functions
 	}
 	for _, test := range tests {

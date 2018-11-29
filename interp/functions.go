@@ -434,6 +434,10 @@ var errorType = reflect.TypeOf((*error)(nil)).Elem()
 // AWK, return a *interp.Error if not. This checks that f is actually
 // a function, and that it's parameter and return types are good.
 func checkNativeFunc(name string, f interface{}) error {
+	if KeywordToken(name) != ILLEGAL {
+		return newError("can't use keyword %q as native function name", name)
+	}
+
 	typ := reflect.TypeOf(f)
 	if typ.Kind() != reflect.Func {
 		return newError("native function %q is not a function", name)
@@ -447,6 +451,7 @@ func checkNativeFunc(name string, f interface{}) error {
 			return newError("native function %q param %d is not int or string", name, i)
 		}
 	}
+
 	switch typ.NumOut() {
 	case 0:
 		// No return value is fine

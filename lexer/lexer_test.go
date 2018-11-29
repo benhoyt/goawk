@@ -148,6 +148,27 @@ func TestHadSpace(t *testing.T) {
 	}
 }
 
+func TestKeywordToken(t *testing.T) {
+	tests := []struct {
+		name string
+		tok  Token
+	}{
+		{"print", PRINT},
+		{"split", F_SPLIT},
+		{"BEGIN", BEGIN},
+		{"foo", ILLEGAL},
+		{"GoAWK", ILLEGAL},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			tok := KeywordToken(test.name)
+			if tok != test.tok {
+				t.Errorf("expected %v, got %v", test.tok, tok)
+			}
+		})
+	}
+}
+
 func TestAllTokens(t *testing.T) {
 	input := "# comment line\n" +
 		"+ += && = : , -- /\n/= $ == >= > >> ++ { [ < ( #\n" +
