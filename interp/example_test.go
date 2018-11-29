@@ -8,12 +8,13 @@ package interp_test
 import (
 	"bytes"
 	"fmt"
+	"strings"
 
 	"github.com/benhoyt/goawk/interp"
 	"github.com/benhoyt/goawk/parser"
 )
 
-func Example_simple() {
+func Example() {
 	input := bytes.NewReader([]byte("foo bar\n\nbaz buz"))
 	err := interp.Exec("$0 { print $1 }", " ", input, nil)
 	if err != nil {
@@ -60,4 +61,36 @@ func Example_program() {
 	// 1:a
 	// 2:ab
 	// 3:abc
+}
+
+func Example_funcs() {
+	src := `BEGIN { print sum(), sum(1), sum(2, 3, 4), repeat("xyz", 3) }`
+
+	parserConfig := &parser.ParserConfig{
+		Funcs: map[string]interface{}{
+			"sum": func(args ...float64) float64 {
+				sum := 0.0
+				for _, a := range args {
+					sum += a
+				}
+				return sum
+			},
+			"repeat": strings.Repeat,
+		},
+	}
+	prog, err := parser.ParseProgram([]byte(src), parserConfig)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	interpConfig := &interp.Config{
+		Funcs: parserConfig.Funcs,
+	}
+	_, err = interp.ExecProgram(prog, interpConfig)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	// Output:
+	// 0 1 9 xyzxyzxyz
 }

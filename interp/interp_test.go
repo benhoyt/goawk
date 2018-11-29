@@ -596,44 +596,235 @@ BEGIN { early() }
 
 		// Then test it in GoAWK
 		t.Run(testName, func(t *testing.T) {
-			prog, err := parser.ParseProgram([]byte(test.src), nil)
-			if err != nil {
-				if test.err != "" {
-					if err.Error() == test.err {
-						return
-					}
-					t.Fatalf("expected error %q, got %q", test.err, err.Error())
-				}
-				t.Fatal(err)
-			}
-			outBuf := &bytes.Buffer{}
-			errBuf := &bytes.Buffer{}
-			config := &interp.Config{
-				Stdin:  strings.NewReader(test.in),
-				Output: outBuf,
-				Error:  errBuf,
-			}
-			_, err = interp.ExecProgram(prog, config)
-			if err != nil {
-				if test.err != "" {
-					if err.Error() == test.err {
-						return
-					}
-					t.Fatalf("expected error %q, got %q", test.err, err.Error())
-				}
-				t.Fatal(err)
-			}
-			if test.err != "" {
-				t.Fatalf(`expected error %q, got ""`, test.err)
-			}
-			out := outBuf.String() + errBuf.String()
-			normalized := normalizeNewlines(out)
-			if normalized != test.out {
-				t.Fatalf("expected %q, got %q", test.out, normalized)
-			}
+			testGoAWK(t, test.src, test.in, test.out, test.err, nil)
 		})
 	}
 	_ = os.Remove("out")
+}
+
+func testGoAWK(t *testing.T, src, in, out, errStr string, funcs map[string]interface{}) {
+	parserConfig := &parser.ParserConfig{
+		Funcs: funcs,
+	}
+	prog, err := parser.ParseProgram([]byte(src), parserConfig)
+	if err != nil {
+		if errStr != "" {
+			if err.Error() == errStr {
+				return
+			}
+			t.Fatalf("expected error %q, got %q", errStr, err.Error())
+		}
+		t.Fatal(err)
+	}
+	outBuf := &bytes.Buffer{}
+	errBuf := &bytes.Buffer{}
+	config := &interp.Config{
+		Stdin:  strings.NewReader(in),
+		Output: outBuf,
+		Error:  errBuf,
+		Funcs:  funcs,
+	}
+	_, err = interp.ExecProgram(prog, config)
+	if err != nil {
+		if errStr != "" {
+			if err.Error() == errStr {
+				return
+			}
+			t.Fatalf("expected error %q, got %q", errStr, err.Error())
+		}
+		t.Fatal(err)
+	}
+	if errStr != "" {
+		t.Fatalf(`expected error %q, got ""`, errStr)
+	}
+	normalized := normalizeNewlines(outBuf.String() + errBuf.String())
+	if normalized != out {
+		t.Fatalf("expected %q, got %q", out, normalized)
+	}
+}
+
+func TestNative(t *testing.T) {
+	tests := []struct {
+		src   string
+		in    string
+		out   string
+		err   string
+		funcs map[string]interface{}
+	}{
+		{`BEGIN { print foo() }`, "", "", `parse error at 1:15: undefined function "foo"`,
+			nil},
+		{`BEGIN { print foo() }`, "", "\n", "",
+			map[string]interface{}{
+				"foo": func() {},
+			}},
+		{`BEGIN { print foo() }`, "", "FOO\n", "",
+			map[string]interface{}{
+				"foo": func() string { return "FOO" },
+			}},
+		{`BEGIN { print foo() }`, "", "BYTES\n", "",
+			map[string]interface{}{
+				"foo": func() []byte { return []byte("BYTES") },
+			}},
+		{`BEGIN { print repeat("xy", 5) }`, "", "xyxyxyxyxy\n", "",
+			map[string]interface{}{
+				"repeat": func(s string, n int) string { return strings.Repeat(s, n) },
+			}},
+		{`BEGIN { print repeat("xy", 5) }`, "", "xyxyxyxyxy\n", "",
+			map[string]interface{}{
+				"repeat": func(s string, n int) string { return strings.Repeat(s, n) },
+			}},
+		{`
+BEGIN {
+	print r0()
+	print r1(), r1(5)
+	print r2(), r2(5)
+}`, "", "\n0 25\n0 25\n", "",
+			map[string]interface{}{
+				"r0": func() {},
+				"r1": func(n int) int { return n * n },
+				"r2": func(n int) (int, error) {
+					return n * n, nil
+				},
+			}},
+		{`
+BEGIN {
+	print r2()
+}`, "", "", "NATIVE ERROR",
+			map[string]interface{}{
+				"r2": func(n int) (int, error) {
+					return n * n, fmt.Errorf("NATIVE ERROR")
+				},
+			}},
+		{`
+BEGIN {
+	print
+	print bool(), bool(0), bool(1), bool(""), bool("0"), bool("x")
+	print i(), i(42), i(-5), i(3.75), i(-3.75)
+	print i8(), i8(42), i8(-5.6), i8(127), i8(128), i8(255), i8(256)
+	print i16(), i16(42), i16(-5.6), i16(32767), i16(32768), i16(65535), i16(65536)
+	print i32(), i32(42), i32(-5.6), i32(2147483647), i32(2147483648), i32(4294967295), i32(4294967296)
+	print i64(), i64(42), i64(-5.6), i64(2147483647000), i64(-2147483647000)
+	print u(), u(42), u(-1)
+	print u8(), u8(42), u8(-5.6), u8(127), u8(128), u8(255), u8(256)
+	print u16(), u16(42), u16(-1), u16(65535), u16(65536)
+	print u32(), u32(42), u32(-1), u32(4294967295), u32(4294967296)
+	print u64(), u64(42), u64(-1), u64(4294967296), u64(2147483647000)
+	print s() "." s("") "." s("Foo bar") "." s(1234)
+	print b() "." b("") "." b("Foo bar") "." b(1234)
+}`, "", `
+0 0 1 0 1 1
+0 42 -5 3 -3
+0 42 -5 127 -128 -1 0
+0 42 -5 32767 -32768 -1 0
+0 42 -5 2147483647 -2147483648 -2147483648 -2147483648
+0 42 -5 2147483647000 -2147483647000
+0 42 1.84467e+19
+0 42 251 127 128 255 0
+0 42 65535 65535 0
+0 42 4294967295 4294967295 0
+0 42 1.84467e+19 4294967296 2147483647000
+..Foo bar.1234
+..Foo bar.1234
+`, "",
+			map[string]interface{}{
+				"bool": func(b bool) bool { return b },
+				"i":    func(n int) int { return n },
+				"i8":   func(n int8) int8 { return n },
+				"i16":  func(n int16) int16 { return n },
+				"i32":  func(n int32) int32 { return n },
+				"i64":  func(n int64) int64 { return n },
+				"u":    func(n uint) uint { return n },
+				"u8":   func(n uint8) uint8 { return n },
+				"u16":  func(n uint16) uint16 { return n },
+				"u32":  func(n uint32) uint32 { return n },
+				"u64":  func(n uint64) uint64 { return n },
+				"b":    func(b []byte) []byte { return b },
+				"s":    func(s string) string { return s },
+			}},
+		{`
+BEGIN {
+	print
+	print sum(), sum(1), sum(2, 3), sum(4, 5, 6, 7, 8)
+	print fmt_ints()
+	print fmt_ints("%5d")
+	print fmt_ints("%5d", 123)
+	print fmt_ints("%d %d", 123, 456)
+	print fmt_ints("%d %d %d", 123, 456, 789)
+}`, "", `
+0 1 5 30
+
+%!d(MISSING)
+  123
+123 456
+123 456 789
+`, "",
+			map[string]interface{}{
+				"sum": func(args ...int) int {
+					sum := 0
+					for _, a := range args {
+						sum += a
+					}
+					return sum
+				},
+				"fmt_ints": func(s string, args ...int) string {
+					fmtArgs := make([]interface{}, len(args))
+					for i, a := range args {
+						fmtArgs[i] = a
+					}
+					return fmt.Sprintf(s, fmtArgs...)
+				},
+			}},
+		{`BEGIN { 0 }`, "", "", `native function "f" is not a function`,
+			map[string]interface{}{
+				"f": 0,
+			}},
+		{`BEGIN { 1 }`, "", "", `native function "g" param 0 is not int or string`,
+			map[string]interface{}{
+				"g": func(s complex64) {},
+			}},
+		{`BEGIN { 2 }`, "", "", `native function "g" param 2 is not int or string`,
+			map[string]interface{}{
+				"g": func(x, y int, s []int, t string) {},
+			}},
+		{`BEGIN { 3 }`, "", "", `native function "h" param 0 is not int or string`,
+			map[string]interface{}{
+				"h": func(a ...map[string]int) {},
+			}},
+		{`BEGIN { 4 }`, "", "", `native function "h" param 1 is not int or string`,
+			map[string]interface{}{
+				"h": func(x int, a ...complex64) {},
+			}},
+		{`BEGIN { 5 }`, "", "", `native function "r" return value is not int or string`,
+			map[string]interface{}{
+				"r": func() map[string]int { return nil },
+			}},
+		{`BEGIN { 6 }`, "", "", `native function "r" first return value is not int or string`,
+			map[string]interface{}{
+				"r": func() (map[string]int, error) { return nil, nil },
+			}},
+		{`BEGIN { 7 }`, "", "", `native function "r" second return value is not an error`,
+			map[string]interface{}{
+				"r": func() (int, int) { return 0, 0 },
+			}},
+		{`BEGIN { 8 }`, "", "", `native function "r" returns more than two values`,
+			map[string]interface{}{
+				"r": func() (int, error, int) { return 0, nil, 0 },
+			}},
+		{`BEGIN { print f(), f(1, 2) }`, "", "", `parse error at 1:20: "f" called with more arguments than declared`,
+			map[string]interface{}{
+				"f": func(n int) {},
+			}},
+		// TODO: add tests for overriding native Funcs with AWK-defined functions
+	}
+	for _, test := range tests {
+		testName := test.src
+		if len(testName) > 70 {
+			testName = testName[:70]
+		}
+		t.Run(testName, func(t *testing.T) {
+			testGoAWK(t, test.src, test.in, test.out, test.err, test.funcs)
+		})
+	}
 }
 
 func TestConfigVarsCorrect(t *testing.T) {

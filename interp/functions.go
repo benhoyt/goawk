@@ -9,6 +9,7 @@ import (
 	"io"
 	"math"
 	"os/exec"
+	"reflect"
 	"strconv"
 	"strings"
 	"syscall"
@@ -245,7 +246,7 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 }
 
 // Call user-defined function with given index and arguments, return
-// return value (or null value if it doesn't return anything)
+// its return value (or null value if it doesn't return anything)
 func (p *interp) callUser(index int, args []Expr) (value, error) {
 	f := p.program.Functions[index]
 
@@ -301,6 +302,192 @@ func (p *interp) callUser(index int, args []Expr) (value, error) {
 		return value{}, err
 	}
 	return value{}, nil
+}
+
+// Call native-defined function with given name and arguments, return
+// return value (or null value if it doesn't return anything).
+func (p *interp) callNative(name string, args []Expr) (value, error) {
+	f := p.nativeFuncs[name]
+	typ := reflect.TypeOf(f)
+	numIn := typ.NumIn()
+	minIn := numIn // Mininum number of args we should pass
+	var variadicType reflect.Type
+	if typ.IsVariadic() {
+		variadicType = typ.In(numIn - 1).Elem()
+		minIn--
+	}
+
+	// Build list of args to pass to function
+	values := make([]reflect.Value, 0, numIn)
+	for i, arg := range args {
+		a, err := p.eval(arg)
+		if err != nil {
+			return value{}, err
+		}
+		var argType reflect.Type
+		if !typ.IsVariadic() || i < numIn-1 {
+			argType = typ.In(i)
+		} else {
+			// Final arg(s) when calling a variadic are all of this type
+			argType = variadicType
+		}
+		values = append(values, p.toNative(a, argType))
+	}
+	// Use zero value for any unspecified args
+	for i := len(args); i < minIn; i++ {
+		values = append(values, reflect.Zero(typ.In(i)))
+	}
+
+	// Call Go function, determine return value
+	outs := reflect.ValueOf(f).Call(values)
+	switch len(outs) {
+	case 0:
+		// No return value, return null value to AWK
+		return value{}, nil
+	case 1:
+		// Single return value
+		return fromNative(outs[0]), nil
+	case 2:
+		// Two-valued return of (scalar, error)
+		if !outs[1].IsNil() {
+			return value{}, outs[1].Interface().(error)
+		}
+		return fromNative(outs[0]), nil
+	default:
+		// Should never happen (checked at parse time)
+		panic(fmt.Sprintf("unexpected number of return values: %d", len(outs)))
+	}
+}
+
+// Convert from an AWK value to a native Go value
+func (p *interp) toNative(v value, typ reflect.Type) reflect.Value {
+	switch typ.Kind() {
+	case reflect.Bool:
+		return reflect.ValueOf(v.boolean())
+	case reflect.Int:
+		return reflect.ValueOf(int(v.num()))
+	case reflect.Int8:
+		return reflect.ValueOf(int8(v.num()))
+	case reflect.Int16:
+		return reflect.ValueOf(int16(v.num()))
+	case reflect.Int32:
+		return reflect.ValueOf(int32(v.num()))
+	case reflect.Int64:
+		return reflect.ValueOf(int64(v.num()))
+	case reflect.Uint:
+		return reflect.ValueOf(uint(v.num()))
+	case reflect.Uint8:
+		return reflect.ValueOf(uint8(v.num()))
+	case reflect.Uint16:
+		return reflect.ValueOf(uint16(v.num()))
+	case reflect.Uint32:
+		return reflect.ValueOf(uint32(v.num()))
+	case reflect.Uint64:
+		return reflect.ValueOf(uint64(v.num()))
+	case reflect.Float32:
+		return reflect.ValueOf(float32(v.num()))
+	case reflect.Float64:
+		return reflect.ValueOf(v.num())
+	case reflect.String:
+		return reflect.ValueOf(p.toString(v))
+	case reflect.Slice:
+		if typ.Elem().Kind() != reflect.Uint8 {
+			// Shouldn't happen: prevented at parse time
+			panic(fmt.Sprintf("unexpected argument slice: %s", typ.Elem().Kind()))
+		}
+		return reflect.ValueOf([]byte(p.toString(v)))
+	default:
+		// Shouldn't happen: prevented at parse time
+		panic(fmt.Sprintf("unexpected argument type: %s", typ.Kind()))
+	}
+}
+
+// Convert from a native Go value to an AWK value
+func fromNative(v reflect.Value) value {
+	switch v.Kind() {
+	case reflect.Bool:
+		return boolean(v.Bool())
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return num(float64(v.Int()))
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return num(float64(v.Uint()))
+	case reflect.Float32, reflect.Float64:
+		return num(v.Float())
+	case reflect.String:
+		return str(v.String())
+	case reflect.Slice:
+		if b, ok := v.Interface().([]byte); ok {
+			return str(string(b))
+		}
+		// Shouldn't happen: prevented at parse time
+		panic(fmt.Sprintf("unexpected return slice: %s", v.Type().Elem().Kind()))
+	default:
+		// Shouldn't happen: prevented at parse time
+		panic(fmt.Sprintf("unexpected return type: %s", v.Kind()))
+	}
+}
+
+// Got this trick from the Go stdlib text/template source
+var errorType = reflect.TypeOf((*error)(nil)).Elem()
+
+// Check that native function with given name is okay to call from
+// AWK, return a *interp.Error if not. This checks that f is actually
+// a function, and that it's parameter and return types are good.
+func checkNativeFunc(name string, f interface{}) error {
+	typ := reflect.TypeOf(f)
+	if typ.Kind() != reflect.Func {
+		return newError("native function %q is not a function", name)
+	}
+	for i := 0; i < typ.NumIn(); i++ {
+		param := typ.In(i)
+		if typ.IsVariadic() && i == typ.NumIn()-1 {
+			param = param.Elem()
+		}
+		if !validNativeType(param) {
+			return newError("native function %q param %d is not int or string", name, i)
+		}
+	}
+	switch typ.NumOut() {
+	case 0:
+		// No return value is fine
+	case 1:
+		// Single scalar return value is fine
+		if !validNativeType(typ.Out(0)) {
+			return newError("native function %q return value is not int or string", name)
+		}
+	case 2:
+		// Returning (scalar, error) is handled too
+		if !validNativeType(typ.Out(0)) {
+			return newError("native function %q first return value is not int or string", name)
+		}
+		if typ.Out(1) != errorType {
+			return newError("native function %q second return value is not an error", name)
+		}
+	default:
+		return newError("native function %q returns more than two values", name)
+	}
+	return nil
+}
+
+// Return true if typ is a valid parameter or return type.
+func validNativeType(typ reflect.Type) bool {
+	switch typ.Kind() {
+	case reflect.Bool:
+		return true
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return true
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return true
+	case reflect.Float32, reflect.Float64:
+		return true
+	case reflect.String:
+		return true
+	case reflect.Slice:
+		// Only allow []byte (convert to string in AWK)
+		return typ.Elem().Kind() == reflect.Uint8
+	default:
+		return false
+	}
 }
 
 // Guts of the split() function

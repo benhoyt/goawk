@@ -8,6 +8,7 @@ package parser
 import (
 	"fmt"
 	"io"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -36,8 +37,13 @@ func (e *ParseError) Error() string {
 type ParserConfig struct {
 	// Enable printing of type information
 	DebugTypes bool
+
 	// io.Writer to print type information on (for example, os.Stderr)
 	DebugWriter io.Writer
+
+	// Map of named Go functions to allow calling from AWK. See docs
+	// on interp.Config.Funcs for details.
+	Funcs map[string]interface{}
 }
 
 // ParseProgram parses an entire AWK program, returning the *Program
@@ -59,6 +65,7 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	if config != nil {
 		p.debugTypes = config.DebugTypes
 		p.debugWriter = config.DebugWriter
+		p.nativeFuncs = config.Funcs
 	}
 	p.initResolve()
 	p.next() // initialize p.tok
@@ -115,8 +122,9 @@ type parser struct {
 	multiExprs map[*MultiExpr]Position        // tracks comma-separated expressions
 
 	// Function tracking
-	functions map[string]int // map of function name to index
-	userCalls []userCall     // record calls so we can resolve them later
+	functions   map[string]int // map of function name to index
+	userCalls   []userCall     // record calls so we can resolve them later
+	nativeFuncs map[string]interface{}
 
 	// Configuration and debugging
 	debugTypes  bool      // show variable types for debugging
@@ -697,7 +705,13 @@ func (p *parser) primary() Expr {
 			// Grammar requires no space between function name and
 			// left paren for user function calls, hence the funky
 			// lexer.HadSpace() method.
-			return p.userCall(name, namePos)
+			if _, ok := p.nativeFuncs[name]; ok {
+				// TODO: this needs work: an AWK-defined function
+				// should override what's passed into Funcs
+				return p.nativeCall(name, namePos)
+			} else {
+				return p.userCall(name, namePos)
+			}
 		}
 		return p.varRef(name, namePos)
 	case LPAREN:
@@ -970,4 +984,17 @@ func (p *parser) userCall(name string, pos Position) *UserCallExpr {
 	call := &UserCallExpr{-1, name, args} // index is resolved later
 	p.recordUserCall(call, pos)
 	return call
+}
+
+func (p *parser) nativeCall(name string, namePos Position) *NativeCallExpr {
+	p.expect(LPAREN)
+	args := p.exprList(p.expr)
+	p.expect(RPAREN)
+
+	typ := reflect.TypeOf(p.nativeFuncs[name])
+	if !typ.IsVariadic() && len(args) > typ.NumIn() {
+		panic(&ParseError{namePos, fmt.Sprintf("%q called with more arguments than declared", name)})
+	}
+
+	return &NativeCallExpr{name, args}
 }
