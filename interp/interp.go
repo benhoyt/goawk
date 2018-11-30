@@ -82,7 +82,7 @@ type interp struct {
 	arrays      []map[string]value
 	localArrays [][]int
 	callDepth   int
-	nativeFuncs map[string]interface{}
+	nativeFuncs []interface{}
 
 	// File, line, and field handling
 	filename    string
@@ -187,12 +187,6 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	if len(config.Vars)%2 != 0 {
 		return 0, newError("length of config.Vars must be a multiple of 2, not %d", len(config.Vars))
 	}
-	for name, f := range config.Funcs {
-		err := checkNativeFunc(name, f)
-		if err != nil {
-			return 0, err
-		}
-	}
 
 	p := &interp{program: program}
 
@@ -217,7 +211,10 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	p.outputFieldSep = " "
 	p.outputRecordSep = "\n"
 	p.subscriptSep = "\x1c"
-	p.nativeFuncs = config.Funcs
+	err := p.initNativeFuncs(config.Funcs)
+	if err != nil {
+		return 0, err
+	}
 
 	// Setup ARGV and other variables from config
 	argvIndex := program.Arrays["ARGV"]
@@ -257,7 +254,7 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	defer p.closeAll()
 
 	// Execute the program! BEGIN, then pattern/actions, then END
-	err := p.execBeginEnd(program.Begin)
+	err = p.execBeginEnd(program.Begin)
 	if err != nil && err != errExit {
 		return 0, err
 	}
@@ -787,12 +784,12 @@ func (p *interp) eval(expr Expr) (value, error) {
 		return boolean(ok), nil
 
 	case *UserCallExpr:
-		// Call user-defined function
-		return p.callUser(e.Index, e.Args)
-
-	case *NativeCallExpr:
-		// Call native Go-defined function
-		return p.callNative(e.Name, e.Args)
+		// Call user-defined or native Go function
+		if e.Native {
+			return p.callNative(e.Index, e.Args)
+		} else {
+			return p.callUser(e.Index, e.Args)
+		}
 
 	case *GetlineExpr:
 		// Getline: read line from input

@@ -8,7 +8,6 @@ package parser
 import (
 	"fmt"
 	"io"
-	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -705,13 +704,7 @@ func (p *parser) primary() Expr {
 			// Grammar requires no space between function name and
 			// left paren for user function calls, hence the funky
 			// lexer.HadSpace() method.
-			if _, ok := p.nativeFuncs[name]; ok {
-				// TODO: this needs work: an AWK-defined function
-				// should override what's passed into Funcs
-				return p.nativeCall(name, namePos)
-			} else {
-				return p.userCall(name, namePos)
-			}
+			return p.userCall(name, namePos)
 		}
 		return p.varRef(name, namePos)
 	case LPAREN:
@@ -981,20 +974,7 @@ func (p *parser) userCall(name string, pos Position) *UserCallExpr {
 		i++
 	}
 	p.expect(RPAREN)
-	call := &UserCallExpr{-1, name, args} // index is resolved later
+	call := &UserCallExpr{false, -1, name, args} // index is resolved later
 	p.recordUserCall(call, pos)
 	return call
-}
-
-func (p *parser) nativeCall(name string, namePos Position) *NativeCallExpr {
-	p.expect(LPAREN)
-	args := p.exprList(p.expr)
-	p.expect(RPAREN)
-
-	typ := reflect.TypeOf(p.nativeFuncs[name])
-	if !typ.IsVariadic() && len(args) > typ.NumIn() {
-		panic(&ParseError{namePos, fmt.Sprintf("%q called with more arguments than declared", name)})
-	}
-
-	return &NativeCallExpr{name, args}
 }

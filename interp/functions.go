@@ -10,6 +10,7 @@ import (
 	"math"
 	"os/exec"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"syscall"
@@ -306,8 +307,10 @@ func (p *interp) callUser(index int, args []Expr) (value, error) {
 
 // Call native-defined function with given name and arguments, return
 // return value (or null value if it doesn't return anything).
-func (p *interp) callNative(name string, args []Expr) (value, error) {
-	f := p.nativeFuncs[name]
+func (p *interp) callNative(index int, args []Expr) (value, error) {
+	// TODO: add benchmarks for this
+	// TODO: convert nativeFuncs to [] of struct{Type, Value} and preload
+	f := p.nativeFuncs[index]
 	typ := reflect.TypeOf(f)
 	numIn := typ.NumIn()
 	minIn := numIn // Mininum number of args we should pass
@@ -425,6 +428,29 @@ func fromNative(v reflect.Value) value {
 		// Shouldn't happen: prevented at parse time
 		panic(fmt.Sprintf("unexpected return type: %s", v.Kind()))
 	}
+}
+
+// Check and initialize native functions
+func (p *interp) initNativeFuncs(funcs map[string]interface{}) error {
+	for name, f := range funcs {
+		err := checkNativeFunc(name, f)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Sort functions by name, then use those indexes to build slice
+	// (this has to match how the parser sets the indexes).
+	names := make([]string, 0, len(funcs))
+	for name := range funcs {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	p.nativeFuncs = make([]interface{}, len(names))
+	for i, name := range names {
+		p.nativeFuncs[i] = funcs[name]
+	}
+	return nil
 }
 
 // Got this trick from the Go stdlib text/template source

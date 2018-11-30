@@ -818,7 +818,42 @@ BEGIN {
 			map[string]interface{}{
 				"split": func() {},
 			}},
-		// TODO: add tests for overriding native Funcs with AWK-defined functions
+		{`
+function foo(n) { return n * 2 }
+BEGIN { print foo(42) }
+`, "", "84\n", "", map[string]interface{}{
+			"foo": func(n int) int { return n / 2 },
+		}},
+		{`BEGIN { x=3; print foo(x) }`, "", "9\n", ``,
+			map[string]interface{}{
+				"foo": func(n int) int { return n * n },
+			}},
+		{`
+function bar(n) { return foo(n) }
+BEGIN { x=4; y=5; print foo(x), bar(y) }
+`, "", "16 25\n", ``,
+			map[string]interface{}{
+				"foo": func(n int) int { return n * n },
+			}},
+		{`BEGIN { a["x"]=1; print foo(a) }`, "", "",
+			`parse error at 1:25: can't pass array "a" to native function`,
+			map[string]interface{}{
+				"foo": func(n int) int { return n * n },
+			}},
+		{`BEGIN { x["x"]=1; print f(x) }  function f(a) { return foo(a) }`, "", "",
+			`parse error at 1:25: can't pass array "x" as scalar param`,
+			map[string]interface{}{
+				"foo": func(n int) int { return n * n },
+			}},
+		{`function f(a) { return foo(a) }  BEGIN { x["x"]=1; print f(x) }`, "", "",
+			`parse error at 1:58: can't pass array "x" as scalar param`,
+			map[string]interface{}{
+				"foo": func(n int) int { return n * n },
+			}},
+		{`BEGIN { x["x"]=1; print f(x["x"]) }  function f(a) { return foo(a) }`, "", "1\n", "",
+			map[string]interface{}{
+				"foo": func(n int) int { return n * n },
+			}},
 	}
 	for _, test := range tests {
 		testName := test.src

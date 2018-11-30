@@ -53,25 +53,24 @@ type Expr interface {
 }
 
 // All these types implement the Expr interface.
-func (e *FieldExpr) expr()      {}
-func (e *UnaryExpr) expr()      {}
-func (e *BinaryExpr) expr()     {}
-func (e *ArrayExpr) expr()      {}
-func (e *InExpr) expr()         {}
-func (e *CondExpr) expr()       {}
-func (e *NumExpr) expr()        {}
-func (e *StrExpr) expr()        {}
-func (e *RegExpr) expr()        {}
-func (e *VarExpr) expr()        {}
-func (e *IndexExpr) expr()      {}
-func (e *AssignExpr) expr()     {}
-func (e *AugAssignExpr) expr()  {}
-func (e *IncrExpr) expr()       {}
-func (e *CallExpr) expr()       {}
-func (e *UserCallExpr) expr()   {}
-func (e *NativeCallExpr) expr() {}
-func (e *MultiExpr) expr()      {}
-func (e *GetlineExpr) expr()    {}
+func (e *FieldExpr) expr()     {}
+func (e *UnaryExpr) expr()     {}
+func (e *BinaryExpr) expr()    {}
+func (e *ArrayExpr) expr()     {}
+func (e *InExpr) expr()        {}
+func (e *CondExpr) expr()      {}
+func (e *NumExpr) expr()       {}
+func (e *StrExpr) expr()       {}
+func (e *RegExpr) expr()       {}
+func (e *VarExpr) expr()       {}
+func (e *IndexExpr) expr()     {}
+func (e *AssignExpr) expr()    {}
+func (e *AugAssignExpr) expr() {}
+func (e *IncrExpr) expr()      {}
+func (e *CallExpr) expr()      {}
+func (e *UserCallExpr) expr()  {}
+func (e *MultiExpr) expr()     {}
+func (e *GetlineExpr) expr()   {}
 
 // Field expression like $0.
 type FieldExpr struct {
@@ -266,26 +265,13 @@ func (e *CallExpr) String() string {
 // resolved function index used by the interpreter; Name is the
 // original name used by String().
 type UserCallExpr struct {
-	Index int
-	Name  string
-	Args  []Expr
+	Native bool // false = AWK-defined function, true = native Go func
+	Index  int
+	Name   string
+	Args   []Expr
 }
 
 func (e *UserCallExpr) String() string {
-	args := make([]string, len(e.Args))
-	for i, a := range e.Args {
-		args[i] = a.String()
-	}
-	return e.Name + "(" + strings.Join(args, ", ") + ")"
-}
-
-// Native (Go) defined function call.
-type NativeCallExpr struct {
-	Name string
-	Args []Expr
-}
-
-func (e *NativeCallExpr) String() string {
 	args := make([]string, len(e.Args))
 	for i, a := range e.Args {
 		args[i] = a.String()

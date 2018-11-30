@@ -4,6 +4,7 @@ package parser
 
 import (
 	"fmt"
+	"reflect"
 	"sort"
 
 	. "github.com/benhoyt/goawk/internal/ast"
@@ -116,10 +117,32 @@ func (p *parser) recordUserCall(call *UserCallExpr, pos Position) {
 // ensures functions called have actually been defined, and that
 // they're not being called with too many arguments.
 func (p *parser) resolveUserCalls(prog *Program) {
+	// Number the native funcs (order by name to get consistent order)
+	nativeNames := make([]string, 0, len(p.nativeFuncs))
+	for name := range p.nativeFuncs {
+		nativeNames = append(nativeNames, name)
+	}
+	sort.Strings(nativeNames)
+	nativeIndexes := make(map[string]int, len(nativeNames))
+	for i, name := range nativeNames {
+		nativeIndexes[name] = i
+	}
+
 	for _, c := range p.userCalls {
+		// AWK-defined functions take precedence over native Go funcs
 		index, ok := p.functions[c.call.Name]
 		if !ok {
-			panic(&ParseError{c.pos, fmt.Sprintf("undefined function %q", c.call.Name)})
+			f, haveNative := p.nativeFuncs[c.call.Name]
+			if !haveNative {
+				panic(&ParseError{c.pos, fmt.Sprintf("undefined function %q", c.call.Name)})
+			}
+			typ := reflect.TypeOf(f)
+			if !typ.IsVariadic() && len(c.call.Args) > typ.NumIn() {
+				panic(&ParseError{c.pos, fmt.Sprintf("%q called with more arguments than declared", c.call.Name)})
+			}
+			c.call.Native = true
+			c.call.Index = nativeIndexes[c.call.Name]
+			continue
 		}
 		function := prog.Functions[index]
 		if len(c.call.Args) > len(function.Params) {
@@ -165,9 +188,9 @@ func (p *parser) varRef(name string, pos Position) *VarExpr {
 	scope, funcName := p.getScope(name)
 	expr := &VarExpr{scope, 0, name}
 	p.varRefs = append(p.varRefs, varRef{funcName, expr, false, pos})
-	typ := p.varTypes[funcName][name].typ
-	if typ == typeUnknown {
-		p.varTypes[funcName][name] = typeInfo{typeScalar, expr, scope, 0, "", 0}
+	info := p.varTypes[funcName][name]
+	if info.typ == typeUnknown {
+		p.varTypes[funcName][name] = typeInfo{typeScalar, expr, scope, 0, info.callName, 0}
 	}
 	return expr
 }
@@ -181,9 +204,9 @@ func (p *parser) arrayRef(name string, pos Position) *ArrayExpr {
 	}
 	expr := &ArrayExpr{scope, 0, name}
 	p.arrayRefs = append(p.arrayRefs, arrayRef{funcName, expr, pos})
-	typ := p.varTypes[funcName][name].typ
-	if typ == typeUnknown {
-		p.varTypes[funcName][name] = typeInfo{typeArray, nil, scope, 0, "", 0}
+	info := p.varTypes[funcName][name]
+	if info.typ == typeUnknown {
+		p.varTypes[funcName][name] = typeInfo{typeArray, nil, scope, 0, info.callName, 0}
 	}
 	return expr
 }
@@ -311,6 +334,25 @@ func (p *parser) resolveVars(prog *Program) {
 
 	// Check that variables passed to functions are the correct type
 	for _, c := range p.userCalls {
+		// Check native function calls
+		if c.call.Native {
+			for _, arg := range c.call.Args {
+				varExpr, ok := arg.(*VarExpr)
+				if !ok {
+					// Non-variable expression, must be scalar
+					continue
+				}
+				funcName := p.getVarFuncName(prog, varExpr.Name, c.inFunc)
+				info := p.varTypes[funcName][varExpr.Name]
+				if info.typ == typeArray {
+					message := fmt.Sprintf("can't pass array %q to native function", varExpr.Name)
+					panic(&ParseError{c.pos, message})
+				}
+			}
+			continue
+		}
+
+		// Check AWK function calls
 		function := prog.Functions[c.call.Index]
 		for i, arg := range c.call.Args {
 			varExpr, ok := arg.(*VarExpr)
@@ -321,15 +363,7 @@ func (p *parser) resolveVars(prog *Program) {
 				}
 				continue
 			}
-			// If this VarExpr refers to a local, use caller name to
-			// look up in varTypes, otherwise use "" (meaning global).
-			funcName := ""
-			for _, p := range prog.Functions[p.functions[c.inFunc]].Params {
-				if varExpr.Name == p {
-					funcName = c.inFunc
-					break
-				}
-			}
+			funcName := p.getVarFuncName(prog, varExpr.Name, c.inFunc)
 			info := p.varTypes[funcName][varExpr.Name]
 			if info.typ == typeArray && !function.Arrays[i] {
 				message := fmt.Sprintf("can't pass array %q as scalar param", varExpr.Name)
@@ -364,6 +398,20 @@ func (p *parser) resolveVars(prog *Program) {
 		}
 		arrayRef.ref.Index = info.index
 	}
+}
+
+// If name refers to a local (in function inFunc), return that
+// function's name, otherwise return "" (meaning global).
+func (p *parser) getVarFuncName(prog *Program, name, inFunc string) string {
+	if inFunc == "" {
+		return ""
+	}
+	for _, param := range prog.Functions[p.functions[inFunc]].Params {
+		if name == param {
+			return inFunc
+		}
+	}
+	return ""
 }
 
 func (p *parser) multiExpr(exprs []Expr, pos Position) Expr {
