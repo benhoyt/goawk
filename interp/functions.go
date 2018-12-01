@@ -317,7 +317,7 @@ func (p *interp) callNative(index int, args []Expr) (value, error) {
 	}
 
 	// Build list of args to pass to function
-	values := make([]reflect.Value, 0, len(f.in))
+	values := make([]reflect.Value, 0, 7) // up to 7 args won't require heap allocation
 	for i, arg := range args {
 		a, err := p.eval(arg)
 		if err != nil {

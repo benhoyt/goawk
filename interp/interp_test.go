@@ -854,6 +854,10 @@ BEGIN { x=4; y=5; print foo(x), bar(y) }
 			map[string]interface{}{
 				"foo": func(n int) int { return n * n },
 			}},
+		{`BEGIN { print add(1, add(2, 3)) }`, "", "6\n", "",
+			map[string]interface{}{
+				"add": func(a, b float64) float64 { return a + b },
+			}},
 	}
 	for _, test := range tests {
 		testName := test.src
