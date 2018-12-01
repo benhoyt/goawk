@@ -667,11 +667,11 @@ func TestNative(t *testing.T) {
 			}},
 		{`BEGIN { print repeat("xy", 5) }`, "", "xyxyxyxyxy\n", "",
 			map[string]interface{}{
-				"repeat": func(s string, n int) string { return strings.Repeat(s, n) },
+				"repeat": strings.Repeat,
 			}},
 		{`BEGIN { print repeat("xy", 5) }`, "", "xyxyxyxyxy\n", "",
 			map[string]interface{}{
-				"repeat": func(s string, n int) string { return strings.Repeat(s, n) },
+				"repeat": strings.Repeat,
 			}},
 		{`
 BEGIN {
