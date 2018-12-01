@@ -73,6 +73,10 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 
 // Program is the abstract syntax tree for an entire AWK program.
 type Program struct {
+	// These fields aren't intended to be used or modified directly,
+	// but are exported for the interpreter (Program itself needs to
+	// be exported in package "parser", otherwise these could live in
+	// "internal/ast".)
 	Begin     []Stmts
 	Actions   []Action
 	End       []Stmts
