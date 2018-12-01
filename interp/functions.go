@@ -391,12 +391,12 @@ func (p *interp) toNative(v value, typ reflect.Type) reflect.Value {
 		return reflect.ValueOf(p.toString(v))
 	case reflect.Slice:
 		if typ.Elem().Kind() != reflect.Uint8 {
-			// Shouldn't happen: prevented at parse time
+			// Shouldn't happen: prevented by checkNativeFunc
 			panic(fmt.Sprintf("unexpected argument slice: %s", typ.Elem().Kind()))
 		}
 		return reflect.ValueOf([]byte(p.toString(v)))
 	default:
-		// Shouldn't happen: prevented at parse time
+		// Shouldn't happen: prevented by checkNativeFunc
 		panic(fmt.Sprintf("unexpected argument type: %s", typ.Kind()))
 	}
 }
@@ -418,10 +418,10 @@ func fromNative(v reflect.Value) value {
 		if b, ok := v.Interface().([]byte); ok {
 			return str(string(b))
 		}
-		// Shouldn't happen: prevented at parse time
+		// Shouldn't happen: prevented by checkNativeFunc
 		panic(fmt.Sprintf("unexpected return slice: %s", v.Type().Elem().Kind()))
 	default:
-		// Shouldn't happen: prevented at parse time
+		// Shouldn't happen: prevented by checkNativeFunc
 		panic(fmt.Sprintf("unexpected return type: %s", v.Kind()))
 	}
 }
