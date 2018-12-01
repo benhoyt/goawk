@@ -308,28 +308,24 @@ func (p *interp) callUser(index int, args []Expr) (value, error) {
 // Call native-defined function with given name and arguments, return
 // return value (or null value if it doesn't return anything).
 func (p *interp) callNative(index int, args []Expr) (value, error) {
-	// TODO: add benchmarks for this
-	// TODO: convert nativeFuncs to [] of struct{Type, Value} and preload
 	f := p.nativeFuncs[index]
-	typ := reflect.TypeOf(f)
-	numIn := typ.NumIn()
-	minIn := numIn // Mininum number of args we should pass
+	minIn := len(f.in) // Mininum number of args we should pass
 	var variadicType reflect.Type
-	if typ.IsVariadic() {
-		variadicType = typ.In(numIn - 1).Elem()
+	if f.isVariadic {
+		variadicType = f.in[len(f.in)-1].Elem()
 		minIn--
 	}
 
 	// Build list of args to pass to function
-	values := make([]reflect.Value, 0, numIn)
+	values := make([]reflect.Value, 0, len(f.in))
 	for i, arg := range args {
 		a, err := p.eval(arg)
 		if err != nil {
 			return value{}, err
 		}
 		var argType reflect.Type
-		if !typ.IsVariadic() || i < numIn-1 {
-			argType = typ.In(i)
+		if !f.isVariadic || i < len(f.in)-1 {
+			argType = f.in[i]
 		} else {
 			// Final arg(s) when calling a variadic are all of this type
 			argType = variadicType
@@ -338,11 +334,11 @@ func (p *interp) callNative(index int, args []Expr) (value, error) {
 	}
 	// Use zero value for any unspecified args
 	for i := len(args); i < minIn; i++ {
-		values = append(values, reflect.Zero(typ.In(i)))
+		values = append(values, reflect.Zero(f.in[i]))
 	}
 
 	// Call Go function, determine return value
-	outs := reflect.ValueOf(f).Call(values)
+	outs := f.value.Call(values)
 	switch len(outs) {
 	case 0:
 		// No return value, return null value to AWK
@@ -430,6 +426,13 @@ func fromNative(v reflect.Value) value {
 	}
 }
 
+// Used for caching native function type information on init
+type nativeFunc struct {
+	isVariadic bool
+	in         []reflect.Type
+	value      reflect.Value
+}
+
 // Check and initialize native functions
 func (p *interp) initNativeFuncs(funcs map[string]interface{}) error {
 	for name, f := range funcs {
@@ -446,9 +449,19 @@ func (p *interp) initNativeFuncs(funcs map[string]interface{}) error {
 		names = append(names, name)
 	}
 	sort.Strings(names)
-	p.nativeFuncs = make([]interface{}, len(names))
+	p.nativeFuncs = make([]nativeFunc, len(names))
 	for i, name := range names {
-		p.nativeFuncs[i] = funcs[name]
+		f := funcs[name]
+		typ := reflect.TypeOf(f)
+		in := make([]reflect.Type, typ.NumIn())
+		for j := 0; j < len(in); j++ {
+			in[j] = typ.In(j)
+		}
+		p.nativeFuncs[i] = nativeFunc{
+			isVariadic: typ.IsVariadic(),
+			in:         in,
+			value:      reflect.ValueOf(f),
+		}
 	}
 	return nil
 }

@@ -82,7 +82,7 @@ type interp struct {
 	arrays      []map[string]value
 	localArrays [][]int
 	callDepth   int
-	nativeFuncs []interface{}
+	nativeFuncs []nativeFunc
 
 	// File, line, and field handling
 	filename    string

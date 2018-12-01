@@ -884,10 +884,15 @@ func TestConfigVarsCorrect(t *testing.T) {
 	}
 }
 
-func benchmarkProgram(b *testing.B, input, expected, srcFormat string, args ...interface{}) {
+func benchmarkProgram(b *testing.B, funcs map[string]interface{},
+	input, expected, srcFormat string, args ...interface{},
+) {
 	b.StopTimer()
 	src := fmt.Sprintf(srcFormat, args...)
-	prog, err := parser.ParseProgram([]byte(src), nil)
+	parserConfig := &parser.ParserConfig{
+		Funcs: funcs,
+	}
+	prog, err := parser.ParseProgram([]byte(src), parserConfig)
 	if err != nil {
 		b.Fatalf("error parsing %s: %v", b.Name(), err)
 	}
@@ -896,6 +901,7 @@ func benchmarkProgram(b *testing.B, input, expected, srcFormat string, args ...i
 		Stdin:  strings.NewReader(input),
 		Output: outBuf,
 		Error:  ioutil.Discard,
+		Funcs:  funcs,
 	}
 	b.StartTimer()
 	_, err = interp.ExecProgram(prog, config)
@@ -913,7 +919,7 @@ func benchmarkProgram(b *testing.B, input, expected, srcFormat string, args ...i
 }
 
 func BenchmarkGlobalVars(b *testing.B) {
-	benchmarkProgram(b, "", "a 1", `
+	benchmarkProgram(b, nil, "", "a 1", `
 BEGIN {
   for (i = 0; i < %d; i++) {
   	x = 1; y = "a"; t = x; x = y; y = t
@@ -928,7 +934,7 @@ BEGIN {
 }
 
 func BenchmarkLocalVars(b *testing.B) {
-	benchmarkProgram(b, "", "b 2", `
+	benchmarkProgram(b, nil, "", "b 2", `
 function f(i, x, y, t) {
   for (i = 0; i < %d; i++) {
   	x = 2; y = "b"; t = x; x = y; y = t
@@ -947,7 +953,7 @@ BEGIN {
 }
 
 func BenchmarkIncrDecr(b *testing.B) {
-	benchmarkProgram(b, "", "0 10", `
+	benchmarkProgram(b, nil, "", "0 10", `
 BEGIN {
   for (i = 0; i < %d; i++) {
   	x++; x++; x++; x++; x++; x++; x++; x++; x++; x++
@@ -960,7 +966,7 @@ BEGIN {
 }
 
 func BenchmarkSimpleBuiltins(b *testing.B) {
-	benchmarkProgram(b, "", "", `
+	benchmarkProgram(b, nil, "", "", `
 BEGIN {
   for (i = 0; i < %d; i++) {
   	sin(0); cos(0); exp(0); log(1); sqrt(2); int("x");
@@ -974,7 +980,7 @@ BEGIN {
 }
 
 func BenchmarkBuiltinMatch(b *testing.B) {
-	benchmarkProgram(b, "", "21", `
+	benchmarkProgram(b, nil, "", "21", `
 BEGIN {
   s = "The quick brown fox jumps over the lazy dog"
   for (i = 0; i < %d; i++) {
@@ -990,7 +996,7 @@ BEGIN {
 }
 
 func BenchmarkBuiltinLength(b *testing.B) {
-	benchmarkProgram(b, "", "134", `
+	benchmarkProgram(b, nil, "", "134", `
 BEGIN {
   s = "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog."
   for (i = 0; i < %d; i++) {
@@ -1006,7 +1012,7 @@ BEGIN {
 }
 
 func BenchmarkBuiltinIndex(b *testing.B) {
-	benchmarkProgram(b, "", "134", `
+	benchmarkProgram(b, nil, "", "134", `
 BEGIN {
   s = "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog!?!"
   for (i = 0; i < %d; i++) {
@@ -1022,7 +1028,7 @@ BEGIN {
 }
 
 func BenchmarkBuiltinSubstr(b *testing.B) {
-	benchmarkProgram(b, "", " brown fox", `
+	benchmarkProgram(b, nil, "", " brown fox", `
 BEGIN {
   s = "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog!?!"
   for (i = 0; i < %d; i++) {
@@ -1038,7 +1044,7 @@ BEGIN {
 }
 
 func BenchmarkBuiltinSplitSpace(b *testing.B) {
-	benchmarkProgram(b, "", "27", `
+	benchmarkProgram(b, nil, "", "27", `
 BEGIN {
   s = "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog!?!"
   for (i = 0; i < %d; i++) {
@@ -1055,7 +1061,7 @@ BEGIN {
 }
 
 func BenchmarkBuiltinSplitRegex(b *testing.B) {
-	benchmarkProgram(b, "", "22", `
+	benchmarkProgram(b, nil, "", "22", `
 BEGIN {
   s = "a fox ab fax abc fix a fox ab fax abc fix a fox ab fax abc fix a fox ab fax abc fix a fox ab fax abc fix a fox ab fax abc fix a fox ab fax abc fix"
   for (i = 0; i < %d; i++) {
@@ -1072,7 +1078,7 @@ BEGIN {
 }
 
 func BenchmarkBuiltinSub(b *testing.B) {
-	benchmarkProgram(b, "", "1 164", `
+	benchmarkProgram(b, nil, "", "1 164", `
 BEGIN {
   for (i = 0; i < %d; i++) {
     s = "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog."
@@ -1088,7 +1094,7 @@ BEGIN {
 }
 
 func BenchmarkBuiltinSubAmpersand(b *testing.B) {
-	benchmarkProgram(b, "", "1 164", `
+	benchmarkProgram(b, nil, "", "1 164", `
 BEGIN {
   for (i = 0; i < %d; i++) {
     s = "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog."
@@ -1104,7 +1110,7 @@ BEGIN {
 }
 
 func BenchmarkBuiltinGsub(b *testing.B) {
-	benchmarkProgram(b, "", "3 224", `
+	benchmarkProgram(b, nil, "", "3 224", `
 BEGIN {
   for (i = 0; i < %d; i++) {
     s = "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog."
@@ -1120,7 +1126,7 @@ BEGIN {
 }
 
 func BenchmarkBuiltinGsubAmpersand(b *testing.B) {
-	benchmarkProgram(b, "", "3 224", `
+	benchmarkProgram(b, nil, "", "3 224", `
 BEGIN {
   for (i = 0; i < %d; i++) {
     s = "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog."
@@ -1136,7 +1142,7 @@ BEGIN {
 }
 
 func BenchmarkBuiltinSprintf(b *testing.B) {
-	benchmarkProgram(b, "", "A 123   foo 3.14", `
+	benchmarkProgram(b, nil, "", "A 123   foo 3.14", `
 BEGIN {
   x = "foo"
   y = 3.14159
@@ -1153,7 +1159,7 @@ BEGIN {
 }
 
 func BenchmarkRecursiveFunc(b *testing.B) {
-	benchmarkProgram(b, "", "55", `
+	benchmarkProgram(b, nil, "", "55", `
 function fib(n) {
   if (n <= 2) {
     return 1
@@ -1171,7 +1177,7 @@ BEGIN {
 }
 
 func BenchmarkFuncCall(b *testing.B) {
-	benchmarkProgram(b, "", "75", `
+	benchmarkProgram(b, nil, "", "75", `
 function add(a, b) {
   return a + b
 }
@@ -1189,8 +1195,26 @@ BEGIN {
 `, b.N)
 }
 
+func BenchmarkNativeFunc(b *testing.B) {
+	funcs := map[string]interface{}{
+		"add": func(a, b float64) float64 { return a + b },
+	}
+	benchmarkProgram(b, funcs, "", "75", `
+BEGIN {
+  for (i = 0; i < %d; i++) {
+    sum = add(0, add(1, add(2, add(3, add(4, 5)))))
+    sum = add(sum, add(1, add(2, add(3, add(4, 5)))))
+    sum = add(sum, add(1, add(2, add(3, add(4, 5)))))
+    sum = add(sum, add(1, add(2, add(3, add(4, 5)))))
+    sum = add(sum, add(1, add(2, add(3, add(4, 5)))))
+  }
+  print sum
+}
+`, b.N)
+}
+
 func BenchmarkForLoop(b *testing.B) {
-	benchmarkProgram(b, "", "", `
+	benchmarkProgram(b, nil, "", "", `
 BEGIN {
   for (i = 0; i < %d; i++) {
   	for (j = 0; j < 100; j++);
@@ -1200,7 +1224,7 @@ BEGIN {
 }
 
 func BenchmarkForInLoop(b *testing.B) {
-	benchmarkProgram(b, "", "", `
+	benchmarkProgram(b, nil, "", "", `
 BEGIN {
   for (j = 0; j < 100; j++) {
   	a[j] = j
@@ -1213,7 +1237,7 @@ BEGIN {
 }
 
 func BenchmarkIfStatement(b *testing.B) {
-	benchmarkProgram(b, "", "0", `
+	benchmarkProgram(b, nil, "", "0", `
 BEGIN {
   c = 1
   d = 0
@@ -1231,7 +1255,7 @@ BEGIN {
 }
 
 func BenchmarkCondExpr(b *testing.B) {
-	benchmarkProgram(b, "", "0", `
+	benchmarkProgram(b, nil, "", "0", `
 BEGIN {
   c = 1
   d = 0
@@ -1263,7 +1287,7 @@ func BenchmarkSimplePattern(b *testing.B) {
 	}
 	input := strings.Join(inputLines, "\n")
 	expected := strings.Join(expectedLines, "\n")
-	benchmarkProgram(b, input, expected, "$0")
+	benchmarkProgram(b, nil, input, expected, "$0")
 }
 
 func BenchmarkGetField(b *testing.B) {
@@ -1276,11 +1300,11 @@ func BenchmarkGetField(b *testing.B) {
 	}
 	input := strings.Join(inputLines, "\n")
 	expected := strings.Join(expectedLines, "\n")
-	benchmarkProgram(b, input, expected, "{ print $1, $3 }")
+	benchmarkProgram(b, nil, input, expected, "{ print $1, $3 }")
 }
 
 func BenchmarkSetField(b *testing.B) {
-	benchmarkProgram(b, "1 2 3", "one 2 three", `
+	benchmarkProgram(b, nil, "1 2 3", "one 2 three", `
 {
   for (i = 0; i < %d; i++) {
     $1 = "one"; $3 = "three"
@@ -1297,7 +1321,7 @@ END {
 }
 
 func BenchmarkRegexMatch(b *testing.B) {
-	benchmarkProgram(b, "", "1", `
+	benchmarkProgram(b, nil, "", "1", `
 BEGIN {
   s = "The quick brown fox jumps over the lazy dog"
   for (i = 0; i < %d; i++) {
@@ -1313,7 +1337,7 @@ BEGIN {
 }
 
 func BenchmarkBinaryOperators(b *testing.B) {
-	benchmarkProgram(b, "", "5.0293", `
+	benchmarkProgram(b, nil, "", "5.0293", `
 BEGIN {
   for (i = 0; i < %d; i++) {
     res = (1+2*3/4^5) + (1+2*3/4^5) + (1+2*3/4^5) + (1+2*3/4^5) + (1+2*3/4^5)
@@ -1325,7 +1349,7 @@ BEGIN {
 
 func BenchmarkConcatSmall(b *testing.B) {
 	b.StopTimer()
-	benchmarkProgram(b, "", "100", `
+	benchmarkProgram(b, nil, "", "100", `
 BEGIN {
   x = "0123456789"
   for (i = 0; i < %d; i++) {
@@ -1338,7 +1362,7 @@ BEGIN {
 
 func BenchmarkConcatLarge(b *testing.B) {
 	b.StopTimer()
-	benchmarkProgram(b, "", "1000000", `
+	benchmarkProgram(b, nil, "", "1000000", `
 BEGIN {
   x = "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789"
   for (i = 0; i < %d; i++) {
@@ -1354,7 +1378,7 @@ BEGIN {
 
 func BenchmarkComparisons(b *testing.B) {
 	b.StopTimer()
-	benchmarkProgram(b, "", "1", `
+	benchmarkProgram(b, nil, "", "1", `
 BEGIN {
   for (i = 0; i < %d; i++) {
   	x = ((((((1 < 2) <= 3) > 4) >= 5) == 6) != 7)
@@ -1368,7 +1392,7 @@ BEGIN {
 
 func BenchmarkArrayOperations(b *testing.B) {
 	b.StopTimer()
-	benchmarkProgram(b, "", "243", `
+	benchmarkProgram(b, nil, "", "243", `
 BEGIN {
   for (i = 0; i < %d; i++) {
   	a[0] = 1
@@ -1385,7 +1409,7 @@ BEGIN {
 
 func BenchmarkAssign(b *testing.B) {
 	b.StopTimer()
-	benchmarkProgram(b, "", "0 1 2 3 4", `
+	benchmarkProgram(b, nil, "", "0 1 2 3 4", `
 BEGIN {
   for (i = 0; i < %d; i++) {
   	v=0; w=1; x=2; y=3; z=4
@@ -1401,7 +1425,7 @@ BEGIN {
 
 func BenchmarkAugAssign(b *testing.B) {
 	b.StopTimer()
-	benchmarkProgram(b, "", "5 -9 729 32 3.0536 2", `
+	benchmarkProgram(b, nil, "", "5 -9 729 32 3.0536 2", `
 BEGIN {
   for (i = 0; i < %d; i++) {
   	a = 0; b = 1; c = 3; d = 1024; e = 2; f = 14
