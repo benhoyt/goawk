@@ -36,8 +36,13 @@ func (e *ParseError) Error() string {
 type ParserConfig struct {
 	// Enable printing of type information
 	DebugTypes bool
+
 	// io.Writer to print type information on (for example, os.Stderr)
 	DebugWriter io.Writer
+
+	// Map of named Go functions to allow calling from AWK. See docs
+	// on interp.Config.Funcs for details.
+	Funcs map[string]interface{}
 }
 
 // ParseProgram parses an entire AWK program, returning the *Program
@@ -59,6 +64,7 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	if config != nil {
 		p.debugTypes = config.DebugTypes
 		p.debugWriter = config.DebugWriter
+		p.nativeFuncs = config.Funcs
 	}
 	p.initResolve()
 	p.next() // initialize p.tok
@@ -115,8 +121,9 @@ type parser struct {
 	multiExprs map[*MultiExpr]Position        // tracks comma-separated expressions
 
 	// Function tracking
-	functions map[string]int // map of function name to index
-	userCalls []userCall     // record calls so we can resolve them later
+	functions   map[string]int // map of function name to index
+	userCalls   []userCall     // record calls so we can resolve them later
+	nativeFuncs map[string]interface{}
 
 	// Configuration and debugging
 	debugTypes  bool      // show variable types for debugging
@@ -967,7 +974,7 @@ func (p *parser) userCall(name string, pos Position) *UserCallExpr {
 		i++
 	}
 	p.expect(RPAREN)
-	call := &UserCallExpr{-1, name, args} // index is resolved later
+	call := &UserCallExpr{false, -1, name, args} // index is resolved later
 	p.recordUserCall(call, pos)
 	return call
 }

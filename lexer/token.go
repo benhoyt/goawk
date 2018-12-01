@@ -149,6 +149,12 @@ var keywordTokens = map[string]Token{
 	"toupper": F_TOUPPER,
 }
 
+// KeywordToken returns the token associated with the given keyword
+// string, or ILLEGAL if given name is not a keyword.
+func KeywordToken(name string) Token {
+	return keywordTokens[name]
+}
+
 var tokenNames = map[Token]string{
 	ILLEGAL: "<illegal>",
 	EOF:     "EOF",

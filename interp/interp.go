@@ -82,6 +82,7 @@ type interp struct {
 	arrays      []map[string]value
 	localArrays [][]int
 	callDepth   int
+	nativeFuncs []nativeFunc
 
 	// File, line, and field handling
 	filename    string
@@ -152,6 +153,30 @@ type Config struct {
 	// the program (useful for setting FS and other built-in
 	// variables, for example []string{"FS", ",", "OFS", ","}).
 	Vars []string
+
+	// Map of named Go functions to allow calling from AWK. You need
+	// to pass this same map to the parser.ParseProgram config.
+	//
+	// Functions can have any number of parameters, and variadic
+	// functions are supported. Functions can have no return values,
+	// one return value, or two return values (result, error). In the
+	// two-value case, if the function returns a non-nil error,
+	// program execution will stop and ExecProgram will return that
+	// error.
+	//
+	// Apart from the error return value, the types supported are
+	// bool, integer and floating point types (excluding complex),
+	// and string types (string or []byte).
+	//
+	// It's not an error to call a Go function from AWK with fewer
+	// arguments than it has parameters in Go. In this case, the zero
+	// value will be used for any additional parameters. However, it
+	// is a parse error to call a non-variadic function from AWK with
+	// more arguments than it has parameters in Go.
+	//
+	// Functions defined with the "function" keyword in AWK code
+	// take precedence over functions in Funcs.
+	Funcs map[string]interface{}
 }
 
 // ExecProgram executes the parsed program using the given interpreter
@@ -186,6 +211,10 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	p.outputFieldSep = " "
 	p.outputRecordSep = "\n"
 	p.subscriptSep = "\x1c"
+	err := p.initNativeFuncs(config.Funcs)
+	if err != nil {
+		return 0, err
+	}
 
 	// Setup ARGV and other variables from config
 	argvIndex := program.Arrays["ARGV"]
@@ -225,7 +254,7 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	defer p.closeAll()
 
 	// Execute the program! BEGIN, then pattern/actions, then END
-	err := p.execBeginEnd(program.Begin)
+	err = p.execBeginEnd(program.Begin)
 	if err != nil && err != errExit {
 		return 0, err
 	}
@@ -755,8 +784,12 @@ func (p *interp) eval(expr Expr) (value, error) {
 		return boolean(ok), nil
 
 	case *UserCallExpr:
-		// Call user-defined function
-		return p.callUser(e.Index, e.Args)
+		// Call user-defined or native Go function
+		if e.Native {
+			return p.callNative(e.Index, e.Args)
+		} else {
+			return p.callUser(e.Index, e.Args)
+		}
 
 	case *GetlineExpr:
 		// Getline: read line from input

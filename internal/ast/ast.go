@@ -265,9 +265,10 @@ func (e *CallExpr) String() string {
 // resolved function index used by the interpreter; Name is the
 // original name used by String().
 type UserCallExpr struct {
-	Index int
-	Name  string
-	Args  []Expr
+	Native bool // false = AWK-defined function, true = native Go func
+	Index  int
+	Name   string
+	Args   []Expr
 }
 
 func (e *UserCallExpr) String() string {
