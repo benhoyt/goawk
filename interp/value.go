@@ -15,14 +15,14 @@ const (
 	typeNil valueType = iota
 	typeStr
 	typeNum
+	typeNumStr
 )
 
 // An AWK value (these are passed around by value)
 type value struct {
-	typ      valueType // Value type
-	isNumStr bool      // An AWK "numeric string" from user input
-	s        string    // String value (for typeStr)
-	n        float64   // Numeric value (for typeNum and numeric strings)
+	typ valueType // Type of value
+	s   string    // String value (for typeStr)
+	n   float64   // Numeric value (for typeNum and typeNumStr)
 }
 
 // Create a new number value
@@ -39,7 +39,11 @@ func str(s string) value {
 // string to a number if possible.
 func numStr(s string) value {
 	f, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
-	return value{typ: typeStr, isNumStr: err == nil, s: s, n: f}
+	if err != nil {
+		// Doesn't parse as number, make it a "true string"
+		return value{typ: typeStr, s: s}
+	}
+	return value{typ: typeNumStr, s: s, n: f}
 }
 
 // Create a numeric value from a Go bool
@@ -53,7 +57,7 @@ func boolean(b bool) value {
 // Return true if value is a "true string" (string but not a "numeric
 // string")
 func (v value) isTrueStr() bool {
-	return v.typ == typeStr && !v.isNumStr
+	return v.typ == typeStr
 }
 
 // Return Go bool value of AWK value. For numbers or numeric strings,
@@ -86,7 +90,7 @@ func (v value) str(floatFormat string) string {
 		} else {
 			return fmt.Sprintf(floatFormat, v.n)
 		}
-	case typeStr:
+	case typeStr, typeNumStr:
 		return v.s
 	default:
 		return ""
@@ -106,13 +110,12 @@ func (v value) numChecked() (float64, bool) {
 	case typeNum:
 		return v.n, true
 	case typeStr:
-		if v.isNumStr {
-			// If it's a numeric string, we already have the float
-			// value from the numStr() call
-			return v.n, true
-		}
-		// Otherwise ensure string starts with a float and convert it
+		// Ensure string starts with a float and convert it
 		return parseFloatPrefix(v.s)
+	case typeNumStr:
+		// If it's a numeric string, we already have the float value
+		// from the numStr() call
+		return v.n, true
 	default:
 		return 0, true
 	}
