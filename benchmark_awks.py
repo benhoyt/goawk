@@ -17,6 +17,24 @@ AWKS = [
     'gawk',
     'mawk',
 ]
+NORM_INDEX = AWKS.index('awk')
+# Only get the mean of these tests because these are the only ones
+# we show in the GoAWK article.
+TESTS_TO_MEAN = [
+    'tt.01',
+    'tt.02',
+    'tt.02a',
+    'tt.03',
+    'tt.03a',
+    'tt.04',
+    'tt.05',
+    'tt.06',
+    'tt.07',
+    'tt.big',
+    'tt.x1',
+    'tt.x2',
+]
+MEAN_TESTS = []
 NUM_RUNS = 3
 MIN_TIME = 0.5
 PROGRAM_GLOB = 'testdata/tt.*'
@@ -40,7 +58,8 @@ print()
 print('-'*9 + ' | -----'*len(AWKS))
 
 repeats_created = []
-sums = [0] * len(AWKS)
+products = [1] * len(AWKS)
+num_products = 0
 programs = sorted(glob.glob(PROGRAM_GLOB))
 for program in programs:
     # First do a test run with GoAWK to see roughly how long it takes
@@ -75,22 +94,24 @@ for program in programs:
                 print('ERROR status {} from cmd: {}'.format(status, cmdline), file=sys.stderr)
         awk_times.append(min(times))
 
-    # Normalize to GoAWK time = 1.0
-    goawk_time = awk_times[0]
-    awk_times = [t/goawk_time for t in awk_times]
-    for i in range(len(AWKS)):
-        sums[i] += awk_times[i]
-
+    # Normalize to One True AWK time = 1.0
+    norm_time = awk_times[NORM_INDEX]
+    speeds = [norm_time/t for t in awk_times]
     test_name = program.split('/')[1]
+    if test_name in TESTS_TO_MEAN:
+        num_products += 1
+        for i in range(len(AWKS)):
+            products[i] *= speeds[i]
+
     print('{:9}'.format(test_name), end='')
     for i, awk in enumerate(AWKS):
-        print(' | {:5.3f}'.format(awk_times[i]), end='')
+        print(' | {:5.2f}'.format(speeds[i]), end='')
     print()
 
 print('-'*9 + ' | -----'*len(AWKS))
-print('**Mean** ', end='')
+print('**Geo mean** ', end='')
 for i, awk in enumerate(AWKS):
-    print(' | **{:5.3f}**'.format(sums[i] / len(programs)), end='')
+    print(' | **{:.2f}**'.format(products[i] ** (1.0/num_products)), end='')
 print()
 
 # Delete temporary files created
