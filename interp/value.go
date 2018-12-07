@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"math"
 	"strconv"
-	"strings"
+
+	"github.com/benhoyt/goawk/internal/strutil"
 )
 
 type valueType uint8
@@ -38,7 +39,7 @@ func str(s string) value {
 // Create a new value for a "numeric string" context, converting the
 // string to a number if possible.
 func numStr(s string) value {
-	f, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
+	f, err := strconv.ParseFloat(strutil.TrimSpace(s), 64)
 	if err != nil {
 		// Doesn't parse as number, make it a "true string"
 		return value{typ: typeStr, s: s}
@@ -126,7 +127,7 @@ func (v value) numChecked() (float64, bool) {
 func parseFloatPrefix(s string) (float64, bool) {
 	// Skip whitespace at start
 	i := 0
-	for i < len(s) && (s[i] == ' ' || s[i] == '\t' || s[i] == '\n' || s[i] == '\r') {
+	for i < len(s) && strutil.IsASCIISpace(s[i]) {
 		i++
 	}
 	start := i
