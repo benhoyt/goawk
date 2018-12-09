@@ -624,7 +624,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 		// $n field expression
 		index, err := p.eval(e.Index)
 		if err != nil {
-			return value{}, err
+			return null(), err
 		}
 		return p.getField(int(index.num()))
 
@@ -636,7 +636,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 		// Stand-alone /regex/ is equivalent to: $0 ~ /regex/
 		re, err := p.compileRegex(e.Regex)
 		if err != nil {
-			return value{}, err
+			return null(), err
 		}
 		return boolean(re.MatchString(p.line)), nil
 
@@ -645,7 +645,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 		// as they're short-circuit operators.
 		left, err := p.eval(e.Left)
 		if err != nil {
-			return value{}, err
+			return null(), err
 		}
 		switch e.Op {
 		case AND:
@@ -654,7 +654,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 			}
 			right, err := p.eval(e.Right)
 			if err != nil {
-				return value{}, err
+				return null(), err
 			}
 			return boolean(right.boolean()), nil
 		case OR:
@@ -663,13 +663,13 @@ func (p *interp) eval(expr Expr) (value, error) {
 			}
 			right, err := p.eval(e.Right)
 			if err != nil {
-				return value{}, err
+				return null(), err
 			}
 			return boolean(right.boolean()), nil
 		default:
 			right, err := p.eval(e.Right)
 			if err != nil {
-				return value{}, err
+				return null(), err
 			}
 			return p.evalBinary(e.Op, left, right)
 		}
@@ -681,7 +681,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 		// index so we don't evaluate part of the expression twice
 		exprValue, arrayIndex, fieldIndex, err := p.evalForAugAssign(e.Expr)
 		if err != nil {
-			return value{}, err
+			return null(), err
 		}
 
 		// Then convert to number and increment or decrement
@@ -697,7 +697,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 		// Finally assign back to expression and return the correct value
 		err = p.assignAug(e.Expr, arrayIndex, fieldIndex, incrValue)
 		if err != nil {
-			return value{}, err
+			return null(), err
 		}
 		if e.Pre {
 			return incrValue, nil
@@ -709,11 +709,11 @@ func (p *interp) eval(expr Expr) (value, error) {
 		// Assignment expression (returns right-hand side)
 		right, err := p.eval(e.Right)
 		if err != nil {
-			return value{}, err
+			return null(), err
 		}
 		err = p.assign(e.Left, right)
 		if err != nil {
-			return value{}, err
+			return null(), err
 		}
 		return right, nil
 
@@ -721,19 +721,19 @@ func (p *interp) eval(expr Expr) (value, error) {
 		// Augmented assignment like += (returns right-hand side)
 		right, err := p.eval(e.Right)
 		if err != nil {
-			return value{}, err
+			return null(), err
 		}
 		left, arrayIndex, fieldIndex, err := p.evalForAugAssign(e.Left)
 		if err != nil {
-			return value{}, err
+			return null(), err
 		}
 		right, err = p.evalBinary(e.Op, left, right)
 		if err != nil {
-			return value{}, err
+			return null(), err
 		}
 		err = p.assignAug(e.Left, arrayIndex, fieldIndex, right)
 		if err != nil {
-			return value{}, err
+			return null(), err
 		}
 		return right, nil
 
@@ -741,7 +741,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 		// C-like ?: ternary conditional operator
 		cond, err := p.eval(e.Cond)
 		if err != nil {
-			return value{}, err
+			return null(), err
 		}
 		if cond.boolean() {
 			return p.eval(e.True)
@@ -753,7 +753,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 		// Read value from array by index
 		index, err := p.evalIndex(e.Index)
 		if err != nil {
-			return value{}, err
+			return null(), err
 		}
 		return p.getArrayValue(e.Array.Scope, e.Array.Index, index), nil
 
@@ -765,7 +765,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 		// Unary ! or + or -
 		v, err := p.eval(e.Value)
 		if err != nil {
-			return value{}, err
+			return null(), err
 		}
 		return p.evalUnary(e.Op, v), nil
 
@@ -773,7 +773,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 		// "key in array" expression
 		index, err := p.evalIndex(e.Index)
 		if err != nil {
-			return value{}, err
+			return null(), err
 		}
 		array := p.arrays[p.getArrayIndex(e.Array.Scope, e.Array.Index)]
 		_, ok := array[index]
@@ -794,12 +794,12 @@ func (p *interp) eval(expr Expr) (value, error) {
 		case e.Command != nil:
 			nameValue, err := p.eval(e.Command)
 			if err != nil {
-				return value{}, err
+				return null(), err
 			}
 			name := p.toString(nameValue)
 			scanner, err := p.getInputScannerPipe(name)
 			if err != nil {
-				return value{}, err
+				return null(), err
 			}
 			if !scanner.Scan() {
 				if err := scanner.Err(); err != nil {
@@ -811,12 +811,12 @@ func (p *interp) eval(expr Expr) (value, error) {
 		case e.File != nil:
 			nameValue, err := p.eval(e.File)
 			if err != nil {
-				return value{}, err
+				return null(), err
 			}
 			name := p.toString(nameValue)
 			scanner, err := p.getInputScannerFile(name)
 			if err != nil {
-				return value{}, err
+				return null(), err
 			}
 			if !scanner.Scan() {
 				if err := scanner.Err(); err != nil {
@@ -838,7 +838,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 		if e.Var != nil {
 			err := p.setVar(e.Var.Scope, e.Var.Index, str(line))
 			if err != nil {
-				return value{}, err
+				return null(), err
 			}
 		} else {
 			p.setLine(line)
@@ -858,18 +858,18 @@ func (p *interp) evalForAugAssign(expr Expr) (v value, arrayIndex string, fieldI
 	case *IndexExpr:
 		arrayIndex, err = p.evalIndex(expr.Index)
 		if err != nil {
-			return value{}, "", 0, err
+			return null(), "", 0, err
 		}
 		v = p.getArrayValue(expr.Array.Scope, expr.Array.Index, arrayIndex)
 	case *FieldExpr:
 		index, err := p.eval(expr.Index)
 		if err != nil {
-			return value{}, "", 0, err
+			return null(), "", 0, err
 		}
 		fieldIndex = int(index.num())
 		v, err = p.getField(fieldIndex)
 		if err != nil {
-			return value{}, "", 0, err
+			return null(), "", 0, err
 		}
 	}
 	return v, arrayIndex, fieldIndex, nil
@@ -1041,7 +1041,7 @@ func (p *interp) setArrayValue(scope VarScope, arrayIndex int, index string, v v
 // Get the value of given numbered field, equivalent to "$index"
 func (p *interp) getField(index int) (value, error) {
 	if index < 0 {
-		return value{}, newError("field index negative: %d", index)
+		return null(), newError("field index negative: %d", index)
 	}
 	if index == 0 {
 		return numStr(p.line), nil
@@ -1130,7 +1130,7 @@ func (p *interp) evalBinary(op Token, l, r value) (value, error) {
 	case DIV:
 		rf := r.num()
 		if rf == 0.0 {
-			return value{}, newError("division by zero")
+			return null(), newError("division by zero")
 		}
 		return num(l.num() / rf), nil
 	case GREATER:
@@ -1154,14 +1154,14 @@ func (p *interp) evalBinary(op Token, l, r value) (value, error) {
 	case MATCH:
 		re, err := p.compileRegex(p.toString(r))
 		if err != nil {
-			return value{}, err
+			return null(), err
 		}
 		matched := re.MatchString(p.toString(l))
 		return boolean(matched), nil
 	case NOT_MATCH:
 		re, err := p.compileRegex(p.toString(r))
 		if err != nil {
-			return value{}, err
+			return null(), err
 		}
 		matched := re.MatchString(p.toString(l))
 		return boolean(!matched), nil
@@ -1170,7 +1170,7 @@ func (p *interp) evalBinary(op Token, l, r value) (value, error) {
 	case MOD:
 		rf := r.num()
 		if rf == 0.0 {
-			return value{}, newError("division by zero in mod")
+			return null(), newError("division by zero in mod")
 		}
 		return num(math.Mod(l.num(), rf)), nil
 	default:

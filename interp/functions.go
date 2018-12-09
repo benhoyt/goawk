@@ -28,14 +28,14 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 	case F_SPLIT:
 		strValue, err := p.eval(argExprs[0])
 		if err != nil {
-			return value{}, err
+			return null(), err
 		}
 		str := p.toString(strValue)
 		var fieldSep string
 		if len(argExprs) == 3 {
 			sepValue, err := p.eval(argExprs[2])
 			if err != nil {
-				return value{}, err
+				return null(), err
 			}
 			fieldSep = p.toString(sepValue)
 		} else {
@@ -44,26 +44,26 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 		arrayExpr := argExprs[1].(*ArrayExpr)
 		n, err := p.split(str, arrayExpr.Scope, arrayExpr.Index, fieldSep)
 		if err != nil {
-			return value{}, err
+			return null(), err
 		}
 		return num(float64(n)), nil
 
 	case F_SUB, F_GSUB:
 		regexValue, err := p.eval(argExprs[0])
 		if err != nil {
-			return value{}, err
+			return null(), err
 		}
 		regex := p.toString(regexValue)
 		replValue, err := p.eval(argExprs[1])
 		if err != nil {
-			return value{}, err
+			return null(), err
 		}
 		repl := p.toString(replValue)
 		var in string
 		if len(argExprs) == 3 {
 			inValue, err := p.eval(argExprs[2])
 			if err != nil {
-				return value{}, err
+				return null(), err
 			}
 			in = p.toString(inValue)
 		} else {
@@ -71,12 +71,12 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 		}
 		out, n, err := p.sub(regex, repl, in, op == F_GSUB)
 		if err != nil {
-			return value{}, err
+			return null(), err
 		}
 		if len(argExprs) == 3 {
 			err := p.assign(argExprs[2], str(out))
 			if err != nil {
-				return value{}, err
+				return null(), err
 			}
 		} else {
 			p.setLine(out)
@@ -90,7 +90,7 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 	for _, a := range argExprs {
 		arg, err := p.eval(a)
 		if err != nil {
-			return value{}, err
+			return null(), err
 		}
 		args = append(args, arg)
 	}
@@ -108,7 +108,7 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 	case F_MATCH:
 		re, err := p.compileRegex(p.toString(args[1]))
 		if err != nil {
-			return value{}, err
+			return null(), err
 		}
 		loc := re.FindStringIndex(p.toString(args[0]))
 		if loc == nil {
@@ -145,7 +145,7 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 	case F_SPRINTF:
 		s, err := p.sprintf(p.toString(args[0]), args[1:])
 		if err != nil {
-			return value{}, err
+			return null(), err
 		}
 		return str(s), nil
 
@@ -252,7 +252,7 @@ func (p *interp) callUser(index int, args []Expr) (value, error) {
 	f := p.program.Functions[index]
 
 	if p.callDepth >= maxCallDepth {
-		return value{}, newError("calling %q exceeded maximum call depth of %d", f.Name, maxCallDepth)
+		return null(), newError("calling %q exceeded maximum call depth of %d", f.Name, maxCallDepth)
 	}
 
 	// Evaluate the arguments and push them onto the locals stack
@@ -266,7 +266,7 @@ func (p *interp) callUser(index int, args []Expr) (value, error) {
 		} else {
 			argValue, err := p.eval(arg)
 			if err != nil {
-				return value{}, err
+				return null(), err
 			}
 			p.stack = append(p.stack, argValue)
 		}
@@ -279,7 +279,7 @@ func (p *interp) callUser(index int, args []Expr) (value, error) {
 			arrays = append(arrays, len(p.arrays))
 			p.arrays = append(p.arrays, make(map[string]value))
 		} else {
-			p.stack = append(p.stack, value{})
+			p.stack = append(p.stack, null())
 		}
 	}
 	p.frame = p.stack[newFrameStart:]
@@ -300,9 +300,9 @@ func (p *interp) callUser(index int, args []Expr) (value, error) {
 		return r.Value, nil
 	}
 	if err != nil {
-		return value{}, err
+		return null(), err
 	}
-	return value{}, nil
+	return null(), nil
 }
 
 // Call native-defined function with given name and arguments, return
@@ -321,7 +321,7 @@ func (p *interp) callNative(index int, args []Expr) (value, error) {
 	for i, arg := range args {
 		a, err := p.eval(arg)
 		if err != nil {
-			return value{}, err
+			return null(), err
 		}
 		var argType reflect.Type
 		if !f.isVariadic || i < len(f.in)-1 {
@@ -342,14 +342,14 @@ func (p *interp) callNative(index int, args []Expr) (value, error) {
 	switch len(outs) {
 	case 0:
 		// No return value, return null value to AWK
-		return value{}, nil
+		return null(), nil
 	case 1:
 		// Single return value
 		return fromNative(outs[0]), nil
 	case 2:
 		// Two-valued return of (scalar, error)
 		if !outs[1].IsNil() {
-			return value{}, outs[1].Interface().(error)
+			return null(), outs[1].Interface().(error)
 		}
 		return fromNative(outs[0]), nil
 	default:

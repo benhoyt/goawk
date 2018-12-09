@@ -13,7 +13,7 @@ import (
 type valueType uint8
 
 const (
-	typeNil valueType = iota
+	typeNull valueType = iota
 	typeStr
 	typeNum
 	typeNumStr
@@ -24,6 +24,11 @@ type value struct {
 	typ valueType // Type of value
 	s   string    // String value (for typeStr)
 	n   float64   // Numeric value (for typeNum and typeNumStr)
+}
+
+// Create a new null value
+func null() value {
+	return value{}
 }
 
 // Create a new number value
