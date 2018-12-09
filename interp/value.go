@@ -100,31 +100,24 @@ func (v value) str(floatFormat string) string {
 
 // Return value's number value, converting from string if necessary
 func (v value) num() float64 {
-	f, _ := v.numChecked()
-	return f
-}
-
-// Return value's number value and a success flag, converting from a
-// string if necessary
-func (v value) numChecked() (float64, bool) {
 	switch v.typ {
 	case typeNum:
-		return v.n, true
+		return v.n
 	case typeStr:
 		// Ensure string starts with a float and convert it
 		return parseFloatPrefix(v.s)
 	case typeNumStr:
 		// If it's a numeric string, we already have the float value
 		// from the numStr() call
-		return v.n, true
+		return v.n
 	default:
-		return 0, true
+		return 0
 	}
 }
 
 // Like strconv.ParseFloat, but parses at the start of string and
 // allows things like "1.5foo"
-func parseFloatPrefix(s string) (float64, bool) {
+func parseFloatPrefix(s string) float64 {
 	// Skip whitespace at start
 	i := 0
 	for i < len(s) && strutil.IsASCIISpace(s[i]) {
@@ -150,7 +143,7 @@ func parseFloatPrefix(s string) (float64, bool) {
 		i++
 	}
 	if !gotDigit {
-		return 0, false
+		return 0
 	}
 
 	// Parse exponent ("1e" and similar are allowed, but ParseFloat
@@ -168,6 +161,6 @@ func parseFloatPrefix(s string) (float64, bool) {
 	}
 
 	floatStr := s[start:end]
-	f, err := strconv.ParseFloat(floatStr, 64)
-	return f, err == nil // May be "value out of range" error
+	f, _ := strconv.ParseFloat(floatStr, 64)
+	return f // Returns infinity in case of "value out of range" error
 }

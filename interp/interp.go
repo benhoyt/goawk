@@ -626,11 +626,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 		if err != nil {
 			return value{}, err
 		}
-		indexNum, ok := index.numChecked()
-		if !ok {
-			return value{}, newError("field index not a number: %q", p.toString(index))
-		}
-		return p.getField(int(indexNum))
+		return p.getField(int(index.num()))
 
 	case *VarExpr:
 		// Variable read expression (scope is global, local, or special)
@@ -870,11 +866,7 @@ func (p *interp) evalForAugAssign(expr Expr) (v value, arrayIndex string, fieldI
 		if err != nil {
 			return value{}, "", 0, err
 		}
-		indexNum, ok := index.numChecked()
-		if !ok {
-			return value{}, "", 0, newError("field index not a number: %q", p.toString(index))
-		}
-		fieldIndex = int(indexNum)
+		fieldIndex = int(index.num())
 		v, err = p.getField(fieldIndex)
 		if err != nil {
 			return value{}, "", 0, err
@@ -1217,11 +1209,7 @@ func (p *interp) assign(left Expr, right value) error {
 		if err != nil {
 			return err
 		}
-		indexNum, ok := index.numChecked()
-		if !ok {
-			return newError("field index not a number: %q", p.toString(index))
-		}
-		return p.setField(int(indexNum), p.toString(right))
+		return p.setField(int(index.num()), p.toString(right))
 	}
 	// Shouldn't happen
 	panic(fmt.Sprintf("unexpected lvalue type: %T", left))
