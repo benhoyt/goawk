@@ -81,43 +81,37 @@ func (v value) boolean() bool {
 // format if a number value. Integers are a special case and don't
 // use floatFormat.
 func (v value) str(floatFormat string) string {
-	switch v.typ {
-	case typeNum:
-		if math.IsNaN(v.n) {
+	if v.typ == typeNum {
+		switch {
+		case math.IsNaN(v.n):
 			return "nan"
-		} else if math.IsInf(v.n, 0) {
+		case math.IsInf(v.n, 0):
 			if v.n < 0 {
 				return "-inf"
 			} else {
 				return "inf"
 			}
-		} else if v.n == float64(int(v.n)) {
+		case v.n == float64(int(v.n)):
 			return strconv.Itoa(int(v.n))
-		} else {
+		default:
 			return fmt.Sprintf(floatFormat, v.n)
 		}
-	case typeStr, typeNumStr:
-		return v.s
-	default:
-		return ""
 	}
+	// For typeStr and typeStrNum we already have the string, for
+	// typeNull v.s == "".
+	return v.s
 }
 
 // Return value's number value, converting from string if necessary
 func (v value) num() float64 {
-	switch v.typ {
-	case typeNum:
-		return v.n
-	case typeStr:
+	if v.typ == typeStr {
 		// Ensure string starts with a float and convert it
 		return parseFloatPrefix(v.s)
-	case typeNumStr:
-		// If it's a numeric string, we already have the float value
-		// from the numStr() call
-		return v.n
-	default:
-		return 0
 	}
+	// Handle case for typeNum and typeStrNum. If it's a numeric
+	// string, we already have the float value from the numStr()
+	// call. For typeNull v.n == 0.
+	return v.n
 }
 
 // Like strconv.ParseFloat, but parses at the start of string and
