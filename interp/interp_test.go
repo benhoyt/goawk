@@ -888,6 +888,41 @@ func TestConfigVarsCorrect(t *testing.T) {
 	}
 }
 
+func TestConfigVarsWithNativeFuncs(t *testing.T) {
+	funcs := map[string]interface{}{
+		"foo": func(i int) int {
+			return i
+		},
+	}
+	prog, err := parser.ParseProgram(
+		[]byte(`BEGIN { print foo(x) }`), &parser.ParserConfig{
+			Funcs: funcs,
+		},
+	)
+	if err != nil {
+		t.Fatalf("error parsing: %v", err)
+	}
+
+	outBuf := &bytes.Buffer{}
+	errBuf := &bytes.Buffer{}
+	config := &interp.Config{
+		Stdin:  strings.NewReader(""),
+		Output: outBuf,
+		Error:  errBuf,
+		Funcs:  funcs,
+		Vars:   []string{"x", "5"},
+	}
+	if _, err = interp.ExecProgram(prog, config); err != nil {
+		t.Fatal(err)
+	}
+
+	exp := "5\n"
+	normalized := normalizeNewlines(outBuf.String() + errBuf.String())
+	if normalized != exp {
+		t.Fatalf("expected %q, got %q", exp, normalized)
+	}
+}
+
 func benchmarkProgram(b *testing.B, funcs map[string]interface{},
 	input, expected, srcFormat string, args ...interface{},
 ) {

@@ -257,7 +257,11 @@ func (p *parser) resolveVars(prog *Program) {
 					continue
 				}
 				if info.typ == typeUnknown {
-					paramName := prog.Functions[p.functions[info.callName]].Params[info.argIndex]
+					fIndex, exists := p.functions[info.callName]
+					if !exists {
+						continue
+					}
+					paramName := prog.Functions[fIndex].Params[info.argIndex]
 					typ := p.varTypes[info.callName][paramName].typ
 					if typ != typeUnknown {
 						if p.debugTypes {
