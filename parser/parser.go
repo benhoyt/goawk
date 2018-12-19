@@ -461,7 +461,7 @@ func (p *parser) exprList(parse func() Expr) []Expr {
 // Here's where things get slightly interesting: only certain
 // expression types are allowed in print/printf statements,
 // presumably so `print a, b > "file"` is a file redirect instead of
-// a greater-than comparsion. So we kind of have two ways to recurse
+// a greater-than comparison. So we kind of have two ways to recurse
 // down here: expr(), which parses all expressions, and printExpr(),
 // which skips PIPE GETLINE and GREATER expressions.
 
@@ -862,7 +862,7 @@ func (p *parser) primary() Expr {
 	}
 }
 
-// Parse /.../ regex or generic espression:
+// Parse /.../ regex or generic expression:
 //
 //     REGEX | expr
 //

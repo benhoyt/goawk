@@ -1098,7 +1098,7 @@ func (p *interp) compileRegex(regex string) (*regexp.Regexp, error) {
 // Evaluate simple binary expression and return result
 func (p *interp) evalBinary(op Token, l, r value) (value, error) {
 	// Note: cases are ordered (very roughly) in order of frequency
-	// of occurence for performance reasons. Benchmark on common code
+	// of occurrence for performance reasons. Benchmark on common code
 	// before changing the order.
 	switch op {
 	case ADD:
