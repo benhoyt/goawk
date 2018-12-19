@@ -622,6 +622,7 @@ func testGoAWK(t *testing.T, src, in, out, errStr string, funcs map[string]inter
 		Stdin:  strings.NewReader(in),
 		Output: outBuf,
 		Error:  errBuf,
+		Vars:   []string{"_var", "42"},
 		Funcs:  funcs,
 	}
 	_, err = interp.ExecProgram(prog, config)
@@ -857,6 +858,18 @@ BEGIN { x=4; y=5; print foo(x), bar(y) }
 		{`BEGIN { print add(1, add(2, 3)) }`, "", "6\n", "",
 			map[string]interface{}{
 				"add": func(a, b float64) float64 { return a + b },
+			}},
+		{`BEGIN { print foo(x) }`, "", "0\n", "",
+			map[string]interface{}{
+				"foo": func(i int) int { return i },
+			}},
+		{`BEGIN { print foo(_var) }`, "", "42\n", "",
+			map[string]interface{}{
+				"foo": func(i int) int { return i },
+			}},
+		{`function foo(y) { return y/2 }  BEGIN { print foo(_var) }`, "", "21\n", "",
+			map[string]interface{}{
+				"foo": func(i int) int { return i },
 			}},
 	}
 	for _, test := range tests {

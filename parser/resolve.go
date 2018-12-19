@@ -253,21 +253,27 @@ func (p *parser) resolveVars(prog *Program) {
 		progressed := false
 		for funcName, infos := range p.varTypes {
 			for name, info := range infos {
-				if info.scope == ScopeSpecial {
+				if info.scope == ScopeSpecial || info.typ != typeUnknown {
+					// It's a special var or type is already known
 					continue
 				}
-				if info.typ == typeUnknown {
-					paramName := prog.Functions[p.functions[info.callName]].Params[info.argIndex]
-					typ := p.varTypes[info.callName][paramName].typ
-					if typ != typeUnknown {
-						if p.debugTypes {
-							fmt.Fprintf(p.debugWriter, "resolving %s:%s to %s\n",
-								funcName, name, typ)
-						}
-						info.typ = typ
-						p.varTypes[funcName][name] = info
-						progressed = true
+				funcIndex, ok := p.functions[info.callName]
+				if !ok {
+					// Function being called is a native function
+					continue
+				}
+				// Determine var type based on type of this parameter
+				// in the called function (if we know that)
+				paramName := prog.Functions[funcIndex].Params[info.argIndex]
+				typ := p.varTypes[info.callName][paramName].typ
+				if typ != typeUnknown {
+					if p.debugTypes {
+						fmt.Fprintf(p.debugWriter, "resolving %s:%s to %s\n",
+							funcName, name, typ)
 					}
+					info.typ = typ
+					p.varTypes[funcName][name] = info
+					progressed = true
 				}
 			}
 		}
