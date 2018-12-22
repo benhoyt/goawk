@@ -91,6 +91,7 @@ type interp struct {
 	fileLineNum int
 	fields      []string
 	numFields   int
+	haveFields  bool
 
 	// Built-in variables
 	argc            int
@@ -897,6 +898,7 @@ func (p *interp) getVar(scope VarScope, index int) value {
 	default: // ScopeSpecial
 		switch index {
 		case V_NF:
+			p.ensureFields()
 			return num(float64(p.numFields))
 		case V_NR:
 			return num(float64(p.lineNum))
@@ -963,6 +965,7 @@ func (p *interp) setVar(scope VarScope, index int, v value) error {
 			if numFields > maxFieldIndex {
 				return newError("NF set too large: %d", numFields)
 			}
+			p.ensureFields()
 			p.numFields = numFields
 			if p.numFields < len(p.fields) {
 				p.fields = p.fields[:p.numFields]
@@ -1046,6 +1049,7 @@ func (p *interp) getField(index int) (value, error) {
 	if index == 0 {
 		return numStr(p.line), nil
 	}
+	p.ensureFields()
 	if index > len(p.fields) {
 		return str(""), nil
 	}
@@ -1065,6 +1069,7 @@ func (p *interp) setField(index int, value string) error {
 		return newError("field index too large: %d", index)
 	}
 	// If there aren't enough fields, add empty string fields in between
+	p.ensureFields()
 	for i := len(p.fields); i < index; i++ {
 		p.fields = append(p.fields, "")
 	}

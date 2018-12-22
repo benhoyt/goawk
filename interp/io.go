@@ -281,17 +281,29 @@ func (p *interp) setFile(filename string) {
 	p.fileLineNum = 0
 }
 
-// Setup for a new input line, and parse it into fields
+// Setup for a new input line (but don't parse it into fields till we
+// need to)
 func (p *interp) setLine(line string) {
 	p.line = line
+	p.haveFields = false
+}
+
+// Ensure that the current line is parsed into fields, splitting it
+// into fields if it hasn't been already
+func (p *interp) ensureFields() {
+	if p.haveFields {
+		return
+	}
+	p.haveFields = true
+
 	if p.fieldSep == " " {
 		// FS space (default) means split fields on any whitespace
-		p.fields = strings.Fields(line)
-	} else if line == "" {
+		p.fields = strings.Fields(p.line)
+	} else if p.line == "" {
 		p.fields = nil
 	} else {
 		// Split on FS as a regex
-		p.fields = p.fieldSepRegex.Split(line, -1)
+		p.fields = p.fieldSepRegex.Split(p.line, -1)
 
 		// Special case for when RS=="" and FS is single character,
 		// split on newline in addition to FS. See more here:
