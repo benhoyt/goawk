@@ -156,12 +156,12 @@ func (p *parser) resolveUserCalls(prog *Program) {
 // type based on context, so mark the types for these as unknown.
 func (p *parser) processUserCallArg(funcName string, arg Expr, index int) {
 	if varExpr, ok := arg.(*VarExpr); ok {
-		ref := p.varTypes[p.funcName][varExpr.Name].ref
+		scope, varFuncName := p.getScope(varExpr.Name)
+		ref := p.varTypes[varFuncName][varExpr.Name].ref
 		if ref == varExpr {
 			// Only applies if this is the first reference to this
 			// variable (otherwise we know the type already)
-			scope := p.varTypes[p.funcName][varExpr.Name].scope
-			p.varTypes[p.funcName][varExpr.Name] = typeInfo{typeUnknown, ref, scope, 0, funcName, index}
+			p.varTypes[varFuncName][varExpr.Name] = typeInfo{typeUnknown, ref, scope, 0, funcName, index}
 		}
 		// Mark the last related varRef (the most recent one) as a
 		// call argument for later error handling

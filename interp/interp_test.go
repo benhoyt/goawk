@@ -505,6 +505,11 @@ BEGIN { early() }
 		{`function f(x) { 0 in _; f(_) }  BEGIN { f() }  # !awk !gawk`, "", "",
 			`parse error at 1:25: can't pass array "_" as scalar param`, ""},
 		{`BEGIN { for (i=0; i<1001; i++) f(); print x }  function f() { x++ }`, "", "1001\n", "", ""},
+		{`
+function bar(y) { return y[1] }
+function foo() { return bar(x) }
+BEGIN { x[1] = 42; print foo() }
+`, "", "42\n", "", ""},
 
 		// Type checking / resolver tests
 		{`BEGIN { a[x]; a=42 }`, "", "", `parse error at 1:15: can't use array "a" as scalar`, "array"},
