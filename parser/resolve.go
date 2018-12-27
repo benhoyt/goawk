@@ -387,7 +387,7 @@ func (p *parser) resolveVars(prog *Program) {
 	}
 
 	// Patch up variable indexes (interpreter uses an index instead
-	// the name for more efficient lookups)
+	// of name for more efficient lookups)
 	for _, varRef := range p.varRefs {
 		info := p.varTypes[varRef.funcName][varRef.ref.Name]
 		if info.typ == typeArray && !varRef.isArg {
@@ -420,16 +420,20 @@ func (p *parser) getVarFuncName(prog *Program, name, inFunc string) string {
 	return ""
 }
 
+// Record a "multi expression" (comma-separated pseudo-expression
+// used to allow commas around print/printf arguments).
 func (p *parser) multiExpr(exprs []Expr, pos Position) Expr {
 	expr := &MultiExpr{exprs}
 	p.multiExprs[expr] = pos
 	return expr
 }
 
+// Mark the multi expression as used (by a print/printf statement).
 func (p *parser) useMultiExpr(expr *MultiExpr) {
 	delete(p.multiExprs, expr)
 }
 
+// Check that there are no unused multi expressions (syntax error).
 func (p *parser) checkMultiExprs() {
 	if len(p.multiExprs) == 0 {
 		return

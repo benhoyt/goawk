@@ -471,7 +471,7 @@ var errorType = reflect.TypeOf((*error)(nil)).Elem()
 
 // Check that native function with given name is okay to call from
 // AWK, return a *interp.Error if not. This checks that f is actually
-// a function, and that it's parameter and return types are good.
+// a function, and that its parameter and return types are good.
 func checkNativeFunc(name string, f interface{}) error {
 	if KeywordToken(name) != ILLEGAL {
 		return newError("can't use keyword %q as native function name", name)
