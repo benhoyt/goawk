@@ -193,21 +193,27 @@ func TestGAWK(t *testing.T) {
 			inputPath := filepath.Join(gawkDir, testName+".in")
 			okPath := filepath.Join(gawkDir, testName+".ok")
 
-			prog, err := parseGoAWK(srcPath)
-			if err != nil {
-				t.Fatal(err)
-			}
-			output, err := interpGoAWK(prog, inputPath)
-			if err != nil {
-				t.Fatal(err)
-			}
-			output = normalizeNewlines(output)
-
 			expected, err := ioutil.ReadFile(okPath)
 			if err != nil {
 				t.Fatal(err)
 			}
 			expected = normalizeNewlines(expected)
+
+			prog, err := parseGoAWK(srcPath)
+			if err != nil {
+				if err.Error() != string(expected) {
+					t.Fatalf("parser error differs, got:\n%s\nexpected:\n%s", err.Error(), expected)
+				}
+				return
+			}
+			output, err := interpGoAWK(prog, inputPath)
+			if err != nil {
+				if err.Error() != string(expected) {
+					t.Fatalf("interp error differs, got:\n%s\nexpected:\n%s", err.Error(), expected)
+				}
+				return
+			}
+			output = normalizeNewlines(output)
 
 			if sortLines[testName] {
 				output = sortedLines(output)
