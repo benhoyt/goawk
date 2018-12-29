@@ -1,2 +1,1 @@
-gawk: aryprm3.awk:4: fatal: attempt to use array `a (from arr)' in a scalar context
-EXIT CODE: 2
+parse error at 4:6: can't use array "a" as scalar

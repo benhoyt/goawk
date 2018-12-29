@@ -1,2 +1,1 @@
-gawk: aryprm7.awk:2: fatal: attempt to use scalar parameter `y' as an array
-EXIT CODE: 2
+parse error at 5:2: can't pass array "a" as scalar param
