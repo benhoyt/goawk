@@ -1,2 +1,1 @@
-gawk: arryref3.awk:17: fatal: attempt to use array `c (from b, from a)' in a scalar context
-EXIT CODE: 2
+parse error at 12:2: can't pass array "b" as scalar param

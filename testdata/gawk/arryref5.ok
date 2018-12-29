@@ -1,2 +1,1 @@
-gawk: arryref5.awk:10: fatal: attempt to use array `a' in a scalar context
-EXIT CODE: 2
+parse error at 2:2: can't pass scalar "a" as array param
