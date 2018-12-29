@@ -173,7 +173,11 @@ func sortedLines(data []byte) []byte {
 	return []byte(strings.Join(lines, "\n") + "\n")
 }
 
-func todoTestGAWK(t *testing.T) {
+func TestGAWK(t *testing.T) {
+	sortLines := map[string]bool{
+		"arryref2": true,
+	}
+
 	gawkDir := filepath.Join(testsDir, "gawk")
 	infos, err := ioutil.ReadDir(gawkDir)
 	if err != nil {
@@ -204,6 +208,11 @@ func todoTestGAWK(t *testing.T) {
 				t.Fatal(err)
 			}
 			expected = normalizeNewlines(expected)
+
+			if sortLines[testName] {
+				output = sortedLines(output)
+				expected = sortedLines(expected)
+			}
 
 			if string(output) != string(expected) {
 				t.Fatalf("output differs, got:\n%s\nexpected:\n%s", output, expected)
