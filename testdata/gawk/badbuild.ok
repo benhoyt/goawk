@@ -1,0 +1,3 @@
+gawk: badbuild.awk:1: $1 == $2 == $3 {
+gawk: badbuild.awk:1:          ^ syntax error
+EXIT CODE: 1

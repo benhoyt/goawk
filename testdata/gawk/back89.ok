@@ -1,0 +1,2 @@
+gawk: back89.awk:1: warning: regexp escape sequence `\8' treated as plain `8'
+a8b

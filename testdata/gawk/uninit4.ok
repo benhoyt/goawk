@@ -1,0 +1,10 @@
+gawk: uninit4.awk:4: warning: reference to uninitialized field `$0'
+
+gawk: uninit4.awk:9: warning: reference to uninitialized field `$0'
+
+gawk: uninit4.awk:10: warning: reference to uninitialized field `$0'
+
+gawk: uninit4.awk:11: warning: reference to uninitialized field `$1'
+
+gawk: uninit4.awk:12: warning: reference to uninitialized field `$2'
+

@@ -1,0 +1,2 @@
+gawk: prmarscl.awk:3: fatal: attempt to use scalar parameter `a' as an array
+EXIT CODE: 2

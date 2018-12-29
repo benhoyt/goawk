@@ -1,0 +1,3 @@
+gawk: synerr1.awk:4: print "hi"
+gawk: synerr1.awk:4: ^ syntax error
+EXIT CODE: 1

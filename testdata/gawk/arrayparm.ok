@@ -1,0 +1,2 @@
+gawk: arrayparm.awk:13: fatal: attempt to use array `i (from foo)' in a scalar context
+EXIT CODE: 2

@@ -1,0 +1,3 @@
+gawk: badassign1.awk:1: BEGIN { $i++ = 3 ; print i }
+gawk: badassign1.awk:1:                  ^ cannot assign a value to the result of a field post-increment expression
+EXIT CODE: 1

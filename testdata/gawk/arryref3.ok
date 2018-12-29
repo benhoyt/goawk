@@ -1,0 +1,2 @@
+gawk: arryref3.awk:17: fatal: attempt to use array `c (from b, from a)' in a scalar context
+EXIT CODE: 2

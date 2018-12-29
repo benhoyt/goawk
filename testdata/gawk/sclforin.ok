@@ -1,0 +1,2 @@
+gawk: sclforin.awk:1: fatal: attempt to use scalar `j' as an array
+EXIT CODE: 2

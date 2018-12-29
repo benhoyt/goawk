@@ -1,0 +1,3 @@
+gawk: uninit3.awk:1: warning: function `f': parameter `x' shadows global variable
+gawk: uninit3.awk:2: warning: reference to uninitialized argument `x'
+

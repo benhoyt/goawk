@@ -1,0 +1,22 @@
+@node Glossario
+@unnumbered Glossario
+
+@table @asis
+@item Azione
+Una serie di istruzioni @command{awk} associate a una regola.  Se
+l'espressione di ricerca della regola individua un record in input,
+@command{awk} esegue su quel record l'azione relativa.  Le azioni sono
+sempre racchiuse fra parentesi graffe.
+(@xref{Panoramica sulle azioni}).
+
+@item Spazio bianco
+Una sequenza di spazi, TAB, o caratteri di "a capo" presenti in un record in
+input o in una stringa.
+@end table
+
+@end ifclear
+
+@c The GNU General Public License.
+
+@c aggiornato alla versione: settembre 2014
+@c ultimo aggiornamento: 14 novembre 2014

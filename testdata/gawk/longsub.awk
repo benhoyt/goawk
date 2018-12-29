@@ -1,0 +1,1 @@
+{sub( "^.*AA", "BB"); print}

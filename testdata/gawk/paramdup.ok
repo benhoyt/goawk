@@ -1,0 +1,3 @@
+gawk: paramdup.awk:3: error: function `foo': parameter #4, `b', duplicates parameter #2
+gawk: paramdup.awk:3: error: function `foo': parameter #5, `a', duplicates parameter #1
+EXIT CODE: 1

@@ -1,0 +1,4 @@
+gawk: uninit2.awk:1: warning: reference to uninitialized variable `a'
+1
+gawk: uninit2.awk:2: warning: reference to uninitialized variable `b'
+1

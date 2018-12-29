@@ -1,0 +1,2068 @@
+%IH:exertion
+%P:nut'i
+%G:exertion
+%OIH:exertion
+%C:N
+%SF:abstractions-misc
+%S:JOPA/EDFR/VESE
+%ES:000088
+%UID:002463
+%MD:1999/03/15
+
+%IH:information
+%P:ts'iyantsuk t'eooninzun
+%G:information
+%OIH:information
+%C:N
+%SF:abstractions-misc
+%S:JOPA/BRBI
+%UID:000986
+%MD:1997/12/17
+
+%IH:interval
+%P:k'et'uk
+%G:interval
+%OIH:interval
+%C:N
+%SF:abstractions-misc
+%S:MAGO
+%ES:001077
+%UID:000873
+%MD:1997/12/11
+
+%IH:language
+%P:khunek
+%G:language, word, message
+%OIH:language/word/message
+%POSS:ghunek
+%P1p:neghunek
+%C:N
+%SF:abstractions-misc
+%S:MAGO/BRBI/JOPA/EDFR/VESE/JEKO
+%UID:000928
+%MD:2001/02/10
+
+%IH:word
+%P:khunek
+%G:language, word, message
+%OIH:language/word/message
+%POSS:ghunek
+%P1p:neghunek
+%C:N
+%SF:abstractions-misc
+%S:MAGO/BRBI/JOPA/EDFR/VESE/JEKO
+%UID:000928
+%MD:2001/02/10
+
+%IH:message
+%P:khunek
+%G:language, word, message
+%OIH:language/word/message
+%POSS:ghunek
+%P1p:neghunek
+%C:N
+%SF:abstractions-misc
+%S:MAGO/BRBI/JOPA/EDFR/VESE/JEKO
+%UID:000928
+%MD:2001/02/10
+
+%IH:running
+%P:gal
+%G:running
+%OIH:running
+%C:N
+%R:Dugal ndesda. He got hurt while running.
+%SF:abstractions-misc
+%S:JOPA
+%ES:000535
+%UID:002462
+%MD:1999/03/15
+
+%IH:work
+%P:t'en
+%G:work
+%OIH:work
+%C:N
+%SF:abstractions-misc
+%S:VESE/PEJO
+%ES:000672
+%UID:003028
+%POCKET:N
+%MD:2000/10/04
+
+%IH:work
+%P:'ut'en
+%G:work
+%OIH:work
+%C:N
+%SF:abstractions-misc
+%P1p:neye'ut'en
+%S:JOPA
+%ES:001041
+%UID:004264
+%POCKET:Y
+%MD:2001/03/15
+
+%IH:Spotted Frog
+%P:dulkw'ah
+%G:Spotted Frog
+%OIH:Spotted Frog/Frog, Spotted
+%SN:Rana pretiosa
+%MN:Lives in water and has red markings on the belly.
+%PICTURE:/home/poser/Research/Dakelh/Pictures/psfiles/SpottedFrog.ps
+%CAPTION:{\qc Tsasdli} --- Spotted Frog
+%PICPERMISSION:N
+%PICCREDIT:Drawing of Spotted Frog from {\it The Amphibians of British Columbia\/}.
+%C:N
+%SF:amphibiansandreptiles
+%S:EDFR
+%UID:004111
+%POCKET:Y
+%MD:2001/03/07
+
+%IH:Frog, Spotted
+%P:dulkw'ah
+%G:Spotted Frog
+%OIH:Spotted Frog/Frog, Spotted
+%SN:Rana pretiosa
+%MN:Lives in water and has red markings on the belly.
+%PICTURE:/home/poser/Research/Dakelh/Pictures/psfiles/SpottedFrog.ps
+%CAPTION:{\qc Tsasdli} --- Spotted Frog
+%PICPERMISSION:N
+%PICCREDIT:Drawing of Spotted Frog from {\it The Amphibians of British Columbia\/}.
+%C:N
+%SF:amphibiansandreptiles
+%S:EDFR
+%UID:004111
+%POCKET:Y
+%MD:2001/03/07
+
+%IH:lizard
+%P:chunlai
+%G:salamander, lizard
+%OIH:lizard/salamander
+%MN:The only species of salamander found in the region is the
+    Long-toed Salamander {\it Ambystoma macrodactylum\/}. No lizards
+    are found in the region. However, this term is applied to other
+    varieties of salamander and to lizards, such as the gekkos sold as
+    pets.
+%FGREF:Corkran \& Thoms (1996;39)
+%SN:Ambystoma macrodactylum
+%C:N
+%SF:amphibiansandreptiles
+%S:LITM/JOPA/BRBI
+%UID:000157
+%MD:1998/05/16
+
+%IH:salamander
+%P:chunlai
+%G:salamander, lizard
+%OIH:lizard/salamander
+%MN:The only species of salamander found in the region is the
+    Long-toed Salamander {\it Ambystoma macrodactylum\/}. No lizards
+    are found in the region. However, this term is applied to other
+    varieties of salamander and to lizards, such as the gekkos sold as
+    pets.
+%FGREF:Corkran \& Thoms (1996;39)
+%SN:Ambystoma macrodactylum
+%C:N
+%SF:amphibiansandreptiles
+%S:LITM/JOPA/BRBI
+%UID:000157
+%MD:1998/05/16
+
+%IH:snake
+%P:tl'ughus
+%G:snake
+%OIH:snake
+%C:N
+%MN:The only snake found in the region is the Common Garter Snake
+    {\it Thamnophis sirtalis\/}. However, the term is applied to all snakes.
+%SN:Thamnophis sirtalis
+%SF:amphibiansandreptiles
+%S:LITM/JOPA/BRBI/MAGO
+%UID:000250
+%MD:1998/12/07
+
+%IH:Western Toad
+%P:tsasdli
+%G:Western Toad
+%SN:Bufo boreas
+%OIH:Western Toad/Toad, Western
+%MN:Lives on land.
+%SF:amphibiansandreptiles
+%C:N
+%S:LITM/JOPA/BRBI/MAGO/STJA/EDFR
+%UID:000059
+%MD:2001/03/07
+
+%IH:Toad, Western
+%P:tsasdli
+%G:Western Toad
+%SN:Bufo boreas
+%OIH:Western Toad/Toad, Western
+%MN:Lives on land.
+%SF:amphibiansandreptiles
+%C:N
+%S:LITM/JOPA/BRBI/MAGO/STJA/EDFR
+%UID:000059
+%MD:2001/03/07
+
+%IH:bitch
+%P:lhits'e
+%G:bitch, female dog
+%OIH:bitch/dog, female
+%C:N
+%SF:animals-domestic
+%S:JOPA/EDFR/VESE
+%UID:002446
+%MD:1999/03/15
+
+%IH:dog, female
+%P:lhits'e
+%G:bitch, female dog
+%OIH:bitch/dog, female
+%C:N
+%SF:animals-domestic
+%S:JOPA/EDFR/VESE
+%UID:002446
+%MD:1999/03/15
+
+%IH:cow
+%P:musdus
+%G:cow
+%OIH:cow
+%C:N
+%P2s:nmusdus
+%ETYM:Loan from Cree {\qf mostos} ``buffalo''.
+%LOANSOURCE:Cree
+%SF:animals-domestic
+%S:LITM/JOPA/BRBI/MAGO
+%UID:000036
+%MD:1997/06/12
+
+%IH:dog
+%P:lhi
+%G:dog
+%OIH:dog
+%C:N
+%DUOPLURAL:lhike
+%SF:animals-domestic
+%POSS:lik
+%P1s:slik
+%P1p:nelik
+%DUOPLURAL:lhike
+%S:LITM/JOPA/BRBI/STJA/VESE/EDFR/JEKO
+%UID:000270
+%MD:2001/02/15
+
+%IH:donkey
+%P:budzocho
+%G:donkey, mule
+%OIH:donkey/mule
+%SF:animals-domestic
+%ETYM:``big ears''.
+%C:N
+%S:JOPA/BRBI
+%UID:000376
+%MD:1997/11/14
+
+%IH:mule
+%P:budzocho
+%G:donkey, mule
+%OIH:donkey/mule
+%SF:animals-domestic
+%ETYM:``big ears''.
+%C:N
+%S:JOPA/BRBI
+%UID:000376
+%MD:1997/11/14
+
+%IH:horse
+%P:yeztli
+%G:horse
+%OIH:horse
+%SF:animals-domestic
+%ETYM:A contraction of {\qc yezihlhi} ``elk dog''.
+%C:N
+%S:LITM/JOPA/BRBI/PEJO
+%UID:000042
+%MD:2000/10/21
+
+%IH:dogs
+%P:lhike
+%G:Irregular plural of {\qc lhi}, q.v.
+%OIH:dogs
+%C:N
+%SF:animals-domestic
+%S:LITM/BRBI/JOPA/STJA
+%UID:000293
+%MD:1999/01/26
+
+%IH:lamb
+%P:sbaiyaz
+%G:lamb
+%OIH:lamb
+%C:N
+%SF:animals-domestic
+%S:LITM
+%UID:000254
+%MD:1997/06/16
+
+%IH:pig
+%P:gugoos
+%G:pig
+%OIH:pig
+%C:N
+%ETYM:Ultimately borrowed from French {\qf coche}, probably via Cree.
+%LOANSOURCE:Cree
+%SF:animals-domestic
+%S:LITM/JOPA/BRBI
+%UID:000133
+%MD:1997/06/16
+
+%IH:bat
+%P:'ut'az
+%G:bat
+%OIH:bat
+%SF:animals-land
+%C:N
+%S:JOPA/BRBI
+%UID:000390
+%MD:1997/11/14
+
+%IH:bat
+%P:liyabdut'ai
+%G:bat
+%MN:The only kind of bat found in the region is the Little Brown Myotis.
+%OIH:bat
+%SF:animals-land
+%SN:Myotis lucifugus
+%ETYM:Literally, ``devil bird'', a compound of {\qc liyab} ``devil'', a loan from
+      French {\qf le diable}, and {\qc dut'ai} ``bird''. 
+%LOANSOURCE:French
+%C:N
+%S:JOPA/BRBI
+%UID:000215
+%MD:1997/06/16
+
+%IH:black bear
+%P:sus
+%G:black bear
+%OIH:black bear
+%C:N
+%SF:animals-land
+%SN:Ursus americanus
+%S:LITM/JOPA/BRBI/STJA/EDFR/VESE/JEKO
+%UID:000048
+%MD:1998/12/19
+
+%IH:buffalo
+%P:musduscho dughai
+%G:buffalo
+%OIH:buffalo
+%SF:animals-land
+%C:N
+%ETYM:``big hairy cow''.
+%S:JOPA/EDFR
+%UID:003478
+%POCKET:Y
+%MD:2000/11/04
+
+%IH:buffalo
+%P:tl'ok'umusdus
+%G:buffalo
+%OIH:buffalo
+%SF:animals-land
+%C:N
+%S:JOPA/BRBI
+%UID:000374
+%MD:2000/11/01
+
+%IH:bull moose
+%P:jenyo
+%G:bull moose
+%OIH:bull moose/moose, bull
+%SF:animals-land
+%C:N
+%S:MAGO/JOPA/VESE/EDFR/JEKO
+%UID:000474
+%MD:1999/05/11
+
+%IH:moose, bull
+%P:jenyo
+%G:bull moose
+%OIH:bull moose/moose, bull
+%SF:animals-land
+%C:N
+%S:MAGO/JOPA/VESE/EDFR/JEKO
+%UID:000474
+%MD:1999/05/11
+
+%IH:moose, bull
+%P:denyo
+%G:bull moose
+%OIH:moose, bull
+%SF:animals-land
+%C:N
+%S:LITM/JOPA
+%UID:000348
+%MD:1997/06/18
+
+%IH:calf moose
+%P:tsiyeyaz
+%G:calf moose
+%OIH:calf moose/moose, calf
+%SF:animals-land
+%C:N
+%S:JOPA/BRBI
+%UID:000380
+%MD:1997/11/14
+
+%IH:moose, calf
+%P:tsiyeyaz
+%G:calf moose
+%OIH:calf moose/moose, calf
+%SF:animals-land
+%C:N
+%S:JOPA/BRBI
+%UID:000380
+%MD:1997/11/14
+
+%IH:calf moose
+%P:duniyaz
+%G:calf moose
+%OIH:calf moose/moose, calf
+%C:N
+%SF:animals-land
+%S:LITM/JOPA/BRBI
+%UID:000245
+%MD:1997/06/16
+
+%IH:moose, calf
+%P:duniyaz
+%G:calf moose
+%OIH:calf moose/moose, calf
+%C:N
+%SF:animals-land
+%S:LITM/JOPA/BRBI
+%UID:000245
+%MD:1997/06/16
+
+%IH:caribou
+%P:whudzih
+%G:caribou
+%OIH:caribou
+%C:N
+%SF:animals-land
+%SN:Rangifer tarandus
+%S:JOPA/BRBI/MAGO/EDFR/VESE/JEKO
+%UID:000274
+%MD:1999/05/11
+
+%IH:cat
+%P:boos
+%G:cat
+%OIH:cat
+%C:N
+%SN:Felis domesticus
+%ETYM:Loan from English {\qf puss}, possibly via Chinook Jargon.
+%LOANSOURCE:English
+%SF:animals-land
+%S:LITM/JOPA/BRBI
+%UID:000137
+%MD:1997/12/17
+
+%IH:chipmunk
+%P:ts'uwhuljos
+%G:chipmunk
+%OIH:chipmunk
+%C:N
+%SF:animals-land
+%S:LITM/JOPA/BRBI
+%UID:000146
+%MD:1997/06/16
+
+%IH:cougar
+%P:booscho
+%G:cougar
+%OIH:cougar
+%SF:animals-land
+%SN:Felis concolor
+%C:N
+%ETYM:Literally, ``big cat'', where {\qc boos} ``cat'' is a loan from English
+      {\qf puss}, possibly via Chinook Jargon.
+%S:JOPA/BRBI
+%UID:000050
+%MD:1997/11/14
+
+%IH:cow moose
+%P:duni'at
+%G:cow moose
+%OIH:cow moose/moose, cow
+%SF:animals-land
+%C:N
+%S:JOPA/BRBI
+%UID:000377
+%MD:1997/11/14
+
+%IH:moose, cow
+%P:duni'at
+%G:cow moose
+%OIH:cow moose/moose, cow
+%SF:animals-land
+%C:N
+%S:JOPA/BRBI
+%UID:000377
+%MD:1997/11/14
+
+%IH:coyote
+%P:tintulhi
+%G:coyote
+%OIH:coyote
+%C:N
+%SF:animals-land
+%SN:Canis latrans
+%S:JOPA/BRBI
+%R:LITM has chuntulhi.
+%UID:000155
+%MD:1997/06/16
+
+%IH:deer
+%P:yests'e
+%G:deer
+%OIH:deer
+%SF:animals-land
+%C:N
+%S:LITM/JOPA/BRBI/EDFR
+%UID:000132
+%MD:1998/12/16
+
+%IH:dry cow moose
+%P:dets'it
+%G:dry cow moose
+%OIH:dry cow moose/moose, dry cow
+%SF:animals-land
+%C:N
+%S:JOPA/BRBI
+%UID:000378
+%MD:1997/11/14
+
+%IH:moose, dry cow
+%P:dets'it
+%G:dry cow moose
+%OIH:dry cow moose/moose, dry cow
+%SF:animals-land
+%C:N
+%S:JOPA/BRBI
+%UID:000378
+%MD:1997/11/14
+
+%IH:elk
+%P:yezih
+%G:elk
+%OIH:elk
+%SF:animals-land
+%C:N
+%R:STJA doesn't use this.
+%S:JOPA/BRBI
+%UID:000382
+%MD:1997/11/14
+
+%IH:beaver, female
+%P:tsa'at
+%G:female beaver
+%OIH:beaver, female
+%C:N
+%SF:animals-land
+%S:STJA
+%UID:001295
+%MD:1998/12/08
+
+%IH:fisher
+%P:chunihcho
+%G:fisher
+%OIH:fisher
+%ETYM:``big marten''.
+%SF:animals-land
+%SN:Martes pennanti
+%C:N
+%S:JOPA/BRBI/MAGO
+%UID:000385
+%MD:2000/06/18
+
+%IH:flying squirrel
+%P:ts'unalhbuz
+%G:flying squirrel
+%OIH:flying squirrel
+%SF:animals-land
+%SN:Glaucomys sabrinus alpinus
+%PICTURE:/home/poser/Research/Dakelh/Pictures/psfiles/FlyingSquirrel.ps
+%CAPTION:{\qc ts'unulhbuz} --- Flying Squirrel
+%PICPERMISSION:N
+%PICCREDIT:Drawing of Flying Squirrel from {\it The Mammals of British Columbia\/}.
+%C:N
+%S:JOPA/BRBI
+%UID:000389
+%MD:1997/11/14
+
+%IH:fox
+%P:nanguz
+%G:fox
+%OIH:fox
+%C:N
+%SF:animals-land
+%S:MAGO
+%UID:000139
+%MD:2001/02/26
+
+%IH:grizzly bear
+%P:shas
+%G:grizzly bear
+%OIH:grizzly bear
+%C:N
+%SF:animals-land
+%S:LITM/JOPA/BRBI/VESE/EDFR/JEKO
+%UID:000039
+%MD:1997/06/12
+
+%IH:grizzly bear cub
+%P:shasyaz
+%G:grizzly bear cub
+%OIH:grizzly bear cub/cub, grizzly bear
+%C:N
+%SF:animals-land
+%S:STJA
+%UID:002114
+%MD:1999/02/20
+
+%IH:cub, grizzly bear
+%P:shasyaz
+%G:grizzly bear cub
+%OIH:grizzly bear cub/cub, grizzly bear
+%C:N
+%SF:animals-land
+%S:STJA
+%UID:002114
+%MD:1999/02/20
+
+%IH:grizzly bear sow
+%P:shas'at
+%G:grizzly bear sow
+%OIH:grizzly bear sow/sow, grizzly bear
+%C:N
+%SF:animals-land
+%ETYM:``grizzly bear's wife''.
+%S:STJA
+%UID:002113
+%MD:1999/02/20
+
+%IH:sow, grizzly bear
+%P:shas'at
+%G:grizzly bear sow
+%OIH:grizzly bear sow/sow, grizzly bear
+%C:N
+%SF:animals-land
+%ETYM:``grizzly bear's wife''.
+%S:STJA
+%UID:002113
+%MD:1999/02/20
+
+%IH:lynx
+%P:wasi
+%G:lynx
+%OIH:lynx
+%C:N
+%SF:animals-land
+%SN:Felis lynx
+%ETYM:Loan from Gitksan {\qf wish}.
+%LOANSOURCE:Gitksan
+%S:JOPA/BRBI/STJA/EDFR/VESE/JEKO/MAGO
+%UID:000049
+%MD:2001/04/20
+
+%IH:woodchuck
+%P:k'ani
+%G:woodchuck
+%OIH:woodchuck
+%C:N
+%SF:animals-land
+%SN:Marmota monax
+%S:JOPA/BRBI/PEJO
+%R:Clarified with Josie and Peter 2001/05/28.
+%UID:000391
+%POCKET:Y
+%MD:2001/05/28
+
+%IH:marmot
+%P:dutni
+%G:marmot
+%OIH:marmot
+%SF:animals-land
+%C:N
+%SN:Marmota caligata
+%R:Josie and Peter are not really familiar with marmots but have heard older
+   people talk about them.
+%S:JOPA/PEJO
+%UID:000143
+%MD:1998/02/10
+
+%IH:marten
+%P:chunih
+%G:marten
+%OIH:marten
+%SF:animals-land
+%SN:Martes americana
+%C:N
+%S:JOPA/BRBI/VESE/EDFR/JEKO/MAGO
+%UID:000016
+%MD:2001/04/20
+
+%IH:mink
+%P:telhjoos
+%G:mink
+%OIH:mink
+%C:N
+%SF:animals-land
+%SN:Mustela vison
+%S:LITM/JOPA/BRBI
+%UID:000167
+%MD:1997/06/16
+
+%IH:moose
+%P:duni
+%G:moose
+%OIH:moose
+%C:N
+%SF:animals-land
+%SN:Alces alces andersoni
+%S:LITM-EDFR/JOPA/BRBI
+%UID:000346
+%MD:1997/06/18
+
+%IH:mouse
+%P:dats'ooz
+%G:mouse
+%OIH:mouse
+%SF:animals-land
+%C:N
+%S:LITM/JOPA/MAGO/VESE/JEKO
+%UID:000156
+%MD:2001/01/22
+
+%IH:muskrat
+%P:tsek'et
+%G:muskrat
+%OIH:muskrat
+%C:N
+%SF:animals-land
+%SN:Ondatra zibethicus
+%S:JOPA/BRBI/STJA/MAGO
+%UID:000335
+%MD:1998/12/08
+
+%IH:moose, newly sexually mature cow
+%P:chanjo
+%G:newly sexually mature cow moose
+%OIH:moose, newly sexually mature cow
+%SF:animals-land
+%C:N
+%S:JOPA/BRBI
+%UID:000379
+%MD:1997/11/14
+
+%IH:pack rat
+%P:looncho
+%G:pack rat
+%OIH:pack rat
+%C:N
+%SF:animals-land
+%S:VESE/JEKO/MAGO
+%UID:000149
+%MD:1999/05/10
+
+%IH:packrat
+%P:dlooncho
+%G:packrat
+%OIH:packrat
+%C:N
+%SF:animals-land
+%S:JOPA
+%UID:002701
+%MD:1999/05/11
+
+%IH:porcupine
+%P:duneza
+%G:porcupine
+%OIH:porcupine
+%SF:animals-land
+%C:N
+%S:JOPA/BRBI/MAGO
+%UID:000388
+%MD:2001/03/06
+
+%IH:porcupine
+%P:ts'it
+%G:porcupine
+%OIH:porcupine
+%SF:animals-land
+%SN:Erethizon dorsatum
+%C:N
+%ETYM:Perhaps derived from the interjection {\qc ts'it} ``don't touch it!''.
+%S:JOPA/BRBI/MAGO/BEMC/STJA
+%UID:000387
+%MD:1998/12/08
+
+%IH:puppy
+%P:lhiyaz
+%G:puppy
+%OIH:puppy
+%C:N
+%SF:animals-land
+%DUOPLURAL:lhiyazke
+%DUOPLURAL:lhikeyaz
+%R:Josie prefers {\qc lhikeyaz}.
+%S:LITM/BRBI/JOPA/EDFR/MAGO-JEKO
+%UID:000182
+%MD:2001/05/26
+
+%IH:squirrel
+%P:nats'ildelh
+%G:Red Squirrel
+%OIH:squirrel/Red Squirrel
+%SN:Tamiasciurus hudsonicus colum.
+%C:N
+%SF:animals-land
+%S:LITM/JOPA/BRBI/STJA
+%UID:000034
+%MD:1999/02/17
+
+%IH:Red Squirrel
+%P:nats'ildelh
+%G:Red Squirrel
+%OIH:squirrel/Red Squirrel
+%SN:Tamiasciurus hudsonicus colum.
+%C:N
+%SF:animals-land
+%S:LITM/JOPA/BRBI/STJA
+%UID:000034
+%MD:1999/02/17
+
+%IH:rabbit
+%P:goh
+%G:rabbit
+%OIH:rabbit
+%C:N
+%SF:animals-land
+%S:LITM/JOPA/VESE/EDFR/JEKO
+%UID:000023
+%MD:1999/05/11
+
+%IH:moose, recently weaned calf
+%P:ooch'ainischoot
+%G:recently weaned calf moose
+%OIH:moose, recently weaned calf
+%SF:animals-land
+%C:N
+%S:JOPA/BRBI
+%UID:000381
+%MD:1997/11/14
+
+%IH:sheep
+%P:sbai
+%G:sheep
+%OIH:sheep
+%C:N
+%SF:animals-land
+%S:MAGO
+%UID:001131
+%MD:1998/02/10
+
+%IH:sheep
+%P:'usbai
+%G:sheep
+%OIH:sheep
+%SF:animals-land
+%C:N
+%S:JOPA/BRBI
+%UID:000375
+%MD:1997/11/14
+
+%IH:shrew
+%P:'ulhguk
+%G:shrew
+%OIH:shrew
+%SF:animals-land
+%C:N
+%S:MAGO/VESE/JEKO
+%UID:000526
+%MD:2001/01/22
+
+%IH:skunk
+%P:hoonliz
+%G:skunk
+%OIH:skunk
+%C:N
+%P2s:unhoonliz
+%SF:animals-land
+%S:LITM/JOPA/BRBI/MAGO/VESE/EDFR/JEKO
+%UID:000052
+%MD:1997/06/12
+
+%IH:weasel
+%P:nohbai
+%G:weasel
+%OIH:weasel
+%C:N
+%SF:animals-land
+%S:JOPA/BRBI/MAGO
+%UID:000141
+%MD:1997/06/16
+
+%IH:wolf
+%P:yus
+%G:wolf
+%OIH:wolf
+%C:N
+%SF:animals-land
+%SN:Canis lupus
+%S:LITM/JOPA/BRBI
+%UID:000051
+%MD:1997/06/12
+
+%IH:wolverine
+%P:noostel
+%G:wolverine
+%OIH:wolverine
+%C:N
+%SF:animals-land
+%SN:Gulo gulo
+%S:JOPA/BRBI/MAGO/VESE/EDFR/JEKO
+%UID:000140
+%MD:2001/04/20
+
+%IH:beaver, young
+%P:tsatsul
+%G:young beaver
+%OIH:beaver, young
+%SF:animals-land
+%C:N
+%S:JOPA/BRBI/STJA
+%UID:000384
+%MD:1998/12/08
+
+%IH:beaver dam
+%P:lht'at
+%G:beaver dam
+%OIH:beaver dam/dam, beaver
+%C:N
+%SF:animals-misc
+%S:STJA
+%UID:001287
+%MD:1998/12/08
+
+%IH:dam, beaver
+%P:lht'at
+%G:beaver dam
+%OIH:beaver dam/dam, beaver
+%C:N
+%SF:animals-misc
+%S:STJA
+%UID:001287
+%MD:1998/12/08
+
+%IH:beaver dam
+%P:'ulh
+%G:beaver dam
+%OIH:beaver dam/dam, beaver
+%C:N
+%SF:animals-misc
+%S:STJA
+%UID:001288
+%MD:1998/12/08
+
+%IH:dam, beaver
+%P:'ulh
+%G:beaver dam
+%OIH:beaver dam/dam, beaver
+%C:N
+%SF:animals-misc
+%S:STJA
+%UID:001288
+%MD:1998/12/08
+
+%IH:beaver lodge
+%P:tsaken
+%G:beaver lodge
+%OIH:beaver lodge
+%C:N
+%SF:animals-misc
+%S:JOPA/BRBI/STJA
+%UID:000405
+%MD:1998/12/08
+
+%IH:beaver path under the ice
+%P:tunyohtsati
+%G:beaver path under the ice
+%OIH:beaver path under the ice
+%C:N
+%SF:animals-misc
+%S:JOPA/EDFR
+%UID:003769
+%POCKET:Y
+%MD:2001/02/13
+
+%IH:black bear den
+%P:sus'an
+%G:black bear den
+%OIH:black bear den
+%C:N
+%SF:animals-misc
+%S:LITM/STJA
+%UID:000131
+%MD:1998/12/08
+
+%IH:tracks, grizzly bear
+%P:shask'oh
+%G:grizzly bear tracks
+%OIH:tracks, grizzly bear
+%C:N
+%SF:animals-misc
+%S:MAGO
+%UID:001132
+%MD:1998/02/10
+
+%IH:leech
+%P:hoolht'ukw
+%G:leech
+%OIH:leech
+%SF:animals-misc
+%C:N
+%S:JOPA/PEJO/EDFR
+%UID:003410
+%POCKET:Y
+%MD:2000/11/01
+
+%IH:leech
+%P:hoot'ub
+%G:leech
+%OIH:leech
+%SF:bugs
+%C:N
+%S:JOPA/BRBI/MAGO
+%UID:000370
+%MD:2000/11/01
+
+%IH:moose tracks
+%P:dunik'oh
+%G:moose tracks
+%OIH:moose tracks
+%C:N
+%SF:animals-misc
+%S:PEJO/JOPA
+%ES:000491
+%UID:003121
+%POCKET:Y
+%MD:2000/09/28
+
+%IH:tracks, rabbit
+%P:gohk'oh
+%G:rabbit tracks
+%OIH:tracks, rabbit
+%C:N
+%SF:animals-misc
+%S:LITM
+%UID:000073
+%MD:1997/06/12
+
+%IH:beaver
+%P:tsa
+%G:beaver
+%OIH:beaver
+%C:N
+%SN:Castor canadensis
+%UID:000044
+%SF:animals-water
+%S:JOPA/BRBI/STJA/EDFR/VESE/JEKO/MAGO
+%MD:2001/04/18
+
+%IH:kit, beaver
+%P:tsayaz
+%G:beaver kit
+%OIH:kit, beaver/beaver, baby
+%SF:animals-water
+%C:N
+%S:STJA
+%UID:001294
+%MD:2000/06/18
+
+%IH:beaver, baby
+%P:tsayaz
+%G:beaver kit
+%OIH:kit, beaver/beaver, baby
+%SF:animals-water
+%C:N
+%S:STJA
+%UID:001294
+%MD:2000/06/18
+
+%IH:beaver, big
+%P:tsati
+%G:big beaver, old beaver
+%OIH:beaver, big/beaver, old
+%C:N
+%SF:animals-water
+%S:LITM/JOPA/BRBI/STJA
+%UID:000206
+%MD:1998/12/08
+
+%IH:beaver, old
+%P:tsati
+%G:big beaver, old beaver
+%OIH:beaver, big/beaver, old
+%C:N
+%SF:animals-water
+%S:LITM/JOPA/BRBI/STJA
+%UID:000206
+%MD:1998/12/08
+
+%IH:otter
+%P:tsis
+%G:otter
+%OIH:otter
+%SF:animals-water
+%SN:Lutra canadensis
+%C:N
+%S:JOPA/BRBI
+%UID:000386
+%MD:1997/11/14
+
+%IH:crow
+%P:datsan
+%G:American Crow
+%C:N
+%SF:bird-gen
+%SN:Corvus brachyrhynchos
+%OIH:crow/American Crow
+%S:LITM/PEJO
+%UID:000158
+%MD:2000/10/21
+
+%IH:American Crow
+%P:datsan
+%G:American Crow
+%C:N
+%SF:bird-gen
+%SN:Corvus brachyrhynchos
+%OIH:crow/American Crow
+%S:LITM/PEJO
+%UID:000158
+%MD:2000/10/21
+
+%IH:Robin, American
+%P:sewh
+%G:American Robin
+%OIH:Robin, American
+%SN:Turdus migratorius
+%C:N
+%SF:bird-gen
+%S:LITM/JOPA/BRBI/PEJO
+%UID:000181
+%MD:2000/10/21
+
+%IH:Bald Eagle
+%P:tsebalyan
+%G:Bald Eagle
+%OIH:Bald Eagle
+%C:N
+%SF:bird-gen
+%SN:Haliaeetus leucocephalus
+%S:LITM/JOPA/BRBI
+%UID:000150
+%MD:1997/06/16
+
+%IH:bird
+%P:dut'ai
+%G:bird, duck
+%OIH:bird/duck
+%C:N
+%SF:bird-gen
+%S:LITM/JOPA/BRBI/MAGO/STJA/PEJO
+%UID:000081
+%MD:2000/09/28
+
+%IH:duck
+%P:dut'ai
+%G:bird, duck
+%OIH:bird/duck
+%C:N
+%SF:bird-gen
+%S:LITM/JOPA/BRBI/MAGO/STJA/PEJO
+%UID:000081
+%MD:2000/09/28
+
+%IH:crane
+%P:delh
+%G:crane
+%OIH:crane
+%C:N
+%SF:bird-gen
+%S:LITM
+%UID:000255
+%MD:1997/06/16
+
+%IH:goose
+%P:khoh
+%G:goose
+%OIH:goose
+%C:N
+%P1s:skhoh
+%P2s:nkhoh
+%P1p:nekhoh
+%POSS:khoh
+%SF:bird-gen
+%S:JOPA/BRBI/MAGO/VESE/EDFR/JEKO
+%UID:000031
+%MD:2001/02/15
+
+%IH:hummingbird
+%P:ts'unalhduz
+%G:hummingbird
+%OIH:hummingbird
+%C:N
+%SF:bird-gen
+%S:LITM/BRBI/JOPA
+%UID:000242
+%MD:1997/06/16
+
+%IH:bird, little
+%P:gagiyaz
+%G:little bird
+%OIH:bird, little
+%C:N
+%QCHECK:Any little bird?
+%SF:bird-gen
+%S:PEJO
+%UID:003115
+%POCKET:Y
+%MD:2000/09/28
+
+%IH:bird, little
+%P:dut'aiyaz
+%G:little bird
+%OIH:bird, little
+%C:N
+%SF:bird-gen
+%S:STJA/JOPA/EDFR/VESE/PEJO
+%UID:001818
+%MD:2000/09/28
+
+%IH:loon
+%P:dadzi
+%G:loon
+%OIH:loon
+%SF:bird-gen
+%SN:Gavia immer
+%C:N
+%S:LITM/JOPA/BRBI
+%UID:000020
+%MD:1997/06/12
+
+%IH:Mallard Duck
+%P:t'ugicho
+%G:Mallard Duck
+%OIH:Mallard Duck
+%C:N
+%SN:Anas platyrhynchos
+%SF:bird-gen
+%S:LITM/JOPA/BRBI/MAGO/VESE/EDFR/JEKO
+%UID:000041
+%MD:1999/05/11
+
+%IH:owl
+%P:musdzoon
+%G:owl
+%OIH:owl
+%C:N
+%SF:bird-gen
+%S:LITM/BRBI/JOPA/MAGO
+%UID:000135
+%MD:1997/12/11
+
+%IH:Red-Necked Grebe
+%P:ts'olh
+%G:Red-necked Grebe
+%MN:A variety of duck locally known as the Helldiver.
+%OIH:Red-Necked Grebe/Helldiver/Grebe, Red-Necked
+%SN:Podiceps grisegena
+%SF:bird-gen
+%C:N
+%S:BRBI/JOPA
+%UID:000263
+%MD:2001/03/08
+
+%IH:Helldiver
+%P:ts'olh
+%G:Red-necked Grebe
+%MN:A variety of duck locally known as the Helldiver.
+%OIH:Red-Necked Grebe/Helldiver/Grebe, Red-Necked
+%SN:Podiceps grisegena
+%SF:bird-gen
+%C:N
+%S:BRBI/JOPA
+%UID:000263
+%MD:2001/03/08
+
+%IH:Grebe, Red-Necked
+%P:ts'olh
+%G:Red-necked Grebe
+%MN:A variety of duck locally known as the Helldiver.
+%OIH:Red-Necked Grebe/Helldiver/Grebe, Red-Necked
+%SN:Podiceps grisegena
+%SF:bird-gen
+%C:N
+%S:BRBI/JOPA
+%UID:000263
+%MD:2001/03/08
+
+%IH:Ruffed grouse
+%P:'utsut
+%G:Ruffed grouse
+%OIH:Ruffed grouse
+%C:N
+%SF:bird-gen
+%S:LITM
+%UID:000218
+%MD:1997/06/16
+
+%IH:Spruce Grouse
+%P:nat'oh
+%G:Spruce Grouse, Fool Hen
+%OIH:Spruce Grouse/Grouse, Spruce/Fool Hen
+%SF:bird-gen
+%SN:Dendragapus canadensis
+%C:N
+%S:MAGO/LITM
+%UID:000539
+%MD:1997/12/04
+
+%IH:Grouse, Spruce
+%P:nat'oh
+%G:Spruce Grouse, Fool Hen
+%OIH:Spruce Grouse/Grouse, Spruce/Fool Hen
+%SF:bird-gen
+%SN:Dendragapus canadensis
+%C:N
+%S:MAGO/LITM
+%UID:000539
+%MD:1997/12/04
+
+%IH:Fool Hen
+%P:nat'oh
+%G:Spruce Grouse, Fool Hen
+%OIH:Spruce Grouse/Grouse, Spruce/Fool Hen
+%SF:bird-gen
+%SN:Dendragapus canadensis
+%C:N
+%S:MAGO/LITM
+%UID:000539
+%MD:1997/12/04
+
+%IH:Steller's Jay
+%P:tehgwuzeh
+%G:Steller's Jay, commonly known locally as ``bluejay''.
+%OIH:Steller's Jay/jay, Steller's/Bluejay (Steller's Jay)
+%SF:bird-gen
+%SN:Cyanocitta stelleri
+%C:N
+%S:JOPA/BRBI
+%UID:000356
+%MD:1997/11/14
+
+%IH:jay, Steller's
+%P:tehgwuzeh
+%G:Steller's Jay, commonly known locally as ``bluejay''.
+%OIH:Steller's Jay/jay, Steller's/Bluejay (Steller's Jay)
+%SF:bird-gen
+%SN:Cyanocitta stelleri
+%C:N
+%S:JOPA/BRBI
+%UID:000356
+%MD:1997/11/14
+
+%IH:Bluejay (Steller's Jay)
+%P:tehgwuzeh
+%G:Steller's Jay, commonly known locally as ``bluejay''.
+%OIH:Steller's Jay/jay, Steller's/Bluejay (Steller's Jay)
+%SF:bird-gen
+%SN:Cyanocitta stelleri
+%C:N
+%S:JOPA/BRBI
+%UID:000356
+%MD:1997/11/14
+
+%IH:sandpiper
+%P:wedlew
+%G:sandpiper
+%OIH:sandpiper
+%C:N
+%SN:Eremophila alpestris et sim.
+%SF:bird-gen
+%S:LITM
+%UID:000237
+%MD:2002/07/19
+
+%IH:seagull
+%P:besk'i
+%G:seagull
+%OIH:seagull
+%C:N
+%SN:Larus species
+%SF:bird-gen
+%S:LITM
+%UID:000136
+%MD:2002/07/19
+
+%IH:swan
+%P:ts'incho
+%G:swan
+%OIH:swan
+%C:N
+%SF:bird-gen
+%S:LITM
+%UID:000222
+%MD:1997/06/16
+
+%IH:Tree Swallow
+%P:'uschas
+%G:Tree Swallow
+%OIH:Tree Swallow
+%SF:bird-gen
+%SN:Tachycineta bicolor
+%C:N
+%S:MAGO
+%UID:000535
+%MD:1997/11/22
+
+%IH:Whiskey Jack
+%P:gwuzeh
+%G:Whiskey Jack, Gray Jay, Canadian Jay
+%OIH:Whiskey Jack/Jay, Gray/Jay, Canadian
+%C:N
+%SN:Perisoreus canadensis
+%SF:bird-gen
+%S:LITM/JOPA/BRBI/MAGO
+%UID:000148
+%MD:1997/11/22
+
+%IH:Jay, Gray
+%P:gwuzeh
+%G:Whiskey Jack, Gray Jay, Canadian Jay
+%OIH:Whiskey Jack/Jay, Gray/Jay, Canadian
+%C:N
+%SN:Perisoreus canadensis
+%SF:bird-gen
+%S:LITM/JOPA/BRBI/MAGO
+%UID:000148
+%MD:1997/11/22
+
+%IH:Jay, Canadian
+%P:gwuzeh
+%G:Whiskey Jack, Gray Jay, Canadian Jay
+%OIH:Whiskey Jack/Jay, Gray/Jay, Canadian
+%C:N
+%SN:Perisoreus canadensis
+%SF:bird-gen
+%S:LITM/JOPA/BRBI/MAGO
+%UID:000148
+%MD:1997/11/22
+
+%IH:woodpecker
+%P:chundulkw'uz
+%G:woodpecker
+%OIH:woodpecker
+%C:N
+%SF:bird-gen
+%S:JOPA/BRBI/STJA
+%UID:000138
+%MD:1999/03/31
+
+%IH:nest
+%P:-t'o
+%G:nest
+%OIH:nest
+%C:N
+%Pind:'ut'o
+%P3s:but'o
+%Pref:dut'o
+%SF:bird-misc/bugs
+%S:STJA/PEJO/JOPA/BRBI/EDFR
+%ES:001353
+%UID:000226
+%MD:2001/03/07
+
+%IH:eye, a single
+%P:-nak'uz
+%G:a single eye
+%OIH:eye, a single
+%C:N
+%SF:body-ext
+%S:JOPA/EDFR
+%ES:000457
+%UID:003770
+%POCKET:Y
+%MD:2001/02/13
+
+%IH:ankle
+%P:-kechunoh
+%G:ankle
+%OIH:ankle
+%P1s:skechunoh
+%P2s:nkechunoh
+%C:N
+%S:MAGO/STJA
+%SF:body-ext
+%UID:000865
+%MD:1999/03/03
+
+%IH:antler
+%P:-de
+%G:antler, horn
+%OIH:antler/horn
+%C:N
+%SF:body-ext
+%P3s:bude
+%S:STJA
+%UID:002266
+%MD:1999/03/02
+
+%IH:horn
+%P:-de
+%G:antler, horn
+%OIH:antler/horn
+%C:N
+%SF:body-ext
+%P3s:bude
+%S:STJA
+%UID:002266
+%MD:1999/03/02
+
+%IH:velvet, antler
+%P:-de_zu_s
+%G:antler velvet
+%OIH:velvet, antler
+%C:N
+%SF:body-ext
+%P3s:bude_zu_s
+%S:STJA
+%UID:002267
+%MD:1999/03/02
+
+%IH:anus
+%P:-tsul
+%G:anus, asshole
+%OIH:anus/asshole
+%C:N
+%P1s:stsul
+%SF:body-ext
+%S:STJA
+%UID:002171
+%MD:1999/02/23
+
+%IH:asshole
+%P:-tsul
+%G:anus, asshole
+%OIH:anus/asshole
+%C:N
+%P1s:stsul
+%SF:body-ext
+%S:STJA
+%UID:002171
+%MD:1999/02/23
+
+%IH:arm
+%P:-gan
+%G:arm
+%OIH:arm
+%P1s:sgan
+%P2s:ngan
+%Pref:dugan
+%C:N
+%S:LITM/MAGO/STJA/JOPA/VESE/EDFR/JEKO
+%SF:body-ext
+%UID:000863
+%MD:1999/02/22
+
+%IH:armpit
+%P:-chak'ests'oh
+%G:armpit
+%OIH:armpit
+%P1s:schak'ests'oh
+%C:N
+%S:MAGO
+%UID:000859
+%SF:body-ext
+%MD:1997/12/11
+
+%IH:back (of body)
+%P:-t'ak
+%G:back (of body)
+%OIH:back (of body)
+%P1s:st'ak
+%P3s:but'ak
+%C:N
+%S:MAGO/EDFR/VESE/JEKO
+%SF:body-ext
+%UID:000899
+%MD:1997/12/11
+
+%IH:back of hand
+%P:-lat'ak
+%G:back of hand
+%OIH:back of hand
+%P1s:slat'ak
+%C:N
+%S:MAGO
+%SF:body-ext
+%UID:000871
+%MD:1997/12/11
+
+%IH:beaver paws
+%P:tsake
+%G:beaver paws
+%OIH:beaver paws
+%C:N
+%SF:body-ext
+%S:LITM-EDFR
+%UID:000329
+%MD:1997/06/18
+
+%IH:beaver tail
+%P:tsache
+%G:beaver tail
+%OIH:beaver tail
+%C:N
+%SF:body-ext
+%S:LITM
+%UID:000207
+%MD:1997/06/16
+
+%IH:belly
+%P:-but
+%G:belly
+%OIH:belly
+%P1s:sbut
+%C:N
+%S:MAGO
+%SF:body-ext
+%UID:000937
+%MD:1997/12/11
+
+%IH:breast
+%P:-ts'oo
+%G:breast
+%OIH:breast
+%P1s:sts'oo
+%C:N
+%S:MAGO
+%UID:000855
+%SF:body-ext
+%MD:1997/12/11
+
+%IH:bum
+%P:-tl'a
+%G:bum, buttocks
+%OIH:bum/buttocks
+%P1s:stl'a
+%C:N
+%S:MAGO
+%SF:body-ext
+%UID:000936
+%MD:1997/12/11
+
+%IH:buttocks
+%P:-tl'a
+%G:bum, buttocks
+%OIH:bum/buttocks
+%P1s:stl'a
+%C:N
+%S:MAGO
+%SF:body-ext
+%UID:000936
+%MD:1997/12/11
+
+%IH:calf of leg
+%P:-kechunch'ooz
+%G:calf of leg
+%OIH:calf of leg
+%C:N
+%SF:body-ext
+%S:JOPA/EDFR
+%UID:004458
+%POCKET:Y
+%MD:2001/04/20
+
+%IH:cheek
+%P:-nembus
+%G:cheek
+%OIH:cheek
+%P1s:snimbus
+%C:N
+%S:MAGO/JOPA/BRBI
+%SF:body-ext
+%UID:000889
+%MD:1997/12/11
+
+%IH:chest
+%P:-yoh
+%G:chest
+%OIH:chest
+%C:N
+%SF:body-ext
+%S:JOPA/EDFR
+%ES:000660
+%UID:003777
+%POCKET:Y
+%MD:2001/02/13
+
+%IH:chin
+%P:-yeda'
+%G:chin
+%OIH:chin
+%P1s:syeda'
+%C:N
+%S:MAGO
+%SF:body-ext
+%UID:000882
+%MD:1997/12/11
+
+%IH:cranial fontanelle
+%P:-tsidakwhudutle
+%G:cranial fontanelle, baby's soft spot
+%OIH:cranial fontanelle/baby's soft spot
+%C:N
+%P3s:butsidakwhudutle
+%S:MAGO
+%SF:body-ext
+%UID:000898
+%MD:1997/12/11
+
+%IH:baby's soft spot
+%P:-tsidakwhudutle
+%G:cranial fontanelle, baby's soft spot
+%OIH:cranial fontanelle/baby's soft spot
+%C:N
+%P3s:butsidakwhudutle
+%S:MAGO
+%SF:body-ext
+%UID:000898
+%MD:1997/12/11
+
+%IH:ear
+%P:-dzo
+%G:ear
+%OIH:ear
+%MN:This refers to the ear considered as a whole, especially the exterior.
+    When the canal in particular is referred to, one uses {\qc -dzek}, q.v.
+%C:N
+%P1s:sdzo
+%S:MAGO
+%SF:body-ext
+%UID:000879
+%MD:1997/12/11
+
+%IH:earlobe
+%P:-dzobal
+%G:earlobe
+%OIH:earlobe
+%C:N
+%P1s:sdzobal
+%SF:body-ext
+%S:BRBI/MAGO
+%UID:000641
+%MD:1997/12/17
+
+%IH:elbow
+%P:-nints'uzti
+%G:elbow
+%OIH:elbow
+%P1s:snints'uzti
+%C:N
+%S:MAGO
+%SF:body-ext
+%UID:000916
+%MD:1997/12/11
+
+%IH:eye
+%P:-na
+%G:eye
+%OIH:eye
+%P1s:sna
+%P3s:buna
+%C:N
+%S:MAGO/JOPA/EDFR
+%SF:body-ext
+%UID:000891
+%MD:1998/12/18
+
+%IH:eye socket
+%P:-nak'et
+%G:eye socket
+%OIH:eye socket
+%P1s:snak'et
+%C:N
+%S:MAGO
+%SF:body-ext
+%UID:000892
+%MD:1997/12/11
+
+%IH:eyebrow
+%P:-nach'usdooz
+%G:eyebrow
+%OIH:eyebrow
+%P1s:snach'usdooz
+%C:N
+%S:MAGO
+%SF:body-ext
+%UID:000896
+%MD:1997/12/11
+
+%IH:eyelash
+%P:-nalusgha
+%G:eyelash
+%OIH:eyelash
+%P1s:snalusgha
+%C:N
+%S:MAGO
+%SF:body-ext
+%UID:000895
+%MD:1997/12/11
+
+%IH:eyelid
+%P:-nalus
+%G:eyelid
+%OIH:eyelid
+%P1s:snalus
+%C:N
+%S:MAGO
+%SF:body-ext
+%UID:000894
+%MD:1997/12/11
+
+%IH:face
+%P:-nen
+%G:face
+%OIH:face
+%P1s:snen
+%P2s:nyunen
+%P3s:bunen
+%C:N
+%S:MAGO/PEJO/STJA/JOPA/VESE/EDFR
+%SF:body-ext
+%ES:000369
+%UID:000890
+%MD:2001/04/20
+
+%IH:feather
+%P:ts'uz
+%G:feather, down
+%OIH:feather/down
+%C:N
+%SF:body-ext
+%S:LITM/STJA/PEJO
+%UID:000271
+%MD:2000/10/16
+
+%IH:down
+%P:ts'uz
+%G:feather, down
+%OIH:feather/down
+%C:N
+%SF:body-ext
+%S:LITM/STJA/PEJO
+%UID:000271
+%MD:2000/10/16
+
+%IH:feathers
+%P:dut'aits'uz
+%G:feathers, down
+%OIH:feathers/down
+%C:N
+%SF:body-ext
+%S:STJA
+%UID:002647
+%MD:2001/02/27
+
+%IH:down
+%P:dut'aits'uz
+%G:feathers, down
+%OIH:feathers/down
+%C:N
+%SF:body-ext
+%S:STJA
+%UID:002647
+%MD:2001/02/27
+
+%IH:finger other than thumb or pinkie
+%P:-lasge
+%G:finger other than thumb or pinkie
+%OIH:finger other than thumb or pinkie
+%P1s:slasge
+%C:N
+%S:MAGO/STJA/JOPA/PEJO/EDFR
+%SF:body-ext
+%UID:000869
+%MD:2000/11/01
+
+%IH:fingernails
+%P:-lagui
+%G:fingernails, claws of forepaws
+%OIH:fingernails/claws of forepaws
+%P1s:slagui
+%C:N
+%S:MAGO
+%SF:body-ext
+%UID:000875
+%MD:1997/12/11
+
+%IH:claws of forepaws
+%P:-lagui
+%G:fingernails, claws of forepaws
+%OIH:fingernails/claws of forepaws
+%P1s:slagui
+%C:N
+%S:MAGO
+%SF:body-ext
+%UID:000875
+%MD:1997/12/11
+
+%IH:foot
+%P:-ke
+%G:foot
+%OIH:foot
+%C:N
+%P1s:ske
+%Pref:duke
+%S:MAGO/STJA/JOPA/VESE/EDFR/JEKO
+%UID:000851
+%SF:body-ext
+%MD:1999/05/11
+
+%IH:hair
+%P:-gha
+%G:hair
+%MN:This refers to hair in general and where no more specific term exists, as on the
+    arms and chest. It is not used to refer to the hair of the head, for which the
+    more specific term {\qc -tsigha} is always used.
+%OIH:hair
+%C:N
+%S:MAGO
+%SF:body-ext
+%UID:000888
+%MD:1997/12/11
+
+%IH:hair of the head
+%P:-tsigha
+%G:hair of the head
+%OIH:hair of the head
+%P1s:stsigha
+%P2s:ntsigha
+%P3s:butsigha
+%C:N
+%S:MAGO/LITM/PEJO
+%SF:body-ext
+%UID:000887
+%MD:2000/10/20
+
+%IH:hand
+%P:-la
+%G:hand
+%OIH:hand
+%P1s:sla
+%P2s:nla
+%C:N
+%S:MAGO/STJA
+%SF:body-ext
+%POCKET:Y
+%UID:000866
+%MD:1999/02/17
+
+%IH:head
+%P:-tsi
+%G:head
+%OIH:head
+%Pref:dutsi
+%C:N
+%SF:body-ext
+%S:STJA
+%UID:002965
+%POCKET:Y
+%MD:1999/06/24
+
+%IH:heel
+%P:-kelatsul
+%G:heel
+%OIH:heel
+%P1s:skelatsul
+%C:N
+%S:MAGO
+%SF:body-ext
+%UID:000917
+%MD:1997/12/11
+
+%IH:hip
+%P:-k'ui
+%G:hip
+%OIH:hip
+%P1s:sk'ui
+%C:N
+%S:MAGO/JOPA
+%SF:body-ext
+%UID:000923
+%MD:2001/03/15
+
+%IH:knee
+%P:-gwut
+%G:knee
+%OIH:knee
+%P1s:sgwut
+%C:N
+%S:MAGO
+%SF:body-ext
+%UID:000933
+%MD:1997/12/11
+
+%IH:kneecap
+%P:-gwutlasi'ai
+%G:kneecap
+%OIH:kneecap
+%P1s:sgwutlasi'ai
+%R:has something to do with floating at tip of knee
+%C:N
+%S:MAGO
+%SF:body-ext
+%UID:000925
+%MD:1997/12/11
+
+%IH:knuckles at boundary between hand and fingers
+%P:-langwut
+%G:knuckles at boundary between hand and fingers
+%OIH:knuckles at boundary between hand and fingers
+%P1s:slangwut
+%SF:body-ext
+%C:N
+%S:JOPA/BRBI
+%UID:000967
+%MD:1997/12/17
+
+%IH:leg
+%P:-kechun
+%G:leg
+%OIH:leg
+%P1s:skechun
+%C:N
+%S:MAGO
+%UID:000852
+%SF:body-ext
+%MD:1997/12/11
+

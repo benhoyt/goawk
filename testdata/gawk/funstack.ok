@@ -1,0 +1,10 @@
+gawk: funstack.awk:129: warning: regexp escape sequence `\"' is not a known regexp operator
+gawk: funstack.awk:381: warning: regexp escape sequence `\e' is not a known regexp operator
+gawk: funstack.awk:386: warning: regexp escape sequence `\i' is not a known regexp operator
+gawk: funstack.awk:395: warning: regexp escape sequence `\o' is not a known regexp operator
+gawk: funstack.awk:402: warning: regexp escape sequence `\u' is not a known regexp operator
+gawk: funstack.awk:412: warning: regexp escape sequence `\A' is not a known regexp operator
+gawk: funstack.awk:427: warning: regexp escape sequence `\I' is not a known regexp operator
+gawk: funstack.awk:436: warning: regexp escape sequence `\O' is not a known regexp operator
+gawk: funstack.awk:443: warning: regexp escape sequence `\U' is not a known regexp operator
+gawk: funstack.awk:952: warning: regexp escape sequence `\&' is not a known regexp operator

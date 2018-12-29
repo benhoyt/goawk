@@ -1,0 +1,3 @@
+gawk: readbuf.awk:2: {
+gawk: readbuf.awk:2: ^ unexpected newline or end of string
+EXIT CODE: 1

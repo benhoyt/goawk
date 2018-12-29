@@ -1,0 +1,3 @@
+gawk: paramasfunc2.awk:8: error: attempt to use non-function `abc' in function call
+gawk: error: function `X': can't use function `abc' as a parameter name
+EXIT CODE: 1

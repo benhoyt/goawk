@@ -173,6 +173,45 @@ func sortedLines(data []byte) []byte {
 	return []byte(strings.Join(lines, "\n") + "\n")
 }
 
+func todoTestGAWK(t *testing.T) {
+	gawkDir := filepath.Join(testsDir, "gawk")
+	infos, err := ioutil.ReadDir(gawkDir)
+	if err != nil {
+		t.Fatalf("couldn't read test files: %v", err)
+	}
+	for _, info := range infos {
+		if !strings.HasSuffix(info.Name(), ".awk") {
+			continue
+		}
+		testName := info.Name()[:len(info.Name())-4]
+		t.Run(testName, func(t *testing.T) {
+			srcPath := filepath.Join(gawkDir, info.Name())
+			inputPath := filepath.Join(gawkDir, testName+".in")
+			okPath := filepath.Join(gawkDir, testName+".ok")
+
+			prog, err := parseGoAWK(srcPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			output, err := interpGoAWK(prog, inputPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			output = normalizeNewlines(output)
+
+			expected, err := ioutil.ReadFile(okPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			expected = normalizeNewlines(expected)
+
+			if string(output) != string(expected) {
+				t.Fatalf("output differs, got:\n%s\nexpected:\n%s", output, expected)
+			}
+		})
+	}
+}
+
 func TestCommandLine(t *testing.T) {
 	tests := []struct {
 		args   []string

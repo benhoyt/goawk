@@ -1,0 +1,2 @@
+gawk: scalar.awk:3: fatal: attempt to use scalar `a' as an array
+EXIT CODE: 2

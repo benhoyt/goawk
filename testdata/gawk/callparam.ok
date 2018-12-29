@@ -1,0 +1,2 @@
+gawk: callparam.awk:5: error: attempt to use non-function `b' in function call
+EXIT CODE: 1

@@ -1,0 +1,9 @@
+gawk: uninit5.awk:75: warning: reference to uninitialized argument `a'
+length:  0
+gawk: uninit5.awk:77: warning: reference to uninitialized argument `a'
+
+
+gawk: uninit5.awk:97: warning: reference to uninitialized argument `a'
+length:  0
+
+
