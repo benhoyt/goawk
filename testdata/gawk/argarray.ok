@@ -1,9 +1,7 @@
-here we have 3 arguments
+here we have 2 arguments
 which are
-	 gawk
-	 ./argarray.input
-	 -
+	 
+	 testdata/gawk/argarray.in
 Environment variable TEST=
 and the current input file is called ""
-in main loop, this input file is known as "./argarray.input"
-in main loop, this input file is known as "-"
+in main loop, this input file is known as "testdata/gawk/argarray.in"
