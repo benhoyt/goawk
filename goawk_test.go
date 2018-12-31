@@ -176,6 +176,7 @@ func sortedLines(data []byte) []byte {
 func TestGAWK(t *testing.T) {
 	sortLines := map[string]bool{
 		"arryref2": true,
+		"forref":   true,
 	}
 
 	gawkDir := filepath.Join(testsDir, "gawk")

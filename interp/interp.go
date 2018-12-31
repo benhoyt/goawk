@@ -991,9 +991,14 @@ func (p *interp) setVar(scope VarScope, index int, v value) error {
 		case V_FS:
 			p.fieldSep = p.toString(v)
 			if p.fieldSep != " " {
-				re, err := regexp.Compile(p.fieldSep)
+				fieldSep := p.fieldSep
+				if fieldSep == `\` {
+					// Other AWKs treat just `\` as regex `\\`
+					fieldSep = `\\`
+				}
+				re, err := regexp.Compile(fieldSep)
 				if err != nil {
-					return newError("invalid regex %q: %s", p.fieldSep, err)
+					return newError("invalid regex %q: %s", fieldSep, err)
 				}
 				p.fieldSepRegex = re
 			}
