@@ -429,6 +429,9 @@ func (p *parser) function() Function {
 		}
 		first = false
 		param := p.val
+		if param == name {
+			panic(p.error("can't use function name as parameter name"))
+		}
 		p.expect(NAME)
 		params = append(params, param)
 	}

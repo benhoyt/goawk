@@ -510,12 +510,12 @@ function bar(y) { return y[1] }
 function foo() { return bar(x) }
 BEGIN { x[1] = 42; print foo() }
 `, "", "42\n", "", ""},
-// TODO
-// 		{`
-// function f1(x) { }
-// function f2(x, y) { return x[y] }
-// BEGIN { a[1]=2; f1(a); print f2(a, 1) }
-// `, "", "2\n", "", ""},
+		// TODO
+		// 		{`
+		// function f1(x) { }
+		// function f2(x, y) { return x[y] }
+		// BEGIN { a[1]=2; f1(a); print f2(a, 1) }
+		// `, "", "2\n", "", ""},
 
 		// Type checking / resolver tests
 		{`BEGIN { a[x]; a=42 }`, "", "", `parse error at 1:15: can't use array "a" as scalar`, "array"},
@@ -527,6 +527,18 @@ BEGIN { x[1] = 42; print foo() }
 		{`{ f(z) }  function f(x) { print NR }`, "abc", "1\n", "", ""},
 		{`function f() { f() }  BEGIN { f() }  # !awk !gawk`, "", "", `calling "f" exceeded maximum call depth of 1000`, ""},
 		{`function f(x) { 0 in x }  BEGIN { f(FS) }  # !awk`, "", "", `parse error at 1:35: can't pass scalar "FS" as array param`, "attempt to use scalar parameter `x' as an array"},
+		{`
+function foo(x) { print "foo", x }
+function bar(foo) { print "bar", foo }
+BEGIN { foo(5); bar(10) }
+`, "", "foo 5\nbar 10\n", "", ""},
+		{`
+function foo(foo) { print "foo", foo }
+function bar(foo) { print "bar", foo }
+BEGIN { foo(5); bar(10) }
+`, "", "", `parse error at 2:14: can't use function name as parameter name`, "function name"},
+		{`function foo() { print foo }  BEGIN { foo() }`,
+			"", "", `parse error at 1:46: global var "foo" can't also be a function`, "function"},
 
 		// Redirected I/O (we give explicit errors, awk and gawk don't)
 		{`BEGIN { print >"out"; getline <"out" }  # !awk !gawk`, "", "", "can't read from writer stream", ""},

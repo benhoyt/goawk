@@ -292,6 +292,12 @@ func (p *parser) resolveVars(prog *Program) {
 	prog.Scalars = make(map[string]int)
 	prog.Arrays = make(map[string]int)
 	for name, info := range p.varTypes[""] {
+		_, isFunc := p.functions[name]
+		if isFunc {
+			// Global var can't also be the name of a function
+			// TODO: ideally this error should have correct pos
+			panic(p.error("global var %q can't also be a function", name))
+		}
 		var index int
 		if info.scope == ScopeSpecial {
 			index = SpecialVarIndex(name)
