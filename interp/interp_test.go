@@ -225,6 +225,7 @@ BEGIN {
 		// Other FNR behaviour is tested in goawk_test.go
 		{`BEGIN { print "|" FS "|"; FS="," } { print $1, $2 }`, "a b\na,b\nx,,y", "| |\na b \na b\nx \n", "", ""},
 		{`BEGIN { print "|" FS "|"; FS="\\." } { print $1, $2 }`, "a b\na.b\nx..y", "| |\na b \na b\nx \n", "", ""},
+		{`BEGIN { FS="\\" } { print $1, $2 }`, "a\\b", "a b\n", "", ""},
 		{`{ print NF }`, "\na\nc d\ne f g", "0\n1\n2\n3\n", "", ""},
 		{`BEGIN { NR = 123; print NR }`, "", "123\n", "", ""},
 		{`{ print NR, $0 }`, "a\nb\nc", "1 a\n2 b\n3 c\n", "", ""},
