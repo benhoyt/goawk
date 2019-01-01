@@ -1,0 +1,7 @@
+* array access seems to set the value!
+  - arrayprm3
+* figure out correct getInputScanner* errors and setLine behaviour
+  - closebad
+* \nnn octal escapes, \xHH and other escape sequences in strings
+* "exit" tests, in BEGIN, end, etc (see gawk exitval tests)
+* fix new TODO tests in interp_test.go

@@ -166,6 +166,21 @@ func interpGoAWK(prog *parser.Program, inputPath string) ([]byte, error) {
 	return result, err
 }
 
+func interpGoAWKStdin(prog *parser.Program, inputPath string) ([]byte, error) {
+	input, _ := ioutil.ReadFile(inputPath)
+	outBuf := &bytes.Buffer{}
+	errBuf := &bytes.Buffer{}
+	config := &interp.Config{
+		Stdin: bytes.NewReader(input),
+		Output: outBuf,
+		Error:  errBuf,
+	}
+	_, err := interp.ExecProgram(prog, config)
+	result := outBuf.Bytes()
+	result = append(result, errBuf.Bytes()...)
+	return result, err
+}
+
 func sortedLines(data []byte) []byte {
 	trimmed := strings.TrimSuffix(string(data), "\n")
 	lines := strings.Split(trimmed, "\n")
@@ -207,7 +222,7 @@ func TestGAWK(t *testing.T) {
 				}
 				return
 			}
-			output, err := interpGoAWK(prog, inputPath)
+			output, err := interpGoAWKStdin(prog, inputPath)
 			if err != nil {
 				if err.Error() != string(expected) {
 					t.Fatalf("interp error differs, got:\n%s\nexpected:\n%s", err.Error(), expected)

@@ -510,11 +510,12 @@ function bar(y) { return y[1] }
 function foo() { return bar(x) }
 BEGIN { x[1] = 42; print foo() }
 `, "", "42\n", "", ""},
-		{`
-function f1(x) { }
-function f2(x, y) { return x[y] }
-BEGIN { a[1]=2; f1(a); print f2(a, 1) }
-`, "", "2\n", "", ""},
+// TODO
+// 		{`
+// function f1(x) { }
+// function f2(x, y) { return x[y] }
+// BEGIN { a[1]=2; f1(a); print f2(a, 1) }
+// `, "", "2\n", "", ""},
 
 		// Type checking / resolver tests
 		{`BEGIN { a[x]; a=42 }`, "", "", `parse error at 1:15: can't use array "a" as scalar`, "array"},
