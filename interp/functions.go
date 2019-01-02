@@ -618,7 +618,7 @@ func (p *interp) parseFmtTypes(s string) (format string, types []byte, err error
 				i++
 				continue
 			}
-			for i < len(s) && bytes.IndexByte([]byte(".-+*#0123456789"), s[i]) >= 0 {
+			for i < len(s) && bytes.IndexByte([]byte(" .-+*#0123456789"), s[i]) >= 0 {
 				if s[i] == '*' {
 					types = append(types, 'd')
 				}

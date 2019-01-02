@@ -371,6 +371,7 @@ BEGIN {
 		{`BEGIN { print sprintf("%d", 12, 34) }`, "", "12\n", "", ""},
 		{`BEGIN { print sprintf("%d") }`, "", "", "format error: got 0 args, expected 1", "not enough arg"},
 		{`BEGIN { print sprintf("%d", 12, 34) }`, "", "12\n", "", ""},
+		{`BEGIN { print sprintf("% 5d", 42) }`, "", "   42\n", "", ""},
 		{`BEGIN { print substr("food", 1) }`, "", "food\n", "", ""},
 		{`BEGIN { print substr("food", 1, 2) }`, "", "fo\n", "", ""},
 		{`BEGIN { print substr("food", 1, 4) }`, "", "food\n", "", ""},
