@@ -1,2 +1,1 @@
-gawk: nulinsrc.awk:1: fatal: PEBKAC error: invalid character '\000' in source code
-EXIT CODE: 2
+parse error at 1:4: didn't find end slash in regex

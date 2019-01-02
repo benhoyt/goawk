@@ -1,5 +1,1 @@
-gawk: noparms.awk:1: function x(a, b, c , ,) {}
-gawk: noparms.awk:1:                      ^ syntax error
-gawk: noparms.awk:1: function x(a, b, c , ,) {}
-gawk: noparms.awk:1:                       ^ syntax error
-EXIT CODE: 1
+parse error at 1:22: expected name instead of ,
