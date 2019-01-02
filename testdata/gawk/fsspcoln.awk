@@ -38,4 +38,5 @@
 # E-mail: asashnov@sw-soft.com
 # ICQ UIN: 79404252
 
+BEGIN { FS = "[ :]+" }
 { print $2 }

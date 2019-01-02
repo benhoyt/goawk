@@ -1,2 +1,1 @@
-gawk: nfneg.awk:1: fatal: NF set to negative value
-EXIT CODE: 2
+NF set to negative value: -2

@@ -1,5 +1,1 @@
-gawk: gsubasgn.awk:4: error: function `test1' called with space between name and `(',
-or used as a variable or an array
-gawk: gsubasgn.awk:8: error: function `test2' called with space between name and `(',
-or used as a variable or an array
-EXIT CODE: 1
+parse error at 14:1: global var "test1" can't also be a function

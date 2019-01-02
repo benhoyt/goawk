@@ -1,2 +1,1 @@
-gawk: fnaryscl.awk:10: fatal: attempt to use array `c (from b, from a, from foo)' in a scalar context
-EXIT CODE: 2
+parse error at 3:2: can't pass array "foo" as scalar param
