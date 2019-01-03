@@ -708,6 +708,9 @@ func (p *parser) primary() Expr {
 			p.expect(RBRACKET)
 			return &IndexExpr{p.arrayRef(name, namePos), index}
 		} else if p.tok == LPAREN && !p.lexer.HadSpace() {
+			if p.locals[name] {
+				panic(p.error("can't call local variable %q as function", name))
+			}
 			// Grammar requires no space between function name and
 			// left paren for user function calls, hence the funky
 			// lexer.HadSpace() method.

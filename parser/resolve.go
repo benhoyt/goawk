@@ -173,7 +173,7 @@ func (p *parser) processUserCallArg(funcName string, arg Expr, index int) {
 // a local, otherwise empty string)
 func (p *parser) getScope(name string) (VarScope, string) {
 	switch {
-	case p.funcName != "" && p.locals[name]:
+	case p.locals[name]:
 		return ScopeLocal, p.funcName
 	case SpecialVarIndex(name) > 0:
 		return ScopeSpecial, ""
