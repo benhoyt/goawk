@@ -1,1 +1,1 @@
-parse error at 5:6: undefined function "b"
+parse error at 5:7: can't call local variable "b" as function

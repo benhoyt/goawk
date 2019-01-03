@@ -79,21 +79,15 @@ func (p *parser) initResolve() {
 	p.multiExprs = make(map[*MultiExpr]Position, 3)
 }
 
-// Signal the start of a function: records the function name and
-// local variables so variable references can determine scope
+// Signal the start of a function
 func (p *parser) startFunction(name string, params []string) {
 	p.funcName = name
 	p.varTypes[name] = make(map[string]typeInfo)
-	p.locals = make(map[string]bool, len(params))
-	for _, param := range params {
-		p.locals[param] = true
-	}
 }
 
 // Signal the end of a function
 func (p *parser) stopFunction() {
 	p.funcName = ""
-	p.locals = nil
 }
 
 // Add function by name with given index

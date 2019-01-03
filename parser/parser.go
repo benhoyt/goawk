@@ -423,6 +423,7 @@ func (p *parser) function() Function {
 	p.expect(LPAREN)
 	first := true
 	params := make([]string, 0, 7) // pre-allocate some to reduce allocations
+	p.locals = make(map[string]bool, 7)
 	for p.tok != RPAREN {
 		if !first {
 			p.commaNewlines()
@@ -432,8 +433,12 @@ func (p *parser) function() Function {
 		if param == name {
 			panic(p.error("can't use function name as parameter name"))
 		}
+		if p.locals[param] {
+			panic(p.error("duplicate parameter name %q", param))
+		}
 		p.expect(NAME)
 		params = append(params, param)
+		p.locals[param] = true
 	}
 	p.expect(RPAREN)
 	p.optionalNewlines()
@@ -442,6 +447,7 @@ func (p *parser) function() Function {
 	p.startFunction(name, params)
 	body := p.stmtsBrace()
 	p.stopFunction()
+	p.locals = nil
 
 	return Function{name, params, nil, body}
 }
