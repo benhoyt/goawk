@@ -1,1 +1,1 @@
-parse error at 14:1: global var "test1" can't also be a function
+parse error at 6:1: global var "test1" can't also be a function
