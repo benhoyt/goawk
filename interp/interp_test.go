@@ -258,6 +258,8 @@ BEGIN {
 		{`BEGIN { RS=""; FS="X" }  { printf "%d (%d):\n", NR, NF; for (i=1; i<=NF; i++) printf "%s|", $i }`,
 			"aXb\ncXd\n\neXf\n\n\n  \n\n\ngXh\n\n\n",
 			"1 (4):\na|b|c|d|2 (2):\ne|f|3 (1):\n  |4 (2):\ng|h|", "", ""},
+		{`BEGIN { RS = "" }  { print "got", $0 }`,
+			"\n\n\n\n", "", "", ""},
 		{`BEGIN { RS="\n" }  { print }`, "a\n\nb\nc", "a\n\nb\nc\n", "", ""},
 		{`
 BEGIN {

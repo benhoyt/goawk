@@ -221,6 +221,10 @@ func scanLinesBlank(data []byte, atEOF bool) (advance int, token []byte, err err
 	for i < len(data) && (data[i] == '\n' || data[i] == '\r') {
 		i++
 	}
+	if i >= len(data) {
+		// At end of data after newlines, skip entire data block
+		return i, nil, nil
+	}
 	start := i
 
 	// Try to find two consecutive newlines (or \n\r\n for Windows)
