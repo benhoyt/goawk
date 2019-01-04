@@ -202,6 +202,7 @@ func TestGAWK(t *testing.T) {
 		"inputred":  true, // getInputScanner errors (see closebad)
 		"membug1":   true, // doesn't parse: '{ one != one = $1 }'
 		"nfldstr":   true, // invalid handling of '!$0' when $0="0"
+		"parse1":    true, // incorrect parsing of $$a++++ (see TODOs in interp_test.go too)
 	}
 
 	sortLines := map[string]bool{

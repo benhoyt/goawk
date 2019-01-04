@@ -294,6 +294,9 @@ BEGIN {
 		{`BEGIN { $1234567=1 }`, "", "", "field index too large: 1234567", ""},
 		{`0 in FS  # !awk - doesn't flag this as an error`, "x", "",
 			`parse error at 1:6: can't use scalar "FS" as array`, "array"},
+		// TODO: I think this is happening because we parse this as ($($0))++ rather than ($($0++))
+		// TODO: {`{ $$0++; print $0 }`, "2 3 4", "3\n", "", ""},
+		// TODO: {`BEGIN { $0="3 4 5 6 7 8 9"; a=3; print $$a++++; print }`, "", "7\n3 4 6 6 8 8 9\n", "", ""},
 
 		// Lots of NF tests with different combinations of NF, $, and number
 		// of input fields. Some of these cause segmentation faults on awk
@@ -543,13 +546,16 @@ BEGIN { foo(5); bar(10) }
 `, "", "", `parse error at 2:14: can't use function name as parameter name`, "function name"},
 		{`function foo() { print foo }  BEGIN { foo() }`,
 			"", "", `parse error at 1:46: global var "foo" can't also be a function`, "function"},
-		{`function f(x) { print x, x(); }  BEGIN { f() }`, "", "", `parse error at 1:27: can't call local variable "x" as function`, ""},
+		{`function f(x) { print x, x(); }  BEGIN { f() }`, "", "", `parse error at 1:27: can't call local variable "x" as function`, "function"},
 
 		// Redirected I/O (we give explicit errors, awk and gawk don't)
 		{`BEGIN { print >"out"; getline <"out" }  # !awk !gawk`, "", "", "can't read from writer stream", ""},
 		{`BEGIN { print |"out"; getline <"out" }  # !awk !gawk`, "", "", "can't read from writer stream", ""},
 		{`BEGIN { getline <"out"; print >"out" }  # !awk !gawk`, "", "", "can't write to reader stream", ""},
 		{`BEGIN { getline <"out"; print |"out" }  # !awk !gawk`, "", "", "can't write to reader stream", ""},
+		// TODO: currently we support "getline var" but not "getline lvalue"
+		// TODO: {`BEGIN { getline a[1]; print a[1] }`, "foo", "foo\n", "", ""},
+		// TODO: {`BEGIN { getline $1; print $1 }`, "foo", "foo\n", "", ""},
 
 		// Greater than operator requires parentheses in print statement,
 		// otherwise it's a redirection directive

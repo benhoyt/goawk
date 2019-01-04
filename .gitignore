@@ -4,3 +4,4 @@ orig
 fuzz/interp/workdir
 fuzz/parser/workdir
 fuzz-fuzz.zip
+posix_spec.html
