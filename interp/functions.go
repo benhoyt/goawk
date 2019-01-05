@@ -578,7 +578,9 @@ func (p *interp) sub(regex, repl, in string, global bool) (out string, num int, 
 				if i < len(repl) {
 					switch repl[i] {
 					case '&':
-						r = append(r, repl[i])
+						r = append(r, '&')
+					case '\\':
+						r = append(r, '\\')
 					default:
 						r = append(r, '\\', repl[i])
 					}
