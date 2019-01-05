@@ -1,5 +1,5 @@
 BEGIN {
-	x[65]
+	x[65] = 1;
 	for (i in x) {
 		# i should be a string
 		printf "%c\n", i	# should print 1st char of string
