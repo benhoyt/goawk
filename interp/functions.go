@@ -228,17 +228,27 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 	case F_CLOSE:
 		name := p.toString(args[0])
 		var c io.Closer = p.inputStreams[name]
-		if c == nil {
-			c = p.outputStreams[name]
-			if c == nil {
+		if c != nil {
+			// Close input stream
+			delete(p.inputStreams, name)
+			err := c.Close()
+			if err != nil {
 				return num(-1), nil
 			}
+			return num(0), nil
 		}
-		err := c.Close()
-		if err != nil {
-			return num(-1), nil
+		c = p.outputStreams[name]
+		if c != nil {
+			// Close output stream
+			delete(p.outputStreams, name)
+			err := c.Close()
+			if err != nil {
+				return num(-1), nil
+			}
+			return num(0), nil
 		}
-		return num(0), nil
+		// Nothing to close
+		return num(-1), nil
 
 	default:
 		// Shouldn't happen

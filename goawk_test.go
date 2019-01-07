@@ -174,6 +174,8 @@ func interpGoAWKStdin(prog *parser.Program, inputPath string) ([]byte, error) {
 		Stdin:  bytes.NewReader(input),
 		Output: outBuf,
 		Error:  errBuf,
+		// srcdir is for "redfilnm.awk"
+		Vars: []string{"srcdir", filepath.Dir(inputPath)},
 	}
 	_, err := interp.ExecProgram(prog, config)
 	result := outBuf.Bytes()
