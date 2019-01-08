@@ -10,7 +10,6 @@ BEGIN {
     for(i=0; i <= 11 ; i++) {
         x = $0 
         sub(/B/, A[i], x)
-	y = gensub(/B/, A[i], "1", $0)
-	print i, x, y
+	print i, x
     }
 }
