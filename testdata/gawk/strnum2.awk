@@ -1,5 +1,5 @@
 BEGIN {
-	split(" 1.234 ", f, "|")	# create a numeric string (strnum) value
+	split(" 1.234 ", f, "x")	# create a numeric string (strnum) value
 	OFMT = "%.1f"
 	CONVFMT = "%.2f"
 
