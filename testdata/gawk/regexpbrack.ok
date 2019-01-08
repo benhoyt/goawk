@@ -1,0 +1,1 @@
+parse error at 1:1: error parsing regexp: missing closing ]: `[]+()0-9.,$%`
