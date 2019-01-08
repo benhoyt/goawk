@@ -248,8 +248,9 @@ func TestGAWK(t *testing.T) {
 			}
 			output, err := interpGoAWKStdin(prog, inputPath)
 			if err != nil {
-				if err.Error() != string(expected) {
-					t.Fatalf("interp error differs, got:\n%s\nexpected:\n%s", err.Error(), expected)
+				errStr := string(output) + err.Error()
+				if errStr != string(expected) {
+					t.Fatalf("interp error differs, got:\n%s\nexpected:\n%s", errStr, expected)
 				}
 				return
 			}

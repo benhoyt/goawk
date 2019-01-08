@@ -2,5 +2,4 @@
 "a" ~ /[]-c]/ --> 1
 "c" ~ /[[a-d]/ --> 1
 "\" ~ /[\[-\]]/ --> 1
-"[.c.]" ~ /[a-[.e.]]/ --> 1
-"[.d.]" ~ /[[.c.]-[.z.]]/ --> 1
+invalid regex "[a-[.e.]]": error parsing regexp: invalid character class range: `a-[`
