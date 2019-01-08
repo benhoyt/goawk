@@ -251,7 +251,7 @@ func scanLinesBlank(data []byte, atEOF bool) (advance int, token []byte, err err
 
 	// If we're at EOF, we have one final record; return it
 	if atEOF {
-		return len(data), dropCR(dropLF(data)), nil
+		return len(data), dropCR(dropLF(data[start:])), nil
 	}
 
 	// Request more data
