@@ -200,6 +200,14 @@ func (l *Lexer) scan() (Position, Token, string) {
 					c = '\t'
 				case 'r':
 					c = '\r'
+				case 'a':
+					c = '\a'
+				case 'b':
+					c = '\b'
+				case 'f':
+					c = '\f'
+				case 'v':
+					c = '\v'
 				default:
 					c = l.ch
 				}
