@@ -1,2 +1,1 @@
-gawk: scalar.awk:3: fatal: attempt to use scalar `a' as an array
-EXIT CODE: 2
+parse error at 3:2: can't use scalar "a" as array

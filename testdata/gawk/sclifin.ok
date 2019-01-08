@@ -1,2 +1,1 @@
-gawk: sclifin.awk:3: fatal: attempt to use scalar `j' as an array
-EXIT CODE: 2
+parse error at 3:15: can't use scalar "j" as array
