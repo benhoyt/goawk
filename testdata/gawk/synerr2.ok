@@ -1,3 +1,1 @@
-gawk: synerr2.awk:47: BEGIN { sprintf("%s", $) }
-gawk: synerr2.awk:47:                        ^ syntax error
-EXIT CODE: 1
+parse error at 47:24: expected expression instead of )

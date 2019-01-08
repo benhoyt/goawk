@@ -1,3 +1,1 @@
-gawk: synerr1.awk:4: print "hi"
-gawk: synerr1.awk:4: ^ syntax error
-EXIT CODE: 1
+parse error at 4:1: expected expression instead of print
