@@ -78,10 +78,6 @@ BEGIN {
 	nf_offset_y = 64
 	nf_offset_z = 65
 
-	while( getline < "xrcf_mnemonics.dat" > 0 ) {
-		mnemonic[$1] = $2
-	}
-
 #	"date" | getline date_line
 # ADR: use a fixed date so that testing will work
 	date_line = "Sun Mar 10 23:00:27 EST 1996"

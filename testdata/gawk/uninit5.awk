@@ -70,11 +70,17 @@
 # behaves differently, iterating once.  so, length() behaves differently
 # on two calls to the same variable, which was not changed.
 
+function array_length(a,   k, n) {
+    n = 0
+    for (k in a) n++
+    return n
+}
+
 function prt1(a, len)
 {
-    print "length:  " length(a)
+    print "length:  " array_length(a)
 
-    for (i = 1; i <= length(a); i++)
+    for (i = 1; i <= array_length(a); i++)
         printf "<" i "," a[i] "> "
 
     print "\n"
@@ -94,7 +100,7 @@ BEGIN {
 
 function prt(a, len)
 {
-    len = length(a)
+    len = array_length(a)
     print "length:  " len
 
     for (i = 1; i <= len; i++)

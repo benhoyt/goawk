@@ -49,6 +49,3 @@
 BEGIN{A="1234567890abcdef";
    for (i=1;i<6;i++){print length(A),"A=" A ".";sub("....","",A)}
 }
-BEGIN{A="1234567890abcdef";
-   for (i=1;i<6;i++){print length(A),"A=" A ".";A=gensub("....","",1,A)}
-}
