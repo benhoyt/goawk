@@ -212,6 +212,12 @@ func TestGAWK(t *testing.T) {
 		"zeroe0":       true, // difference in handling of numStr typing when setting $0 and $1
 	}
 
+	dontRunOnWindows := map[string]bool{
+		"delargv":  true, // reads from /dev/null
+		"eofsplit": true, // reads from /etc/passwd
+		"iobug1":   true, // reads from /dev/null
+	}
+
 	sortLines := map[string]bool{
 		"arryref2": true,
 		"delargv":  true,
@@ -230,6 +236,9 @@ func TestGAWK(t *testing.T) {
 		}
 		testName := info.Name()[:len(info.Name())-4]
 		if skip[testName] {
+			continue
+		}
+		if runtime.GOOS == "windows" && dontRunOnWindows[testName] {
 			continue
 		}
 		t.Run(testName, func(t *testing.T) {
@@ -251,6 +260,7 @@ func TestGAWK(t *testing.T) {
 				return
 			}
 			output, err := interpGoAWKStdin(prog, inputPath)
+			output = normalizeNewlines(output)
 			if err != nil {
 				errStr := string(output) + err.Error()
 				if errStr != string(expected) {
@@ -258,7 +268,6 @@ func TestGAWK(t *testing.T) {
 				}
 				return
 			}
-			output = normalizeNewlines(output)
 
 			if sortLines[testName] {
 				output = sortedLines(output)
