@@ -270,6 +270,8 @@ func TestGAWK(t *testing.T) {
 			}
 		})
 	}
+
+	_ = os.Remove("seq")
 }
 
 func TestCommandLine(t *testing.T) {

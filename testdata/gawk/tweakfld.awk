@@ -94,8 +94,8 @@ function add2output( variable ) {
 }
 
 function error( ekey, message ) {
-	print "Error at input line " NR ", anode " ekey >> "errors.cleanup"
-	print "   " message "." >> "errors.cleanup"
+#	print "Error at input line " NR ", anode " ekey >> "errors.cleanup"
+#	print "   " message "." >> "errors.cleanup"
 }
 
 function hxda_na() {
