@@ -191,29 +191,65 @@ func (l *Lexer) scan() (Position, Token, string) {
 			if c == '\r' || c == '\n' {
 				return l.pos, ILLEGAL, "can't have newline in string"
 			}
-			if c == '\\' {
+			if c != '\\' {
+				// Normal, non-escaped character
+				chars = append(chars, c)
 				l.next()
-				switch l.ch {
-				case 'n':
-					c = '\n'
-				case 't':
-					c = '\t'
-				case 'r':
-					c = '\r'
-				case 'a':
-					c = '\a'
-				case 'b':
-					c = '\b'
-				case 'f':
-					c = '\f'
-				case 'v':
-					c = '\v'
-				default:
-					c = l.ch
+				continue
+			}
+			// Escape sequence, skip over \ and process
+			l.next()
+			switch l.ch {
+			case 'n':
+				c = '\n'
+				l.next()
+			case 't':
+				c = '\t'
+				l.next()
+			case 'r':
+				c = '\r'
+				l.next()
+			case 'a':
+				c = '\a'
+				l.next()
+			case 'b':
+				c = '\b'
+				l.next()
+			case 'f':
+				c = '\f'
+				l.next()
+			case 'v':
+				c = '\v'
+				l.next()
+			case 'x':
+				// Hex byte of one of two hex digits
+				l.next()
+				digit := hexDigit(l.ch)
+				if digit < 0 {
+					return l.pos, ILLEGAL, "1 or 2 hex digits expected"
 				}
+				c = byte(digit)
+				l.next()
+				digit = hexDigit(l.ch)
+				if digit >= 0 {
+					c = c*16 + byte(digit)
+					l.next()
+				}
+			case '0', '1', '2', '3', '4', '5', '6', '7':
+				// Octal byte of 1-3 octal digits
+				c = l.ch - '0'
+				l.next()
+				for i := 0; i < 2 && l.ch >= '0' && l.ch <= '7'; i++ {
+					c = c*8 + l.ch - '0'
+					l.next()
+				}
+			default:
+				// Any other escape character is just the char
+				// itself, eg: "\z" is just "z"
+				c = l.ch
+				l.next()
 			}
 			chars = append(chars, c)
-			l.next()
 		}
 		l.next()
 		tok = STRING
@@ -376,6 +412,21 @@ func (l *Lexer) next() {
 
 func isNameStart(ch byte) bool {
 	return ch == '_' || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')
+}
+
+// Return the hex digit 0-15 corresponding to the given ASCII byte,
+// or -1 if it's not a valid hex digit.
+func hexDigit(ch byte) int {
+	switch {
+	case ch >= '0' && ch <= '9':
+		return int(ch - '0')
+	case ch >= 'a' && ch <= 'f':
+		return int(ch - 'a' + 10)
+	case ch >= 'A' && ch <= 'F':
+		return int(ch - 'A' + 10)
+	default:
+		return -1
+	}
 }
 
 func (l *Lexer) choice(ch byte, one, two Token) Token {

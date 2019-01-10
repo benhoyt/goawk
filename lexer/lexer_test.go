@@ -37,6 +37,9 @@ func TestLexer(t *testing.T) {
 		{`'a\t\r\n\z\'\"b'`, `1:1 string "a\t\r\nz'\"b"`},
 		{`'x`, `1:3 <illegal> "didn't find end quote in string"`},
 		{"'x\n'", `1:3 <illegal> "can't have newline in string", 1:3 <newline> "", 2:2 <illegal> "didn't find end quote in string"`},
+		{`"\x0.\x00.\x0A\x10\xff\xFF\x41"`, `1:1 string "\x00.\x00.\n\x10\xff\xffA"`},
+		{`"\xg"`, `1:4 <illegal> "1 or 2 hex digits expected", 1:4 name "g", 1:6 <illegal> "didn't find end quote in string"`},
+		{`"\0\78\7\77\777\0 \141 "`, `1:1 string "\x00\a8\a?\xff\x00 a "`},
 
 		// Number tokens
 		{"0", `1:1 number "0"`},

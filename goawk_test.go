@@ -195,7 +195,6 @@ func TestGAWK(t *testing.T) {
 		"arrayind1":    true, // this is flakey, probably an array iteration order issue
 		"arrayprm3":    true, // array access seems to set the value!
 		"closebad":     true, // figure out correct getInputScanner* errors and setLine behaviour
-		"fsnul1":       true, // "\0" octal escape sequences not supported
 		"getline":      true, // getline syntax issues (may be okay, see grammar notes at http://pubs.opengroup.org/onlinepubs/007904975/utilities/awk.html#tag_04_06_13_14)
 		"getline3":     true, // getline syntax issues (similar to above)
 		"getline5":     true, // getline syntax issues (similar to above)

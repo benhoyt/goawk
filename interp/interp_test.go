@@ -204,6 +204,10 @@ BEGIN {
 			"", "-inf\n", "", ""},
 		{`BEGIN { print atan2(0, 8020020000000e20G-0)}`, "", "0\n", "", ""},
 		{`BEGIN { print 1e1000, -1e1000 }`, "", "inf -inf\n", "", ""},
+		{`BEGIN { printf "\x0.\x00.\x0A\x10\xff\xFF\x41" }  # !awk`, "", "\x00.\x00.\n\x10\xff\xffA", "", ""},
+		{`BEGIN { printf "\x1.\x01.\x0A\x10\xff\xFF\x41" }`, "", "\x01.\x01.\n\x10\xff\xffA", "", ""},
+		{`BEGIN { printf "\0\78\7\77\777\0 \141 " }  # !awk`, "", "\x00\a8\a?\xff\x00 a ", "", ""},
+		{`BEGIN { printf "\1\78\7\77\777\1 \141 " }`, "", "\x01\a8\a?\xff\x01 a ", "", ""},
 
 		// Conditional ?: expression
 		{`{ print /x/?"t":"f" }`, "x\ny\nxx\nz\n", "t\nf\nt\nf\n", "", ""},
