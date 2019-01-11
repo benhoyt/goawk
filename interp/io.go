@@ -347,10 +347,13 @@ func (p *interp) nextLine() (string, error) {
 					// Done with ARGV args, all done with input
 					return "", io.EOF
 				}
-				// Fetch next filename from ARGV
+				// Fetch next filename from ARGV. Can't use
+				// getArrayValue() here as it would set the value if
+				// not present
 				index := strconv.Itoa(p.filenameIndex)
 				argvIndex := p.program.Arrays["ARGV"]
-				filename := p.toString(p.getArrayValue(ScopeGlobal, argvIndex, index))
+				argvArray := p.arrays[p.getArrayIndex(ScopeGlobal, argvIndex)]
+				filename := p.toString(argvArray[index])
 				p.filenameIndex++
 
 				// Is it actually a var=value assignment?

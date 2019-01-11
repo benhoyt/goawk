@@ -1,4 +1,2 @@
-* "exit" tests, in BEGIN, end, etc (see gawk exitval tests)
-* fix new TODO tests in interp_test.go
 * should interp have a configurable "safe" mode that doesn't run
   system(), redirection, etc?

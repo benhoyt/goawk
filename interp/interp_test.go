@@ -135,6 +135,7 @@ BEGIN {
 		{`BEGIN { a["x"] = 3; print "x" in a, "y" in a }`, "", "1 0\n", "", ""},
 		{`BEGIN { a["x"] = 3; a["y"] = 4; delete a["x"]; for (k in a) print k, a[k] }`, "", "y 4\n", "", ""},
 		{`BEGIN { a["x"] = 3; a["y"] = 4; for (k in a) delete a[k]; for (k in a) print k, a[k] }`, "", "", "", ""},
+		{`BEGIN { a["x"]; "y" in a; for (k in a) print k, a[k] }`, "", "x \n", "", ""},
 		{`BEGIN { a[] }`, "", "", "parse error at 1:11: expected expression instead of ]", "syntax error"},
 		{`BEGIN { delete a[] }`, "", "", "parse error at 1:18: expected expression instead of ]", "syntax error"},
 

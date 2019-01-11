@@ -1037,7 +1037,15 @@ func (p *interp) getArrayIndex(scope VarScope, index int) int {
 // Get a value from given array by key (index)
 func (p *interp) getArrayValue(scope VarScope, arrayIndex int, index string) value {
 	resolved := p.getArrayIndex(scope, arrayIndex)
-	return p.arrays[resolved][index]
+	array := p.arrays[resolved]
+	v, ok := array[index]
+	if !ok {
+		// Strangely, per the POSIX spec, "Any other reference to a
+		// nonexistent array element [apart from "in" expressions]
+		// shall automatically create it."
+		array[index] = v
+	}
+	return v
 }
 
 // Set a value in given array by key (index)

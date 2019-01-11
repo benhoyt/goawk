@@ -50,7 +50,7 @@
 	    clear_array(table)
 	    foo(table)
 	    for (key in table)
-		print key, table[k]
+		print key, table[key]
 	    clear_array(table)
 	    exit(0)
 	}
