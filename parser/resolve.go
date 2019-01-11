@@ -289,8 +289,6 @@ func (p *parser) resolveVars(prog *Program) {
 		_, isFunc := p.functions[name]
 		if isFunc {
 			// Global var can't also be the name of a function
-			// TODO: ideally this error should have correct pos, or
-			// could invert test to loop through functions and look up in varTypes
 			panic(p.error("global var %q can't also be a function", name))
 		}
 		var index int
