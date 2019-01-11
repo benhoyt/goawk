@@ -7,8 +7,8 @@ BEGIN {
 
 	print e+0, x+0
 	print 0x
-	print 0e+x
-	print 0ex
+#	print 0e+x       # GoAWK behaviour is different (saner!) here
+#	print 0ex        # GoAWK behaviour is different (saner!) here
 	print 010e2
 	print 0e9.3
 }

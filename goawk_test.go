@@ -198,7 +198,6 @@ func TestGAWK(t *testing.T) {
 		"getline3":     true, // getline syntax issues (similar to above)
 		"getline5":     true, // getline syntax issues (similar to above)
 		"gsubtst7":     true, // something wrong with gsub or field split/join
-		"hex":          true, // different parsing of numbers with exponents
 		"inputred":     true, // getInputScanner errors (see closebad)
 		"membug1":      true, // doesn't parse: '{ one != one = $1 }'
 		"nfldstr":      true, // invalid handling of '!$0' when $0="0"
