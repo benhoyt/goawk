@@ -193,18 +193,22 @@ func sortedLines(data []byte) []byte {
 func TestGAWK(t *testing.T) {
 	skip := map[string]bool{ // TODO: fix these
 		"closebad":     true, // figure out correct getInputScanner* errors and setLine behaviour
+		"inputred":     true, // getInputScanner errors
+
 		"getline":      true, // getline syntax issues (may be okay, see grammar notes at http://pubs.opengroup.org/onlinepubs/007904975/utilities/awk.html#tag_04_06_13_14)
 		"getline3":     true, // getline syntax issues (similar to above)
 		"getline5":     true, // getline syntax issues (similar to above)
+
 		"gsubtst7":     true, // something wrong with gsub or field split/join
-		"inputred":     true, // getInputScanner errors (see closebad)
 		"membug1":      true, // doesn't parse: '{ one != one = $1 }'
-		"nfldstr":      true, // invalid handling of '!$0' when $0="0"
-		"parse1":       true, // incorrect parsing of $$a++++ (see TODOs in interp_test.go too)
-		"prec":         true, // incorrect parsing of $ and ++ (see above)
 		"splitwht":     true, // other awks handle split(s, a, " ") differently from split(s, a, / /)
 		"status-close": true, // hmmm, not sure what's up here
 		"sigpipe1":     true, // probable race condition: sometimes fails, sometimes passes
+
+		"parse1":       true, // incorrect parsing of $$a++++ (see TODOs in interp_test.go too)
+		"prec":         true, // incorrect parsing of $ and ++ (see above)
+
+		"nfldstr":      true, // invalid handling of '!$0' when $0="0"
 		"zeroe0":       true, // difference in handling of numStr typing when setting $0 and $1
 	}
 

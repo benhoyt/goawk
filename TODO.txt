@@ -6,3 +6,11 @@
   system(), redirection, etc?
 * fix how we handle numstr type when setting $0 directly, see TODO test:
   {`BEGIN { $0="0"; print !$0 }`, "", "0\n", "", ""},
+* get large awk files going from FreeBSD:
+  - support length(array)
+  - support delete array
+  - can't pass scalar "p_layout" as array param in nvram_map_gen.awk
+  feeder_rate_mkfilter.awk
+  makeobjops.awk
+  mtree-dedup.awk
+  nvram_map_gen.awk
