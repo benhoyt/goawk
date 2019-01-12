@@ -200,7 +200,6 @@ func TestGAWK(t *testing.T) {
 		"getline5":     true, // getline syntax issues (similar to above)
 
 		"gsubtst7":     true, // something wrong with gsub or field split/join
-		"membug1":      true, // doesn't parse: '{ one != one = $1 }'
 		"splitwht":     true, // other awks handle split(s, a, " ") differently from split(s, a, / /)
 		"status-close": true, // hmmm, not sure what's up here
 		"sigpipe1":     true, // probable race condition: sometimes fails, sometimes passes
