@@ -1,2 +1,8 @@
+* failing interp_test with f1() and f2()
+* failing TravisCI tests with write error if possible
+* getInputScanner issues (see GAWK tests closebad and inputred)
+* support "getline lvalue"
 * should interp have a configurable "safe" mode that doesn't run
   system(), redirection, etc?
+* fix how we handle numstr type when setting $0 directly, see TODO test:
+  {`BEGIN { $0="0"; print !$0 }`, "", "0\n", "", ""},
