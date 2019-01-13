@@ -1,6 +1,3 @@
-* get large awk files going from FreeBSD:
-  - support length(array) for feeder_rate_mkfilter.awk
-* undelete/adjust gawk tests with recent features (delete a, etc)
 * should interp have a configurable "safe" mode that doesn't run
   system(), redirection, etc?
 * support "getline lvalue"

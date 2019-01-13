@@ -82,6 +82,7 @@ NR==3, NR==5 { print NR }
 		{`BEGIN { printf "%c", "xyz" }`, "", "x", "", ""},
 		{`BEGIN { printf "%c", "" }  # !awk`, "", "\x00", "", ""},
 		{`BEGIN { printf }  # !awk - doesn't error on this`, "", "", "parse error at 1:16: expected printf args, got none", "printf: no arguments"},
+		{`BEGIN { printf("%%%dd", 4) }`, "", "%4d", "", ""},
 
 		// if and loop statements
 		{`BEGIN { if (1) print "t"; }`, "", "t\n", "", ""},

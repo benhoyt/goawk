@@ -627,7 +627,6 @@ func (p *interp) parseFmtTypes(s string) (format string, types []byte, err error
 				return "", nil, errors.New("expected type specifier after %")
 			}
 			if s[i] == '%' {
-				i++
 				continue
 			}
 			for i < len(s) && bytes.IndexByte([]byte(" .-+*#0123456789"), s[i]) >= 0 {
