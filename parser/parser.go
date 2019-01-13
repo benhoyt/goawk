@@ -242,12 +242,15 @@ func (p *parser) simpleStmt() Stmt {
 		p.next()
 		ref := p.arrayRef(p.val, p.pos)
 		p.expect(NAME)
-		p.expect(LBRACKET)
-		index := p.exprList(p.expr)
-		if len(index) == 0 {
-			panic(p.error("expected expression instead of ]"))
+		var index []Expr
+		if p.tok == LBRACKET {
+			p.next()
+			index = p.exprList(p.expr)
+			if len(index) == 0 {
+				panic(p.error("expected expression instead of ]"))
+			}
+			p.expect(RBRACKET)
 		}
-		p.expect(RBRACKET)
 		return &DeleteStmt{ref, index}
 	case IF, FOR, WHILE, DO, BREAK, CONTINUE, NEXT, EXIT, RETURN:
 		panic(p.error("expected print/printf, delete, or expression"))

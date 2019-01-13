@@ -1,1 +1,1 @@
-parse error at 4:10: expected [ instead of <newline>
+parse error at 8:1: global var "f" can't also be a function

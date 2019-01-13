@@ -138,6 +138,7 @@ BEGIN {
 		{`BEGIN { a["x"]; "y" in a; for (k in a) print k, a[k] }`, "", "x \n", "", ""},
 		{`BEGIN { a[] }`, "", "", "parse error at 1:11: expected expression instead of ]", "syntax error"},
 		{`BEGIN { delete a[] }`, "", "", "parse error at 1:18: expected expression instead of ]", "syntax error"},
+		{`BEGIN { a["x"] = 3; a["y"] = 4; delete a; for (k in a) print k, a[k] }`, "", "", "", ""},
 
 		// Unary expressions: ! + -
 		{`BEGIN { print !42, !1, !0, !!42, !!1, !!0 }`, "", "0 0 1 1 1 0\n", "", ""},

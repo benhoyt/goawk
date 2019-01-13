@@ -591,13 +591,21 @@ func (p *interp) execute(stmt Stmt) error {
 		return errExit
 
 	case *DeleteStmt:
-		// Delete key from array
-		index, err := p.evalIndex(s.Index)
-		if err != nil {
-			return err
+		if len(s.Index) > 0 {
+			// Delete single key from array
+			index, err := p.evalIndex(s.Index)
+			if err != nil {
+				return err
+			}
+			array := p.arrays[p.getArrayIndex(s.Array.Scope, s.Array.Index)]
+			delete(array, index) // Does nothing if key isn't present
+		} else {
+			// Delete entire array
+			array := p.arrays[p.getArrayIndex(s.Array.Scope, s.Array.Index)]
+			for k := range array {
+				delete(array, k)
+			}
 		}
-		array := p.arrays[p.getArrayIndex(s.Array.Scope, s.Array.Index)]
-		delete(array, index) // Does nothing if key isn't present
 
 	case *BlockStmt:
 		// Nested block (just syntax, doesn't do anything)

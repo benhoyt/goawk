@@ -1,16 +1,11 @@
+* get large awk files going from FreeBSD:
+  - support length(array) for feeder_rate_mkfilter.awk
+* undelete/adjust gawk tests with recent features (delete a, etc)
+* should interp have a configurable "safe" mode that doesn't run
+  system(), redirection, etc?
+* support "getline lvalue"
+* fix how we handle numstr type when setting $0 directly, see TODO test:
+  {`BEGIN { $0="0"; print !$0 }`, "", "0\n", "", ""},
 * failing interp_test with f1() and f2()
 * failing TravisCI tests with write error if possible
 * getInputScanner issues (see GAWK tests closebad and inputred)
-* support "getline lvalue"
-* should interp have a configurable "safe" mode that doesn't run
-  system(), redirection, etc?
-* fix how we handle numstr type when setting $0 directly, see TODO test:
-  {`BEGIN { $0="0"; print !$0 }`, "", "0\n", "", ""},
-* get large awk files going from FreeBSD:
-  - support length(array)
-  - support delete array
-  - can't pass scalar "p_layout" as array param in nvram_map_gen.awk
-  feeder_rate_mkfilter.awk
-  makeobjops.awk
-  mtree-dedup.awk
-  nvram_map_gen.awk
