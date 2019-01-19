@@ -74,6 +74,9 @@ type interp struct {
 	inputStreams  map[string]io.ReadCloser
 	outputStreams map[string]io.WriteCloser
 	commands      map[string]*exec.Cmd
+	noExec        bool
+	noFileWrites  bool
+	noFileReads   bool
 
 	// Scalars, arrays, and function state
 	globals     []value
@@ -178,6 +181,17 @@ type Config struct {
 	// Functions defined with the "function" keyword in AWK code
 	// take precedence over functions in Funcs.
 	Funcs map[string]interface{}
+
+	// Set one or more of these to true to prevent unsafe behaviours,
+	// useful when executing untrusted scripts:
+	//
+	// * NoExec prevents system calls via system() or pipe operator
+	// * NoFileWrites prevents writing to files via '>' or '>>'
+	// * NoFileReads prevents reading from files via getline or the
+	//   filenames in Args
+	NoExec       bool
+	NoFileWrites bool
+	NoFileReads  bool
 }
 
 // ExecProgram executes the parsed program using the given interpreter
@@ -212,6 +226,9 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	p.outputFieldSep = " "
 	p.outputRecordSep = "\n"
 	p.subscriptSep = "\x1c"
+	p.noExec = config.NoExec
+	p.noFileWrites = config.NoFileWrites
+	p.noFileReads = config.NoFileReads
 	err := p.initNativeFuncs(config.Funcs)
 	if err != nil {
 		return 0, err

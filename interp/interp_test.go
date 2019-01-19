@@ -650,13 +650,16 @@ BEGIN { foo(5); bar(10) }
 
 		// Then test it in GoAWK
 		t.Run(testName, func(t *testing.T) {
-			testGoAWK(t, test.src, test.in, test.out, test.err, nil)
+			testGoAWK(t, test.src, test.in, test.out, test.err, nil, nil)
 		})
 	}
 	_ = os.Remove("out")
 }
 
-func testGoAWK(t *testing.T, src, in, out, errStr string, funcs map[string]interface{}) {
+func testGoAWK(
+	t *testing.T, src, in, out, errStr string,
+	funcs map[string]interface{}, configure func(config *interp.Config),
+) {
 	parserConfig := &parser.ParserConfig{
 		Funcs: funcs,
 	}
@@ -678,6 +681,9 @@ func testGoAWK(t *testing.T, src, in, out, errStr string, funcs map[string]inter
 		Error:  errBuf,
 		Vars:   []string{"_var", "42"},
 		Funcs:  funcs,
+	}
+	if configure != nil {
+		configure(config)
 	}
 	_, err = interp.ExecProgram(prog, config)
 	if err != nil {
@@ -932,7 +938,40 @@ BEGIN { x=4; y=5; print foo(x), bar(y) }
 			testName = testName[:70]
 		}
 		t.Run(testName, func(t *testing.T) {
-			testGoAWK(t, test.src, test.in, test.out, test.err, test.funcs)
+			testGoAWK(t, test.src, test.in, test.out, test.err, test.funcs, nil)
+		})
+	}
+}
+
+func TestSafeMode(t *testing.T) {
+	tests := []struct {
+		src  string
+		in   string
+		out  string
+		err  string
+		args []string
+	}{
+		{`BEGIN { print "hi" >"out" }`, "", "", "can't write to file due to NoFileWrites", nil},
+		{`BEGIN { print "hi" >>"out" }`, "", "", "can't write to file due to NoFileWrites", nil},
+		{`BEGIN { print "hi" |"sort" }`, "", "", "can't write to pipe due to NoExec", nil},
+		{`BEGIN { getline <"in" }`, "", "", "can't read from file due to NoFileReads", nil},
+		{`$0  # no files`, "1\n2\n", "1\n2\n", "", nil},
+		{`$0  # files`, "1\n2\n", "1\n2\n", "can't read from file due to NoFileReads", []string{"f1"}},
+		{`BEGIN { "echo foo" |getline }`, "", "", "can't read from pipe due to NoExec", nil},
+		{`BEGIN { system("echo foo") }`, "", "", "can't call system() due to NoExec", nil},
+	}
+	for _, test := range tests {
+		testName := test.src
+		if len(testName) > 70 {
+			testName = testName[:70]
+		}
+		t.Run(testName, func(t *testing.T) {
+			testGoAWK(t, test.src, test.in, test.out, test.err, nil, func(config *interp.Config) {
+				config.Args = test.args
+				config.NoExec = true
+				config.NoFileWrites = true
+				config.NoFileReads = true
+			})
 		})
 	}
 }

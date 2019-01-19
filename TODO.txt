@@ -1,5 +1,3 @@
-* should interp have a configurable "safe" mode that doesn't run
-  system(), redirection, etc?
 * support "getline lvalue"
 * fix how we handle numstr type when setting $0 directly, see TODO test:
   {`BEGIN { $0="0"; print !$0 }`, "", "0\n", "", ""},

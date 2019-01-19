@@ -188,6 +188,9 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 		return num(prevSeed), nil
 
 	case F_SYSTEM:
+		if p.noExec {
+			return null(), newError("can't call system() due to NoExec")
+		}
 		cmdline := p.toString(args[0])
 		cmd := exec.Command("sh", "-c", cmdline)
 		stdout, err := cmd.StdoutPipe()

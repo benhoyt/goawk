@@ -69,6 +69,9 @@ func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
 	switch redirect {
 	case GREATER, APPEND:
 		// Write or append to file
+		if p.noFileWrites {
+			return nil, newError("can't write to file due to NoFileWrites")
+		}
 		flags := os.O_CREATE | os.O_WRONLY
 		if redirect == GREATER {
 			flags |= os.O_TRUNC
@@ -85,6 +88,9 @@ func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
 
 	case PIPE:
 		// Pipe to command
+		if p.noExec {
+			return nil, newError("can't write to pipe due to NoExec")
+		}
 		cmd := exec.Command("sh", "-c", name)
 		w, err := cmd.StdinPipe()
 		if err != nil {
@@ -127,6 +133,9 @@ func (p *interp) getInputScannerFile(name string) (*bufio.Scanner, error) {
 	if _, ok := p.inputStreams[name]; ok {
 		return p.scanners[name], nil
 	}
+	if p.noFileReads {
+		return nil, newError("can't read from file due to NoFileReads")
+	}
 	r, err := os.Open(name)
 	if err != nil {
 		return nil, newError("input redirection error: %s", err)
@@ -144,6 +153,9 @@ func (p *interp) getInputScannerPipe(name string) (*bufio.Scanner, error) {
 	}
 	if _, ok := p.inputStreams[name]; ok {
 		return p.scanners[name], nil
+	}
+	if p.noExec {
+		return nil, newError("can't read from pipe due to NoExec")
 	}
 	cmd := exec.Command("sh", "-c", name)
 	stdin, err := cmd.StdinPipe()
@@ -375,6 +387,9 @@ func (p *interp) nextLine() (string, error) {
 					p.setFile("")
 				} else {
 					// A regular file name, open it
+					if p.noFileReads {
+						return "", newError("can't read from file due to NoFileReads")
+					}
 					input, err := os.Open(filename)
 					if err != nil {
 						return "", err
