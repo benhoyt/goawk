@@ -96,25 +96,13 @@ func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
 		if err != nil {
 			return nil, newError("error connecting to stdin pipe: %v", err)
 		}
-		stdout, err := cmd.StdoutPipe()
-		if err != nil {
-			return nil, newError("error connecting to stdout pipe: %v", err)
-		}
-		stderr, err := cmd.StderrPipe()
-		if err != nil {
-			return nil, newError("error connecting to stderr pipe: %v", err)
-		}
+		cmd.Stdout = p.output
+		cmd.Stderr = p.errorOutput
 		err = cmd.Start()
 		if err != nil {
 			fmt.Fprintln(p.errorOutput, err)
 			return ioutil.Discard, nil
 		}
-		go func() {
-			io.Copy(p.output, stdout)
-		}()
-		go func() {
-			io.Copy(p.errorOutput, stderr)
-		}()
 		p.commands[name] = cmd
 		p.outputStreams[name] = w
 		return w, nil
@@ -158,30 +146,17 @@ func (p *interp) getInputScannerPipe(name string) (*bufio.Scanner, error) {
 		return nil, newError("can't read from pipe due to NoExec")
 	}
 	cmd := exec.Command("sh", "-c", name)
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		return nil, newError("error connecting to stdin pipe: %v", err)
-	}
+	cmd.Stdin = p.stdin
+	cmd.Stderr = p.errorOutput
 	r, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil, newError("error connecting to stdout pipe: %v", err)
-	}
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return nil, newError("error connecting to stderr pipe: %v", err)
 	}
 	err = cmd.Start()
 	if err != nil {
 		fmt.Fprintln(p.errorOutput, err)
 		return bufio.NewScanner(strings.NewReader("")), nil
 	}
-	go func() {
-		io.Copy(stdin, p.stdin)
-		stdin.Close()
-	}()
-	go func() {
-		io.Copy(p.errorOutput, stderr)
-	}()
 	scanner := p.newScanner(r)
 	p.commands[name] = cmd
 	p.inputStreams[name] = r

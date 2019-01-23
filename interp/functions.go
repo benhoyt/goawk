@@ -193,25 +193,13 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 		}
 		cmdline := p.toString(args[0])
 		cmd := exec.Command("sh", "-c", cmdline)
-		stdout, err := cmd.StdoutPipe()
-		if err != nil {
-			return num(-1), nil
-		}
-		stderr, err := cmd.StderrPipe()
-		if err != nil {
-			return num(-1), nil
-		}
-		err = cmd.Start()
+		cmd.Stdout = p.output
+		cmd.Stderr = p.errorOutput
+		err := cmd.Start()
 		if err != nil {
 			fmt.Fprintln(p.errorOutput, err)
 			return num(-1), nil
 		}
-		go func() {
-			io.Copy(p.output, stdout)
-		}()
-		go func() {
-			io.Copy(p.errorOutput, stderr)
-		}()
 		err = cmd.Wait()
 		if err != nil {
 			if exitErr, ok := err.(*exec.ExitError); ok {

@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/benhoyt/goawk/interp"
@@ -440,6 +441,10 @@ BEGIN {
 	print (n>400)
 }
 `, "", "1\n", "", ""},
+		{`BEGIN { print system("echo foo"); print system("echo bar") }`,
+			"", "foo\n0\nbar\n0\n", "", ""},
+		{`BEGIN { print system(">&2 echo error") }`,
+			"", "error\n0\n", "", ""},
 
 		// Conditional expressions parse and work correctly
 		{`BEGIN { print 0?"t":"f" }`, "", "f\n", "", ""},
@@ -576,6 +581,10 @@ BEGIN { foo(5); bar(10) }
 		// TODO: currently we support "getline var" but not "getline lvalue"
 		// TODO: {`BEGIN { getline a[1]; print a[1] }`, "foo", "foo\n", "", ""},
 		// TODO: {`BEGIN { getline $1; print $1 }`, "foo", "foo\n", "", ""},
+		{`BEGIN { print "foo" |"sort"; print "bar" |"sort" }`, "", "bar\nfoo\n", "", ""},
+		{`BEGIN { print "foo" |">&2 echo error" }`, "", "error\n", "", ""},
+		{`BEGIN { "cat" | getline; print }`, "bar", "bar\n", "", ""},
+		{`BEGIN { ">&2 echo error" | getline; print }`, "", "error\n\n", "", ""},
 
 		// Greater than operator requires parentheses in print statement,
 		// otherwise it's a redirection directive
@@ -656,6 +665,26 @@ BEGIN { foo(5); bar(10) }
 	_ = os.Remove("out")
 }
 
+// Version of bytes.Buffer that's safe for concurrent writes. This
+// makes certain tests that write to Output and Error at once (due
+// to os/exec) work correctly.
+type concurrentBuffer struct {
+	buffer bytes.Buffer
+	mutex sync.Mutex
+}
+
+func (b *concurrentBuffer) Write(data []byte) (int, error) {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+	return b.buffer.Write(data)
+}
+
+func (b *concurrentBuffer) String() string {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+	return b.buffer.String()
+}
+
 func testGoAWK(
 	t *testing.T, src, in, out, errStr string,
 	funcs map[string]interface{}, configure func(config *interp.Config),
@@ -673,12 +702,11 @@ func testGoAWK(
 		}
 		t.Fatal(err)
 	}
-	outBuf := &bytes.Buffer{}
-	errBuf := &bytes.Buffer{}
+	outBuf := &concurrentBuffer{}
 	config := &interp.Config{
 		Stdin:  strings.NewReader(in),
 		Output: outBuf,
-		Error:  errBuf,
+		Error:  outBuf,
 		Vars:   []string{"_var", "42"},
 		Funcs:  funcs,
 	}
@@ -698,7 +726,7 @@ func testGoAWK(
 	if errStr != "" {
 		t.Fatalf(`expected error %q, got ""`, errStr)
 	}
-	normalized := normalizeNewlines(outBuf.String() + errBuf.String())
+	normalized := normalizeNewlines(outBuf.String())
 	if normalized != out {
 		t.Fatalf("expected %q, got %q", out, normalized)
 	}
