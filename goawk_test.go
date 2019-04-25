@@ -291,6 +291,7 @@ func TestCommandLine(t *testing.T) {
 		// Load source from stdin
 		{[]string{"-f", "-"}, `BEGIN { print "b" }`, "b\n"},
 		{[]string{"-f", "-", "-f", "-"}, `BEGIN { print "b" }`, "b\n"},
+		{[]string{"-f-", "-f", "-"}, `BEGIN { print "b" }`, "b\n"},
 
 		// Program with no input
 		{[]string{`BEGIN { print "a" }`}, "", "a\n"},
@@ -313,12 +314,14 @@ func TestCommandLine(t *testing.T) {
 		{[]string{"-F", ",", `{ print $1, $3 }`}, "1 2 3\n4 5 6", "1 2 3 \n4 5 6 \n"},
 		{[]string{"-F", ",", `{ print $1, $3 }`}, "1,2,3\n4,5,6", "1 3\n4 6\n"},
 		{[]string{"-F", ",", `{ print $1, $3 }`}, "1,2,3\n4,5,6", "1 3\n4 6\n"},
+		{[]string{"-F,", `{ print $1, $3 }`}, "1,2,3\n4,5,6", "1 3\n4 6\n"},
 
 		// Assigning other variables with -v
 		{[]string{"-v", "OFS=.", `{ print $1, $3 }`}, "1 2 3\n4 5 6", "1.3\n4.6\n"},
 		{[]string{"-v", "OFS=.", "-v", "ORS=", `{ print $1, $3 }`}, "1 2 3\n4 5 6", "1.34.6"},
 		{[]string{"-v", "x=42", "-v", "y=foo", `BEGIN { print x, y }`}, "", "42 foo\n"},
 		{[]string{"-v", "RS=;", `$0`}, "a b;c\nd;e", "a b\nc\nd\ne\n"},
+		{[]string{"-vRS=;", `$0`}, "a b;c\nd;e", "a b\nc\nd\ne\n"},
 
 		// ARGV/ARGC handling
 		{[]string{`

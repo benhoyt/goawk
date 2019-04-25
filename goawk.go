@@ -29,7 +29,6 @@ package main
 
 import (
 	"bytes"
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -44,30 +43,101 @@ import (
 )
 
 const (
-	version = "v1.4.1"
+	version    = "v1.5.0"
+	shortUsage = "usage: goawk [-F fs] [-v var=value] [-f progfile | 'prog'] [file ...]"
+	longUsage  = `
+Standard AWK arguments:
+  -F separator
+        field separator (default " ")
+  -v assignment
+        name=value variable assignment (multiple allowed)
+  -f progfile
+        load AWK source from progfile (multiple allowed)
+
+Additional GoAWK arguments:
+  -cpuprofile file
+        write CPU profile to file
+  -d    debug mode (print parsed AST to stderr)
+  -dt   show variable types debug info
+  -h    show this usage message
+  -version
+        show GoAWK version and exit
+`
 )
 
 func main() {
-	// Main AWK arguments
-	var progFiles multiString
-	flag.Var(&progFiles, "f", "load AWK source from `progfile` (multiple allowed)")
-	fieldSep := flag.String("F", " ", "field `separator`")
-	var vars multiString
-	flag.Var(&vars, "v", "name=value variable `assignment` (multiple allowed)")
-	showVersion := flag.Bool("version", false, "show GoAWK version and exit")
-
-	// Debugging and profiling arguments
-	debug := flag.Bool("d", false, "debug mode (print parsed AST to stderr)")
-	debugTypes := flag.Bool("dt", false, "show variable types debug info")
-	cpuprofile := flag.String("cpuprofile", "", "write CPU profile to `file`")
-	memprofile := flag.String("memprofile", "", "write memory profile to `file`")
-
-	flag.Parse()
-	args := flag.Args()
-
-	if *showVersion {
-		fmt.Printf("GoAWK %s - Copyright (c) 2018 Ben Hoyt\n", version)
-		return
+	// Parse command line arguments manually rather than using the
+	// "flag" package so we can support flags with no space between
+	// flag and argument, like '-F:' (allowed by POSIX)
+	args := make([]string, 0)
+	fieldSep := " "
+	progFiles := make([]string, 0)
+	vars := make([]string, 0)
+	cpuprofile := ""
+	debug := false
+	debugTypes := false
+	memprofile := ""
+	for i := 1; i < len(os.Args); i++ {
+		switch os.Args[i] {
+		case "-F":
+			if i+1 >= len(os.Args) {
+				errorExit("flag needs an argument: -F")
+			}
+			i++
+			fieldSep = os.Args[i]
+		case "-f":
+			if i+1 >= len(os.Args) {
+				errorExit("flag needs an argument: -f")
+			}
+			i++
+			progFiles = append(progFiles, os.Args[i])
+		case "-v":
+			if i+1 >= len(os.Args) {
+				errorExit("flag needs an argument: -v")
+			}
+			i++
+			vars = append(vars, os.Args[i])
+		case "-cpuprofile":
+			if i+1 >= len(os.Args) {
+				errorExit("flag needs an argument: -cpuprofile")
+			}
+			i++
+			cpuprofile = os.Args[i]
+		case "-d":
+			debug = true
+		case "-dt":
+			debugTypes = true
+		case "-h", "--help":
+			fmt.Printf("%s\n%s", shortUsage, longUsage)
+			os.Exit(0)
+		case "-memprofile":
+			if i+1 >= len(os.Args) {
+				errorExit("flag needs an argument: -memprofile")
+			}
+			i++
+			memprofile = os.Args[i]
+		case "-version", "--version":
+			fmt.Printf("GoAWK %s - Copyright (c) 2018 Ben Hoyt\n", version)
+			os.Exit(0)
+		default:
+			arg := os.Args[i]
+			switch {
+			case strings.HasPrefix(arg, "-F"):
+				fieldSep = arg[2:]
+			case strings.HasPrefix(arg, "-f"):
+				progFiles = append(progFiles, arg[2:])
+			case strings.HasPrefix(arg, "-v"):
+				vars = append(vars, arg[2:])
+			case strings.HasPrefix(arg, "-cpuprofile="):
+				cpuprofile = arg[12:]
+			case strings.HasPrefix(arg, "-memprofile="):
+				memprofile = arg[12:]
+			case len(arg) > 1 && arg[0] == '-':
+				errorExit("flag provided but not defined: %s", arg)
+			default:
+				args = append(args, arg)
+			}
+		}
 	}
 
 	var src []byte
@@ -98,7 +168,7 @@ func main() {
 		src = buf.Bytes()
 	} else {
 		if len(args) < 1 {
-			errorExit("usage: goawk [-F fs] [-v var=value] [-f progfile | 'prog'] [file ...]")
+			errorExit(shortUsage)
 		}
 		src = []byte(args[0])
 		args = args[1:]
@@ -106,7 +176,7 @@ func main() {
 
 	// Parse source code and setup interpreter
 	parserConfig := &parser.ParserConfig{
-		DebugTypes:  *debugTypes,
+		DebugTypes:  debugTypes,
 		DebugWriter: os.Stderr,
 	}
 	prog, err := parser.ParseProgram(src, parserConfig)
@@ -117,13 +187,13 @@ func main() {
 		}
 		errorExit("%s", errMsg)
 	}
-	if *debug {
+	if debug {
 		fmt.Fprintln(os.Stderr, prog)
 	}
 	config := &interp.Config{
 		Argv0: filepath.Base(os.Args[0]),
 		Args:  args,
-		Vars:  []string{"FS", *fieldSep},
+		Vars:  []string{"FS", fieldSep},
 	}
 	for _, v := range vars {
 		parts := strings.SplitN(v, "=", 2)
@@ -133,8 +203,8 @@ func main() {
 		config.Vars = append(config.Vars, parts[0], parts[1])
 	}
 
-	if *cpuprofile != "" {
-		f, err := os.Create(*cpuprofile)
+	if cpuprofile != "" {
+		f, err := os.Create(cpuprofile)
 		if err != nil {
 			errorExit("could not create CPU profile: %v", err)
 		}
@@ -148,12 +218,12 @@ func main() {
 		errorExit("%s", err)
 	}
 
-	if *cpuprofile != "" {
+	if cpuprofile != "" {
 		pprof.StopCPUProfile()
 	}
 
-	if *memprofile != "" {
-		f, err := os.Create(*memprofile)
+	if memprofile != "" {
+		f, err := os.Create(memprofile)
 		if err != nil {
 			errorExit("could not create memory profile: %v", err)
 		}
