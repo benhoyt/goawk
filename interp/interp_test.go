@@ -670,7 +670,7 @@ BEGIN { foo(5); bar(10) }
 // to os/exec) work correctly.
 type concurrentBuffer struct {
 	buffer bytes.Buffer
-	mutex sync.Mutex
+	mutex  sync.Mutex
 }
 
 func (b *concurrentBuffer) Write(data []byte) (int, error) {
