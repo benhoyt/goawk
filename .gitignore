@@ -5,3 +5,5 @@ fuzz/interp/workdir
 fuzz/parser/workdir
 fuzz-fuzz.zip
 posix_spec.html
+goawk_*.zip
+goawk_*.tar.gz
