@@ -43,10 +43,10 @@ import (
 )
 
 const (
-	version    = "v1.5.0"
+	version    = "v1.5.1"
+	copyright  = "GoAWK " + version + " - Copyright (c) 2019 Ben Hoyt"
 	shortUsage = "usage: goawk [-F fs] [-v var=value] [-f progfile | 'prog'] [file ...]"
-	longUsage  = `
-Standard AWK arguments:
+	longUsage  = `Standard AWK arguments:
   -F separator
         field separator (default " ")
   -v assignment
@@ -108,7 +108,7 @@ func main() {
 		case "-dt":
 			debugTypes = true
 		case "-h", "--help":
-			fmt.Printf("%s\n%s", shortUsage, longUsage)
+			fmt.Printf("%s\n\n%s\n\n%s", copyright, shortUsage, longUsage)
 			os.Exit(0)
 		case "-memprofile":
 			if i+1 >= len(os.Args) {
@@ -117,7 +117,7 @@ func main() {
 			i++
 			memprofile = os.Args[i]
 		case "-version", "--version":
-			fmt.Printf("GoAWK %s - Copyright (c) 2018 Ben Hoyt\n", version)
+			fmt.Println(version)
 			os.Exit(0)
 		default:
 			arg := os.Args[i]
