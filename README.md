@@ -20,6 +20,13 @@ $ echo 1 2 3 | goawk '{ print $1 + $3 }'
 4
 ```
 
+On Windows, `"` is the shell quoting character, so use `"` around the entire AWK program on the command line, and use `'` around AWK strings -- this is a non-POSIX extension to make GoAWK easier to use on Windows:
+
+```powershell
+C:\> goawk "BEGIN { print 'foo', 42 }"
+foo 42
+```
+
 To use it in your Go programs, you can call `interp.Exec()` directly for simple needs:
 
 ```go
