@@ -9,6 +9,7 @@ package interp
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -21,6 +22,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	. "github.com/benhoyt/goawk/internal/ast"
 	. "github.com/benhoyt/goawk/lexer"
@@ -77,6 +79,7 @@ type interp struct {
 	noExec        bool
 	noFileWrites  bool
 	noFileReads   bool
+	timeout       time.Duration
 
 	// Scalars, arrays, and function state
 	globals     []value
@@ -192,6 +195,8 @@ type Config struct {
 	NoExec       bool
 	NoFileWrites bool
 	NoFileReads  bool
+
+	Timeout time.Duration
 }
 
 // ExecProgram executes the parsed program using the given interpreter
@@ -229,6 +234,7 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	p.noExec = config.NoExec
 	p.noFileWrites = config.NoFileWrites
 	p.noFileReads = config.NoFileReads
+	p.timeout = config.Timeout
 	err := p.initNativeFuncs(config.Funcs)
 	if err != nil {
 		return 0, err
@@ -271,8 +277,31 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	p.scanners = make(map[string]*bufio.Scanner)
 	defer p.closeAll()
 
+	// If timeout is set then run with timeout
+	if p.timeout.Nanoseconds() != 0 {
+		ctx, cancel := context.WithTimeout(context.Background(), p.timeout)
+		defer cancel()
+		errChan := make(chan error)
+		go func() {
+			var execError error
+			p.exitStatus, execError = execProgram(p, program)
+			errChan <- execError
+		}()
+		select {
+		case err := <-errChan:
+			if err != nil {
+				return p.exitStatus, err
+			}
+		case <-ctx.Done():
+			return p.exitStatus, fmt.Errorf("Runtime exceeded timeout %v", p.timeout)
+		}
+	}
+
+	return execProgram(p, program)
+}
+func execProgram(p *interp, program *Program) (int, error) {
 	// Execute the program! BEGIN, then pattern/actions, then END
-	err = p.execBeginEnd(program.Begin)
+	err := p.execBeginEnd(program.Begin)
 	if err != nil && err != errExit {
 		return 0, err
 	}
@@ -289,7 +318,7 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	if err != nil && err != errExit {
 		return 0, err
 	}
-	return p.exitStatus, nil
+	return 0, nil
 }
 
 // Exec provides a simple way to parse and execute an AWK program
@@ -410,6 +439,7 @@ func (p *interp) executes(stmts Stmts) error {
 
 // Execute a single statement
 func (p *interp) execute(stmt Stmt) error {
+
 	switch s := stmt.(type) {
 	case *ExprStmt:
 		// Expression statement: simply throw away the expression value

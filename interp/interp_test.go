@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/benhoyt/goawk/interp"
 	"github.com/benhoyt/goawk/parser"
@@ -1000,6 +1001,31 @@ func TestSafeMode(t *testing.T) {
 				config.NoExec = true
 				config.NoFileWrites = true
 				config.NoFileReads = true
+			})
+		})
+	}
+}
+func TestTimeout(t *testing.T) {
+	tests := []struct {
+		src  string
+		in   string
+		out  string
+		err  string
+		args []string
+	}{
+		{`BEGIN { print "hi" }`, "", "hi\nhi\n", "", nil},
+		{`BEGIN { while(i<1){} }`, "", "", "Runtime exceeded timeout 5ms", nil},
+		{`BEGIN { while(i<1){i++} }`, "", "", "", nil},
+	}
+	for _, test := range tests {
+		testName := test.src
+		if len(testName) > 70 {
+			testName = testName[:70]
+		}
+		t.Run(testName, func(t *testing.T) {
+			testGoAWK(t, test.src, test.in, test.out, test.err, nil, func(config *interp.Config) {
+				config.Args = test.args
+				config.Timeout = 5 * time.Millisecond
 			})
 		})
 	}
