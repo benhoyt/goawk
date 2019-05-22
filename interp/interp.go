@@ -198,6 +198,7 @@ type Config struct {
 	NoFileWrites bool
 	NoFileReads  bool
 
+	// RuntimeLimit is the limit of the amount of time a single program can run
 	RuntimeLimit time.Duration
 }
 
