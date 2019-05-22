@@ -1005,7 +1005,7 @@ func TestSafeMode(t *testing.T) {
 		})
 	}
 }
-func TestTimeout(t *testing.T) {
+func TestRuntimeLimit(t *testing.T) {
 	tests := []struct {
 		src  string
 		in   string
@@ -1013,21 +1013,34 @@ func TestTimeout(t *testing.T) {
 		err  string
 		args []string
 	}{
-		{`BEGIN { print "hi" }`, "", "hi\nhi\n", "", nil},
-		{`BEGIN { while(i<1){} }`, "", "", "Runtime exceeded timeout 5ms", nil},
+		{`BEGIN { print "hi" }`, "", "hi\n", "", nil},
+		{`BEGIN { while(i<1){} }`, "", "", "Runtime exceeded limit of 5ms", nil},
 		{`BEGIN { while(i<1){i++} }`, "", "", "", nil},
+		{`BEGIN { while(1){} }`, "", "", "Runtime exceeded limit of 5ms", nil},
 	}
 	for _, test := range tests {
 		testName := test.src
 		if len(testName) > 70 {
 			testName = testName[:70]
 		}
-		t.Run(testName, func(t *testing.T) {
-			testGoAWK(t, test.src, test.in, test.out, test.err, nil, func(config *interp.Config) {
-				config.Args = test.args
-				config.Timeout = 5 * time.Millisecond
+		timeout := 5 * time.Millisecond
+		testRun := make(chan bool, 0)
+		go func() {
+			t.Run(testName, func(t *testing.T) {
+				testGoAWK(t, test.src, test.in, test.out, test.err, nil, func(config *interp.Config) {
+					config.Args = test.args
+					config.RuntimeLimit = timeout
+				})
 			})
-		})
+			testRun <- true
+		}()
+
+		select {
+		case <-testRun:
+			break
+		case <-time.After(timeout):
+			t.Errorf("Failed to stop runtime in %v: %s", timeout, test.src)
+		}
 	}
 }
 
