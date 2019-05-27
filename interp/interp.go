@@ -21,6 +21,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	. "github.com/benhoyt/goawk/internal/ast"
 	. "github.com/benhoyt/goawk/lexer"
@@ -1015,15 +1016,10 @@ func (p *interp) setVar(scope VarScope, index int, v value) error {
 			p.filename = p.toString(v)
 		case V_FS:
 			p.fieldSep = p.toString(v)
-			if p.fieldSep != " " {
-				fieldSep := p.fieldSep
-				if fieldSep == `\` {
-					// Other AWKs treat just `\` as regex `\\`
-					fieldSep = `\\`
-				}
-				re, err := regexp.Compile(fieldSep)
+			if utf8.RuneCountInString(p.fieldSep) > 1 {
+				re, err := regexp.Compile(p.fieldSep)
 				if err != nil {
-					return newError("invalid regex %q: %s", fieldSep, err)
+					return newError("invalid regex %q: %s", p.fieldSep, err)
 				}
 				p.fieldSepRegex = re
 			}
