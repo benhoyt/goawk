@@ -291,11 +291,11 @@ func (p *interp) ensureFields() {
 	if p.fieldSep == " " {
 		// FS space (default) means split fields on any whitespace
 		p.fields = strings.Fields(p.line)
+	} else if p.line == "" {
+		p.fields = nil
 	} else if utf8.RuneCountInString(p.fieldSep) <= 1 {
 		// 1-char FS is handled as plain split (not regex)
 		p.fields = strings.Split(p.line, p.fieldSep)
-	} else if p.line == "" {
-		p.fields = nil
 	} else {
 		// Split on FS as a regex
 		p.fields = p.fieldSepRegex.Split(p.line, -1)

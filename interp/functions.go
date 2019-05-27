@@ -15,6 +15,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"unicode/utf8"
 
 	. "github.com/benhoyt/goawk/internal/ast"
 	. "github.com/benhoyt/goawk/lexer"
@@ -540,7 +541,11 @@ func (p *interp) split(s string, scope VarScope, index int, fs string) (int, err
 	var parts []string
 	if fs == " " {
 		parts = strings.Fields(s)
-	} else if s != "" {
+	} else if s == "" {
+		// NF should be 0 on empty line
+	} else if utf8.RuneCountInString(fs) <= 1 {
+		parts = strings.Split(s, fs)
+	} else {
 		re, err := p.compileRegex(fs)
 		if err != nil {
 			return 0, err
