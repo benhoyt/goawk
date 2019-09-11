@@ -118,7 +118,15 @@ func (l *Lexer) scan() (Position, Token, string) {
 	// through a corpus of real AWK programs to determine actual
 	// frequency.
 	switch ch {
-	case '$':
+	// There are many cases, $1/$2/... means argv1/argv2/...
+	// In order to distinguish between $n and argv[N] in this case,
+	// it will be helpful to support @n to express AWK ouput field n,
+	// which the semantics of $n
+
+	// Example (Windows OS)
+	// echo a = 100 | goawk "{ print @3 }" will print 100, same as
+	// echo a = 100 | goawk "{ print $3 }" will print 100
+	case '$', '@':
 		tok = DOLLAR
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.':
 		// Avoid make/append and use l.offset directly for performance
