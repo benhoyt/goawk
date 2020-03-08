@@ -157,13 +157,13 @@ func main() {
 				}
 				_, err = buf.ReadFrom(f)
 				if err != nil {
-					f.Close()
+					_ = f.Close()
 					errorExit("%s", err)
 				}
-				f.Close()
+				_ = f.Close()
 			}
 			// Append newline to file in case it doesn't end with one
-			buf.WriteByte('\n')
+			_ = buf.WriteByte('\n')
 		}
 		src = buf.Bytes()
 	} else {
@@ -231,7 +231,7 @@ func main() {
 		if err := pprof.WriteHeapProfile(f); err != nil {
 			errorExit("could not write memory profile: %v", err)
 		}
-		f.Close()
+		_ = f.Close()
 	}
 
 	os.Exit(status)

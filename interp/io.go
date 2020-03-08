@@ -326,7 +326,7 @@ func (p *interp) nextLine() (string, error) {
 		if p.scanner == nil {
 			if prevInput, ok := p.input.(io.Closer); ok && p.input != p.stdin {
 				// Previous input is file, close it
-				prevInput.Close()
+				_ = prevInput.Close()
 			}
 			if p.filenameIndex >= p.argc && !p.hadFiles {
 				// Moved past number of ARGV args and haven't seen
@@ -415,7 +415,7 @@ func writeOutput(w io.Writer, s string) error {
 // Close all streams, commands, etc (after program execution)
 func (p *interp) closeAll() {
 	if prevInput, ok := p.input.(io.Closer); ok {
-		prevInput.Close()
+		_ = prevInput.Close()
 	}
 	for _, r := range p.inputStreams {
 		_ = r.Close()
@@ -427,9 +427,9 @@ func (p *interp) closeAll() {
 		_ = cmd.Wait()
 	}
 	if p.flushOutput {
-		p.output.(*bufio.Writer).Flush()
+		_ = p.output.(*bufio.Writer).Flush()
 	}
 	if p.flushError {
-		p.errorOutput.(*bufio.Writer).Flush()
+		_ = p.errorOutput.(*bufio.Writer).Flush()
 	}
 }
