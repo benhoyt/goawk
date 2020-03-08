@@ -265,15 +265,3 @@ func errorExit(format string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, format+"\n", args...)
 	os.Exit(1)
 }
-
-// Helper type for flag parsing to allow multiple -f and -v arguments
-type multiString []string
-
-func (m *multiString) String() string {
-	return fmt.Sprintf("%v", []string(*m))
-}
-
-func (m *multiString) Set(value string) error {
-	*m = append(*m, value)
-	return nil
-}
