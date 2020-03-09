@@ -205,7 +205,6 @@ func TestGAWK(t *testing.T) {
 		"sigpipe1":     true, // probable race condition: sometimes fails, sometimes passes
 
 		"parse1": true, // incorrect parsing of $$a++++ (see TODOs in interp_test.go too)
-		"prec":   true, // incorrect parsing of $ and ++ (see above)
 
 		"nfldstr": true, // invalid handling of '!$0' when $0="0"
 		"zeroe0":  true, // difference in handling of numStr typing when setting $0 and $1

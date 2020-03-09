@@ -702,7 +702,7 @@ func (p *parser) primary() Expr {
 	case NOT, ADD, SUB:
 		op := p.tok
 		p.next()
-		return &UnaryExpr{op, p.primary()}
+		return &UnaryExpr{op, p.pow()}
 	case NAME:
 		name := p.val
 		namePos := p.pos
