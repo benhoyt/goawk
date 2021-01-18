@@ -64,6 +64,7 @@ func TestAWK(t *testing.T) {
 	// order (according to the spec), so sort lines before comparing.
 	sortLines := map[string]bool{
 		"p.43":      true,
+		"t.in1":     true, // because "sort" is locale-dependent
 		"t.in2":     true,
 		"t.intest2": true,
 	}
