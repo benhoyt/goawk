@@ -127,7 +127,7 @@ func (p *interp) getInputScannerFile(name string) (*bufio.Scanner, error) {
 	}
 	r, err := os.Open(name)
 	if err != nil {
-		return nil, newError("input redirection error: %s", err)
+		return nil, err // *os.PathError is handled by caller (getline returns -1)
 	}
 	scanner := p.newScanner(r)
 	p.scanners[name] = scanner

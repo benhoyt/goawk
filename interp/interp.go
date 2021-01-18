@@ -843,6 +843,11 @@ func (p *interp) eval(expr Expr) (value, error) {
 			name := p.toString(nameValue)
 			scanner, err := p.getInputScannerFile(name)
 			if err != nil {
+				if _, ok := err.(*os.PathError); ok {
+					// File not found is not a hard error, getline just returns -1.
+					// See: https://github.com/benhoyt/goawk/issues/41
+					return num(-1), nil
+				}
 				return null(), err
 			}
 			if !scanner.Scan() {
