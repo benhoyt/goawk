@@ -105,8 +105,9 @@ func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
 			return ioutil.Discard, nil
 		}
 		p.commands[name] = cmd
-		p.outputStreams[name] = w
-		return w, nil
+		buffered := newBufferedWriteClose(w)
+		p.outputStreams[name] = buffered
+		return buffered, nil
 
 	default:
 		// Should never happen
