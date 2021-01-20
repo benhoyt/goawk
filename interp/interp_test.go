@@ -1042,7 +1042,7 @@ type mockFlusher struct {
 }
 
 func (f *mockFlusher) Flush() error {
-	f.flushes = append(f.flushes, f.String())
+	f.flushes = append(f.flushes, normalizeNewlines(f.String()))
 	return nil
 }
 
