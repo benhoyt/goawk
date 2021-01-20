@@ -3,11 +3,13 @@ package interp_test
 
 import (
 	"bytes"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -590,6 +592,14 @@ BEGIN { foo(5); bar(10) }
 		// {`BEGIN { ">&2 echo error" | getline; print }`, "", "error\n\n", "", ""},
 		{`BEGIN { print getline x < "/no/such/file" }`, "", "-1\n", "", ""},
 
+		// fflush() function - tests parsing and some edge cases, but not
+		// actual flushing behavior (that's partially tested in TestFlushes).
+		{`BEGIN { print fflush(); print fflush("") }`, "", "0\n0\n", "", ""},
+		{`BEGIN { print "x"; print fflush(); print "y"; print fflush("") }`, "", "x\n0\ny\n0\n", "", ""},
+		{`BEGIN { print "x" >"out"; print fflush("out"); print "y"; print fflush("") }`, "", "0\ny\n0\n", "", ""},
+		{`BEGIN { print fflush("x") }  # !gawk`, "", "error flushing \"x\": not an output file or pipe\n-1\n", "", ""},
+		{`BEGIN { "cat" | getline; print fflush("cat") }  # !gawk`, "", "error flushing \"cat\": not an output file or pipe\n-1\n", "", ""},
+
 		// Greater than operator requires parentheses in print statement,
 		// otherwise it's a redirection directive
 		{`BEGIN { print "x" > "out" }`, "", "", "", ""},
@@ -1023,6 +1033,57 @@ func TestConfigVarsCorrect(t *testing.T) {
 	expected := "length of config.Vars must be a multiple of 2, not 1"
 	if err == nil || err.Error() != expected {
 		t.Fatalf("expected error %q, got: %v", expected, err)
+	}
+}
+
+type mockFlusher struct {
+	bytes.Buffer
+	flushes []string
+}
+
+func (f *mockFlusher) Flush() error {
+	f.flushes = append(f.flushes, f.String())
+	return nil
+}
+
+func TestFlushes(t *testing.T) {
+	src := `
+BEGIN {
+	print fflush()
+	print "x"
+	print "y"
+	print fflush()
+	print "z"
+	print fflush("")
+}`
+	f := &mockFlusher{}
+	testGoAWK(t, src, "", "", "", nil, func(config *interp.Config) {
+		config.Output = f
+	})
+	// The last one is from GoAWK itself flushing output after finishing
+	expected := []string{"", "0\nx\ny\n", "0\nx\ny\n0\nz\n", "0\nx\ny\n0\nz\n0\n"}
+	if !reflect.DeepEqual(f.flushes, expected) {
+		t.Fatalf("expected flushes %q, got %q", expected, f.flushes)
+	}
+}
+
+type errorFlusher struct {
+	bytes.Buffer
+}
+
+func (f *errorFlusher) Flush() error {
+	return errors.New("that's not good, hackers")
+}
+
+func TestFlushError(t *testing.T) {
+	f := &errorFlusher{}
+	testGoAWK(t, `BEGIN { fflush() }`, "", "", "", nil, func(config *interp.Config) {
+		config.Output = f
+		config.Error = f
+	})
+	expected := "error flushing \"stdout\": that's not good, hackers\n"
+	if f.String() != expected {
+		t.Fatalf("expected %q, got %q", expected, f.String())
 	}
 }
 

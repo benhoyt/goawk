@@ -427,10 +427,51 @@ func (p *interp) closeAll() {
 	for _, cmd := range p.commands {
 		_ = cmd.Wait()
 	}
-	if p.flushOutput {
-		_ = p.output.(*bufio.Writer).Flush()
+	if f, ok := p.output.(flusher); ok {
+		_ = f.Flush()
 	}
-	if p.flushError {
-		_ = p.errorOutput.(*bufio.Writer).Flush()
+	if f, ok := p.errorOutput.(flusher); ok {
+		_ = f.Flush()
 	}
+}
+
+// Flush all output streams as well as standard output. Report whether all
+// streams were flushed successfully (logging error(s) if not).
+func (p *interp) flushAll() bool {
+	allGood := true
+	for name, writer := range p.outputStreams {
+		allGood = allGood && p.flushWriter(name, writer)
+	}
+	if _, ok := p.output.(flusher); ok {
+		// User-provided output may or may not be flushable
+		allGood = allGood && p.flushWriter("stdout", p.output)
+	}
+	return allGood
+}
+
+// Flush a single, named output stream, and report whether it was flushed
+// successfully (logging an error if not).
+func (p *interp) flushStream(name string) bool {
+	writer := p.outputStreams[name]
+	if writer == nil {
+		fmt.Fprintf(p.errorOutput, "error flushing %q: not an output file or pipe\n", name)
+		return false
+	}
+	return p.flushWriter(name, writer)
+}
+
+type flusher interface {
+	Flush() error
+}
+
+// Flush given output writer, and report whether it was flushed successfully
+// (logging an error if not).
+func (p *interp) flushWriter(name string, writer io.Writer) bool {
+	flusher := writer.(flusher)
+	err := flusher.Flush()
+	if err != nil {
+		fmt.Fprintf(p.errorOutput, "error flushing %q: %v\n", name, err)
+		return false
+	}
+	return true
 }

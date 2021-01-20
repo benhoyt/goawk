@@ -77,6 +77,7 @@ const (
 	F_CLOSE
 	F_COS
 	F_EXP
+	F_FFLUSH
 	F_GSUB
 	F_INDEX
 	F_INT
@@ -130,6 +131,7 @@ var keywordTokens = map[string]Token{
 	"close":   F_CLOSE,
 	"cos":     F_COS,
 	"exp":     F_EXP,
+	"fflush":  F_FFLUSH,
 	"gsub":    F_GSUB,
 	"index":   F_INDEX,
 	"int":     F_INT,
@@ -224,6 +226,7 @@ var tokenNames = map[Token]string{
 	F_CLOSE:   "close",
 	F_COS:     "cos",
 	F_EXP:     "exp",
+	F_FFLUSH:  "fflush",
 	F_GSUB:    "gsub",
 	F_INDEX:   "index",
 	F_INT:     "int",

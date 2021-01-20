@@ -63,9 +63,7 @@ func (r returnValue) Error() string {
 type interp struct {
 	// Input/output
 	output        io.Writer
-	flushOutput   bool
 	errorOutput   io.Writer
-	flushError    bool
 	scanner       *bufio.Scanner
 	scanners      map[string]*bufio.Scanner
 	stdin         io.Reader
@@ -259,12 +257,10 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	p.output = config.Output
 	if p.output == nil {
 		p.output = bufio.NewWriterSize(os.Stdout, outputBufSize)
-		p.flushOutput = true
 	}
 	p.errorOutput = config.Error
 	if p.errorOutput == nil {
 		p.errorOutput = bufio.NewWriterSize(os.Stderr, stderrBufSize)
-		p.flushError = true
 	}
 	p.inputStreams = make(map[string]io.ReadCloser)
 	p.outputStreams = make(map[string]io.WriteCloser)

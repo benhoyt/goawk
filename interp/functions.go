@@ -242,6 +242,24 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 		// Nothing to close
 		return num(-1), nil
 
+	case F_FFLUSH:
+		var name string
+		if len(args) > 0 {
+			name = p.toString(args[0])
+		}
+		var ok bool
+		if name != "" {
+			// Flush a single, named output stream
+			ok = p.flushStream(name)
+		} else {
+			// fflush() or fflush("") flushes all output streams
+			ok = p.flushAll()
+		}
+		if !ok {
+			return num(-1), nil
+		}
+		return num(0), nil
+
 	default:
 		// Shouldn't happen
 		panic(fmt.Sprintf("unexpected function: %s", op))
