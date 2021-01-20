@@ -127,7 +127,6 @@ const (
 	maxCallDepth     = 1000
 	initialStackSize = 100
 	outputBufSize    = 64 * 1024
-	stderrBufSize    = 4 * 1024
 	inputBufSize     = 64 * 1024
 )
 
@@ -140,8 +139,7 @@ type Config struct {
 	// os.Stdout)
 	Output io.Writer
 
-	// Writer for non-fatal error messages (defaults to a buffered
-	// version of os.Stderr)
+	// Writer for non-fatal error messages (defaults to os.Stderr)
 	Error io.Writer
 
 	// The name of the executable (accessible via ARGV[0])
@@ -260,7 +258,7 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	}
 	p.errorOutput = config.Error
 	if p.errorOutput == nil {
-		p.errorOutput = bufio.NewWriterSize(os.Stderr, stderrBufSize)
+		p.errorOutput = os.Stderr
 	}
 	p.inputStreams = make(map[string]io.ReadCloser)
 	p.outputStreams = make(map[string]io.WriteCloser)
