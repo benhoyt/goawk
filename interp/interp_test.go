@@ -545,7 +545,7 @@ function bar(y) { return y[1] }
 function foo() { return bar(x) }
 BEGIN { x[1] = 42; print foo() }
 `, "", "42\n", "", ""},
-		// TODO
+		// TODO: failing because f1 doesn't use x, so resolver assumes its type is scalar
 		// 		{`
 		// function f1(x) { }
 		// function f2(x, y) { return x[y] }
