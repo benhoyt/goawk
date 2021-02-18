@@ -55,6 +55,9 @@ jobs:
       with:
         go-version: 1.15
 
+    - name: Install Gawk
+      run: brew install gawk
+
     - name: Build and Test
       run: |
         gawk --version
