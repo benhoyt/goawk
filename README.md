@@ -1,6 +1,6 @@
 # GoAWK: an AWK interpreter written in Go
 
-[![GoDoc](https://godoc.org/github.com/benhoyt/goawk?status.png)](https://godoc.org/github.com/benhoyt/goawk)
+[![Documentation](https://pkg.go.dev/badge/github.com/benhoyt/goawk)](https://pkg.go.dev/github.com/benhoyt/goawk)
 [![GitHub Actions Build](https://github.com/benhoyt/goawk/workflows/Go/badge.svg)](https://github.com/benhoyt/goawk/actions?query=workflow%3AGo)
 
 
@@ -67,7 +67,7 @@ if err != nil {
 // 3:abc
 ```
 
-Read the [GoDoc documentation](https://godoc.org/github.com/benhoyt/goawk) for more details.
+Read the [documentation](https://pkg.go.dev/github.com/benhoyt/goawk) for more details.
 
 ## Differences from AWK
 
