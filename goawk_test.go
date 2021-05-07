@@ -5,6 +5,7 @@ package main_test
 import (
 	"bytes"
 	"flag"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -12,6 +13,7 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/benhoyt/goawk/interp"
@@ -158,7 +160,7 @@ func interpGoAWK(prog *parser.Program, inputPath string) ([]byte, error) {
 	errBuf := &bytes.Buffer{}
 	config := &interp.Config{
 		Output: outBuf,
-		Error:  errBuf,
+		Error:  &concurrentWriter{w: errBuf},
 		Args:   []string{inputPath},
 	}
 	_, err := interp.ExecProgram(prog, config)
@@ -172,9 +174,9 @@ func interpGoAWKStdin(prog *parser.Program, inputPath string) ([]byte, error) {
 	outBuf := &bytes.Buffer{}
 	errBuf := &bytes.Buffer{}
 	config := &interp.Config{
-		Stdin:  bytes.NewReader(input),
+		Stdin:  &concurrentReader{r: bytes.NewReader(input)},
 		Output: outBuf,
-		Error:  errBuf,
+		Error:  &concurrentWriter{w: errBuf},
 		// srcdir is for "redfilnm.awk"
 		Vars: []string{"srcdir", filepath.Dir(inputPath)},
 	}
@@ -182,6 +184,30 @@ func interpGoAWKStdin(prog *parser.Program, inputPath string) ([]byte, error) {
 	result := outBuf.Bytes()
 	result = append(result, errBuf.Bytes()...)
 	return result, err
+}
+
+// Wraps a Writer but makes Write calls safe for concurrent use.
+type concurrentWriter struct {
+	w  io.Writer
+	mu sync.Mutex
+}
+
+func (w *concurrentWriter) Write(p []byte) (int, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.w.Write(p)
+}
+
+// Wraps a Reader but makes Read calls safe for concurrent use.
+type concurrentReader struct {
+	r  io.Reader
+	mu sync.Mutex
+}
+
+func (r *concurrentReader) Read(p []byte) (int, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.r.Read(p)
 }
 
 func sortedLines(data []byte) []byte {
