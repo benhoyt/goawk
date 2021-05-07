@@ -22,7 +22,7 @@ jobs:
       run: |
         gawk --version
         go build
-        go test ./...
+        go test -race ./...
 
   build-windows:
     runs-on: windows-latest
@@ -42,7 +42,7 @@ jobs:
       run: |
         gawk --version
         go build
-        go test ./...
+        go test -race ./...
 
   build-macos:
     runs-on: macos-latest
@@ -62,4 +62,4 @@ jobs:
       run: |
         gawk --version
         go build
-        go test ./...
+        go test -race ./...

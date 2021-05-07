@@ -219,7 +219,6 @@ func sortedLines(data []byte) []byte {
 
 func TestGAWK(t *testing.T) {
 	skip := map[string]bool{ // TODO: fix these
-		"closebad": true, // figure out correct getInputScanner* errors and setLine behaviour
 		"inputred": true, // getInputScanner errors
 
 		"getline":  true, // getline syntax issues (may be okay, see grammar notes at http://pubs.opengroup.org/onlinepubs/007904975/utilities/awk.html#tag_04_06_13_14)
