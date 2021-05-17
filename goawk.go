@@ -144,6 +144,7 @@ func main() {
 	if len(progFiles) > 0 {
 		// Read source: the concatenation of all source files specified
 		buf := &bytes.Buffer{}
+		progFiles = expandWildcardsOnWindows(progFiles)
 		for _, progFile := range progFiles {
 			if progFile == "-" {
 				_, err := buf.ReadFrom(os.Stdin)
@@ -192,7 +193,7 @@ func main() {
 	}
 	config := &interp.Config{
 		Argv0: filepath.Base(os.Args[0]),
-		Args:  args,
+		Args:  expandWildcardsOnWindows(args),
 		Vars:  []string{"FS", fieldSep},
 	}
 	for _, v := range vars {
@@ -264,4 +265,25 @@ func showSourceLine(src []byte, pos lexer.Position, dividerLen int) {
 func errorExit(format string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, format+"\n", args...)
 	os.Exit(1)
+}
+
+func expandWildcardsOnWindows(args []string) []string {
+	if runtime.GOOS != "windows" {
+		return args
+	}
+	return expandWildcards(args)
+}
+
+// Originally from https://github.com/mattn/getwild (compatible LICENSE).
+func expandWildcards(args []string) []string {
+	result := make([]string, 0, len(args))
+	for _, arg := range args {
+		matches, err := filepath.Glob(arg)
+		if err == nil && len(matches) > 0 {
+			result = append(result, matches...)
+		} else {
+			result = append(result, arg)
+		}
+	}
+	return result
 }

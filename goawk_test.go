@@ -385,30 +385,83 @@ func TestCommandLine(t *testing.T) {
 			if test.stdin != "" {
 				cmd.Stdin = bytes.NewReader([]byte(test.stdin))
 			}
-			stderr := &bytes.Buffer{}
-			cmd.Stderr = stderr
+			errBuf := &bytes.Buffer{}
+			cmd.Stderr = errBuf
 			output, err := cmd.Output()
 			if err != nil {
-				t.Fatalf("error running %s: %v: %s", awkExe, err, stderr.String())
+				t.Fatalf("error running %s: %v: %s", awkExe, err, errBuf.String())
 			}
-			output = normalizeNewlines(output)
-			if string(output) != test.output {
-				t.Fatalf("expected AWK to give %q, got %q", test.output, output)
+			stdout := string(normalizeNewlines(output))
+			if stdout != test.output {
+				t.Fatalf("expected AWK to give %q, got %q", test.output, stdout)
 			}
 
-			cmd = exec.Command(goAWKExe, test.args...)
-			if test.stdin != "" {
-				cmd.Stdin = bytes.NewReader([]byte(test.stdin))
-			}
-			stderr = &bytes.Buffer{}
-			cmd.Stderr = stderr
-			output, err = cmd.Output()
+			stdout, stderr, err := runGoAWK(test.args, test.stdin)
 			if err != nil {
-				t.Fatalf("error running %s: %v: %s", goAWKExe, err, stderr.String())
+				t.Fatalf("error running %s: %v: %s", goAWKExe, err, stderr)
 			}
-			output = normalizeNewlines(output)
-			if string(output) != test.output {
-				t.Fatalf("expected GoAWK to give %q, got %q", test.output, output)
+			if stdout != test.output {
+				t.Fatalf("expected GoAWK to give %q, got %q", test.output, stdout)
+			}
+		})
+	}
+}
+
+func runGoAWK(args []string, stdin string) (stdout, stderr string, err error) {
+	cmd := exec.Command(goAWKExe, args...)
+	if stdin != "" {
+		cmd.Stdin = bytes.NewReader([]byte(stdin))
+	}
+	errBuf := &bytes.Buffer{}
+	cmd.Stderr = errBuf
+	output, err := cmd.Output()
+	stdout = string(normalizeNewlines(output))
+	stderr = string(normalizeNewlines(errBuf.Bytes()))
+	return stdout, stderr, err
+}
+
+func TestWildcards(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		// Wildcards shouldn't be expanded on non-Windows systems, and a file
+		// literally named "*.go" doesn't exist, so expect a failure.
+		_, stderr, err := runGoAWK([]string{"FNR==1 { print FILENAME }", "testdata/wildcards/*.txt"}, "")
+		if err == nil {
+			t.Fatal("expected error using wildcards on non-Windows system")
+		}
+		expected := "open testdata/wildcards/*.txt: no such file or directory\n"
+		if stderr != expected {
+			t.Fatalf("expected %q, got %q", expected, stderr)
+		}
+		return
+	}
+
+	tests := []struct {
+		args   []string
+		output string
+	}{
+		{
+			[]string{"FNR==1 { print FILENAME }", "testdata/wildcards/*.txt"},
+			"testdata/wildcards/one.txt\ntestdata/wildcards/two.txt\n",
+		},
+		{
+			[]string{"-f", "testdata/wildcards/*.awk", "testdata/wildcards/one.txt"},
+			"testdata/wildcards/one.txt\nbee\n",
+		},
+		{
+			[]string{"-f", "testdata/wildcards/*.awk", "testdata/wildcards/*.txt"},
+			"testdata/wildcards/one.txt\nbee\ntestdata/wildcards/two.txt\nbee\n",
+		},
+	}
+
+	for _, test := range tests {
+		testName := strings.Join(test.args, " ")
+		t.Run(testName, func(t *testing.T) {
+			stdout, stderr, err := runGoAWK(test.args, "")
+			if err != nil {
+				t.Fatalf("expected no error, got %v (%q)", err, stderr)
+			}
+			if stdout != test.output {
+				t.Fatalf("expected %q, got %q", test.output, stdout)
 			}
 		})
 	}
