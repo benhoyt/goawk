@@ -460,6 +460,7 @@ func TestWildcards(t *testing.T) {
 			if err != nil {
 				t.Fatalf("expected no error, got %v (%q)", err, stderr)
 			}
+			stdout = strings.Replace(stdout, "\\", "/", -1)
 			if stdout != test.output {
 				t.Fatalf("expected %q, got %q", test.output, stdout)
 			}
