@@ -69,37 +69,48 @@ func main() {
 	// Parse command line arguments manually rather than using the
 	// "flag" package so we can support flags with no space between
 	// flag and argument, like '-F:' (allowed by POSIX)
-	args := make([]string, 0)
+	var progFiles []string
+	var vars []string
 	fieldSep := " "
-	progFiles := make([]string, 0)
-	vars := make([]string, 0)
 	cpuprofile := ""
 	debug := false
 	debugTypes := false
 	memprofile := ""
-	for i := 1; i < len(os.Args); i++ {
-		switch os.Args[i] {
+
+	var i int
+	for i = 1; i < len(os.Args); i++ {
+		// Stop on explicit end of args or first arg not prefixed with "-"
+		arg := os.Args[i]
+		if arg == "--" {
+			i++
+			break
+		}
+		if !strings.HasPrefix(arg, "-") {
+			break
+		}
+
+		switch arg {
 		case "-F":
 			if i+1 >= len(os.Args) {
-				errorExit("flag needs an argument: -F")
+				errorExitf("flag needs an argument: -F")
 			}
 			i++
 			fieldSep = os.Args[i]
 		case "-f":
 			if i+1 >= len(os.Args) {
-				errorExit("flag needs an argument: -f")
+				errorExitf("flag needs an argument: -f")
 			}
 			i++
 			progFiles = append(progFiles, os.Args[i])
 		case "-v":
 			if i+1 >= len(os.Args) {
-				errorExit("flag needs an argument: -v")
+				errorExitf("flag needs an argument: -v")
 			}
 			i++
 			vars = append(vars, os.Args[i])
 		case "-cpuprofile":
 			if i+1 >= len(os.Args) {
-				errorExit("flag needs an argument: -cpuprofile")
+				errorExitf("flag needs an argument: -cpuprofile")
 			}
 			i++
 			cpuprofile = os.Args[i]
@@ -112,7 +123,7 @@ func main() {
 			os.Exit(0)
 		case "-memprofile":
 			if i+1 >= len(os.Args) {
-				errorExit("flag needs an argument: -memprofile")
+				errorExitf("flag needs an argument: -memprofile")
 			}
 			i++
 			memprofile = os.Args[i]
@@ -120,7 +131,6 @@ func main() {
 			fmt.Println(version)
 			os.Exit(0)
 		default:
-			arg := os.Args[i]
 			switch {
 			case strings.HasPrefix(arg, "-F"):
 				fieldSep = arg[2:]
@@ -132,13 +142,14 @@ func main() {
 				cpuprofile = arg[12:]
 			case strings.HasPrefix(arg, "-memprofile="):
 				memprofile = arg[12:]
-			case len(arg) > 1 && arg[0] == '-':
-				errorExit("flag provided but not defined: %s", arg)
 			default:
-				args = append(args, arg)
+				errorExitf("flag provided but not defined: %s", arg)
 			}
 		}
 	}
+
+	// Any remaining args are program and input files
+	args := os.Args[i:]
 
 	var src []byte
 	if len(progFiles) > 0 {
@@ -149,17 +160,17 @@ func main() {
 			if progFile == "-" {
 				_, err := buf.ReadFrom(os.Stdin)
 				if err != nil {
-					errorExit("%s", err)
+					errorExit(err)
 				}
 			} else {
 				f, err := os.Open(progFile)
 				if err != nil {
-					errorExit("%s", err)
+					errorExit(err)
 				}
 				_, err = buf.ReadFrom(f)
 				if err != nil {
 					_ = f.Close()
-					errorExit("%s", err)
+					errorExit(err)
 				}
 				_ = f.Close()
 			}
@@ -169,7 +180,7 @@ func main() {
 		src = buf.Bytes()
 	} else {
 		if len(args) < 1 {
-			errorExit(shortUsage)
+			errorExitf(shortUsage)
 		}
 		src = []byte(args[0])
 		args = args[1:]
@@ -186,7 +197,7 @@ func main() {
 		if err, ok := err.(*parser.ParseError); ok {
 			showSourceLine(src, err.Position, len(errMsg))
 		}
-		errorExit("%s", errMsg)
+		errorExitf("%s", errMsg)
 	}
 	if debug {
 		fmt.Fprintln(os.Stderr, prog)
@@ -199,7 +210,7 @@ func main() {
 	for _, v := range vars {
 		parts := strings.SplitN(v, "=", 2)
 		if len(parts) != 2 {
-			errorExit("-v flag must be in format name=value")
+			errorExitf("-v flag must be in format name=value")
 		}
 		config.Vars = append(config.Vars, parts[0], parts[1])
 	}
@@ -207,30 +218,30 @@ func main() {
 	if cpuprofile != "" {
 		f, err := os.Create(cpuprofile)
 		if err != nil {
-			errorExit("could not create CPU profile: %v", err)
+			errorExitf("could not create CPU profile: %v", err)
 		}
 		if err := pprof.StartCPUProfile(f); err != nil {
-			errorExit("could not start CPU profile: %v", err)
+			errorExitf("could not start CPU profile: %v", err)
 		}
 	}
 
+	// Run the program!
 	status, err := interp.ExecProgram(prog, config)
 	if err != nil {
-		errorExit("%s", err)
+		errorExit(err)
 	}
 
 	if cpuprofile != "" {
 		pprof.StopCPUProfile()
 	}
-
 	if memprofile != "" {
 		f, err := os.Create(memprofile)
 		if err != nil {
-			errorExit("could not create memory profile: %v", err)
+			errorExitf("could not create memory profile: %v", err)
 		}
 		runtime.GC() // get up-to-date statistics
 		if err := pprof.WriteHeapProfile(f); err != nil {
-			errorExit("could not write memory profile: %v", err)
+			errorExitf("could not write memory profile: %v", err)
 		}
 		_ = f.Close()
 	}
@@ -262,7 +273,15 @@ func showSourceLine(src []byte, pos lexer.Position, dividerLen int) {
 	}
 }
 
-func errorExit(format string, args ...interface{}) {
+func errorExit(err error) {
+	pathErr, ok := err.(*os.PathError)
+	if ok && os.IsNotExist(err) {
+		errorExitf("file %q not found", pathErr.Path)
+	}
+	errorExitf("%s", err)
+}
+
+func errorExitf(format string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, format+"\n", args...)
 	os.Exit(1)
 }
