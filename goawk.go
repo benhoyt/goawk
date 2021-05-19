@@ -69,16 +69,27 @@ func main() {
 	// Parse command line arguments manually rather than using the
 	// "flag" package so we can support flags with no space between
 	// flag and argument, like '-F:' (allowed by POSIX)
-	args := make([]string, 0)
+	var progFiles []string
+	var vars []string
 	fieldSep := " "
-	progFiles := make([]string, 0)
-	vars := make([]string, 0)
 	cpuprofile := ""
 	debug := false
 	debugTypes := false
 	memprofile := ""
-	for i := 1; i < len(os.Args); i++ {
-		switch os.Args[i] {
+
+	var i int
+	for i = 1; i < len(os.Args); i++ {
+		// Stop on explicit end of args or first arg not prefixed with "-"
+		arg := os.Args[i]
+		if arg == "--" {
+			i++
+			break
+		}
+		if !strings.HasPrefix(arg, "-") {
+			break
+		}
+
+		switch arg {
 		case "-F":
 			if i+1 >= len(os.Args) {
 				errorExit("flag needs an argument: -F")
@@ -120,7 +131,6 @@ func main() {
 			fmt.Println(version)
 			os.Exit(0)
 		default:
-			arg := os.Args[i]
 			switch {
 			case strings.HasPrefix(arg, "-F"):
 				fieldSep = arg[2:]
@@ -132,13 +142,14 @@ func main() {
 				cpuprofile = arg[12:]
 			case strings.HasPrefix(arg, "-memprofile="):
 				memprofile = arg[12:]
-			case len(arg) > 1 && arg[0] == '-':
-				errorExit("flag provided but not defined: %s", arg)
 			default:
-				args = append(args, arg)
+				errorExit("flag provided but not defined: %s", arg)
 			}
 		}
 	}
+
+	// Any remaining args are program and input files
+	args := os.Args[i:]
 
 	var src []byte
 	if len(progFiles) > 0 {
@@ -214,6 +225,7 @@ func main() {
 		}
 	}
 
+	// Run the program!
 	status, err := interp.ExecProgram(prog, config)
 	if err != nil {
 		errorExit("%s", err)
@@ -222,7 +234,6 @@ func main() {
 	if cpuprofile != "" {
 		pprof.StopCPUProfile()
 	}
-
 	if memprofile != "" {
 		f, err := os.Create(memprofile)
 		if err != nil {

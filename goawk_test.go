@@ -312,41 +312,45 @@ func TestCommandLine(t *testing.T) {
 		args   []string
 		stdin  string
 		output string
+		error  string
 	}{
 		// Load source from stdin
-		{[]string{"-f", "-"}, `BEGIN { print "b" }`, "b\n"},
-		{[]string{"-f", "-", "-f", "-"}, `BEGIN { print "b" }`, "b\n"},
-		{[]string{"-f-", "-f", "-"}, `BEGIN { print "b" }`, "b\n"},
+		{[]string{"-f", "-"}, `BEGIN { print "b" }`, "b\n", ""},
+		{[]string{"-f", "-", "-f", "-"}, `BEGIN { print "b" }`, "b\n", ""},
+		{[]string{"-f-", "-f", "-"}, `BEGIN { print "b" }`, "b\n", ""},
 
 		// Program with no input
-		{[]string{`BEGIN { print "a" }`}, "", "a\n"},
+		{[]string{`BEGIN { print "a" }`}, "", "a\n", ""},
 
 		// Read input from stdin
-		{[]string{`$0`}, "one\n\nthree", "one\nthree\n"},
-		{[]string{`$0`, "-"}, "one\n\nthree", "one\nthree\n"},
-		{[]string{`$0`, "-", "-"}, "one\n\nthree", "one\nthree\n"},
+		{[]string{`$0`}, "one\n\nthree", "one\nthree\n", ""},
+		{[]string{`$0`, "-"}, "one\n\nthree", "one\nthree\n", ""},
+		{[]string{`$0`, "-", "-"}, "one\n\nthree", "one\nthree\n", ""},
 
 		// Read input from file(s)
-		{[]string{`$0`, "testdata/g.1"}, "", "ONE\n"},
-		{[]string{`$0`, "testdata/g.1", "testdata/g.2"}, "", "ONE\nTWO\n"},
+		{[]string{`$0`, "testdata/g.1"}, "", "ONE\n", ""},
+		{[]string{`$0`, "testdata/g.1", "testdata/g.2"}, "", "ONE\nTWO\n", ""},
 		{[]string{`{ print FILENAME ":" FNR "/" NR ": " $0 }`, "testdata/g.1", "testdata/g.4"}, "",
-			"testdata/g.1:1/1: ONE\ntestdata/g.4:1/2: FOUR a\ntestdata/g.4:2/3: FOUR b\n"},
-		{[]string{`$0`, "testdata/g.1", "-", "testdata/g.2"}, "STDIN", "ONE\nSTDIN\nTWO\n"},
-		{[]string{`$0`, "testdata/g.1", "-", "testdata/g.2", "-"}, "STDIN", "ONE\nSTDIN\nTWO\n"},
+			"testdata/g.1:1/1: ONE\ntestdata/g.4:1/2: FOUR a\ntestdata/g.4:2/3: FOUR b\n", ""},
+		{[]string{`$0`, "testdata/g.1", "-", "testdata/g.2"}, "STDIN", "ONE\nSTDIN\nTWO\n", ""},
+		{[]string{`$0`, "testdata/g.1", "-", "testdata/g.2", "-"}, "STDIN", "ONE\nSTDIN\nTWO\n", ""},
+		{[]string{"-F", " ", "--", "$0", "testdata/g.1"}, "", "ONE\n", ""},
+		{[]string{"--", "$0", "-ftest"}, "", "used in tests; do not delete\n", ""}, // Issue #53
+		{[]string{"$0", "-ftest"}, "", "used in tests; do not delete\n", ""},
 
 		// Specifying field separator with -F
-		{[]string{`{ print $1, $3 }`}, "1 2 3\n4 5 6", "1 3\n4 6\n"},
-		{[]string{"-F", ",", `{ print $1, $3 }`}, "1 2 3\n4 5 6", "1 2 3 \n4 5 6 \n"},
-		{[]string{"-F", ",", `{ print $1, $3 }`}, "1,2,3\n4,5,6", "1 3\n4 6\n"},
-		{[]string{"-F", ",", `{ print $1, $3 }`}, "1,2,3\n4,5,6", "1 3\n4 6\n"},
-		{[]string{"-F,", `{ print $1, $3 }`}, "1,2,3\n4,5,6", "1 3\n4 6\n"},
+		{[]string{`{ print $1, $3 }`}, "1 2 3\n4 5 6", "1 3\n4 6\n", ""},
+		{[]string{"-F", ",", `{ print $1, $3 }`}, "1 2 3\n4 5 6", "1 2 3 \n4 5 6 \n", ""},
+		{[]string{"-F", ",", `{ print $1, $3 }`}, "1,2,3\n4,5,6", "1 3\n4 6\n", ""},
+		{[]string{"-F", ",", `{ print $1, $3 }`}, "1,2,3\n4,5,6", "1 3\n4 6\n", ""},
+		{[]string{"-F,", `{ print $1, $3 }`}, "1,2,3\n4,5,6", "1 3\n4 6\n", ""},
 
 		// Assigning other variables with -v
-		{[]string{"-v", "OFS=.", `{ print $1, $3 }`}, "1 2 3\n4 5 6", "1.3\n4.6\n"},
-		{[]string{"-v", "OFS=.", "-v", "ORS=", `{ print $1, $3 }`}, "1 2 3\n4 5 6", "1.34.6"},
-		{[]string{"-v", "x=42", "-v", "y=foo", `BEGIN { print x, y }`}, "", "42 foo\n"},
-		{[]string{"-v", "RS=;", `$0`}, "a b;c\nd;e", "a b\nc\nd\ne\n"},
-		{[]string{"-vRS=;", `$0`}, "a b;c\nd;e", "a b\nc\nd\ne\n"},
+		{[]string{"-v", "OFS=.", `{ print $1, $3 }`}, "1 2 3\n4 5 6", "1.3\n4.6\n", ""},
+		{[]string{"-v", "OFS=.", "-v", "ORS=", `{ print $1, $3 }`}, "1 2 3\n4 5 6", "1.34.6", ""},
+		{[]string{"-v", "x=42", "-v", "y=foo", `BEGIN { print x, y }`}, "", "42 foo\n", ""},
+		{[]string{"-v", "RS=;", `$0`}, "a b;c\nd;e", "a b\nc\nd\ne\n", ""},
+		{[]string{"-vRS=;", `$0`}, "a b;c\nd;e", "a b\nc\nd\ne\n", ""},
 
 		// ARGV/ARGC handling
 		{[]string{`
@@ -354,7 +358,7 @@ func TestCommandLine(t *testing.T) {
 				for (i=1; i<ARGC; i++) {
 					print i, ARGV[i]
 				}
-			}`, "a", "b"}, "", "1 a\n2 b\n"},
+			}`, "a", "b"}, "", "1 a\n2 b\n", ""},
 		{[]string{`
 			BEGIN {
 				for (i=1; i<ARGC; i++) {
@@ -362,21 +366,34 @@ func TestCommandLine(t *testing.T) {
 					delete ARGV[i]
 				}
 			}
-			$0`, "a", "b"}, "c\nd", "1 a\n2 b\nc\nd\n"},
+			$0`, "a", "b"}, "c\nd", "1 a\n2 b\nc\nd\n", ""},
 		{[]string{`
 			BEGIN {
 				ARGV[1] = ""
 			}
-			$0`, "testdata/g.1", "-", "testdata/g.2"}, "c\nd", "c\nd\nTWO\n"},
+			$0`, "testdata/g.1", "-", "testdata/g.2"}, "c\nd", "c\nd\nTWO\n", ""},
 		{[]string{`
 			BEGIN {
 				ARGC = 3
 			}
-			$0`, "testdata/g.1", "-", "testdata/g.2"}, "c\nd", "ONE\nc\nd\n"},
+			$0`, "testdata/g.1", "-", "testdata/g.2"}, "c\nd", "ONE\nc\nd\n", ""},
 		{[]string{"-v", "A=1", "-f", "testdata/g.3", "B=2", "testdata/test.countries"}, "",
-			"A=1, B=0\n\tARGV[1] = B=2\n\tARGV[2] = testdata/test.countries\nA=1, B=2\n"},
-		{[]string{`END { print (x==42) }`, "x=42.0"}, "", "1\n"},
-		{[]string{"-v", "x=42.0", `BEGIN { print (x==42) }`}, "", "1\n"},
+			"A=1, B=0\n\tARGV[1] = B=2\n\tARGV[2] = testdata/test.countries\nA=1, B=2\n", ""},
+		{[]string{`END { print (x==42) }`, "x=42.0"}, "", "1\n", ""},
+		{[]string{"-v", "x=42.0", `BEGIN { print (x==42) }`}, "", "1\n", ""},
+
+		// Error handling
+		{[]string{}, "", "", "usage: goawk [-F fs] [-v var=value] [-f progfile | 'prog'] [file ...]"},
+		{[]string{"-F"}, "", "", "flag needs an argument: -F"},
+		{[]string{"-f"}, "", "", "flag needs an argument: -f"},
+		{[]string{"-v"}, "", "", "flag needs an argument: -v"},
+		{[]string{"-z"}, "", "", "flag provided but not defined: -z"},
+		{[]string{"{ print }", "notexist"}, "", "", "open notexist: no such file or directory"},
+		{[]string{"@"}, "", "", "-----------------------------------\n@\n^\n-----------------------------------\nparse error at 1:1: unexpected char"},
+		{[]string{"BEGIN { print 1/0 }"}, "", "", "division by zero"},
+		{[]string{"-v", "foo", "BEGIN {}"}, "", "", "-v flag must be in format name=value"},
+		{[]string{"--", "{ print $1 }", "-file"}, "", "", "open -file: no such file or directory"},
+		{[]string{"{ print $1 }", "-file"}, "", "", "open -file: no such file or directory"},
 	}
 	for _, test := range tests {
 		testName := strings.Join(test.args, " ")
@@ -389,7 +406,13 @@ func TestCommandLine(t *testing.T) {
 			cmd.Stderr = errBuf
 			output, err := cmd.Output()
 			if err != nil {
-				t.Fatalf("error running %s: %v: %s", awkExe, err, errBuf.String())
+				if test.error == "" {
+					t.Fatalf("expected no error, got AWK error: %v (%s)", err, errBuf.String())
+				}
+			} else {
+				if test.error != "" {
+					t.Fatalf("expected AWK error, got none")
+				}
 			}
 			stdout := string(normalizeNewlines(output))
 			if stdout != test.output {
@@ -398,7 +421,14 @@ func TestCommandLine(t *testing.T) {
 
 			stdout, stderr, err := runGoAWK(test.args, test.stdin)
 			if err != nil {
-				t.Fatalf("error running %s: %v: %s", goAWKExe, err, stderr)
+				stderr = strings.TrimSpace(stderr)
+				if stderr != test.error {
+					t.Fatalf("expected GoAWK error %q, got %q", test.error, stderr)
+				}
+			} else {
+				if test.error != "" {
+					t.Fatalf("expected GoAWK error %q, got none", test.error)
+				}
 			}
 			if stdout != test.output {
 				t.Fatalf("expected GoAWK to give %q, got %q", test.output, stdout)
