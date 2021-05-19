@@ -388,12 +388,12 @@ func TestCommandLine(t *testing.T) {
 		{[]string{"-f"}, "", "", "flag needs an argument: -f"},
 		{[]string{"-v"}, "", "", "flag needs an argument: -v"},
 		{[]string{"-z"}, "", "", "flag provided but not defined: -z"},
-		{[]string{"{ print }", "notexist"}, "", "", "open notexist: no such file or directory"},
+		{[]string{"{ print }", "notexist"}, "", "", `file "notexist" not found`},
 		{[]string{"@"}, "", "", "-----------------------------------\n@\n^\n-----------------------------------\nparse error at 1:1: unexpected char"},
 		{[]string{"BEGIN { print 1/0 }"}, "", "", "division by zero"},
 		{[]string{"-v", "foo", "BEGIN {}"}, "", "", "-v flag must be in format name=value"},
-		{[]string{"--", "{ print $1 }", "-file"}, "", "", "open -file: no such file or directory"},
-		{[]string{"{ print $1 }", "-file"}, "", "", "open -file: no such file or directory"},
+		{[]string{"--", "{ print $1 }", "-file"}, "", "", `file "-file" not found`},
+		{[]string{"{ print $1 }", "-file"}, "", "", `file "-file" not found`},
 	}
 	for _, test := range tests {
 		testName := strings.Join(test.args, " ")
@@ -458,7 +458,7 @@ func TestWildcards(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error using wildcards on non-Windows system")
 		}
-		expected := "open testdata/wildcards/*.txt: no such file or directory\n"
+		expected := "file \"testdata/wildcards/*.txt\" not found\n"
 		if stderr != expected {
 			t.Fatalf("expected %q, got %q", expected, stderr)
 		}
