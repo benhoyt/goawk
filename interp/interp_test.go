@@ -1646,3 +1646,48 @@ BEGIN {
 func normalizeNewlines(s string) string {
 	return strings.Replace(s, "\r\n", "\n", -1)
 }
+
+func TestBuiltinRand(t *testing.T) {
+	p, err := parser.ParseProgram([]byte(`BEGIN { print rand() }`), nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	nextRand := func() string {
+		// Subsequent executions should return different values
+		out := &strings.Builder{}
+		cfg := &interp.Config{
+			Output: out,
+		}
+		_, err = interp.ExecProgram(p, cfg)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		return out.String()
+	}
+
+	a := nextRand()
+	b := nextRand()
+
+	if a == b {
+		t.Fatalf("expecting two different values, got %v twice", a)
+	}
+}
+
+func BenchmarkBuiltinRand(b *testing.B) {
+	p, err := parser.ParseProgram([]byte(`BEGIN { print rand() }`), nil)
+	if err != nil {
+		b.Fatalf("unexpected error: %v", err)
+	}
+
+	cfg := &interp.Config{
+		Output: ioutil.Discard,
+	}
+
+	for i := 0; i < b.N; i++ {
+		_, err = interp.ExecProgram(p, cfg)
+		if err != nil {
+			b.Fatalf("unexpected error: %v", err)
+		}
+	}
+}
