@@ -21,6 +21,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	. "github.com/benhoyt/goawk/internal/ast"
@@ -213,7 +214,7 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	// Initialize defaults
 	p.regexCache = make(map[string]*regexp.Regexp, 10)
 	p.formatCache = make(map[string]cachedFormat, 10)
-	p.randSeed = 1.0
+	p.randSeed = float64(time.Now().UnixNano())
 	seed := math.Float64bits(p.randSeed)
 	p.random = rand.New(rand.NewSource(int64(seed)))
 	p.convertFormat = "%.6g"
