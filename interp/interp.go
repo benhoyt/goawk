@@ -192,6 +192,11 @@ type Config struct {
 	NoFileReads  bool
 }
 
+var (
+	randSeed = float64(time.Now().UnixNano())
+	randSrc  = rand.NewSource(int64(math.Float64bits(randSeed)))
+)
+
 // ExecProgram executes the parsed program using the given interpreter
 // config, returning the exit status code of the program. Error is nil
 // on successful execution of the program, even if the program returns
@@ -214,9 +219,8 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	// Initialize defaults
 	p.regexCache = make(map[string]*regexp.Regexp, 10)
 	p.formatCache = make(map[string]cachedFormat, 10)
-	p.randSeed = float64(time.Now().UnixNano())
-	seed := math.Float64bits(p.randSeed)
-	p.random = rand.New(rand.NewSource(int64(seed)))
+	p.randSeed = randSeed
+	p.random = rand.New(randSrc)
 	p.convertFormat = "%.6g"
 	p.outputFormat = "%.6g"
 	p.fieldSep = " "
