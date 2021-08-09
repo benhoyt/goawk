@@ -95,3 +95,27 @@ GoAWK is licensed under an open source [MIT license](https://github.com/benhoyt/
 ## The end
 
 Have fun, and please [contact me](https://benhoyt.com/) if you're using GoAWK or have any feedback!
+
+
+TODO:
+
+awk fflush(stdout)
+* before system()
+* in printstat() -- what does this do?
+* in openfile() when opening a file or pipe or getline
+* in getline() before getting line
+* fflush(fp) in awkprintf
+
+gawk:
+* flush_io() to flush all output before system()
+* flush_io() to flush all output before creating new pipe
+* fflush(output_fp) before printing an error message to stderr
+* fflush(stderr) after printing an error
+* builtin.c:efwrite: fflush(fp) if output_is_tty and some other conditions met
+* builtin.c:do_printf and do_print
+
+
+// add test that ensures output is flushed before system()
+// add test that ensures output is flushed before getline reading from stdin
+./goawk 'BEGIN { print "press key: "; getline x; print "X:", x }'
+

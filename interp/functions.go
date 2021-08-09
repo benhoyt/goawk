@@ -196,6 +196,7 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 		cmd := exec.Command("sh", "-c", cmdline)
 		cmd.Stdout = p.output
 		cmd.Stderr = p.errorOutput
+		_ = p.flushAll() // flush output streams to ensure synchronization
 		err := cmd.Start()
 		if err != nil {
 			fmt.Fprintln(p.errorOutput, err)

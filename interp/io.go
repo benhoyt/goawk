@@ -99,6 +99,7 @@ func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
 		}
 		cmd.Stdout = p.output
 		cmd.Stderr = p.errorOutput
+		_ = p.flushAll() // flush output streams to ensure synchronization
 		err = cmd.Start()
 		if err != nil {
 			fmt.Fprintln(p.errorOutput, err)
@@ -154,6 +155,7 @@ func (p *interp) getInputScannerPipe(name string) (*bufio.Scanner, error) {
 	if err != nil {
 		return nil, newError("error connecting to stdout pipe: %v", err)
 	}
+	_ = p.flushAll() // flush output streams to ensure synchronization
 	err = cmd.Start()
 	if err != nil {
 		fmt.Fprintln(p.errorOutput, err)
