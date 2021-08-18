@@ -335,8 +335,9 @@ func TestCommandLine(t *testing.T) {
 		{[]string{`$0`, "testdata/g.1", "-", "testdata/g.2"}, "STDIN", "ONE\nSTDIN\nTWO\n", ""},
 		{[]string{`$0`, "testdata/g.1", "-", "testdata/g.2", "-"}, "STDIN", "ONE\nSTDIN\nTWO\n", ""},
 		{[]string{"-F", " ", "--", "$0", "testdata/g.1"}, "", "ONE\n", ""},
-		{[]string{"--", "$0", "-ftest"}, "", "used in tests; do not delete\n", ""}, // Issue #53
-		{[]string{"$0", "-ftest"}, "", "used in tests; do not delete\n", ""},
+		// I've deleted the "-ftest" file for now as it was causing problems with "go install" zip files
+		// {[]string{"--", "$0", "-ftest"}, "", "used in tests; do not delete\n", ""}, // Issue #53
+		// {[]string{"$0", "-ftest"}, "", "used in tests; do not delete\n", ""},
 
 		// Specifying field separator with -F
 		{[]string{`{ print $1, $3 }`}, "1 2 3\n4 5 6", "1 3\n4 6\n", ""},
