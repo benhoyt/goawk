@@ -6,8 +6,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
-
-	"github.com/benhoyt/goawk/internal/strutil"
+	"strings"
 )
 
 type valueType uint8
@@ -44,7 +43,7 @@ func str(s string) value {
 // Create a new value for a "numeric string" context, converting the
 // string to a number if possible.
 func numStr(s string) value {
-	f, err := strconv.ParseFloat(strutil.TrimSpace(s), 64)
+	f, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
 	if err != nil {
 		// Doesn't parse as number, make it a "true string"
 		return value{typ: typeStr, s: s}
@@ -114,12 +113,14 @@ func (v value) num() float64 {
 	return v.n
 }
 
+var asciiSpace = [256]uint8{'\t': 1, '\n': 1, '\v': 1, '\f': 1, '\r': 1, ' ': 1}
+
 // Like strconv.ParseFloat, but parses at the start of string and
 // allows things like "1.5foo"
 func parseFloatPrefix(s string) float64 {
 	// Skip whitespace at start
 	i := 0
-	for i < len(s) && strutil.IsASCIISpace(s[i]) {
+	for i < len(s) && asciiSpace[s[i]] != 0 {
 		i++
 	}
 	start := i
