@@ -13,7 +13,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 	"unicode/utf8"
 
@@ -204,12 +203,8 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 		err = cmd.Wait()
 		if err != nil {
 			if exitErr, ok := err.(*exec.ExitError); ok {
-				if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
-					return num(float64(status.ExitStatus())), nil
-				} else {
-					fmt.Fprintf(p.errorOutput, "couldn't get exit status for %q: %v\n", cmdline, err)
-					return num(-1), nil
-				}
+				code := exitErr.ProcessState.ExitCode()
+				return num(float64(code)), nil
 			} else {
 				fmt.Fprintf(p.errorOutput, "unexpected error running command %q: %v\n", cmdline, err)
 				return num(-1), nil
