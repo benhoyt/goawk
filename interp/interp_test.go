@@ -634,25 +634,9 @@ func TestInterp(t *testing.T) {
 		if awkExe != "" && !strings.Contains(test.src, "!"+awkExe) {
 			// Run it through external awk program first
 			t.Run("awk_"+testName, func(t *testing.T) {
-				srcFile, err := ioutil.TempFile("", "goawktest_")
-				if err != nil {
-					t.Fatalf("error creating temp file: %v", err)
-				}
-				defer os.Remove(srcFile.Name())
-				_, err = srcFile.Write([]byte(test.src))
-				if err != nil {
-					t.Fatalf("error writing temp file: %v", err)
-				}
-				cmd := exec.Command(awkExe, "-f", srcFile.Name(), "-")
+				cmd := exec.Command(awkExe, test.src, "-")
 				if test.in != "" {
-					stdin, err := cmd.StdinPipe()
-					if err != nil {
-						t.Fatalf("error fetching stdin pipe: %v", err)
-					}
-					go func() {
-						defer stdin.Close()
-						stdin.Write([]byte(test.in))
-					}()
+					cmd.Stdin = strings.NewReader(test.in)
 				}
 				out, err := cmd.CombinedOutput()
 				if err != nil {
