@@ -36,6 +36,7 @@ type interpTest struct {
 	awkErr string // error from awk/gawk must contain this
 }
 
+// Note: a lot of these are really parser tests too.
 var interpTests = []interpTest{
 	// BEGIN and END work correctly
 	{`BEGIN { print "b" }`, "", "b\n", "", ""},
@@ -617,7 +618,6 @@ BEGIN { foo(5); bar(10) }
 	{`BEGIN { print (1,2,(3,4),(5,6)) }`, "", "", "parse error at 1:20: unexpected comma-separated expression", "syntax"},
 }
 
-// Note: a lot of these are really parser tests too.
 func TestInterp(t *testing.T) {
 	// Ensure very long lines work (> 64KB)
 	longLine := strings.Repeat("x", 70000)
