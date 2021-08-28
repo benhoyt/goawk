@@ -126,13 +126,26 @@ func (p *interp) getInputScannerFile(name string) (*bufio.Scanner, error) {
 	if p.noFileReads {
 		return nil, newError("can't read from file due to NoFileReads")
 	}
-	r, err := os.Open(name)
-	if err != nil {
-		return nil, err // *os.PathError is handled by caller (getline returns -1)
+
+	var scanner *bufio.Scanner
+
+	if name == "-" {
+		if _, ok := p.scanners["-"]; ok {
+			return p.scanners["-"], nil
+		}
+
+		scanner = p.newScanner(p.stdin)
+	} else {
+		r, err := os.Open(name)
+		if err != nil {
+			return nil, err // *os.PathError is handled by caller (getline returns -1)
+		}
+
+		scanner = p.newScanner(r)
+		p.inputStreams[name] = r
 	}
-	scanner := p.newScanner(r)
+
 	p.scanners[name] = scanner
-	p.inputStreams[name] = r
 	return scanner, nil
 }
 
