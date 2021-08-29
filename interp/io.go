@@ -69,6 +69,10 @@ func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
 
 	switch redirect {
 	case GREATER, APPEND:
+		if name == "-" {
+			// filename of "-" means write to stdout, eg: print "x" >"-"
+			return p.output, nil
+		}
 		// Write or append to file
 		if p.noFileWrites {
 			return nil, newError("can't write to file due to NoFileWrites")
@@ -123,29 +127,25 @@ func (p *interp) getInputScannerFile(name string) (*bufio.Scanner, error) {
 	if _, ok := p.inputStreams[name]; ok {
 		return p.scanners[name], nil
 	}
+	if name == "-" {
+		// filename of "-" means read from stdin, eg: getline <"-"
+		if scanner, ok := p.scanners["-"]; ok {
+			return scanner, nil
+		}
+		scanner := p.newScanner(p.stdin)
+		p.scanners[name] = scanner
+		return scanner, nil
+	}
 	if p.noFileReads {
 		return nil, newError("can't read from file due to NoFileReads")
 	}
-
-	var scanner *bufio.Scanner
-
-	if name == "-" {
-		if _, ok := p.scanners["-"]; ok {
-			return p.scanners["-"], nil
-		}
-
-		scanner = p.newScanner(p.stdin)
-	} else {
-		r, err := os.Open(name)
-		if err != nil {
-			return nil, err // *os.PathError is handled by caller (getline returns -1)
-		}
-
-		scanner = p.newScanner(r)
-		p.inputStreams[name] = r
+	r, err := os.Open(name)
+	if err != nil {
+		return nil, err // *os.PathError is handled by caller (getline returns -1)
 	}
-
+	scanner := p.newScanner(r)
 	p.scanners[name] = scanner
+	p.inputStreams[name] = r
 	return scanner, nil
 }
 

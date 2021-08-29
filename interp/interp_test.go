@@ -591,6 +591,11 @@ BEGIN { foo(5); bar(10) }
 	// {`BEGIN { ">&2 echo error" | getline; print }`, "", "error\n\n", "", ""},
 	{`BEGIN { print getline x < "/no/such/file" }  # !fuzz`, "", "-1\n", "", ""},
 
+	// Redirecting to or from a filename of "-" means write to stdout or read from stdin
+	{`BEGIN { print getline x < "-"; print x }`, "a\nb\n", "1\na\n", "", ""},
+	{`{ print $0; print getline x <"-"; print x }`, "one\ntwo\n", "one\n0\n\ntwo\n0\n\n", "", ""},
+	{`BEGIN { print "x" >"-"; print "y" >"-" }`, "", "x\ny\n", "", ""},
+
 	// fflush() function - tests parsing and some edge cases, but not
 	// actual flushing behavior (that's partially tested in TestFlushes).
 	{`BEGIN { print fflush(); print fflush("") }`, "", "0\n0\n", "", ""},
