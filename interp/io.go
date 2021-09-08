@@ -96,7 +96,7 @@ func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
 		if p.noExec {
 			return nil, newError("can't write to pipe due to NoExec")
 		}
-		cmd := exec.Command("sh", "-c", name)
+		cmd := exec.Command("/bin/sh", "-c", name)
 		w, err := cmd.StdinPipe()
 		if err != nil {
 			return nil, newError("error connecting to stdin pipe: %v", err)
@@ -160,7 +160,7 @@ func (p *interp) getInputScannerPipe(name string) (*bufio.Scanner, error) {
 	if p.noExec {
 		return nil, newError("can't read from pipe due to NoExec")
 	}
-	cmd := exec.Command("sh", "-c", name)
+	cmd := exec.Command("/bin/sh", "-c", name)
 	cmd.Stdin = p.stdin
 	cmd.Stderr = p.errorOutput
 	r, err := cmd.StdoutPipe()

@@ -192,7 +192,7 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 			return null(), newError("can't call system() due to NoExec")
 		}
 		cmdline := p.toString(args[0])
-		cmd := exec.Command("sh", "-c", cmdline)
+		cmd := exec.Command("/bin/sh", "-c", cmdline)
 		cmd.Stdout = p.output
 		cmd.Stderr = p.errorOutput
 		err := cmd.Start()
