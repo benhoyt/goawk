@@ -96,7 +96,7 @@ func (v value) str(floatFormat string) string {
 			return fmt.Sprintf(floatFormat, v.n)
 		}
 	}
-	// For typeStr and typeStrNum we already have the string, for
+	// For typeStr and typeNumStr we already have the string, for
 	// typeNull v.s == "".
 	return v.s
 }
@@ -107,7 +107,7 @@ func (v value) num() float64 {
 		// Ensure string starts with a float and convert it
 		return parseFloatPrefix(v.s)
 	}
-	// Handle case for typeNum and typeStrNum. If it's a numeric
+	// Handle case for typeNum and typeNumStr. If it's a numeric
 	// string, we already have the float value from the numStr()
 	// call. For typeNull v.n == 0.
 	return v.n
