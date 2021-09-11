@@ -192,7 +192,7 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 			return null(), newError("can't call system() due to NoExec")
 		}
 		cmdline := p.toString(args[0])
-		cmd := exec.Command("/bin/sh", "-c", cmdline)
+		cmd := p.execShell(cmdline)
 		cmd.Stdout = p.output
 		cmd.Stderr = p.errorOutput
 		err := cmd.Start()
@@ -261,6 +261,15 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 	}
 }
 
+// executes code using configured system shell
+func (p *interp) execShell(code string) *exec.Cmd {
+	shellInterpreter := p.shellCommand[0]
+	shellArgs := p.shellCommand[1:]
+	shellArgs = append(shellArgs, code)
+	cmd := exec.Command(shellInterpreter, shellArgs...)
+	return cmd
+}
+
 // Call user-defined function with given index and arguments, return
 // its return value (or null value if it doesn't return anything)
 func (p *interp) callUser(index int, args []Expr) (value, error) {
@@ -320,11 +329,11 @@ func (p *interp) callUser(index int, args []Expr) (value, error) {
 	return null(), nil
 }
 
-// Call native-defined function with given name and arguments, return
+// Call native-defined function with given name and arguments,
 // return value (or null value if it doesn't return anything).
 func (p *interp) callNative(index int, args []Expr) (value, error) {
 	f := p.nativeFuncs[index]
-	minIn := len(f.in) // Mininum number of args we should pass
+	minIn := len(f.in) // Minimum number of args we should pass
 	var variadicType reflect.Type
 	if f.isVariadic {
 		variadicType = f.in[len(f.in)-1].Elem()
