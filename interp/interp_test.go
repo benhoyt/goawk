@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"reflect"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -1026,6 +1027,30 @@ func TestConfigVarsCorrect(t *testing.T) {
 	expected := "length of config.Vars must be a multiple of 2, not 1"
 	if err == nil || err.Error() != expected {
 		t.Fatalf("expected error %q, got: %v", expected, err)
+	}
+}
+
+func TestShellCommand(t *testing.T) {
+	testGoAWK(t, `BEGIN { system("echo hello world") }`, "", "hello world\n", "", nil, nil)
+
+	if runtime.GOOS == "windows" {
+		testGoAWK(t, `BEGIN { system("echo hello world") }`, "", "hello world\n", "", nil,
+			func(config *interp.Config) {
+				config.ShellCommand = []string{"cmd.exe", "/c"}
+			})
+	} else {
+		testGoAWK(t, `BEGIN { system("world") }`, "", "hello world\n", "", nil,
+			func(config *interp.Config) {
+				config.ShellCommand = []string{"/bin/echo", "hello"}
+			})
+		testGoAWK(t, `BEGIN { "world" | getline; print }`, "", "hello world\n", "", nil,
+			func(config *interp.Config) {
+				config.ShellCommand = []string{"/bin/echo", "hello"}
+			})
+		testGoAWK(t, `BEGIN { print "hello world" | "-" }`, "", "hello world\n", "", nil,
+			func(config *interp.Config) {
+				config.ShellCommand = []string{"/bin/cat"}
+			})
 	}
 }
 

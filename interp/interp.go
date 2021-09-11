@@ -76,6 +76,7 @@ type interp struct {
 	noExec        bool
 	noFileWrites  bool
 	noFileReads   bool
+	shellCommand  []string
 
 	// Scalars, arrays, and function state
 	globals     []value
@@ -189,6 +190,10 @@ type Config struct {
 	NoExec       bool
 	NoFileWrites bool
 	NoFileReads  bool
+
+	// Exec args used to run system shell. Typically, this will
+	// be {"/bin/sh", "-c"}
+	ShellCommand []string
 }
 
 // ExecProgram executes the parsed program using the given interpreter
@@ -245,6 +250,17 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 		if err != nil {
 			return 0, err
 		}
+	}
+
+	// Setup system shell command
+	if len(config.ShellCommand) != 0 {
+		p.shellCommand = config.ShellCommand
+	} else {
+		executable := "/bin/sh"
+		if runtime.GOOS == "windows" {
+			executable = "sh"
+		}
+		p.shellCommand = []string{executable, "-c"}
 	}
 
 	// Setup I/O structures
