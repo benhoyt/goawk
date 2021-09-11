@@ -261,12 +261,12 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 	}
 }
 
-// executes code using configured system shell
+// Executes code using configured system shell
 func (p *interp) execShell(code string) *exec.Cmd {
-	shellInterpreter := p.shellCommand[0]
-	shellArgs := p.shellCommand[1:]
-	shellArgs = append(shellArgs, code)
-	cmd := exec.Command(shellInterpreter, shellArgs...)
+	executable := p.shellCommand[0]
+	args := p.shellCommand[1:]
+	args = append(args, code)
+	cmd := exec.Command(executable, args...)
 	return cmd
 }
 
@@ -329,8 +329,8 @@ func (p *interp) callUser(index int, args []Expr) (value, error) {
 	return null(), nil
 }
 
-// Call native-defined function with given name and arguments,
-// return value (or null value if it doesn't return anything).
+// Call native-defined function with given name and arguments, return
+// its return value (or null value if it doesn't return anything).
 func (p *interp) callNative(index int, args []Expr) (value, error) {
 	f := p.nativeFuncs[index]
 	minIn := len(f.in) // Minimum number of args we should pass

@@ -1033,7 +1033,12 @@ func TestConfigVarsCorrect(t *testing.T) {
 func TestShellCommand(t *testing.T) {
 	testGoAWK(t, `BEGIN { system("echo hello world") }`, "", "hello world\n", "", nil, nil)
 
-	if runtime.GOOS != "windows" {
+	if runtime.GOOS == "windows" {
+		testGoAWK(t, `BEGIN { system("echo hello world") }`, "", "hello world\n", "", nil,
+			func(config *interp.Config) {
+				config.ShellCommand = []string{"cmd.exe", "/c"}
+			})
+	} else {
 		testGoAWK(t, `BEGIN { system("world") }`, "", "hello world\n", "", nil,
 			func(config *interp.Config) {
 				config.ShellCommand = []string{"/bin/echo", "hello"}

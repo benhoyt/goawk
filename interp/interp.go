@@ -256,13 +256,11 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	if len(config.ShellCommand) != 0 {
 		p.shellCommand = config.ShellCommand
 	} else {
-		var shellInterpreter string
+		executable := "/bin/sh"
 		if runtime.GOOS == "windows" {
-			shellInterpreter = "sh"
-		} else {
-			shellInterpreter = "/bin/sh"
+			executable = "sh"
 		}
-		p.shellCommand = []string{shellInterpreter, "-c"}
+		p.shellCommand = []string{executable, "-c"}
 	}
 
 	// Setup I/O structures
