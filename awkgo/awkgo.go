@@ -73,25 +73,49 @@ import (
 	"strings"
 )
 
+var (
+	_output  *bufio.Writer
+	_scanner *bufio.Scanner
+	_line    string
+	_fields  []string
+)
+
 func main() {
-	_output := bufio.NewWriter(os.Stdout)
+	_output = bufio.NewWriter(os.Stdout)
 	defer _output.Flush()
 
-	_scanner := bufio.NewScanner(os.Stdin)
+	_scanner = bufio.NewScanner(os.Stdin)
+`)
+
+	for _, stmts := range prog.Begin {
+		c.output("\n{ // BEGIN\n")
+		c.stmts(stmts)
+		c.output("}\n")
+	}
+
+	// TODO: leave this section out if just BEGIN
+	c.output(`
 	for _scanner.Scan() {
-		_line := _scanner.Text()
-		_fields := strings.Fields(_line)
+		_line = _scanner.Text()
+		_fields = strings.Fields(_line)
+
 `)
 	c.actions(prog.Actions)
-	c.output(`	}
+	c.output("	}\n")
+
+	for _, stmts := range prog.End {
+		c.output("\n{ // END\n")
+		c.stmts(stmts)
+		c.output("}\n")
+	}
+
+	c.output(`
 	if _scanner.Err() != nil {
 		fmt.Fprintln(os.Stderr, _scanner.Err())
 		os.Exit(1)
 	}
 }
 `)
-
-	// TODO: handle BEGIN and END
 
 	for _, f := range prog.Functions {
 		c.function(f)
