@@ -30,6 +30,7 @@ func main() {
 		os.Exit(1)
 	}
 	c := &compiler{}
+	c.globalTypes = make(map[string]valueType)
 	c.program(prog)
 }
 
@@ -46,8 +47,12 @@ func errorf(format string, args ...interface{}) error {
 }
 
 type compiler struct {
-	prog    *Program
-	imports map[string]bool
+	prog        *Program
+	globalTypes map[string]valueType
+}
+
+func (c *compiler) globalType(name string) valueType {
+	return c.globalTypes[name]
 }
 
 func (c *compiler) output(s string) {
@@ -78,98 +83,8 @@ func main() {
 		fmt.Fprintln(os.Stderr, _scanner.Err())
 		os.Exit(1)
 	}
-}
-
-func _getField(line string, fields []string, i int) string {
-	if i == 0 {
-		return line
-	}
-	if i >= 1 && i <= len(fields) {
-        return fields[i-1]
-    }
-    return ""
-}
-
-func _boolToNum(b bool) float64 {
-	if b {
-		return 1
-	}
-	return 0
-}
-
-func _numToStr(n float64) string {
-	switch {
-	case math.IsNaN(n):
-		return "nan"
-	case math.IsInf(n, 0):
-		if n < 0 {
-			return "-inf"
-		} else {
-			return "inf"
-		}
-	case n == float64(int(n)):
-		return strconv.Itoa(int(n))
-	default:
-		return fmt.Sprintf("%.6g", n)
-	}
-}
-
-var asciiSpace = [256]uint8{'\t': 1, '\n': 1, '\v': 1, '\f': 1, '\r': 1, ' ': 1}
-
-// Like strconv.ParseFloat, but parses at the start of string and
-// allows things like "1.5foo".
-func _strToNum(s string) float64 {
-	// Skip whitespace at start
-	i := 0
-	for i < len(s) && asciiSpace[s[i]] != 0 {
-		i++
-	}
-	start := i
-
-	// Parse mantissa: optional sign, initial digit(s), optional '.',
-	// then more digits
-	gotDigit := false
-	if i < len(s) && (s[i] == '+' || s[i] == '-') {
-		i++
-	}
-	for i < len(s) && s[i] >= '0' && s[i] <= '9' {
-		gotDigit = true
-		i++
-	}
-	if i < len(s) && s[i] == '.' {
-		i++
-	}
-	for i < len(s) && s[i] >= '0' && s[i] <= '9' {
-		gotDigit = true
-		i++
-	}
-	if !gotDigit {
-		return 0
-	}
-
-	// Parse exponent ("1e" and similar are allowed, but ParseFloat
-	// rejects them)
-	end := i
-	if i < len(s) && (s[i] == 'e' || s[i] == 'E') {
-		i++
-		if i < len(s) && (s[i] == '+' || s[i] == '-') {
-			i++
-		}
-		for i < len(s) && s[i] >= '0' && s[i] <= '9' {
-			i++
-			end = i
-		}
-	}
-
-	floatStr := s[start:end]
-	f, _ := strconv.ParseFloat(floatStr, 64)
-	return f // Returns infinity in case of "value out of range" error
-}
 `)
-}
-
-func (c *compiler) addImport(path string) {
-	c.imports[path] = true
+	//c.outputHelpers()
 }
 
 func (c *compiler) actions(actions []Action) {
@@ -194,6 +109,7 @@ func (c *compiler) stmt(stmt Stmt) {
 	switch stmt := stmt.(type) {
 	case *ExprStmt:
 		// TODO: some expressions like "1+2" won't be valid Go statements
+		// TODO: if it's an assign expr, simplify _assignNum(&x, 3) to "x = 3"
 		s, _ := c.expr(stmt.Expr)
 		c.output(s)
 
@@ -211,15 +127,11 @@ func (c *compiler) stmt(stmt Stmt) {
 		}
 		c.output(")")
 
+	//TODO: case *PrintfStmt:
+
 	case *IfStmt:
 		c.output("if ")
-		s, t := c.expr(stmt.Cond)
-		c.output(s)
-		if t == typeStr {
-			c.output(` != ""`)
-		} else {
-			c.output(" != 0")
-		}
+		c.output(c.cond(stmt.Cond))
 		c.output(" {\n")
 		c.stmts(stmt.Body)
 		c.output("}")
@@ -230,6 +142,101 @@ func (c *compiler) stmt(stmt Stmt) {
 			c.output("}")
 		}
 
+	case *ForStmt:
+		c.output("for ")
+		if stmt.Pre != nil {
+			exprStmt, ok := stmt.Pre.(*ExprStmt)
+			if !ok {
+				panic(errorf(`only expressions are allowed in "for" initializer`))
+			}
+			s, _ := c.expr(exprStmt.Expr)
+			c.output(s)
+		}
+		c.output("; ")
+		if stmt.Cond != nil {
+			c.cond(stmt.Cond)
+		}
+		c.output("; ")
+		if stmt.Post != nil {
+			exprStmt, ok := stmt.Pre.(*ExprStmt)
+			if !ok {
+				panic(errorf(`only expressions are allowed in "for" post expression`))
+			}
+			s, _ := c.expr(exprStmt.Expr)
+			c.output(s)
+		}
+		c.output(" {\n")
+		c.stmts(stmt.Body)
+		c.output("}")
+
+	case *ForInStmt:
+		// TODO: scoping of loop variable
+		c.output("for ")
+		c.output(stmt.Var.Name)
+		c.globalTypes[stmt.Var.Name] = typeStr
+		c.output(" := range ")
+		c.output(stmt.Array.Name)
+		c.output(" {\n")
+		c.stmts(stmt.Body)
+		c.output("}")
+
+	//TODO: case *ReturnStmt:
+
+	case *WhileStmt:
+		c.output("for ")
+		c.output(c.cond(stmt.Cond))
+		c.output(" {\n")
+		c.stmts(stmt.Body)
+		c.output("}")
+
+	case *DoWhileStmt:
+		c.output("for {\n")
+		c.stmts(stmt.Body)
+		c.output("if !(")
+		c.output(c.cond(stmt.Cond))
+		c.output(") {\nbreak\n}\n")
+		c.output("}")
+
+	case *BreakStmt:
+		c.output("break")
+
+	case *ContinueStmt:
+		c.output("continue")
+
+	case *NextStmt:
+		panic(errorf(`"next" statement not supported`))
+
+	case *ExitStmt:
+		if stmt.Status != nil {
+			c.output("os.Exit(")
+			c.output(c.intExpr(stmt.Status))
+			c.output(")")
+		} else {
+			c.output("os.Exit(0)")
+		}
+
+	case *DeleteStmt:
+		if len(stmt.Index) > 0 {
+			// Delete single key from array
+			c.output("delete(")
+			c.output(stmt.Array.Name)
+			c.output(", ")
+			c.output(c.index(stmt.Index))
+			c.output(")")
+		} else {
+			// Delete every element in array
+			c.output("for k := range ")
+			c.output(stmt.Array.Name)
+			c.output(" {\ndelete(")
+			c.output(stmt.Array.Name)
+			c.output(", k)\n}")
+		}
+
+	case *BlockStmt:
+		c.output("{\n")
+		c.stmts(stmt.Body)
+		c.output("}")
+
 	default:
 		panic(errorf("%T not yet supported", stmt))
 	}
@@ -239,7 +246,8 @@ func (c *compiler) stmt(stmt Stmt) {
 type valueType int
 
 const (
-	typeStr valueType = iota + 1
+	typeUnknown valueType = iota
+	typeStr
 	typeNum
 	typeNumStr
 )
@@ -255,8 +263,119 @@ func (c *compiler) expr(expr Expr) (string, valueType) {
 	case *FieldExpr:
 		return "_getField(_line, _fields, " + c.intExpr(e.Index) + ")", typeNumStr
 
+	case *VarExpr:
+		if e.Scope != ScopeGlobal {
+			panic(errorf("scope %v not yet supported", e.Scope))
+		}
+		// TODO: ideally would do a pass to determine types ahead of time...
+		t := c.globalType(e.Name)
+		if t == typeUnknown {
+			panic(errorf("%q not yet assigned to; type not known", e.Name))
+		}
+		return e.Name, t
+
+	case *RegExpr:
+		// TODO: pre-compile regex literal as global
+		return fmt.Sprintf("_regexMatch(%q, _line)", e.Regex), typeNum
+
 	case *BinaryExpr:
 		return c.binaryExpr(e.Op, e.Left, e.Right)
+
+	//case *IncrExpr:
+	//	return "TODO", 0
+
+	case *AssignExpr:
+		r, t := c.expr(e.Right)
+		switch l := e.Left.(type) {
+		case *VarExpr:
+			// TODO: check scope
+			c.globalTypes[l.Name] = t
+			if t == typeNum {
+				return "_assignNum(&" + l.Name + ", " + r + ")", typeNum
+			}
+			return "_assignStr(&" + l.Name + ", " + r + ")", t
+
+		//TODO: case *IndexExpr:
+
+		//TODO: case *FieldExpr:
+
+		default:
+			panic(errorf("unexpected lvalue type: %T", l))
+		}
+
+	//case *AugAssignExpr:
+	//	return "TODO", 0
+
+	case *CondExpr:
+		// TODO: should only evaluate True or False, not both
+		ts, tt := c.expr(e.True)
+		fs, ft := c.expr(e.False)
+		if tt != ft {
+			panic(errorf("true branch of ?: must be same type as false branch"))
+		}
+		if tt == typeNum {
+			return "_condNum(" + c.cond(e.Cond) + ", " + ts + ", " + fs + ")", typeNum
+		}
+		return "_condStr(" + c.cond(e.Cond) + ", " + ts + ", " + fs + ")", tt
+
+	case *IndexExpr:
+		if e.Array.Scope != ScopeGlobal {
+			panic(errorf("scope %v not yet supported", e.Array.Scope))
+		}
+		arrayType := c.globalType(e.Array.Name)
+		if arrayType == typeUnknown {
+			panic(errorf("%q not yet assigned to; type not known", e.Array.Name))
+		}
+		return e.Array.Name + "[" + c.index(e.Index) + "]", arrayType
+
+	//case *CallExpr:
+	//	return "TODO", 0
+
+	case *UnaryExpr:
+		s, t := c.expr(e.Value)
+		switch e.Op {
+		case SUB:
+			if t == typeStr {
+				s = "_strToNum(" + s + ")"
+			}
+			return "-" + s, typeNum
+
+		case NOT:
+			if t == typeStr {
+				s = s + ` == ""`
+			} else {
+				s = s + " == 0 "
+			}
+			return "_boolToNum(" + s + ")", typeNum
+
+		case ADD:
+			if t == typeStr {
+				s = "_strToNum(" + s + ")"
+			}
+			return "+" + s, typeNum
+
+		default:
+			panic(errorf("unexpected unary operation: %s", e.Op))
+		}
+
+	case *InExpr:
+		if e.Array.Scope != ScopeGlobal {
+			panic(errorf("scope %v not yet supported", e.Array.Scope))
+		}
+		arrayType := c.globalType(e.Array.Name)
+		if arrayType == typeUnknown {
+			panic(errorf("%q not yet assigned to; type not known", e.Array.Name))
+		}
+		if arrayType == typeNum {
+			return "_containsNum(" + e.Array.Name + ", " + c.index(e.Index) + ")", typeNum
+		}
+		return "_containsStr(" + e.Array.Name + ", " + c.index(e.Index) + ")", arrayType
+
+	//case *UserCallExpr:
+	//	return "TODO", 0
+
+	//case *GetlineExpr:
+	//	return "TODO", 0
 
 	default:
 		panic(errorf("%T not yet supported", expr))
@@ -268,7 +387,6 @@ func (c *compiler) binaryExpr(op Token, l, r Expr) (string, valueType) {
 	case ADD, SUB, MUL, DIV, MOD:
 		return c.numExpr(l) + " " + op.String() + " " + c.numExpr(r), typeNum
 	case POW:
-		c.addImport("math")
 		return "math.Pow(" + c.numExpr(l) + ", " + c.numExpr(r) + ")", typeNum
 	case CONCAT:
 		return c.strExpr(l) + " + " + c.strExpr(r), typeStr
@@ -306,9 +424,22 @@ func (c *compiler) binaryExpr(op Token, l, r Expr) (string, valueType) {
 	case MATCH, NOT_MATCH:
 		// TODO: pre-compile regex literals if r is string literal
 		return "_regexMatch(" + c.strExpr(r) + ", " + c.strExpr(l) + ")", typeNum
+	case AND, OR:
+		// TODO: what to do about precedence / parentheses?
+		return "_boolToNum(" + c.cond(l) + " " + op.String() + " " + c.cond(r) + ")", typeNum
 	default:
 		panic(errorf("unexpected binary operator %s", op))
 	}
+}
+
+func (c *compiler) cond(expr Expr) string {
+	s, t := c.expr(expr)
+	if t == typeStr {
+		s += ` != ""`
+	} else {
+		s += " != 0"
+	}
+	return s
 }
 
 func (c *compiler) numExpr(expr Expr) string {
@@ -330,4 +461,19 @@ func (c *compiler) strExpr(expr Expr) string {
 		s = "_numToStr(" + s + ")"
 	}
 	return s
+}
+
+func (c *compiler) index(index []Expr) string {
+	indexStr := ""
+	for i, e := range index {
+		if i > 0 {
+			indexStr += ` + "\x1c" + `
+		}
+		s, t := c.expr(e)
+		if t == typeNum {
+			s = "_numToStr(" + s + ")"
+		}
+		indexStr += s
+	}
+	return indexStr
 }
