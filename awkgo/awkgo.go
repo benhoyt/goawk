@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	. "github.com/benhoyt/goawk/internal/ast"
 	. "github.com/benhoyt/goawk/lexer"
@@ -67,11 +68,15 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 )
 
 func main() {
+	_output := bufio.NewWriter(os.Stdout)
+	defer _output.Flush()
+
 	_scanner := bufio.NewScanner(os.Stdin)
 	for _scanner.Scan() {
 		_line := _scanner.Text()
@@ -83,8 +88,16 @@ func main() {
 		fmt.Fprintln(os.Stderr, _scanner.Err())
 		os.Exit(1)
 	}
+}
 `)
-	//c.outputHelpers()
+
+	// TODO: handle BEGIN and END
+
+	for _, f := range prog.Functions {
+		c.function(f)
+	}
+
+	c.outputHelpers()
 }
 
 func (c *compiler) actions(actions []Action) {
@@ -114,20 +127,33 @@ func (c *compiler) stmt(stmt Stmt) {
 		c.output(s)
 
 	case *PrintStmt:
+		// TODO: handle modified OFS and ORS
 		if stmt.Dest != nil {
 			panic(errorf("print redirection not yet supported"))
 		}
-		c.output("fmt.Println(")
+		c.output("fmt.Fprintln(_output, ")
 		for i, arg := range stmt.Args {
 			if i > 0 {
 				c.output(", ")
 			}
-			s, _ := c.expr(arg) // TODO: handle type
+			s, _ := c.expr(arg) // TODO: need to handle type?
 			c.output(s)
 		}
 		c.output(")")
 
-	//TODO: case *PrintfStmt:
+	case *PrintfStmt:
+		if stmt.Dest != nil {
+			panic(errorf("printf redirection not yet supported"))
+		}
+		c.output("fmt.Fprintf(_output, ")
+		c.output(c.strExpr(stmt.Args[0]))
+		for _, a := range stmt.Args[1:] {
+			// TODO: hmm, need special handling for the types to avoid "%!d(string=1234)"
+			c.output(", ")
+			s, _ := c.expr(a)
+			c.output(s)
+		}
+		c.output(")")
 
 	case *IfStmt:
 		c.output("if ")
@@ -180,7 +206,14 @@ func (c *compiler) stmt(stmt Stmt) {
 		c.stmts(stmt.Body)
 		c.output("}")
 
-	//TODO: case *ReturnStmt:
+	case *ReturnStmt:
+		if stmt.Value != nil {
+			c.output("return ")
+			s, _ := c.expr(stmt.Value)
+			c.output(s)
+		} else {
+			c.output("return")
+		}
 
 	case *WhileStmt:
 		c.output("for ")
@@ -451,7 +484,10 @@ func (c *compiler) numExpr(expr Expr) string {
 }
 
 func (c *compiler) intExpr(expr Expr) string {
-	// TODO: if integer NumExpr can avoid int(...)
+	e, ok := expr.(*NumExpr)
+	if ok && e.Value == float64(int(e.Value)) {
+		return strconv.Itoa(int(e.Value))
+	}
 	return "int(" + c.numExpr(expr) + ")"
 }
 
@@ -476,4 +512,18 @@ func (c *compiler) index(index []Expr) string {
 		indexStr += s
 	}
 	return indexStr
+}
+
+func (c *compiler) function(f Function) {
+	// TODO: handle param types and return type (and use f.Arrays)
+	c.output("\nfunc ")
+	c.output(f.Name)
+	c.output("(")
+	if len(f.Params) > 0 {
+		c.output(strings.Join(f.Params, ", "))
+		c.output(" string")
+	}
+	c.output(") {\n")
+	c.stmts(f.Body)
+	c.output("}\n")
 }

@@ -1,5 +1,7 @@
 package main
 
+// TODO: we should include only the functions we use in the output
+
 func (c *compiler) outputHelpers() {
 	c.output(`
 func _getField(line string, fields []string, i int) string {
@@ -103,8 +105,8 @@ func _condNum(cond, trueVal, falseVal float64) float64 {
 	return falseVal
 }
 
-func _condStr(cond float64, trueVal, falseVal string) float64 {
-	if cond != "" {
+func _condStr(cond float64, trueVal, falseVal string) string {
+	if cond != 0 {
 		return trueVal
 	}
 	return falseVal
