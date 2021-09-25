@@ -107,10 +107,11 @@ func (p *Program) String() string {
 // Parser state
 type parser struct {
 	// Lexer instance and current token values
-	lexer *Lexer
-	pos   Position // position of last token (tok)
-	tok   Token    // last lexed token
-	val   string   // string value of last token (or "")
+	lexer   *Lexer
+	pos     Position // position of last token (tok)
+	tok     Token    // last lexed token
+	prevtok Token    // previously lexed token
+	val     string   // string value of last token (or "")
 
 	// Parsing state
 	inAction  bool   // true if parsing an action (false in BEGIN or END)
@@ -169,6 +170,10 @@ func (p *parser) program() *Program {
 			prog.Actions = append(prog.Actions, action)
 			p.inAction = false
 		}
+		// Allowed semicolon after items
+		if p.matches(SEMICOLON) {
+			p.next()
+		}
 		p.optionalNewlines()
 	}
 
@@ -203,9 +208,6 @@ func (p *parser) stmtsBrace() Stmts {
 		ss = append(ss, p.stmt())
 	}
 	p.expect(RBRACE)
-	if p.tok == SEMICOLON {
-		p.next()
-	}
 	return ss
 }
 
@@ -393,10 +395,27 @@ func (p *parser) stmt() Stmt {
 	default:
 		s = p.simpleStmt()
 	}
+	if !p.allowedEndOfStatement() {
+		panic(p.error("unexpected token after statement"))
+	}
 	for p.matches(NEWLINE, SEMICOLON) {
 		p.next()
 	}
 	return s
+}
+
+// Matches the begin of a statement
+func (p *parser) matchesStatementBegin() bool {
+	return p.matches(LBRACE, BREAK, CONTINUE, DELETE, DO, EXIT, FOR, IF,
+		NEXT, PRINT, PRINTF, RETURN, WHILE)
+}
+
+func (p *parser) allowedEndOfStatement() bool {
+	// A statement can come directly after another only if the previous
+	// token is '}' ('BEGIN {if (1) {print 1} print 1}' should compile) or
+	// if the previous token is ';' or a new line (as these are statement
+	// separators)
+	return !(p.matchesStatementBegin() && p.prevtok != RBRACE && p.prevtok != SEMICOLON && p.prevtok != NEWLINE)
 }
 
 // Same as stmts(), but tracks that we're in a loop (as break and
@@ -938,6 +957,7 @@ func (p *parser) optionalNewlines() {
 
 // Parse next token into p.tok (and set p.pos and p.val).
 func (p *parser) next() {
+	p.prevtok = p.tok
 	p.pos, p.tok, p.val = p.lexer.Scan()
 	if p.tok == ILLEGAL {
 		panic(p.error("%s", p.val))
