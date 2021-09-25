@@ -152,9 +152,16 @@ func (l *Lexer) scan() (Position, Token, string) {
 				l.next()
 				gotDigit = true
 			}
-			// Per awk/gawk, "1e" is allowed, but not "1e+"
-			if gotSign && !gotDigit {
-				return l.pos, ILLEGAL, "expected digits"
+			// Per awk/gawk, "1e" is allowed because "e" is
+			// considered a variable. "1e+" is considered an error
+			if !gotDigit {
+				if gotSign {
+					l.offset--
+					l.nextPos.Column--
+				}
+				l.offset--
+				l.nextPos.Column--
+				l.ch = l.src[l.offset-1]
 			}
 		}
 		tok = NUMBER
