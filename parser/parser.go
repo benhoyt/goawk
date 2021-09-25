@@ -107,10 +107,11 @@ func (p *Program) String() string {
 // Parser state
 type parser struct {
 	// Lexer instance and current token values
-	lexer *Lexer
-	pos   Position // position of last token (tok)
-	tok   Token    // last lexed token
-	val   string   // string value of last token (or "")
+	lexer   *Lexer
+	pos     Position // position of last token (tok)
+	tok     Token    // last lexed token
+	prevtok Token    // previously lexed token
+	val     string   // string value of last token (or "")
 
 	// Parsing state
 	inAction  bool   // true if parsing an action (false in BEGIN or END)
@@ -392,6 +393,9 @@ func (p *parser) stmt() Stmt {
 		s = &BlockStmt{body}
 	default:
 		s = p.simpleStmt()
+	}
+	if !p.checkAllowedAfterStatement() {
+		panic(p.error("unexpected token %s after statement", p.tok))
 	}
 	for p.matches(NEWLINE, SEMICOLON) {
 		p.next()
@@ -938,6 +942,7 @@ func (p *parser) optionalNewlines() {
 
 // Parse next token into p.tok (and set p.pos and p.val).
 func (p *parser) next() {
+	p.prevtok = p.tok
 	p.pos, p.tok, p.val = p.lexer.Scan()
 	if p.tok == ILLEGAL {
 		panic(p.error("%s", p.val))
@@ -1005,4 +1010,15 @@ func (p *parser) userCall(name string, pos Position) *UserCallExpr {
 	call := &UserCallExpr{false, -1, name, args} // index is resolved later
 	p.recordUserCall(call, pos)
 	return call
+}
+
+func (p *parser) matchesTerminator() bool {
+	return p.matches(NEWLINE, EOF, SEMICOLON)
+}
+
+func (p *parser) checkAllowedAfterStatement() bool {
+	// Terminators and '}' are allowed directly after statements. Another
+	// statement is allowed after another statement if the preceding
+	// statement ends with a '}', a semicolon or a newline
+	return (p.matchesTerminator() || p.matches(RBRACE)) || p.prevtok == RBRACE || p.prevtok == SEMICOLON || p.prevtok == NEWLINE
 }
