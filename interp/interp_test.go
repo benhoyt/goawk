@@ -221,6 +221,14 @@ BEGIN {
 	{`BEGIN { printf "\0\78\7\77\777\0 \141 " }  # !awk`, "", "\x00\a8\a?\xff\x00 a ", "", ""},
 	{`BEGIN { printf "\1\78\7\77\777\1 \141 " }`, "", "\x01\a8\a?\xff\x01 a ", "", ""},
 
+	// Unusual number/exponent handling
+	{`BEGIN { e="x"; E="X"; print 1e, 1E }`, "", "1x 1X\n", "", ""},
+	{`BEGIN { e="x"; E="X"; print 1e1e, 1E1E }`, "", "10x 10X\n", "", ""},
+	{`BEGIN { a=2; print 1e+a, 1E+a, 1e+1, 1E+1 }`, "", "12 12 10 10\n", "", ""},
+	{`BEGIN { a=2; print 1e-a, 1E-a, 1e-1, 1E-1 }`, "", "1-2 1-2 0.1 0.1\n", "", ""},
+	{`BEGIN { print 1e+ }`, "", "", "parse error at 1:19: expected expression instead of }", "syntax error"},
+	{`BEGIN { print 1e- }`, "", "", "parse error at 1:19: expected expression instead of }", "syntax error"},
+
 	// Conditional ?: expression
 	{`{ print /x/?"t":"f" }`, "x\ny\nxx\nz\n", "t\nf\nt\nf\n", "", ""},
 	{`BEGIN { print 1?2?3:4:5, 1?0?3:4:5, 0?2?3:4:5 }`, "", "3 4 5\n", "", ""},

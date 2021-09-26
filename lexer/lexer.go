@@ -152,16 +152,13 @@ func (l *Lexer) scan() (Position, Token, string) {
 				l.next()
 				gotDigit = true
 			}
-			// Per awk/gawk, "1e" is allowed because "e" is
-			// considered a variable. "1e+" is considered an error
+			// Per awk/gawk, "1e" is allowed and parsed as "1 e" (with "e"
+			// considered a variable). "1e+" is parsed as "1e + ...".
 			if !gotDigit {
 				if gotSign {
-					l.offset--
-					l.nextPos.Column--
+					l.unread() // unread the '+' or '-'
 				}
-				l.offset--
-				l.nextPos.Column--
-				l.ch = l.src[l.offset-1]
+				l.unread() // unread the 'e' or 'E'
 			}
 		}
 		tok = NUMBER
@@ -403,6 +400,7 @@ func (l *Lexer) next() {
 		if l.ch != 0 {
 			l.ch = 0
 			l.offset++
+			l.nextPos.Column++
 		}
 		return
 	}
@@ -415,6 +413,14 @@ func (l *Lexer) next() {
 	}
 	l.ch = ch
 	l.offset++
+}
+
+// Un-read the character just scanned (doesn't handle line boundaries).
+func (l *Lexer) unread() {
+	l.offset--
+	l.pos.Column--
+	l.nextPos.Column--
+	l.ch = l.src[l.offset-1]
 }
 
 func isNameStart(ch byte) bool {
