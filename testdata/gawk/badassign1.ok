@@ -1,1 +1,1 @@
-parse error at 1:14: expected expression instead of =
+parse error at 1:14: unexpected token = after statement
