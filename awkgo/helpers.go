@@ -4,14 +4,14 @@ package main
 
 func (c *compiler) outputHelpers() {
 	c.output(`
-func _getField(line string, fields []string, i int) string {
-	if i == 0 {
-		return line
+func _getField(i int) string {
+	if i < 0 || i > len(_fields) {
+		return ""
 	}
-	if i >= 1 && i <= len(fields) {
-        return fields[i-1]
-    }
-    return ""
+	if i == 0 {
+		return _line
+	}
+	return _fields[i-1]
 }
 
 func _boolToNum(b bool) float64 {
@@ -90,12 +90,9 @@ func _strToNum(s string) float64 {
 	return f // Returns infinity in case of "value out of range" error
 }
 
-func _regexMatch(pattern, str string) float64 {
+func _regexMatch(str, pattern string) bool {
 	re := regexp.MustCompile(pattern)
-	if re.MatchString(str) {
-		return 1
-	}
-	return 0
+	return re.MatchString(str)
 }
 
 func _condNum(cond, trueVal, falseVal float64) float64 {
