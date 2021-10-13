@@ -59,10 +59,6 @@ type compiler struct {
 	typer *typer
 }
 
-func (c *compiler) globalType(name string) valueType {
-	return c.typer.globals[name]
-}
-
 func (c *compiler) output(s string) {
 	fmt.Print(s)
 }
@@ -101,6 +97,13 @@ func main() {
 
 	_scanner = bufio.NewScanner(os.Stdin)
 `)
+
+	for name, typ := range c.typer.globals {
+		switch typ {
+		case typeArrayStr, typeArrayNum:
+			c.output(fmt.Sprintf("%s = make(%s)\n", name, c.goType(typ)))
+		}
+	}
 
 	for _, stmts := range prog.Begin {
 		c.output("\n")
@@ -173,7 +176,7 @@ func (c *compiler) stmts(stmts Stmts) {
 	}
 }
 
-func (c *compiler) stmt(stmt Stmt) {
+func (c *compiler) stmtNoNewline(stmt Stmt) {
 	switch s := stmt.(type) {
 	case *ExprStmt:
 		switch e := s.Expr.(type) {
@@ -282,25 +285,23 @@ func (c *compiler) stmt(stmt Stmt) {
 	case *ForStmt:
 		c.output("for ")
 		if s.Pre != nil {
-			exprStmt, ok := s.Pre.(*ExprStmt)
+			_, ok := s.Pre.(*ExprStmt)
 			if !ok {
 				panic(errorf(`only expressions are allowed in "for" initializer`))
 			}
-			str := c.expr(exprStmt.Expr)
-			c.output(str)
+			c.stmtNoNewline(s.Pre)
 		}
 		c.output("; ")
 		if s.Cond != nil {
-			c.cond(s.Cond)
+			c.output(c.cond(s.Cond))
 		}
 		c.output("; ")
 		if s.Post != nil {
-			exprStmt, ok := s.Pre.(*ExprStmt)
+			_, ok := s.Post.(*ExprStmt)
 			if !ok {
 				panic(errorf(`only expressions are allowed in "for" post expression`))
 			}
-			str := c.expr(exprStmt.Expr)
-			c.output(str)
+			c.stmtNoNewline(s.Post)
 		}
 		c.output(" {\n")
 		c.stmts(s.Body)
@@ -383,6 +384,10 @@ func (c *compiler) stmt(stmt Stmt) {
 	default:
 		panic(errorf("%T not yet supported", s))
 	}
+}
+
+func (c *compiler) stmt(stmt Stmt) {
+	c.stmtNoNewline(stmt)
 	c.output("\n")
 }
 
@@ -493,18 +498,27 @@ func (c *compiler) expr(expr Expr) string {
 	//	}
 	//	return "_condStr(" + c.cond(e.Cond) + ", " + ts + ", " + fs + ")", tt
 
-	//case *IndexExpr:
-	//	if e.Array.Scope != ScopeGlobal {
-	//		panic(errorf("scope %v not yet supported", e.Array.Scope))
-	//	}
-	//	arrayType := c.globalType(e.Array.Name)
-	//	if arrayType == typeUnknown {
-	//		panic(errorf("%q not yet assigned to; type not known", e.Array.Name))
-	//	}
-	//	return e.Array.Name + "[" + c.index(e.Index) + "]", arrayType
+	case *IndexExpr:
+		// TODO: see interp.go getArrayValue
+		// Strangely, per the POSIX spec, "Any other reference to a
+		// nonexistent array element [apart from "in" expressions]
+		// shall automatically create it."
+		switch e.Array.Scope {
+		case ScopeSpecial:
+			panic(fmt.Sprintf("special variable %s not yet supported", e.Array.Name))
+		case ScopeGlobal:
+			return e.Array.Name + "[" + c.index(e.Index) + "]"
+		default:
+			panic(errorf("unexpected scope %v", e.Array.Scope))
+		}
 
-	//case *CallExpr:
-	//	return "TODO", 0
+	case *CallExpr:
+		switch e.Func {
+		case F_TOLOWER:
+			return "strings.ToLower(" + c.expr(e.Args[0]) + ")"
+		default:
+			panic(errorf("%s() not yet supported", e.Func))
+		}
 
 	case *UnaryExpr:
 		str := c.expr(e.Value)
