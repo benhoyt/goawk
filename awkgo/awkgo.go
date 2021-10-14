@@ -113,6 +113,9 @@ func main() {
 	defer _output.Flush()
 
 	_scanner = bufio.NewScanner(os.Stdin)
+
+	OFS = " "
+	ORS = "\n"
 `)
 
 	for i, action := range prog.Actions {
@@ -185,7 +188,7 @@ func (c *compiler) actions(actions []Action) {
 
 		if len(action.Stmts) == 0 {
 			// No action is equivalent to { print $0 }
-			c.output("fmt.Fprintln(_output, _line)\n")
+			c.output("fmt.Fprint(_output, _line, ORS)\n")
 		} else {
 			c.stmts(action.Stmts)
 		}
@@ -303,15 +306,15 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 		}
 
 	case *PrintStmt:
-		// TODO: handle modified OFS and ORS
+		// TODO: if OFS and ORS are never changed, use fmt.Fprintln() instead
 		if s.Dest != nil {
 			panic(errorf("print redirection not yet supported"))
 		}
-		c.output("fmt.Fprintln(_output, ")
+		c.output("fmt.Fprint(_output, ")
 		if len(s.Args) > 0 {
 			for i, arg := range s.Args {
 				if i > 0 {
-					c.output(", ")
+					c.output(", OFS, ")
 				}
 				str := c.expr(arg) // TODO: need to handle type?
 				c.output(str)
@@ -320,7 +323,7 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 			// "print" with no args is equivalent to "print $0"
 			c.output("_line")
 		}
-		c.output(")")
+		c.output(", ORS)")
 
 	case *PrintfStmt:
 		if s.Dest != nil {
@@ -785,8 +788,10 @@ func (c *compiler) special(name string, index int) string {
 	//case V_FILENAME:
 	//case V_FS:
 	//case V_OFMT:
-	//case V_OFS:
-	//case V_ORS:
+	case V_OFS:
+		return "OFS"
+	case V_ORS:
+		return "ORS"
 	//case V_RS:
 	//case V_SUBSEP:
 	default:

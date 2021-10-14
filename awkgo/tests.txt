@@ -17,11 +17,8 @@
 === RUN   TestAWKGo/_NR==2,_NR==4_{_print_$0_}_NR==3,_NR==5_{_print_NR_}_
 === RUN   TestAWKGo/BEGIN_{_print_"x",_"y"_}
 === RUN   TestAWKGo/BEGIN_{_print_OFS;_OFS_=_",";_print_"x",_"y"_}
-    awkgo_test.go:637: compile error: special variable OFS not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_ORS;_ORS_=_".";_print_"x",_"y"_}
-    awkgo_test.go:637: compile error: special variable ORS not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_ORS;_ORS_=_"";_print_"x",_"y"_}
-    awkgo_test.go:637: compile error: special variable ORS not yet supported
 === RUN   TestAWKGo/{_print;_print_}
 === RUN   TestAWKGo/BEGIN_{_print;_print_}
 === RUN   TestAWKGo/BEGIN_{_printf_"%%_%d_%x_%c_%f_%s",_42,_42,_42,_42,_42_}
@@ -64,7 +61,7 @@
 === RUN   TestAWKGo/BEGIN_{_a[1]=1;_a[2]=1;_for_(k_in_a)_{_s++;_break_}_print_s_}
     awkgo_test.go:649: error running program: exit status 2:
         # command-line-arguments
-        /tmp/TestAWKGo/001/test_46.go:34:5: k declared but not used
+        /tmp/TestAWKGo/001/test_46.go:39:5: k declared but not used
 === RUN   TestAWKGo/BEGIN_{_a[1]=1;_a[2]=1;_a[3]=1;_for_(k_in_a)_{_if_(k==2)_continue;_s++
 === RUN   TestAWKGo/BEGIN_{_while_(i<3)_{_i++;_s++;_break_}_print_s_}
 === RUN   TestAWKGo/BEGIN_{_while_(i<3)_{_i++;_if_(i==2)_continue;_s++_}_print_s_}
@@ -96,7 +93,7 @@
 === RUN   TestAWKGo/BEGIN_{_print_+4,_+"3",_+0,_+-3,_-3,_-_-4,_-"3"_}
     awkgo_test.go:649: error running program: exit status 2:
         # command-line-arguments
-        /tmp/TestAWKGo/001/test_70.go:28:57: syntax error: unexpected --, expecting expression
+        /tmp/TestAWKGo/001/test_70.go:33:80: syntax error: unexpected --, expecting expression
 === RUN   TestAWKGo/BEGIN_{_$0="1";_print_!$0_}
 === RUN   TestAWKGo/{_print_!$0_}
     awkgo_test.go:652: expected "1\n", got "0\n"
@@ -104,11 +101,11 @@
 === RUN   TestAWKGo/!seen[$0]++
     awkgo_test.go:649: error running program: exit status 2:
         # command-line-arguments
-        /tmp/TestAWKGo/001/test_74.go:35:25: cannot take the address of seen[_getField(0)]
+        /tmp/TestAWKGo/001/test_74.go:40:25: cannot take the address of seen[_getField(0)]
 === RUN   TestAWKGo/!seen[$0]--
     awkgo_test.go:649: error running program: exit status 2:
         # command-line-arguments
-        /tmp/TestAWKGo/001/test_75.go:35:25: cannot take the address of seen[_getField(0)]
+        /tmp/TestAWKGo/001/test_75.go:40:25: cannot take the address of seen[_getField(0)]
 === RUN   TestAWKGo/BEGIN_{_print_(1==1,_1==0,_"1"==1,_"1"==1.0)_}
 === RUN   TestAWKGo/{_print_($0=="1",_$0==1)_}
     awkgo_test.go:652: expected "1 1\n0 1\n0 1\n", got "1 1\n0 0\n0 0\n"
@@ -158,7 +155,7 @@
 === RUN   TestAWKGo/BEGIN_{_print_1e1000,_-1e1000_}__#_!gawk
     awkgo_test.go:649: error running program: exit status 2:
         # command-line-arguments
-        /tmp/TestAWKGo/001/test_110.go:28:24: undefined: Inf
+        /tmp/TestAWKGo/001/test_110.go:33:22: undefined: Inf
 === RUN   TestAWKGo/BEGIN_{_printf_"\x0.\x00.\x0A\x10\xff\xFF\x41"_}__#_!awk
 === RUN   TestAWKGo/BEGIN_{_printf_"\x1.\x01.\x0A\x10\xff\xFF\x41"_}
 === RUN   TestAWKGo/BEGIN_{_printf_"\0\78\7\77\777\0_\141_"_}__#_!awk
@@ -172,7 +169,7 @@
 === RUN   TestAWKGo/BEGIN_{_print_0?1:0,_1?1:0,_""?1:0,_"0"?1:0,_"1"?1:0,_x?1:0_}
     awkgo_test.go:649: error running program: exit status 2:
         # command-line-arguments
-        /tmp/TestAWKGo/001/test_120.go:28: undefined: x
+        /tmp/TestAWKGo/001/test_120.go:33: undefined: x
 === RUN   TestAWKGo/_BEGIN_{__print_CONVFMT,_1.2345678_""__CONVFMT_=_"%.3g"__print_CONVFMT
     awkgo_test.go:637: compile error: special variable CONVFMT not yet supported
 === RUN   TestAWKGo/BEGIN_{_FILENAME_=_"foo";_print_FILENAME_}
@@ -496,9 +493,9 @@
     --- PASS: TestAWKGo/NR==2,_NR==4
     --- PASS: TestAWKGo/_NR==2,_NR==4_{_print_$0_}_NR==3,_NR==5_{_print_NR_}_
     --- PASS: TestAWKGo/BEGIN_{_print_"x",_"y"_}
-    --- FAIL: TestAWKGo/BEGIN_{_print_OFS;_OFS_=_",";_print_"x",_"y"_}
-    --- FAIL: TestAWKGo/BEGIN_{_print_ORS;_ORS_=_".";_print_"x",_"y"_}
-    --- FAIL: TestAWKGo/BEGIN_{_print_ORS;_ORS_=_"";_print_"x",_"y"_}
+    --- PASS: TestAWKGo/BEGIN_{_print_OFS;_OFS_=_",";_print_"x",_"y"_}
+    --- PASS: TestAWKGo/BEGIN_{_print_ORS;_ORS_=_".";_print_"x",_"y"_}
+    --- PASS: TestAWKGo/BEGIN_{_print_ORS;_ORS_=_"";_print_"x",_"y"_}
     --- PASS: TestAWKGo/{_print;_print_}
     --- PASS: TestAWKGo/BEGIN_{_print;_print_}
     --- FAIL: TestAWKGo/BEGIN_{_printf_"%%_%d_%x_%c_%f_%s",_42,_42,_42,_42,_42_}

@@ -19,6 +19,8 @@ func newTyper() *typer {
 		globals: make(map[string]valueType),
 		exprs:   make(map[Expr]valueType),
 	}
+	t.globals["OFS"] = typeStr
+	t.globals["ORS"] = typeStr
 	return t
 }
 

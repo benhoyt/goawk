@@ -24,7 +24,7 @@ func _setField(i int, s string) {
 		_fields = append(_fields, "")
 	}
 	_fields[i-1] = s
-	_line = strings.Join(_fields, " ") // TODO: OFS
+	_line = strings.Join(_fields, OFS)
 }
 
 func _boolToNum(b bool) float64 {
