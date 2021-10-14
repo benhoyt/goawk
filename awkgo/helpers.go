@@ -14,6 +14,19 @@ func _getField(i int) string {
 	return _fields[i-1]
 }
 
+func _setField(i int, s string) {
+	if i == 0 {
+		_line = s
+		_fields = strings.Fields(_line)
+		return
+	}
+	for j := len(_fields); j < i; j++ {
+		_fields = append(_fields, "")
+	}
+	_fields[i-1] = s
+	_line = strings.Join(_fields, " ") // TODO: OFS
+}
+
 func _boolToNum(b bool) float64 {
 	if b {
 		return 1
@@ -131,6 +144,28 @@ func _assignNum(p *float64, v float64) float64 {
 func _assignStr(p *string, v string) string {
 	*p = v
 	return v
+}
+
+func _preIncr(p *float64) float64 {
+	*p++
+	return *p
+}
+
+func _preDecr(p *float64) float64 {
+	*p--
+	return *p
+}
+
+func _postIncr(p *float64) float64 {
+	x := *p
+	*p++
+	return x
+}
+
+func _postDecr(p *float64) float64 {
+	x := *p
+	*p--
+	return x
 }
 `)
 }

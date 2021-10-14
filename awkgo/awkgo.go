@@ -127,22 +127,22 @@ func main() {
 		c.stmts(stmts)
 	}
 
-	// TODO: leave this section out if just BEGIN
-	c.output(`
+	if len(prog.Actions) > 0 {
+		c.output(`
 	for _scanner.Scan() {
 		_lineNum++
 		_line = _scanner.Text()
 		_fields = strings.Fields(_line)
 `)
-	c.actions(prog.Actions)
-	c.output("	}\n")
+		c.actions(prog.Actions)
+		c.output(`	}
 
-	c.output(`
 	if _scanner.Err() != nil {
 		fmt.Fprintln(os.Stderr, _scanner.Err())
 		os.Exit(1)
 	}
 `)
+	}
 
 	for _, stmts := range prog.End {
 		c.output("\n")
@@ -474,16 +474,16 @@ func (c *compiler) expr(expr Expr) string {
 		switch {
 		case e.Op == INCR && e.Pre:
 			// ++x
-			return "_preIncr(&" + c.expr(e.Expr) + ", 1)"
+			return "_preIncr(&" + c.expr(e.Expr) + ")"
 		case e.Op == INCR && !e.Pre:
 			// x++
-			return "_postIncr(&" + c.expr(e.Expr) + ", 1)"
+			return "_postIncr(&" + c.expr(e.Expr) + ")"
 		case e.Op == DECR && e.Pre:
 			// --x
-			return "_preIncr(&" + c.expr(e.Expr) + ", -1)"
+			return "_preDecr(&" + c.expr(e.Expr) + ")"
 		case e.Op == DECR && !e.Pre:
 			// x--
-			return "_postIncr(&" + c.expr(e.Expr) + ", -1)"
+			return "_postDecr(&" + c.expr(e.Expr) + ")"
 		default:
 			panic(errorf("unexpected increment type %s (pre=%v)", e.Op, e.Pre))
 		}
