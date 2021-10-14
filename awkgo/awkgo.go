@@ -223,15 +223,47 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 			switch left := e.Left.(type) {
 			case *VarExpr:
 				// TODO: handle ScopeSpecial
-				c.output(left.Name)
-				c.output(" " + e.Op.String() + "= ")
-				c.output(c.numExpr(e.Right))
+				switch e.Op {
+				case MOD, POW:
+					c.output(left.Name)
+					if e.Op == MOD {
+						c.output(" = math.Mod(")
+					} else {
+						c.output(" = math.Pow(")
+					}
+					c.output(left.Name)
+					c.output(", ")
+					c.output(c.numExpr(e.Right))
+					c.output(")")
+				default:
+					c.output(left.Name)
+					c.output(" " + e.Op.String() + "= ")
+					c.output(c.numExpr(e.Right))
+				}
 			case *IndexExpr:
-				c.output(left.Array.Name)
-				c.output("[")
-				c.output(c.index(left.Index))
-				c.output("] " + e.Op.String() + "= ")
-				c.output(c.numExpr(e.Right))
+				switch e.Op {
+				case MOD, POW:
+					c.output(left.Array.Name)
+					c.output("[")
+					c.output(c.index(left.Index))
+					if e.Op == MOD {
+						c.output("] = math.Mod(")
+					} else {
+						c.output("] = math.Pow(")
+					}
+					c.output(left.Array.Name)
+					c.output("[")
+					c.output(c.index(left.Index))
+					c.output("], ")
+					c.output(c.numExpr(e.Right))
+					c.output(")")
+				default:
+					c.output(left.Array.Name)
+					c.output("[")
+					c.output(c.index(left.Index))
+					c.output("] " + e.Op.String() + "= ")
+					c.output(c.numExpr(e.Right))
+				}
 			case *FieldExpr:
 				panic(errorf("AugAssign of field not yet supported"))
 			}
@@ -588,8 +620,10 @@ func (c *compiler) expr(expr Expr) string {
 
 func (c *compiler) binaryExpr(op Token, l, r Expr) string {
 	switch op {
-	case ADD, SUB, MUL, DIV, MOD:
+	case ADD, SUB, MUL, DIV:
 		return c.numExpr(l) + " " + op.String() + " " + c.numExpr(r)
+	case MOD:
+		return "math.Mod(" + c.numExpr(l) + ", " + c.numExpr(r) + ")"
 	case POW:
 		return "math.Pow(" + c.numExpr(l) + ", " + c.numExpr(r) + ")"
 	case CONCAT:
