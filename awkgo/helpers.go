@@ -108,20 +108,6 @@ func _regexMatch(str, pattern string) bool {
 	return re.MatchString(str)
 }
 
-func _condNum(cond, trueVal, falseVal float64) float64 {
-	if cond != 0 {
-		return trueVal
-	}
-	return falseVal
-}
-
-func _condStr(cond float64, trueVal, falseVal string) string {
-	if cond != 0 {
-		return trueVal
-	}
-	return falseVal
-}
-
 func _containsNum(array map[string]float64, index string) float64 {
 	if _, ok := array[index]; ok {
 		return 1

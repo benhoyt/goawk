@@ -184,6 +184,7 @@ func (t *typer) expr(expr Expr) (typ valueType) {
 		return typeNum
 
 	case *CondExpr:
+		t.expr(e.Cond)
 		trueType := t.expr(e.True)
 		falseType := t.expr(e.False)
 		if trueType != falseType {

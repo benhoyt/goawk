@@ -508,17 +508,9 @@ func (c *compiler) expr(expr Expr) string {
 	//case *AugAssignExpr:
 	//	return "TODO", 0
 
-	//case *CondExpr:
-	//	// TODO: should only evaluate True or False, not both
-	//	ts, tt := c.expr(e.True)
-	//	fs, ft := c.expr(e.False)
-	//	if tt != ft {
-	//		panic(errorf("true branch of ?: must be same type as false branch"))
-	//	}
-	//	if tt == typeNum {
-	//		return "_condNum(" + c.cond(e.Cond) + ", " + ts + ", " + fs + ")", typeNum
-	//	}
-	//	return "_condStr(" + c.cond(e.Cond) + ", " + ts + ", " + fs + ")", tt
+	case *CondExpr:
+		return fmt.Sprintf("func() %s { if %s { return %s }; return %s }()",
+			c.goType(c.typer.exprs[e]), c.cond(e.Cond), c.expr(e.True), c.expr(e.False))
 
 	case *IndexExpr:
 		// TODO: see interp.go getArrayValue
