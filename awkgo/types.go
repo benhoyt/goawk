@@ -241,6 +241,7 @@ func (t *typer) expr(expr Expr) (typ valueType) {
 		case *FieldExpr:
 			// $1 = right
 		}
+		t.expr(e.Left)
 		return rightType
 
 	case *AugAssignExpr:
@@ -256,6 +257,7 @@ func (t *typer) expr(expr Expr) (typ valueType) {
 			// $1 += right
 			// TODO: this should probably return typeStr
 		}
+		t.expr(e.Left)
 		return typeNum
 
 	case *IncrExpr:
@@ -270,6 +272,7 @@ func (t *typer) expr(expr Expr) (typ valueType) {
 			// $1++
 			// TODO: this should probably return typeStr
 		}
+		t.expr(e.Expr)
 		return typeNum
 
 	case *CallExpr:
