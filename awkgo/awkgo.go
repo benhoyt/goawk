@@ -618,16 +618,16 @@ func (c *compiler) expr(expr Expr) string {
 	}
 }
 
-func (c *compiler) binaryExpr(op Token, l, r Expr) string {
+func (c *compiler) binaryExpr(op Token, l, r Expr) (str string) {
 	switch op {
 	case ADD, SUB, MUL, DIV:
-		return c.numExpr(l) + " " + op.String() + " " + c.numExpr(r)
+		return "(" + c.numExpr(l) + " " + op.String() + " " + c.numExpr(r) + ")"
 	case MOD:
 		return "math.Mod(" + c.numExpr(l) + ", " + c.numExpr(r) + ")"
 	case POW:
 		return "math.Pow(" + c.numExpr(l) + ", " + c.numExpr(r) + ")"
 	case CONCAT:
-		return c.strExpr(l) + " + " + c.strExpr(r)
+		return "(" + c.strExpr(l) + " + " + c.strExpr(r) + ")"
 	default:
 		s, ok := c.boolExpr(op, l, r)
 		if ok {
