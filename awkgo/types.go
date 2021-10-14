@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"os"
+
 	. "github.com/benhoyt/goawk/internal/ast"
 	. "github.com/benhoyt/goawk/lexer"
 	. "github.com/benhoyt/goawk/parser"
@@ -21,12 +23,12 @@ func newTyper() *typer {
 }
 
 func (t *typer) dump() {
-	fmt.Printf("// DUMP:\n")
+	fmt.Fprintf(os.Stderr, "// DUMP:\n")
 	for name, t := range t.globals {
-		fmt.Printf("// var %s: %s\n", name, t)
+		fmt.Fprintf(os.Stderr, "// var %s: %s\n", name, t)
 	}
 	for expr, t := range t.exprs {
-		fmt.Printf("// expr %s: %s\n", expr, t)
+		fmt.Fprintf(os.Stderr, "// expr %s: %s\n", expr, t)
 	}
 }
 
@@ -85,9 +87,15 @@ func (t *typer) stmt(stmt Stmt) {
 		t.stmts(s.Else)
 
 	case *ForStmt:
-		t.stmt(s.Pre)
-		t.expr(s.Cond)
-		t.stmt(s.Post)
+		if s.Pre != nil {
+			t.stmt(s.Pre)
+		}
+		if s.Cond != nil {
+			t.expr(s.Cond)
+		}
+		if s.Post != nil {
+			t.stmt(s.Post)
+		}
 		t.stmts(s.Body)
 
 	case *ForInStmt:
@@ -151,7 +159,7 @@ func (t *typer) expr(expr Expr) (typ valueType) {
 	switch e := expr.(type) {
 	case *FieldExpr:
 		t.expr(e.Index)
-		return typeNumStr
+		return typeStr // TODO: should be typeNumStr
 
 	case *UnaryExpr:
 		t.expr(e.Value)

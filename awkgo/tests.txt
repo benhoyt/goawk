@@ -1,0 +1,932 @@
+=== RUN   TestAWKGo
+=== RUN   TestAWKGo/BEGIN_{_print_"b"_}
+=== RUN   TestAWKGo/BEGIN_{_print_"b"_}#01
+=== RUN   TestAWKGo/END_{_print_"e"_}
+=== RUN   TestAWKGo/END_{_print_"e"_}#01
+=== RUN   TestAWKGo/BEGIN_{_print_"b"}_END_{_print_"e"_}
+=== RUN   TestAWKGo/BEGIN_{_print_"b"}_END_{_print_"e"_}#01
+=== RUN   TestAWKGo/BEGIN_{_print_"b"}_$0_{_print_NR_}_END_{_print_"e"_}
+=== RUN   TestAWKGo/BEGIN_{_printf_"x"_};_BEGIN_{_printf_"y"_}
+=== RUN   TestAWKGo/$0
+=== RUN   TestAWKGo/{_print_$0_}
+=== RUN   TestAWKGo/$1=="foo"
+=== RUN   TestAWKGo/$1==42
+=== RUN   TestAWKGo/$1=="42"
+=== RUN   TestAWKGo//foo/
+=== RUN   TestAWKGo/NR==2,_NR==4
+    awkgo_test.go:644: compile error: range patterns not yet supported
+=== RUN   TestAWKGo/_NR==2,_NR==4_{_print_$0_}_NR==3,_NR==5_{_print_NR_}_
+    awkgo_test.go:644: compile error: range patterns not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_"x",_"y"_}
+=== RUN   TestAWKGo/BEGIN_{_print_OFS;_OFS_=_",";_print_"x",_"y"_}
+    awkgo_test.go:644: compile error: special variable OFS not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_ORS;_ORS_=_".";_print_"x",_"y"_}
+    awkgo_test.go:644: compile error: special variable ORS not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_ORS;_ORS_=_"";_print_"x",_"y"_}
+    awkgo_test.go:644: compile error: special variable ORS not yet supported
+=== RUN   TestAWKGo/{_print;_print_}
+=== RUN   TestAWKGo/BEGIN_{_print;_print_}
+=== RUN   TestAWKGo/BEGIN_{_printf_"%%_%d_%x_%c_%f_%s",_42,_42,_42,_42,_42_}
+    awkgo_test.go:659: expected "% 42 2a * 42.000000 42", got "% 42 2a * %!f(int=42) %!s(int=42)"
+=== RUN   TestAWKGo/BEGIN_{_printf_"%3d",_42_}
+=== RUN   TestAWKGo/BEGIN_{_printf_"%3s",_"x"_}
+=== RUN   TestAWKGo/BEGIN_{_printf_"%d",_12,_34_}
+    awkgo_test.go:659: expected "12", got "12%!(EXTRA int=34)"
+=== RUN   TestAWKGo/BEGIN_{_printf_"%d"_}
+    awkgo_test.go:659: expected "", got "%!d(MISSING)"
+=== RUN   TestAWKGo/BEGIN_{_printf_"%c",_0_}
+=== RUN   TestAWKGo/BEGIN_{_printf_"%c",_127_}
+=== RUN   TestAWKGo/BEGIN_{_printf_"%c",_128_}__#_!gawk
+    awkgo_test.go:659: expected "\x80", got "\u0080"
+=== RUN   TestAWKGo/BEGIN_{_printf_"%c",_255_}__#_!gawk
+    awkgo_test.go:659: expected "\xff", got "ÿ"
+=== RUN   TestAWKGo/BEGIN_{_printf_"%c",_256_}__#_!awk_!gawk
+    awkgo_test.go:659: expected "\x00", got "Ā"
+=== RUN   TestAWKGo/BEGIN_{_printf_"%c",_"xyz"_}
+    awkgo_test.go:659: expected "x", got "%!c(string=xyz)"
+=== RUN   TestAWKGo/BEGIN_{_printf_"%c",_""_}__#_!awk
+    awkgo_test.go:659: expected "\x00", got "%!c(string=)"
+=== RUN   TestAWKGo/BEGIN_{_printf_}__#_!awk_-_doesn't_error_on_this
+=== RUN   TestAWKGo/BEGIN_{_printf("%%%dd",_4)_}
+=== RUN   TestAWKGo/BEGIN_{_if_(1)_print_"t";_}
+=== RUN   TestAWKGo/BEGIN_{_if_(0)_print_"t";_}
+=== RUN   TestAWKGo/BEGIN_{_if_(1)_print_"t";_else_print_"f"_}
+=== RUN   TestAWKGo/BEGIN_{_if_(0)_print_"t";_else_print_"f"_}
+=== RUN   TestAWKGo/BEGIN_{_for_(;;)_{_print_"x";_break_}_}
+=== RUN   TestAWKGo/BEGIN_{_for_(;;)_{_printf_"%d_",_i;_i++;_if_(i>2)_break;_}_}
+    awkgo_test.go:659: expected "0 1 2 ", got "%!d(float64=0) %!d(float64=1) %!d(float64=2) "
+=== RUN   TestAWKGo/BEGIN_{_for_(i=5;_;_)_{_printf_"%d_",_i;_i++;_if_(i>8)_break;_}_}
+    awkgo_test.go:659: expected "5 6 7 8 ", got "%!d(float64=5) %!d(float64=6) %!d(float64=7) %!d(float64=8) "
+=== RUN   TestAWKGo/BEGIN_{_for_(i=5;_;_i++)_{_printf_"%d_",_i;_if_(i>8)_break;_}_}
+    awkgo_test.go:659: expected "5 6 7 8 9 ", got "%!d(float64=5) %!d(float64=6) %!d(float64=7) %!d(float64=8) %!d(float64=9) "
+=== RUN   TestAWKGo/BEGIN_{_for_(i=5;_i<8;_i++)_{_printf_"%d_",_i_}_}
+    awkgo_test.go:659: expected "5 6 7 ", got "%!d(float64=5) %!d(float64=6) %!d(float64=7) "
+=== RUN   TestAWKGo/BEGIN_{_for_(i=0;_i<10;_i++)_{_if_(i_<_5)_continue;_printf_"%d_",_i_}_
+    awkgo_test.go:659: expected "5 6 7 8 9 ", got "%!d(float64=5) %!d(float64=6) %!d(float64=7) %!d(float64=8) %!d(float64=9) "
+=== RUN   TestAWKGo/BEGIN_{_a[1]=1;_a[2]=1;_for_(k_in_a)_{_s++;_break_}_print_s_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_46.go:32:2: cannot use 1 (type untyped int) as type string in map index
+        /tmp/TestAWKGo2598196115/001/test_46.go:33:2: cannot use 2 (type untyped int) as type string in map index
+=== RUN   TestAWKGo/BEGIN_{_a[1]=1;_a[2]=1;_a[3]=1;_for_(k_in_a)_{_if_(k==2)_continue;_s++
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_47.go:32:2: cannot use 1 (type untyped int) as type string in map index
+        /tmp/TestAWKGo2598196115/001/test_47.go:33:2: cannot use 2 (type untyped int) as type string in map index
+        /tmp/TestAWKGo2598196115/001/test_47.go:34:2: cannot use 3 (type untyped int) as type string in map index
+=== RUN   TestAWKGo/BEGIN_{_while_(i<3)_{_i++;_s++;_break_}_print_s_}
+=== RUN   TestAWKGo/BEGIN_{_while_(i<3)_{_i++;_if_(i==2)_continue;_s++_}_print_s_}
+=== RUN   TestAWKGo/BEGIN_{_do_{_i++;_s++;_break_}_while_(i<3);_print_s_}
+=== RUN   TestAWKGo/BEGIN_{_do_{_i++;_if_(i==2)_continue;_s++_}_while_(i<3);_print_s_}
+=== RUN   TestAWKGo/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_for_(k_in_a)_x_+=_a[k];_print_x_}
+=== RUN   TestAWKGo/BEGIN_{_while_(i_<_5)_{_print_i;_i++_}_}
+    awkgo_test.go:659: expected "\n1\n2\n3\n4\n", got "0\n1\n2\n3\n4\n"
+=== RUN   TestAWKGo/BEGIN_{_do_{_print_i;_i++_}_while_(i_<_5)_}
+    awkgo_test.go:659: expected "\n1\n2\n3\n4\n", got "0\n1\n2\n3\n4\n"
+=== RUN   TestAWKGo/BEGIN_{_for_(i=0;_i<10;_i++);_printf_"x"_}
+=== RUN   TestAWKGo/_BEGIN_{__for_(i_=_0;_i_<_1;_i++)_{___for_(j_=_0;_j_<_1;_j++)_{____pri
+=== RUN   TestAWKGo/_BEGIN_{__for_(i_=_0;_i_<_1;_i++)_{___for_(j_=_0;_j_<_1;_j++)_{____pri#01
+=== RUN   TestAWKGo/{_if_(NR==2)_next;_print_}
+    awkgo_test.go:644: compile error: "next" statement not supported
+=== RUN   TestAWKGo/BEGIN_{_next_}
+=== RUN   TestAWKGo/END_{_next_}
+=== RUN   TestAWKGo/BEGIN_{_a["x"]_=_3;_print_"x"_in_a,_"y"_in_a_}
+    awkgo_test.go:644: compile error: *ast.InExpr not yet supported
+=== RUN   TestAWKGo/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_delete_a["x"];_for_(k_in_a)_print_k,_a
+=== RUN   TestAWKGo/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_for_(k_in_a)_delete_a[k];_for_(k_in_a)
+=== RUN   TestAWKGo/BEGIN_{_a["x"];_"y"_in_a;_for_(k_in_a)_print_k,_a[k]_}
+    awkgo_test.go:644: compile error: *ast.InExpr not yet supported
+=== RUN   TestAWKGo/BEGIN_{_a[]_}
+=== RUN   TestAWKGo/BEGIN_{_delete_a[]_}
+=== RUN   TestAWKGo/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_delete_a;_for_(k_in_a)_print_k,_a[k]_}
+=== RUN   TestAWKGo/BEGIN_{_print_!42,_!1,_!0,_!!42,_!!1,_!!0_}
+=== RUN   TestAWKGo/BEGIN_{_print_!42,_!1,_!0,_!!42,_!!1,_!!0_}#01
+=== RUN   TestAWKGo/BEGIN_{_print_+4,_+"3",_+0,_+-3,_-3,_-_-4,_-"3"_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_70.go:28:57: syntax error: unexpected --, expecting expression
+=== RUN   TestAWKGo/BEGIN_{_$0="1";_print_!$0_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_71.go:28:1: undefined: _setField
+=== RUN   TestAWKGo/{_print_!$0_}
+    awkgo_test.go:659: expected "1\n", got "0\n"
+=== RUN   TestAWKGo/{_print_!$0_}#01
+=== RUN   TestAWKGo/!seen[$0]++
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_74.go:35:15: undefined: _postIncr
+        /tmp/TestAWKGo2598196115/001/test_74.go:35:25: cannot take the address of seen[_getField(0)]
+=== RUN   TestAWKGo/!seen[$0]--
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_75.go:35:15: undefined: _postIncr
+        /tmp/TestAWKGo2598196115/001/test_75.go:35:25: cannot take the address of seen[_getField(0)]
+=== RUN   TestAWKGo/BEGIN_{_print_(1==1,_1==0,_"1"==1,_"1"==1.0)_}
+=== RUN   TestAWKGo/{_print_($0=="1",_$0==1)_}
+    awkgo_test.go:659: expected "1 1\n0 1\n0 1\n", got "1 1\n0 0\n0 0\n"
+=== RUN   TestAWKGo/{_print_($1=="1",_$1==1)_}
+    awkgo_test.go:659: expected "1 1\n0 1\n0 1\n", got "1 1\n0 0\n0 0\n"
+=== RUN   TestAWKGo/BEGIN_{_print_(1!=1,_1!=0,_"1"!=1,_"1"!=1.0)_}
+=== RUN   TestAWKGo/{_print_($0!="1",_$0!=1)_}
+    awkgo_test.go:659: expected "0 0\n1 0\n1 0\n", got "0 0\n1 1\n1 1\n"
+=== RUN   TestAWKGo/{_print_($1!="1",_$1!=1)_}
+    awkgo_test.go:659: expected "0 0\n1 0\n1 0\n", got "0 0\n1 1\n1 1\n"
+=== RUN   TestAWKGo/BEGIN_{_print_(0<1,_1<1,_2<1,_"12"<"2")_}
+=== RUN   TestAWKGo/{_print_($1<2)_}
+=== RUN   TestAWKGo/BEGIN_{_print_(0<=1,_1<=1,_2<=1,_"12"<="2")_}
+=== RUN   TestAWKGo/{_print_($1<=2)_}
+=== RUN   TestAWKGo/BEGIN_{_print_(0>1,_1>1,_2>1,_"12">"2")_}
+=== RUN   TestAWKGo/{_print_($1>2)_}
+=== RUN   TestAWKGo/BEGIN_{_print_(0>=1,_1>=1,_2>=1,_"12">="2")_}
+=== RUN   TestAWKGo/{_print_($1>=2)_}
+=== RUN   TestAWKGo/_function_t()_{_print_"t";_return_1_}_function_f()_{_print_"f";_return
+    awkgo_test.go:644: compile error: functions not yet supported
+=== RUN   TestAWKGo/_function_t()_{_print_"t";_return_1_}_function_f()_{_print_"f";_return#01
+    awkgo_test.go:644: compile error: functions not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_1+2,_1+2+3,_1+-2,_-1+2,_"1"+"2",_3+.14_}
+=== RUN   TestAWKGo/BEGIN_{_print_1-2,_1-2-3,_1-+2,_-1-2,_"1"-"2",_3-.14_}
+=== RUN   TestAWKGo/BEGIN_{_print_2*3,_2*3*4,_2*-3,_-2*3,_"2"*"3",_3*.14_}
+=== RUN   TestAWKGo/BEGIN_{_print_2/3,_2/3/4,_2/-3,_-2/3,_"2"/"3",_3/.14_}
+    awkgo_test.go:659: expected "0.666667 0.166667 -0.666667 -0.666667 0.666667 21.4286\n", got "0 0 0 0 0.6666666666666666 21.428571428571427\n"
+=== RUN   TestAWKGo/BEGIN_{_print_2%3,_2%3%4,_2%-3,_-2%3,_"2"%"3",_3%.14_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_96.go:28:72: invalid operation: _strToNum("2") % _strToNum("3") (operator % not defined on float64)
+        /tmp/TestAWKGo2598196115/001/test_96.go:28:92: invalid operation: 3 % 0.14 (operator % not defined on untyped float)
+=== RUN   TestAWKGo/BEGIN_{_print_2^3,_2^3^3,_2^-3,_-2^3,_"2"^"3",_3^.14_}
+    awkgo_test.go:659: expected "8 134217728 0.125 -8 8 1.16626\n", got "8 1.34217728e+08 0.125 -8 8 1.1662642834242571\n"
+=== RUN   TestAWKGo/BEGIN_{_print_1_2,_"x"_"yz",_1+2_3+4_}
+=== RUN   TestAWKGo/BEGIN_{_print_"food"~/oo/,_"food"~/[oO]+d/,_"food"~"f",_"food"~"F",_"f
+=== RUN   TestAWKGo/BEGIN_{_print_"food"!~/oo/,_"food"!~/[oO]+d/,_"food"!~"f",_"food"!~"F"
+    awkgo_test.go:659: expected "0 0 0 1 1\n", got "1 1 1 0 0\n"
+=== RUN   TestAWKGo/BEGIN_{_print_1+2*3/4^5%6_7,_(1+2)*3/4^5%6_"7"_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_101.go:28:60: invalid operation: 2 * 3 / math.Pow(4, 5) % 6 (operator % not defined on float64)
+=== RUN   TestAWKGo/BEGIN_{_print_1,_1.,_.1,_1e0,_-1,_1e_}
+=== RUN   TestAWKGo/BEGIN_{_print_'\"'_'\''_'xy'_"z"_"'"_'\"'_}
+=== RUN   TestAWKGo/{_print_/foo/_}
+=== RUN   TestAWKGo//[a-/
+=== RUN   TestAWKGo/BEGIN_{_print_"-12"+0,_"+12"+0,_"_\t\r\n7foo"+0,_".5"+0,_"5."+0,_"+."+
+=== RUN   TestAWKGo/BEGIN_{_print_"1e3"+0,_"1.2e-1"+0,_"1e+1"+0,_"1e"+0,_"1e+"+0_}
+=== RUN   TestAWKGo/BEGIN_{_print_-(11102200000000000000000000000000000000_1040000)_}__#_!
+    awkgo_test.go:659: expected "-inf\n", got "-Inf\n"
+=== RUN   TestAWKGo/BEGIN_{_print_atan2(0,_8020020000000e20G-0)}
+    awkgo_test.go:644: compile error: atan2() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_1e1000,_-1e1000_}__#_!gawk
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_110.go:28:24: undefined: Inf
+=== RUN   TestAWKGo/BEGIN_{_printf_"\x0.\x00.\x0A\x10\xff\xFF\x41"_}__#_!awk
+=== RUN   TestAWKGo/BEGIN_{_printf_"\x1.\x01.\x0A\x10\xff\xFF\x41"_}
+=== RUN   TestAWKGo/BEGIN_{_printf_"\0\78\7\77\777\0_\141_"_}__#_!awk
+=== RUN   TestAWKGo/BEGIN_{_printf_"\1\78\7\77\777\1_\141_"_}
+=== RUN   TestAWKGo/{_print_/x/?"t":"f"_}
+    awkgo_test.go:644: compile error: *ast.CondExpr not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_1?2?3:4:5,_1?0?3:4:5,_0?2?3:4:5_}
+    awkgo_test.go:644: compile error: *ast.CondExpr not yet supported
+=== RUN   TestAWKGo/{_print_$0?1:0_}
+    awkgo_test.go:644: compile error: *ast.CondExpr not yet supported
+=== RUN   TestAWKGo/{_print_$0?1:0_}#01
+    awkgo_test.go:644: compile error: *ast.CondExpr not yet supported
+=== RUN   TestAWKGo/BEGIN_{_$0="1";_print_($0?1:0)_}
+    awkgo_test.go:644: compile error: *ast.CondExpr not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_0?1:0,_1?1:0,_""?1:0,_"0"?1:0,_"1"?1:0,_x?1:0_}
+    awkgo_test.go:644: compile error: *ast.CondExpr not yet supported
+=== RUN   TestAWKGo/_BEGIN_{__print_CONVFMT,_1.2345678_""__CONVFMT_=_"%.3g"__print_CONVFMT
+    awkgo_test.go:644: compile error: special variable CONVFMT not yet supported
+=== RUN   TestAWKGo/BEGIN_{_FILENAME_=_"foo";_print_FILENAME_}
+    awkgo_test.go:644: compile error: special variable FILENAME not yet supported
+=== RUN   TestAWKGo/BEGIN_{_FILENAME_=_"123.0";_print_(FILENAME==123)_}
+    awkgo_test.go:644: compile error: special variable FILENAME not yet supported
+=== RUN   TestAWKGo/BEGIN_{_FNR_=_123;_print_FNR_}
+    awkgo_test.go:644: compile error: special variable FNR not yet supported
+=== RUN   TestAWKGo/{_print_FNR,_$0_}
+    awkgo_test.go:644: compile error: special variable FNR not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_"|"_FS_"|";_FS=","_}_{_print_$1,_$2_}
+    awkgo_test.go:644: compile error: special variable FS not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_"|"_FS_"|";_FS="\\."_}_{_print_$1,_$2_}
+    awkgo_test.go:644: compile error: special variable FS not yet supported
+=== RUN   TestAWKGo/BEGIN_{_FS="\\"_}_{_print_$1,_$2_}
+    awkgo_test.go:659: expected "a b\n", got "a\\b \n"
+=== RUN   TestAWKGo/{_print_NF_}
+=== RUN   TestAWKGo/BEGIN_{_NR_=_123;_print_NR_}
+    awkgo_test.go:659: expected "123\n", got "0\n"
+=== RUN   TestAWKGo/{_print_NR,_$0_}
+=== RUN   TestAWKGo/_BEGIN_{__print_OFMT,_1.2345678__OFMT_=_"%.3g"__print_OFMT,_1.234567_}
+    awkgo_test.go:644: compile error: special variable OFMT not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_RSTART,_RLENGTH;_RSTART=5;_RLENGTH=42;_print_RSTART,_RLE
+    awkgo_test.go:644: compile error: special variable RSTART not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_RS_}
+    awkgo_test.go:644: compile error: special variable RS not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_RS;_RS="|";_print_RS_}__{_print_}
+    awkgo_test.go:644: compile error: special variable RS not yet supported
+=== RUN   TestAWKGo/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=
+    awkgo_test.go:659: expected "1 (1):\na\n2 (2):\nb\nc\n", got "%!d(float64=1) (%!d(float64=1)):\na\n%!d(float64=2) (%!d(float64=0)):\n%!d(float64=3) (%!d(float64=1)):\nb\n%!d(float64=4) (%!d(float64=1)):\nc\n"
+=== RUN   TestAWKGo/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#01
+    awkgo_test.go:659: expected "1 (2):\n1\n2\n2 (2):\na\nb\n", got "%!d(float64=1) (%!d(float64=1)):\n1\n%!d(float64=2) (%!d(float64=1)):\n2\n%!d(float64=3) (%!d(float64=0)):\n%!d(float64=4) (%!d(float64=1)):\na\n%!d(float64=5) (%!d(float64=1)):\nb\n"
+=== RUN   TestAWKGo/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#02
+    awkgo_test.go:659: expected "1 (2):\na b\nc d\n2 (1):\ne f\n3 (1):\n  \n4 (1):\ng h\n", got "%!d(float64=1) (%!d(float64=2)):\na\nb\n%!d(float64=2) (%!d(float64=2)):\nc\nd\n%!d(float64=3) (%!d(float64=0)):\n%!d(float64=4) (%!d(float64=2)):\ne\nf\n%!d(float64=5) (%!d(float64=0)):\n%!d(float64=6) (%!d(float64=0)):\n%!d(float64=7) (%!d(float64=0)):\n%!d(float64=8) (%!d(float64=0)):\n%!d(float64=9) (%!d(float64=0)):\n%!d(float64=10) (%!d(float64=2)):\ng\nh\n%!d(float64=11) (%!d(float64=0)):\n%!d(float64=12) (%!d(float64=0)):\n"
+=== RUN   TestAWKGo/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#03
+    awkgo_test.go:659: expected "1 (1):\na b\n2 (1):\nc d\n", got "%!d(float64=1) (%!d(float64=0)):\n%!d(float64=2) (%!d(float64=0)):\n%!d(float64=3) (%!d(float64=2)):\na\nb\n%!d(float64=4) (%!d(float64=0)):\n%!d(float64=5) (%!d(float64=2)):\nc\nd\n"
+=== RUN   TestAWKGo/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#04
+    awkgo_test.go:659: expected "1 (1):\na b\n2 (1):\nc d\n", got "%!d(float64=1) (%!d(float64=0)):\n%!d(float64=2) (%!d(float64=0)):\n%!d(float64=3) (%!d(float64=2)):\na\nb\n%!d(float64=4) (%!d(float64=0)):\n%!d(float64=5) (%!d(float64=2)):\nc\nd\n"
+=== RUN   TestAWKGo/BEGIN_{_RS="";_FS="X"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=N
+    awkgo_test.go:659: expected "1 (4):\na|b|c|d|2 (2):\ne|f|3 (1):\n  |4 (2):\ng|h|", got "%!d(float64=1) (%!d(float64=1)):\naXb|%!d(float64=2) (%!d(float64=1)):\ncXd|%!d(float64=3) (%!d(float64=0)):\n%!d(float64=4) (%!d(float64=1)):\neXf|%!d(float64=5) (%!d(float64=0)):\n%!d(float64=6) (%!d(float64=0)):\n%!d(float64=7) (%!d(float64=0)):\n%!d(float64=8) (%!d(float64=0)):\n%!d(float64=9) (%!d(float64=0)):\n%!d(float64=10) (%!d(float64=1)):\ngXh|%!d(float64=11) (%!d(float64=0)):\n%!d(float64=12) (%!d(float64=0)):\n"
+=== RUN   TestAWKGo/BEGIN_{_RS_=_""_}__{_print_"got",_$0_}
+    awkgo_test.go:659: expected "", got "got \ngot \ngot \ngot \n"
+=== RUN   TestAWKGo/BEGIN_{_RS="\n"_}__{_print_}
+=== RUN   TestAWKGo/_BEGIN_{__print_SUBSEP__a[1,_2]_=_"onetwo"__print_a[1,_2]__for_(k_in_a
+    awkgo_test.go:644: compile error: special variable SUBSEP not yet supported
+=== RUN   TestAWKGo/{_print_NF;_NF=1;_$2="two";_print_$0,_NF_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_145.go:36:1: undefined: _setField
+=== RUN   TestAWKGo/{_print_NF;_NF=2;_$2="two";_print_$0,_NF}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_146.go:36:1: undefined: _setField
+=== RUN   TestAWKGo/{_print_NF;_NF=3;_$2="two";_print_$0,_NF}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_147.go:36:1: undefined: _setField
+=== RUN   TestAWKGo/{_print;_print_$1,_$3,_$NF_}
+=== RUN   TestAWKGo/{_print_$1,$3;_$2="x";_print;_print_$2_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_149.go:34:1: undefined: _setField
+=== RUN   TestAWKGo/{_print;_$0="x_y_z";_print;_print_$1,_$3_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_150.go:34:1: undefined: _setField
+=== RUN   TestAWKGo/{_print_$1^2_}
+=== RUN   TestAWKGo/{_print_$-1_}
+    awkgo_test.go:659: expected "", got "\n"
+=== RUN   TestAWKGo/{_NF=-1;_}__#_!awk_-_awk_allows_setting_negative_NF
+=== RUN   TestAWKGo/{_NF=1234567;_}
+=== RUN   TestAWKGo/BEGIN_{_$1234567=1_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_155.go:28:1: undefined: _setField
+=== RUN   TestAWKGo/0_in_FS__#_!awk_-_doesn't_flag_this_as_an_error
+=== RUN   TestAWKGo/{_NF=1;_$1="x";_print_$0;_print_NF_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_157.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/{_NF=1;_$1="x";_print_$0;_print_NF_}#01
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_158.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/{_NF=1;_$1="x";_print_$0;_print_NF_}#02
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_159.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/{_NF=1;_$2="x";_print_$0;_print_NF_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_160.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/{_NF=1;_$2="x";_print_$0;_print_NF_}#01
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_161.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/{_NF=1;_$2="x";_print_$0;_print_NF_}#02
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_162.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/{_NF=1;_$3="x";_print_$0;_print_NF_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_163.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/{_NF=1;_$3="x";_print_$0;_print_NF_}__#_!awk_-_awk_differs_from_gawk_(
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_164.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/{_NF=1;_$3="x";_print_$0;_print_NF_}__#_!awk_-_awk_differs_from_gawk_(#01
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_165.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/{_NF=2;_$1="x";_print_$0;_print_NF_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_166.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/{_NF=2;_$1="x";_print_$0;_print_NF_}#01
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_167.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/{_NF=2;_$1="x";_print_$0;_print_NF_}#02
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_168.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/{_NF=2;_$2="x";_print_$0;_print_NF_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_169.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/{_NF=2;_$2="x";_print_$0;_print_NF_}#01
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_170.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/{_NF=2;_$2="x";_print_$0;_print_NF_}#02
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_171.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/{_NF=2;_$3="x";_print_$0;_print_NF_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_172.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/{_NF=2;_$3="x";_print_$0;_print_NF_}#01
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_173.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/{_NF=2;_$3="x";_print_$0;_print_NF_}#02
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_174.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/{_NF=3;_$1="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_175.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/{_NF=3;_$1="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault#01
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_176.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/{_NF=3;_$1="x";_print_$0;_print_NF_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_177.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/{_NF=3;_$2="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_178.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/{_NF=3;_$2="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault#01
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_179.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/{_NF=3;_$2="x";_print_$0;_print_NF_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_180.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/{_NF=3;_$3="x";_print_$0;_print_NF_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_181.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/{_NF=3;_$3="x";_print_$0;_print_NF_}#01
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_182.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/{_NF=3;_$3="x";_print_$0;_print_NF_}#02
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_183.go:35:1: undefined: _setField
+=== RUN   TestAWKGo/BEGIN_{_print_x;_x_=_4;_print_x;_}
+    awkgo_test.go:659: expected "\n4\n", got "0\n4\n"
+=== RUN   TestAWKGo/BEGIN_{_a["foo"]=1;_b[2]="x";_k="foo";_print_a[k],_b["2"]_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_185.go:34:2: cannot use 2 (type untyped int) as type string in map index
+=== RUN   TestAWKGo/BEGIN_{_s+=5;_print_s;_s-=2;_print_s;_s-=s;_print_s_}
+=== RUN   TestAWKGo/BEGIN_{_x=2;_x*=x;_print_x;_x*=3;_print_x_}
+=== RUN   TestAWKGo/BEGIN_{_x=6;_x/=3;_print_x;_x/=x;_print_x;_x/=.6;_print_x_}
+    awkgo_test.go:659: expected "2\n1\n1.66667\n", got "2\n1\n1.6666666666666667\n"
+=== RUN   TestAWKGo/BEGIN_{_x=12;_x%=5;_print_x_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_189.go:30:3: invalid operation: x %= 5 (operator % not defined on float64)
+=== RUN   TestAWKGo/BEGIN_{_x=2;_x^=5;_print_x;_x^=0.5;_print_x_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_190.go:30:3: invalid operation: x ^= 5 (operator ^ not defined on float64)
+        /tmp/TestAWKGo2598196115/001/test_190.go:32:3: invalid operation: x ^= 0.5 (operator ^ not defined on float64)
+=== RUN   TestAWKGo/{_$2+=10;_print;_$3/=2;_print_}
+    awkgo_test.go:644: compile error: AugAssign of field not yet supported
+=== RUN   TestAWKGo/BEGIN_{_a[2]_+=_1;_a["2"]_*=_3;_print_a[2]_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_192.go:30:2: cannot use 2 (type untyped int) as type string in map index
+=== RUN   TestAWKGo/BEGIN_{_print_x++;_print_x_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_193.go:29:23: undefined: _postIncr
+=== RUN   TestAWKGo/BEGIN_{_print_x;_print_x++;_print_++x;_print_x_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_194.go:30:23: undefined: _postIncr
+        /tmp/TestAWKGo2598196115/001/test_194.go:31:23: undefined: _preIncr
+=== RUN   TestAWKGo/BEGIN_{_print_x;_print_x--;_print_--x;_print_x_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_195.go:30:23: undefined: _postIncr
+        /tmp/TestAWKGo2598196115/001/test_195.go:31:23: undefined: _preIncr
+=== RUN   TestAWKGo/BEGIN_{_s++;_s++;_print_s_}
+=== RUN   TestAWKGo/BEGIN_{_y="_";_--x[y_=_y_y];_print_length(y)_}
+    awkgo_test.go:644: compile error: length() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_x[y++]++;_print_y_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_198.go:30:3: undefined: _postIncr
+        /tmp/TestAWKGo2598196115/001/test_198.go:30:14: undefined: y
+=== RUN   TestAWKGo/BEGIN_{_x[y++]_+=_3;_print_y_}
+    awkgo_test.go:656: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo2598196115/001/test_199.go:30:3: undefined: _postIncr
+        /tmp/TestAWKGo2598196115/001/test_199.go:30:14: undefined: y
+        /tmp/TestAWKGo2598196115/001/test_199.go:31:23: undefined: y
+=== RUN   TestAWKGo/BEGIN_{_$(y++)++;_print_y_}
+    awkgo_test.go:644: compile error: Incr of field not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_sin(0),_sin(0.5),_sin(1),_sin(-1)_}
+    awkgo_test.go:644: compile error: sin() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_cos(0),_cos(0.5),_cos(1),_cos(-1)_}
+    awkgo_test.go:644: compile error: cos() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_exp(0),_exp(0.5),_exp(1),_exp(-1)_}
+    awkgo_test.go:644: compile error: exp() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_log(0),_log(0.5),_log(1)_}
+    awkgo_test.go:644: compile error: log() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_log(-1)_}__#_!gawk_-_gawk_prints_warning_for_this_as_wel
+    awkgo_test.go:644: compile error: log() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_sqrt(0),_sqrt(2),_sqrt(4)_}
+    awkgo_test.go:644: compile error: sqrt() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_int(3.5),_int("1.9"),_int(4),_int(-3.6),_int("x"),_int("
+    awkgo_test.go:644: compile error: int() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_match("food",_"foo"),_RSTART,_RLENGTH_}
+    awkgo_test.go:644: compile error: match() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_match("x_food_y",_"fo"),_RSTART,_RLENGTH_}
+    awkgo_test.go:644: compile error: match() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_match("x_food_y",_"fox"),_RSTART,_RLENGTH_}
+    awkgo_test.go:644: compile error: match() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_match("x_food_y",_/[fod]+/),_RSTART,_RLENGTH_}
+    awkgo_test.go:644: compile error: match() not yet supported
+=== RUN   TestAWKGo/{_print_length,_length(),_length("buzz"),_length("")_}
+    awkgo_test.go:644: compile error: length() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_index("foo",_"f"),_index("foo0",_0),_index("foo",_"o"),_
+    awkgo_test.go:644: compile error: index() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_atan2(1,_0.5),_atan2(-1,_0)_}
+    awkgo_test.go:644: compile error: atan2() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_sprintf("%3d",_42)_}
+    awkgo_test.go:644: compile error: sprintf() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_sprintf("%d",_12,_34)_}
+    awkgo_test.go:644: compile error: sprintf() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_sprintf("%d")_}
+    awkgo_test.go:644: compile error: sprintf() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_sprintf("%d",_12,_34)_}#01
+    awkgo_test.go:644: compile error: sprintf() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_sprintf("%_5d",_42)_}
+    awkgo_test.go:644: compile error: sprintf() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_substr("food",_1)_}
+    awkgo_test.go:644: compile error: substr() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_substr("food",_1,_2)_}
+    awkgo_test.go:644: compile error: substr() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_substr("food",_1,_4)_}
+    awkgo_test.go:644: compile error: substr() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_substr("food",_1,_8)_}
+    awkgo_test.go:644: compile error: substr() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_substr("food",_2)_}
+    awkgo_test.go:644: compile error: substr() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_substr("food",_2,_2)_}
+    awkgo_test.go:644: compile error: substr() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_substr("food",_2,_3)_}
+    awkgo_test.go:644: compile error: substr() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_substr("food",_2,_8)_}
+    awkgo_test.go:644: compile error: substr() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_substr("food",_0,_8)_}
+    awkgo_test.go:644: compile error: substr() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_substr("food",_-1,_8)_}
+    awkgo_test.go:644: compile error: substr() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_substr("food",_5,_8)_}
+    awkgo_test.go:644: compile error: substr() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_n_=_split("ab_c_d_",_a);_for_(i=1;_i<=n;_i++)_print_a[i]_}
+    awkgo_test.go:644: compile error: split() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_n_=_split("ab,c,d,",_a,_",");_for_(i=1;_i<=n;_i++)_print_a[i]_
+    awkgo_test.go:644: compile error: split() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_n_=_split("ab,c.d,",_a,_/[,.]/);_for_(i=1;_i<=n;_i++)_print_a[
+    awkgo_test.go:644: compile error: split() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_n_=_split("1_2",_a);_print_(n,_a[1],_a[2],_a[1]==1,_a[2]==2)_}
+    awkgo_test.go:644: compile error: split() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_x_=_"1.2.3";_print_sub(/\./,_",",_x);_print_x_}
+    awkgo_test.go:644: compile error: sub() not yet supported
+=== RUN   TestAWKGo/{_print_sub(/\./,_",");_print_$0_}
+    awkgo_test.go:644: compile error: sub() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_x_=_"1.2.3";_print_gsub(/\./,_",",_x);_print_x_}
+    awkgo_test.go:644: compile error: gsub() not yet supported
+=== RUN   TestAWKGo/{_print_gsub(/\./,_",");_print_$0_}
+    awkgo_test.go:644: compile error: gsub() not yet supported
+=== RUN   TestAWKGo/{_print_gsub(/[0-9]/,_"(&)");_print_$0_}
+    awkgo_test.go:644: compile error: gsub() not yet supported
+=== RUN   TestAWKGo/{_print_gsub(/[0-9]+/,_"(&)");_print_$0_}
+    awkgo_test.go:644: compile error: gsub() not yet supported
+=== RUN   TestAWKGo/{_print_gsub(/[0-9]/,_"\\&");_print_$0_}
+    awkgo_test.go:644: compile error: gsub() not yet supported
+=== RUN   TestAWKGo/{_print_gsub(/[0-9]/,_"\\z");_print_$0_}
+    awkgo_test.go:644: compile error: gsub() not yet supported
+=== RUN   TestAWKGo/{_print_gsub("0",_"x\\\\y");_print_$0_}__#_!awk_!gawk_--_our_behaviour
+    awkgo_test.go:644: compile error: gsub() not yet supported
+=== RUN   TestAWKGo/sub("",_"\\e",_FS)__#_!awk_!gawk
+    awkgo_test.go:644: compile error: sub() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_tolower("Foo_BaR")_}
+=== RUN   TestAWKGo/BEGIN_{_print_toupper("Foo_BaR")_}
+    awkgo_test.go:644: compile error: toupper() not yet supported
+=== RUN   TestAWKGo/_BEGIN_{__srand(1)__a_=_rand();_b_=_rand();_c_=_rand()__srand(1)__x_=_
+    awkgo_test.go:644: compile error: srand() not yet supported
+=== RUN   TestAWKGo/_BEGIN_{__for_(i_=_0;_i_<_1000;_i++)_{___if_(rand()_<_0.5)_n++__}__pri
+    awkgo_test.go:644: compile error: rand() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_system("echo_foo");_print_system("echo_bar")_}__#_!fuzz
+    awkgo_test.go:644: compile error: system() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_system(">&2_echo_error")_}__#_!fuzz
+    awkgo_test.go:644: compile error: system() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_0?"t":"f"_}
+    awkgo_test.go:644: compile error: *ast.CondExpr not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_1?"t":"f"_}
+    awkgo_test.go:644: compile error: *ast.CondExpr not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_(1+2)?"t":"f"_}
+    awkgo_test.go:644: compile error: *ast.CondExpr not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_(1+2?"t":"f")_}
+    awkgo_test.go:644: compile error: *ast.CondExpr not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print(1_?_x="t"_:_"f");_print_x;_}
+    awkgo_test.go:644: compile error: *ast.CondExpr not yet supported
+=== RUN   TestAWKGo/_function_f(loc)_{__glob_+=_1__loc_+=_1__print_glob,_loc_}_BEGIN_{__gl
+    awkgo_test.go:644: compile error: functions not yet supported
+=== RUN   TestAWKGo/_function_set(a,_x,_v)_{__a[x]_=_v_}_function_get(a,_x)_{__return_a[x]
+    awkgo_test.go:644: compile error: functions not yet supported
+=== RUN   TestAWKGo/_function_fib(n)_{__return_n_<_3_?_1_:_fib(n-2)_+_fib(n-1)_}_BEGIN_{__
+    awkgo_test.go:644: compile error: functions not yet supported
+=== RUN   TestAWKGo/_function_f(a,_x)_{_return_a[x]_}_function_g(b,_y)_{_f(b,_y)_}_BEGIN_{
+    awkgo_test.go:644: compile error: functions not yet supported
+=== RUN   TestAWKGo/_function_g(b,_y)_{_return_f(b,_y)_}_function_f(a,_x)_{_return_a[x]_}_
+    awkgo_test.go:644: compile error: functions not yet supported
+=== RUN   TestAWKGo/_function_h(b,_y)_{_g(b,_y)_}_function_g(b,_y)_{_f(b,_y)_}_function_f(
+    awkgo_test.go:644: compile error: functions not yet supported
+=== RUN   TestAWKGo/_function_h(b,_y)_{_return_g(b,_y)_}_function_g(b,_y)_{_return_f(b,_y)
+    awkgo_test.go:644: compile error: functions not yet supported
+=== RUN   TestAWKGo/_function_get(a,_x)_{_return_a[x]_}_BEGIN_{_a[1]=2;_print_get(a,_x);_p
+=== RUN   TestAWKGo/_function_early()_{__print_"x"__return__print_"y"_}_BEGIN_{_early()_}_
+    awkgo_test.go:644: compile error: functions not yet supported
+=== RUN   TestAWKGo/BEGIN_{_return_}
+=== RUN   TestAWKGo/function_f()_{_printf_"x"_};_BEGIN_{_f()_}_
+    awkgo_test.go:644: compile error: functions not yet supported
+=== RUN   TestAWKGo/function_f(x)_{_0_in__;_f(_)_}__BEGIN_{_f()_}__#_!awk_!gawk
+=== RUN   TestAWKGo/BEGIN_{_for_(i=0;_i<1001;_i++)_f();_print_x_}__function_f()_{_x++_}
+    awkgo_test.go:644: compile error: functions not yet supported
+=== RUN   TestAWKGo/_function_bar(y)_{_return_y[1]_}_function_foo()_{_return_bar(x)_}_BEGI
+    awkgo_test.go:644: compile error: functions not yet supported
+=== RUN   TestAWKGo/BEGIN_{_a[x];_a=42_}
+=== RUN   TestAWKGo/BEGIN_{_s=42;_s[x]_}
+=== RUN   TestAWKGo/function_get(a,_k)_{_return_a[k]_}__BEGIN_{_a_=_42;_print_get(a,_1);_}
+=== RUN   TestAWKGo/function_get(a,_k)_{_return_a+k_}_BEGIN_{_a[42];_print_get(a,_1);_}
+=== RUN   TestAWKGo/{_f(z)_}__function_f(x)_{_print_NR_}
+    awkgo_test.go:644: compile error: functions not yet supported
+=== RUN   TestAWKGo/function_f()_{_f()_}__BEGIN_{_f()_}__#_!awk_!gawk
+    awkgo_test.go:644: compile error: functions not yet supported
+=== RUN   TestAWKGo/function_f(x)_{_0_in_x_}__BEGIN_{_f(FS)_}__#_!awk
+=== RUN   TestAWKGo/_function_foo(x)_{_print_"foo",_x_}_function_bar(foo)_{_print_"bar",_f
+    awkgo_test.go:644: compile error: functions not yet supported
+=== RUN   TestAWKGo/_function_foo(foo)_{_print_"foo",_foo_}_function_bar(foo)_{_print_"bar
+=== RUN   TestAWKGo/function_foo()_{_print_foo_}__BEGIN_{_foo()_}
+=== RUN   TestAWKGo/function_f(x)_{_print_x,_x();_}__BEGIN_{_f()_}
+=== RUN   TestAWKGo/BEGIN_{_print_>"out";_close("out");_getline_<"out";_print_>"out"_}__#_
+    awkgo_test.go:644: compile error: print redirection not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_>"out";_close("out");_getline_<"out";_print_|"out"_}__#_
+    awkgo_test.go:644: compile error: print redirection not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_"foo"_|"sort";_print_"bar"_|"sort"_}__#_!fuzz
+    awkgo_test.go:644: compile error: print redirection not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_"foo"_|">&2_echo_error"_}__#_!fuzz
+    awkgo_test.go:644: compile error: print redirection not yet supported
+=== RUN   TestAWKGo/BEGIN_{_"cat"_|_getline;_print_}__#_!fuzz
+    awkgo_test.go:644: compile error: *ast.GetlineExpr not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_getline_x_<_"/no/such/file"_}__#_!fuzz
+    awkgo_test.go:644: compile error: *ast.GetlineExpr not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_getline_x_<_"-";_print_x_}
+    awkgo_test.go:644: compile error: *ast.GetlineExpr not yet supported
+=== RUN   TestAWKGo/{_print_$0;_print_getline_x_<"-";_print_x_}
+    awkgo_test.go:644: compile error: *ast.GetlineExpr not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_"x"_>"-";_print_"y"_>"-"_}
+    awkgo_test.go:644: compile error: print redirection not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_fflush();_print_fflush("")_}
+    awkgo_test.go:644: compile error: fflush() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_"x";_print_fflush();_print_"y";_print_fflush("")_}
+    awkgo_test.go:644: compile error: fflush() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_"x"_>"out";_print_fflush("out");_print_"y";_print_fflush
+    awkgo_test.go:644: compile error: print redirection not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_fflush("x")_}__#_!gawk
+    awkgo_test.go:644: compile error: fflush() not yet supported
+=== RUN   TestAWKGo/BEGIN_{_"cat"_|_getline;_print_fflush("cat")_}__#_!gawk_!fuzz
+    awkgo_test.go:644: compile error: *ast.GetlineExpr not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print_"x"_>_"out"_}__#_!fuzz
+    awkgo_test.go:644: compile error: print redirection not yet supported
+=== RUN   TestAWKGo/BEGIN_{_printf_"x"_>_"out"_}__#_!fuzz
+    awkgo_test.go:644: compile error: printf redirection not yet supported
+=== RUN   TestAWKGo/BEGIN_{_print("x"_>_"out")_}
+=== RUN   TestAWKGo/BEGIN_{_printf("x"_>_"out")_}
+=== RUN   TestAWKGo/BEGIN_{_if_(1)_printf_"x";_else_printf_"y"_}
+=== RUN   TestAWKGo/BEGIN_{_printf_"x";_{_printf_"y";_printf_"z"_}_}
+=== RUN   TestAWKGo/BEGIN_{_f()_}
+=== RUN   TestAWKGo/function_f()_{}_function_f()_{}_BEGIN_{_}
+=== RUN   TestAWKGo/BEGIN_{_print_(1,2),(3,4)_}
+=== RUN   TestAWKGo/BEGIN_{_print_(1,2,(3,4),(5,6))_}
+--- FAIL: TestAWKGo (21.27s)
+    --- PASS: TestAWKGo/BEGIN_{_print_"b"_} (0.14s)
+    --- PASS: TestAWKGo/BEGIN_{_print_"b"_}#01 (0.14s)
+    --- PASS: TestAWKGo/END_{_print_"e"_} (0.16s)
+    --- PASS: TestAWKGo/END_{_print_"e"_}#01 (0.18s)
+    --- PASS: TestAWKGo/BEGIN_{_print_"b"}_END_{_print_"e"_} (0.16s)
+    --- PASS: TestAWKGo/BEGIN_{_print_"b"}_END_{_print_"e"_}#01 (0.15s)
+    --- PASS: TestAWKGo/BEGIN_{_print_"b"}_$0_{_print_NR_}_END_{_print_"e"_} (0.15s)
+    --- PASS: TestAWKGo/BEGIN_{_printf_"x"_};_BEGIN_{_printf_"y"_} (0.14s)
+    --- PASS: TestAWKGo/$0 (0.14s)
+    --- PASS: TestAWKGo/{_print_$0_} (0.13s)
+    --- PASS: TestAWKGo/$1=="foo" (0.15s)
+    --- PASS: TestAWKGo/$1==42 (0.16s)
+    --- PASS: TestAWKGo/$1=="42" (0.15s)
+    --- PASS: TestAWKGo//foo/ (0.14s)
+    --- FAIL: TestAWKGo/NR==2,_NR==4 (0.00s)
+    --- FAIL: TestAWKGo/_NR==2,_NR==4_{_print_$0_}_NR==3,_NR==5_{_print_NR_}_ (0.00s)
+    --- PASS: TestAWKGo/BEGIN_{_print_"x",_"y"_} (0.15s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_OFS;_OFS_=_",";_print_"x",_"y"_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_ORS;_ORS_=_".";_print_"x",_"y"_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_ORS;_ORS_=_"";_print_"x",_"y"_} (0.00s)
+    --- PASS: TestAWKGo/{_print;_print_} (0.15s)
+    --- PASS: TestAWKGo/BEGIN_{_print;_print_} (0.14s)
+    --- FAIL: TestAWKGo/BEGIN_{_printf_"%%_%d_%x_%c_%f_%s",_42,_42,_42,_42,_42_} (0.14s)
+    --- PASS: TestAWKGo/BEGIN_{_printf_"%3d",_42_} (0.15s)
+    --- PASS: TestAWKGo/BEGIN_{_printf_"%3s",_"x"_} (0.15s)
+    --- FAIL: TestAWKGo/BEGIN_{_printf_"%d",_12,_34_} (0.14s)
+    --- FAIL: TestAWKGo/BEGIN_{_printf_"%d"_} (0.14s)
+    --- PASS: TestAWKGo/BEGIN_{_printf_"%c",_0_} (0.14s)
+    --- PASS: TestAWKGo/BEGIN_{_printf_"%c",_127_} (0.15s)
+    --- FAIL: TestAWKGo/BEGIN_{_printf_"%c",_128_}__#_!gawk (0.14s)
+    --- FAIL: TestAWKGo/BEGIN_{_printf_"%c",_255_}__#_!gawk (0.14s)
+    --- FAIL: TestAWKGo/BEGIN_{_printf_"%c",_256_}__#_!awk_!gawk (0.14s)
+    --- FAIL: TestAWKGo/BEGIN_{_printf_"%c",_"xyz"_} (0.14s)
+    --- FAIL: TestAWKGo/BEGIN_{_printf_"%c",_""_}__#_!awk (0.15s)
+    --- PASS: TestAWKGo/BEGIN_{_printf_}__#_!awk_-_doesn't_error_on_this (0.00s)
+    --- PASS: TestAWKGo/BEGIN_{_printf("%%%dd",_4)_} (0.15s)
+    --- PASS: TestAWKGo/BEGIN_{_if_(1)_print_"t";_} (0.14s)
+    --- PASS: TestAWKGo/BEGIN_{_if_(0)_print_"t";_} (0.16s)
+    --- PASS: TestAWKGo/BEGIN_{_if_(1)_print_"t";_else_print_"f"_} (0.14s)
+    --- PASS: TestAWKGo/BEGIN_{_if_(0)_print_"t";_else_print_"f"_} (0.15s)
+    --- PASS: TestAWKGo/BEGIN_{_for_(;;)_{_print_"x";_break_}_} (0.15s)
+    --- FAIL: TestAWKGo/BEGIN_{_for_(;;)_{_printf_"%d_",_i;_i++;_if_(i>2)_break;_}_} (0.14s)
+    --- FAIL: TestAWKGo/BEGIN_{_for_(i=5;_;_)_{_printf_"%d_",_i;_i++;_if_(i>8)_break;_}_} (0.16s)
+    --- FAIL: TestAWKGo/BEGIN_{_for_(i=5;_;_i++)_{_printf_"%d_",_i;_if_(i>8)_break;_}_} (0.14s)
+    --- FAIL: TestAWKGo/BEGIN_{_for_(i=5;_i<8;_i++)_{_printf_"%d_",_i_}_} (0.15s)
+    --- FAIL: TestAWKGo/BEGIN_{_for_(i=0;_i<10;_i++)_{_if_(i_<_5)_continue;_printf_"%d_",_i_}_ (0.14s)
+    --- FAIL: TestAWKGo/BEGIN_{_a[1]=1;_a[2]=1;_for_(k_in_a)_{_s++;_break_}_print_s_} (0.09s)
+    --- FAIL: TestAWKGo/BEGIN_{_a[1]=1;_a[2]=1;_a[3]=1;_for_(k_in_a)_{_if_(k==2)_continue;_s++ (0.07s)
+    --- PASS: TestAWKGo/BEGIN_{_while_(i<3)_{_i++;_s++;_break_}_print_s_} (0.14s)
+    --- PASS: TestAWKGo/BEGIN_{_while_(i<3)_{_i++;_if_(i==2)_continue;_s++_}_print_s_} (0.14s)
+    --- PASS: TestAWKGo/BEGIN_{_do_{_i++;_s++;_break_}_while_(i<3);_print_s_} (0.14s)
+    --- PASS: TestAWKGo/BEGIN_{_do_{_i++;_if_(i==2)_continue;_s++_}_while_(i<3);_print_s_} (0.15s)
+    --- PASS: TestAWKGo/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_for_(k_in_a)_x_+=_a[k];_print_x_} (0.15s)
+    --- FAIL: TestAWKGo/BEGIN_{_while_(i_<_5)_{_print_i;_i++_}_} (0.16s)
+    --- FAIL: TestAWKGo/BEGIN_{_do_{_print_i;_i++_}_while_(i_<_5)_} (0.21s)
+    --- PASS: TestAWKGo/BEGIN_{_for_(i=0;_i<10;_i++);_printf_"x"_} (0.18s)
+    --- PASS: TestAWKGo/_BEGIN_{__for_(i_=_0;_i_<_1;_i++)_{___for_(j_=_0;_j_<_1;_j++)_{____pri (0.14s)
+    --- PASS: TestAWKGo/_BEGIN_{__for_(i_=_0;_i_<_1;_i++)_{___for_(j_=_0;_j_<_1;_j++)_{____pri#01 (0.14s)
+    --- FAIL: TestAWKGo/{_if_(NR==2)_next;_print_} (0.00s)
+    --- PASS: TestAWKGo/BEGIN_{_next_} (0.00s)
+    --- PASS: TestAWKGo/END_{_next_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_a["x"]_=_3;_print_"x"_in_a,_"y"_in_a_} (0.00s)
+    --- PASS: TestAWKGo/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_delete_a["x"];_for_(k_in_a)_print_k,_a (0.14s)
+    --- PASS: TestAWKGo/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_for_(k_in_a)_delete_a[k];_for_(k_in_a) (0.15s)
+    --- FAIL: TestAWKGo/BEGIN_{_a["x"];_"y"_in_a;_for_(k_in_a)_print_k,_a[k]_} (0.00s)
+    --- PASS: TestAWKGo/BEGIN_{_a[]_} (0.00s)
+    --- PASS: TestAWKGo/BEGIN_{_delete_a[]_} (0.00s)
+    --- PASS: TestAWKGo/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_delete_a;_for_(k_in_a)_print_k,_a[k]_} (0.15s)
+    --- PASS: TestAWKGo/BEGIN_{_print_!42,_!1,_!0,_!!42,_!!1,_!!0_} (0.14s)
+    --- PASS: TestAWKGo/BEGIN_{_print_!42,_!1,_!0,_!!42,_!!1,_!!0_}#01 (0.14s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_+4,_+"3",_+0,_+-3,_-3,_-_-4,_-"3"_} (0.07s)
+    --- FAIL: TestAWKGo/BEGIN_{_$0="1";_print_!$0_} (0.07s)
+    --- FAIL: TestAWKGo/{_print_!$0_} (0.14s)
+    --- PASS: TestAWKGo/{_print_!$0_}#01 (0.19s)
+    --- FAIL: TestAWKGo/!seen[$0]++ (0.08s)
+    --- FAIL: TestAWKGo/!seen[$0]-- (0.08s)
+    --- PASS: TestAWKGo/BEGIN_{_print_(1==1,_1==0,_"1"==1,_"1"==1.0)_} (0.16s)
+    --- FAIL: TestAWKGo/{_print_($0=="1",_$0==1)_} (0.15s)
+    --- FAIL: TestAWKGo/{_print_($1=="1",_$1==1)_} (0.15s)
+    --- PASS: TestAWKGo/BEGIN_{_print_(1!=1,_1!=0,_"1"!=1,_"1"!=1.0)_} (0.16s)
+    --- FAIL: TestAWKGo/{_print_($0!="1",_$0!=1)_} (0.16s)
+    --- FAIL: TestAWKGo/{_print_($1!="1",_$1!=1)_} (0.15s)
+    --- PASS: TestAWKGo/BEGIN_{_print_(0<1,_1<1,_2<1,_"12"<"2")_} (0.14s)
+    --- PASS: TestAWKGo/{_print_($1<2)_} (0.14s)
+    --- PASS: TestAWKGo/BEGIN_{_print_(0<=1,_1<=1,_2<=1,_"12"<="2")_} (0.15s)
+    --- PASS: TestAWKGo/{_print_($1<=2)_} (0.17s)
+    --- PASS: TestAWKGo/BEGIN_{_print_(0>1,_1>1,_2>1,_"12">"2")_} (0.15s)
+    --- PASS: TestAWKGo/{_print_($1>2)_} (0.16s)
+    --- PASS: TestAWKGo/BEGIN_{_print_(0>=1,_1>=1,_2>=1,_"12">="2")_} (0.14s)
+    --- PASS: TestAWKGo/{_print_($1>=2)_} (0.14s)
+    --- FAIL: TestAWKGo/_function_t()_{_print_"t";_return_1_}_function_f()_{_print_"f";_return (0.00s)
+    --- FAIL: TestAWKGo/_function_t()_{_print_"t";_return_1_}_function_f()_{_print_"f";_return#01 (0.00s)
+    --- PASS: TestAWKGo/BEGIN_{_print_1+2,_1+2+3,_1+-2,_-1+2,_"1"+"2",_3+.14_} (0.14s)
+    --- PASS: TestAWKGo/BEGIN_{_print_1-2,_1-2-3,_1-+2,_-1-2,_"1"-"2",_3-.14_} (0.14s)
+    --- PASS: TestAWKGo/BEGIN_{_print_2*3,_2*3*4,_2*-3,_-2*3,_"2"*"3",_3*.14_} (0.14s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_2/3,_2/3/4,_2/-3,_-2/3,_"2"/"3",_3/.14_} (0.14s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_2%3,_2%3%4,_2%-3,_-2%3,_"2"%"3",_3%.14_} (0.08s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_2^3,_2^3^3,_2^-3,_-2^3,_"2"^"3",_3^.14_} (0.18s)
+    --- PASS: TestAWKGo/BEGIN_{_print_1_2,_"x"_"yz",_1+2_3+4_} (0.17s)
+    --- PASS: TestAWKGo/BEGIN_{_print_"food"~/oo/,_"food"~/[oO]+d/,_"food"~"f",_"food"~"F",_"f (0.15s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_"food"!~/oo/,_"food"!~/[oO]+d/,_"food"!~"f",_"food"!~"F" (0.17s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_1+2*3/4^5%6_7,_(1+2)*3/4^5%6_"7"_} (0.09s)
+    --- PASS: TestAWKGo/BEGIN_{_print_1,_1.,_.1,_1e0,_-1,_1e_} (0.14s)
+    --- PASS: TestAWKGo/BEGIN_{_print_'\"'_'\''_'xy'_"z"_"'"_'\"'_} (0.16s)
+    --- PASS: TestAWKGo/{_print_/foo/_} (0.15s)
+    --- PASS: TestAWKGo//[a-/ (0.00s)
+    --- PASS: TestAWKGo/BEGIN_{_print_"-12"+0,_"+12"+0,_"_\t\r\n7foo"+0,_".5"+0,_"5."+0,_"+."+ (0.14s)
+    --- PASS: TestAWKGo/BEGIN_{_print_"1e3"+0,_"1.2e-1"+0,_"1e+1"+0,_"1e"+0,_"1e+"+0_} (0.14s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_-(11102200000000000000000000000000000000_1040000)_}__#_! (0.15s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_atan2(0,_8020020000000e20G-0)} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_1e1000,_-1e1000_}__#_!gawk (0.07s)
+    --- PASS: TestAWKGo/BEGIN_{_printf_"\x0.\x00.\x0A\x10\xff\xFF\x41"_}__#_!awk (0.14s)
+    --- PASS: TestAWKGo/BEGIN_{_printf_"\x1.\x01.\x0A\x10\xff\xFF\x41"_} (0.14s)
+    --- PASS: TestAWKGo/BEGIN_{_printf_"\0\78\7\77\777\0_\141_"_}__#_!awk (0.14s)
+    --- PASS: TestAWKGo/BEGIN_{_printf_"\1\78\7\77\777\1_\141_"_} (0.14s)
+    --- FAIL: TestAWKGo/{_print_/x/?"t":"f"_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_1?2?3:4:5,_1?0?3:4:5,_0?2?3:4:5_} (0.00s)
+    --- FAIL: TestAWKGo/{_print_$0?1:0_} (0.00s)
+    --- FAIL: TestAWKGo/{_print_$0?1:0_}#01 (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_$0="1";_print_($0?1:0)_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_0?1:0,_1?1:0,_""?1:0,_"0"?1:0,_"1"?1:0,_x?1:0_} (0.00s)
+    --- FAIL: TestAWKGo/_BEGIN_{__print_CONVFMT,_1.2345678_""__CONVFMT_=_"%.3g"__print_CONVFMT (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_FILENAME_=_"foo";_print_FILENAME_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_FILENAME_=_"123.0";_print_(FILENAME==123)_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_FNR_=_123;_print_FNR_} (0.00s)
+    --- FAIL: TestAWKGo/{_print_FNR,_$0_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_"|"_FS_"|";_FS=","_}_{_print_$1,_$2_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_"|"_FS_"|";_FS="\\."_}_{_print_$1,_$2_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_FS="\\"_}_{_print_$1,_$2_} (0.14s)
+    --- PASS: TestAWKGo/{_print_NF_} (0.14s)
+    --- FAIL: TestAWKGo/BEGIN_{_NR_=_123;_print_NR_} (0.14s)
+    --- PASS: TestAWKGo/{_print_NR,_$0_} (0.14s)
+    --- FAIL: TestAWKGo/_BEGIN_{__print_OFMT,_1.2345678__OFMT_=_"%.3g"__print_OFMT,_1.234567_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_RSTART,_RLENGTH;_RSTART=5;_RLENGTH=42;_print_RSTART,_RLE (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_RS_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_RS;_RS="|";_print_RS_}__{_print_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<= (0.14s)
+    --- FAIL: TestAWKGo/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#01 (0.14s)
+    --- FAIL: TestAWKGo/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#02 (0.14s)
+    --- FAIL: TestAWKGo/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#03 (0.14s)
+    --- FAIL: TestAWKGo/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#04 (0.14s)
+    --- FAIL: TestAWKGo/BEGIN_{_RS="";_FS="X"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=N (0.14s)
+    --- FAIL: TestAWKGo/BEGIN_{_RS_=_""_}__{_print_"got",_$0_} (0.13s)
+    --- PASS: TestAWKGo/BEGIN_{_RS="\n"_}__{_print_} (0.14s)
+    --- FAIL: TestAWKGo/_BEGIN_{__print_SUBSEP__a[1,_2]_=_"onetwo"__print_a[1,_2]__for_(k_in_a (0.00s)
+    --- FAIL: TestAWKGo/{_print_NF;_NF=1;_$2="two";_print_$0,_NF_} (0.07s)
+    --- FAIL: TestAWKGo/{_print_NF;_NF=2;_$2="two";_print_$0,_NF} (0.07s)
+    --- FAIL: TestAWKGo/{_print_NF;_NF=3;_$2="two";_print_$0,_NF} (0.07s)
+    --- PASS: TestAWKGo/{_print;_print_$1,_$3,_$NF_} (0.14s)
+    --- FAIL: TestAWKGo/{_print_$1,$3;_$2="x";_print;_print_$2_} (0.07s)
+    --- FAIL: TestAWKGo/{_print;_$0="x_y_z";_print;_print_$1,_$3_} (0.07s)
+    --- PASS: TestAWKGo/{_print_$1^2_} (0.14s)
+    --- FAIL: TestAWKGo/{_print_$-1_} (0.14s)
+    --- PASS: TestAWKGo/{_NF=-1;_}__#_!awk_-_awk_allows_setting_negative_NF (0.15s)
+    --- PASS: TestAWKGo/{_NF=1234567;_} (0.15s)
+    --- FAIL: TestAWKGo/BEGIN_{_$1234567=1_} (0.08s)
+    --- PASS: TestAWKGo/0_in_FS__#_!awk_-_doesn't_flag_this_as_an_error (0.00s)
+    --- FAIL: TestAWKGo/{_NF=1;_$1="x";_print_$0;_print_NF_} (0.11s)
+    --- FAIL: TestAWKGo/{_NF=1;_$1="x";_print_$0;_print_NF_}#01 (0.19s)
+    --- FAIL: TestAWKGo/{_NF=1;_$1="x";_print_$0;_print_NF_}#02 (0.10s)
+    --- FAIL: TestAWKGo/{_NF=1;_$2="x";_print_$0;_print_NF_} (0.10s)
+    --- FAIL: TestAWKGo/{_NF=1;_$2="x";_print_$0;_print_NF_}#01 (0.11s)
+    --- FAIL: TestAWKGo/{_NF=1;_$2="x";_print_$0;_print_NF_}#02 (0.11s)
+    --- FAIL: TestAWKGo/{_NF=1;_$3="x";_print_$0;_print_NF_} (0.09s)
+    --- FAIL: TestAWKGo/{_NF=1;_$3="x";_print_$0;_print_NF_}__#_!awk_-_awk_differs_from_gawk_( (0.08s)
+    --- FAIL: TestAWKGo/{_NF=1;_$3="x";_print_$0;_print_NF_}__#_!awk_-_awk_differs_from_gawk_(#01 (0.07s)
+    --- FAIL: TestAWKGo/{_NF=2;_$1="x";_print_$0;_print_NF_} (0.07s)
+    --- FAIL: TestAWKGo/{_NF=2;_$1="x";_print_$0;_print_NF_}#01 (0.08s)
+    --- FAIL: TestAWKGo/{_NF=2;_$1="x";_print_$0;_print_NF_}#02 (0.08s)
+    --- FAIL: TestAWKGo/{_NF=2;_$2="x";_print_$0;_print_NF_} (0.07s)
+    --- FAIL: TestAWKGo/{_NF=2;_$2="x";_print_$0;_print_NF_}#01 (0.07s)
+    --- FAIL: TestAWKGo/{_NF=2;_$2="x";_print_$0;_print_NF_}#02 (0.07s)
+    --- FAIL: TestAWKGo/{_NF=2;_$3="x";_print_$0;_print_NF_} (0.07s)
+    --- FAIL: TestAWKGo/{_NF=2;_$3="x";_print_$0;_print_NF_}#01 (0.07s)
+    --- FAIL: TestAWKGo/{_NF=2;_$3="x";_print_$0;_print_NF_}#02 (0.07s)
+    --- FAIL: TestAWKGo/{_NF=3;_$1="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault (0.08s)
+    --- FAIL: TestAWKGo/{_NF=3;_$1="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault#01 (0.07s)
+    --- FAIL: TestAWKGo/{_NF=3;_$1="x";_print_$0;_print_NF_} (0.07s)
+    --- FAIL: TestAWKGo/{_NF=3;_$2="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault (0.07s)
+    --- FAIL: TestAWKGo/{_NF=3;_$2="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault#01 (0.07s)
+    --- FAIL: TestAWKGo/{_NF=3;_$2="x";_print_$0;_print_NF_} (0.07s)
+    --- FAIL: TestAWKGo/{_NF=3;_$3="x";_print_$0;_print_NF_} (0.07s)
+    --- FAIL: TestAWKGo/{_NF=3;_$3="x";_print_$0;_print_NF_}#01 (0.07s)
+    --- FAIL: TestAWKGo/{_NF=3;_$3="x";_print_$0;_print_NF_}#02 (0.07s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_x;_x_=_4;_print_x;_} (0.15s)
+    --- FAIL: TestAWKGo/BEGIN_{_a["foo"]=1;_b[2]="x";_k="foo";_print_a[k],_b["2"]_} (0.08s)
+    --- PASS: TestAWKGo/BEGIN_{_s+=5;_print_s;_s-=2;_print_s;_s-=s;_print_s_} (0.14s)
+    --- PASS: TestAWKGo/BEGIN_{_x=2;_x*=x;_print_x;_x*=3;_print_x_} (0.13s)
+    --- FAIL: TestAWKGo/BEGIN_{_x=6;_x/=3;_print_x;_x/=x;_print_x;_x/=.6;_print_x_} (0.14s)
+    --- FAIL: TestAWKGo/BEGIN_{_x=12;_x%=5;_print_x_} (0.08s)
+    --- FAIL: TestAWKGo/BEGIN_{_x=2;_x^=5;_print_x;_x^=0.5;_print_x_} (0.10s)
+    --- FAIL: TestAWKGo/{_$2+=10;_print;_$3/=2;_print_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_a[2]_+=_1;_a["2"]_*=_3;_print_a[2]_} (0.10s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_x++;_print_x_} (0.08s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_x;_print_x++;_print_++x;_print_x_} (0.07s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_x;_print_x--;_print_--x;_print_x_} (0.07s)
+    --- PASS: TestAWKGo/BEGIN_{_s++;_s++;_print_s_} (0.15s)
+    --- FAIL: TestAWKGo/BEGIN_{_y="_";_--x[y_=_y_y];_print_length(y)_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_x[y++]++;_print_y_} (0.08s)
+    --- FAIL: TestAWKGo/BEGIN_{_x[y++]_+=_3;_print_y_} (0.07s)
+    --- FAIL: TestAWKGo/BEGIN_{_$(y++)++;_print_y_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_sin(0),_sin(0.5),_sin(1),_sin(-1)_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_cos(0),_cos(0.5),_cos(1),_cos(-1)_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_exp(0),_exp(0.5),_exp(1),_exp(-1)_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_log(0),_log(0.5),_log(1)_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_log(-1)_}__#_!gawk_-_gawk_prints_warning_for_this_as_wel (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_sqrt(0),_sqrt(2),_sqrt(4)_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_int(3.5),_int("1.9"),_int(4),_int(-3.6),_int("x"),_int(" (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_match("food",_"foo"),_RSTART,_RLENGTH_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_match("x_food_y",_"fo"),_RSTART,_RLENGTH_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_match("x_food_y",_"fox"),_RSTART,_RLENGTH_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_match("x_food_y",_/[fod]+/),_RSTART,_RLENGTH_} (0.00s)
+    --- FAIL: TestAWKGo/{_print_length,_length(),_length("buzz"),_length("")_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_index("foo",_"f"),_index("foo0",_0),_index("foo",_"o"),_ (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_atan2(1,_0.5),_atan2(-1,_0)_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_sprintf("%3d",_42)_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_sprintf("%d",_12,_34)_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_sprintf("%d")_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_sprintf("%d",_12,_34)_}#01 (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_sprintf("%_5d",_42)_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_substr("food",_1)_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_substr("food",_1,_2)_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_substr("food",_1,_4)_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_substr("food",_1,_8)_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_substr("food",_2)_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_substr("food",_2,_2)_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_substr("food",_2,_3)_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_substr("food",_2,_8)_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_substr("food",_0,_8)_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_substr("food",_-1,_8)_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_substr("food",_5,_8)_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_n_=_split("ab_c_d_",_a);_for_(i=1;_i<=n;_i++)_print_a[i]_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_n_=_split("ab,c,d,",_a,_",");_for_(i=1;_i<=n;_i++)_print_a[i]_ (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_n_=_split("ab,c.d,",_a,_/[,.]/);_for_(i=1;_i<=n;_i++)_print_a[ (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_n_=_split("1_2",_a);_print_(n,_a[1],_a[2],_a[1]==1,_a[2]==2)_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_x_=_"1.2.3";_print_sub(/\./,_",",_x);_print_x_} (0.00s)
+    --- FAIL: TestAWKGo/{_print_sub(/\./,_",");_print_$0_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_x_=_"1.2.3";_print_gsub(/\./,_",",_x);_print_x_} (0.00s)
+    --- FAIL: TestAWKGo/{_print_gsub(/\./,_",");_print_$0_} (0.00s)
+    --- FAIL: TestAWKGo/{_print_gsub(/[0-9]/,_"(&)");_print_$0_} (0.00s)
+    --- FAIL: TestAWKGo/{_print_gsub(/[0-9]+/,_"(&)");_print_$0_} (0.00s)
+    --- FAIL: TestAWKGo/{_print_gsub(/[0-9]/,_"\\&");_print_$0_} (0.00s)
+    --- FAIL: TestAWKGo/{_print_gsub(/[0-9]/,_"\\z");_print_$0_} (0.00s)
+    --- FAIL: TestAWKGo/{_print_gsub("0",_"x\\\\y");_print_$0_}__#_!awk_!gawk_--_our_behaviour (0.00s)
+    --- FAIL: TestAWKGo/sub("",_"\\e",_FS)__#_!awk_!gawk (0.00s)
+    --- PASS: TestAWKGo/BEGIN_{_print_tolower("Foo_BaR")_} (0.14s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_toupper("Foo_BaR")_} (0.00s)
+    --- FAIL: TestAWKGo/_BEGIN_{__srand(1)__a_=_rand();_b_=_rand();_c_=_rand()__srand(1)__x_=_ (0.00s)
+    --- FAIL: TestAWKGo/_BEGIN_{__for_(i_=_0;_i_<_1000;_i++)_{___if_(rand()_<_0.5)_n++__}__pri (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_system("echo_foo");_print_system("echo_bar")_}__#_!fuzz (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_system(">&2_echo_error")_}__#_!fuzz (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_0?"t":"f"_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_1?"t":"f"_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_(1+2)?"t":"f"_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_(1+2?"t":"f")_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print(1_?_x="t"_:_"f");_print_x;_} (0.03s)
+    --- FAIL: TestAWKGo/_function_f(loc)_{__glob_+=_1__loc_+=_1__print_glob,_loc_}_BEGIN_{__gl (0.00s)
+    --- FAIL: TestAWKGo/_function_set(a,_x,_v)_{__a[x]_=_v_}_function_get(a,_x)_{__return_a[x] (0.00s)
+    --- FAIL: TestAWKGo/_function_fib(n)_{__return_n_<_3_?_1_:_fib(n-2)_+_fib(n-1)_}_BEGIN_{__ (0.00s)
+    --- FAIL: TestAWKGo/_function_f(a,_x)_{_return_a[x]_}_function_g(b,_y)_{_f(b,_y)_}_BEGIN_{ (0.00s)
+    --- FAIL: TestAWKGo/_function_g(b,_y)_{_return_f(b,_y)_}_function_f(a,_x)_{_return_a[x]_}_ (0.00s)
+    --- FAIL: TestAWKGo/_function_h(b,_y)_{_g(b,_y)_}_function_g(b,_y)_{_f(b,_y)_}_function_f( (0.00s)
+    --- FAIL: TestAWKGo/_function_h(b,_y)_{_return_g(b,_y)_}_function_g(b,_y)_{_return_f(b,_y) (0.00s)
+    --- PASS: TestAWKGo/_function_get(a,_x)_{_return_a[x]_}_BEGIN_{_a[1]=2;_print_get(a,_x);_p (0.00s)
+    --- FAIL: TestAWKGo/_function_early()_{__print_"x"__return__print_"y"_}_BEGIN_{_early()_}_ (0.00s)
+    --- PASS: TestAWKGo/BEGIN_{_return_} (0.00s)
+    --- FAIL: TestAWKGo/function_f()_{_printf_"x"_};_BEGIN_{_f()_}_ (0.00s)
+    --- PASS: TestAWKGo/function_f(x)_{_0_in__;_f(_)_}__BEGIN_{_f()_}__#_!awk_!gawk (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_for_(i=0;_i<1001;_i++)_f();_print_x_}__function_f()_{_x++_} (0.00s)
+    --- FAIL: TestAWKGo/_function_bar(y)_{_return_y[1]_}_function_foo()_{_return_bar(x)_}_BEGI (0.00s)
+    --- PASS: TestAWKGo/BEGIN_{_a[x];_a=42_} (0.00s)
+    --- PASS: TestAWKGo/BEGIN_{_s=42;_s[x]_} (0.00s)
+    --- PASS: TestAWKGo/function_get(a,_k)_{_return_a[k]_}__BEGIN_{_a_=_42;_print_get(a,_1);_} (0.00s)
+    --- PASS: TestAWKGo/function_get(a,_k)_{_return_a+k_}_BEGIN_{_a[42];_print_get(a,_1);_} (0.00s)
+    --- FAIL: TestAWKGo/{_f(z)_}__function_f(x)_{_print_NR_} (0.00s)
+    --- FAIL: TestAWKGo/function_f()_{_f()_}__BEGIN_{_f()_}__#_!awk_!gawk (0.00s)
+    --- PASS: TestAWKGo/function_f(x)_{_0_in_x_}__BEGIN_{_f(FS)_}__#_!awk (0.00s)
+    --- FAIL: TestAWKGo/_function_foo(x)_{_print_"foo",_x_}_function_bar(foo)_{_print_"bar",_f (0.00s)
+    --- PASS: TestAWKGo/_function_foo(foo)_{_print_"foo",_foo_}_function_bar(foo)_{_print_"bar (0.00s)
+    --- PASS: TestAWKGo/function_foo()_{_print_foo_}__BEGIN_{_foo()_} (0.00s)
+    --- PASS: TestAWKGo/function_f(x)_{_print_x,_x();_}__BEGIN_{_f()_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_>"out";_close("out");_getline_<"out";_print_>"out"_}__#_ (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_>"out";_close("out");_getline_<"out";_print_|"out"_}__#_ (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_"foo"_|"sort";_print_"bar"_|"sort"_}__#_!fuzz (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_"foo"_|">&2_echo_error"_}__#_!fuzz (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_"cat"_|_getline;_print_}__#_!fuzz (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_getline_x_<_"/no/such/file"_}__#_!fuzz (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_getline_x_<_"-";_print_x_} (0.00s)
+    --- FAIL: TestAWKGo/{_print_$0;_print_getline_x_<"-";_print_x_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_"x"_>"-";_print_"y"_>"-"_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_fflush();_print_fflush("")_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_"x";_print_fflush();_print_"y";_print_fflush("")_} (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_"x"_>"out";_print_fflush("out");_print_"y";_print_fflush (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_fflush("x")_}__#_!gawk (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_"cat"_|_getline;_print_fflush("cat")_}__#_!gawk_!fuzz (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_print_"x"_>_"out"_}__#_!fuzz (0.00s)
+    --- FAIL: TestAWKGo/BEGIN_{_printf_"x"_>_"out"_}__#_!fuzz (0.00s)
+    --- PASS: TestAWKGo/BEGIN_{_print("x"_>_"out")_} (0.17s)
+    --- PASS: TestAWKGo/BEGIN_{_printf("x"_>_"out")_} (0.14s)
+    --- PASS: TestAWKGo/BEGIN_{_if_(1)_printf_"x";_else_printf_"y"_} (0.15s)
+    --- PASS: TestAWKGo/BEGIN_{_printf_"x";_{_printf_"y";_printf_"z"_}_} (0.14s)
+    --- PASS: TestAWKGo/BEGIN_{_f()_} (0.00s)
+    --- PASS: TestAWKGo/function_f()_{}_function_f()_{}_BEGIN_{_} (0.00s)
+    --- PASS: TestAWKGo/BEGIN_{_print_(1,2),(3,4)_} (0.00s)
+    --- PASS: TestAWKGo/BEGIN_{_print_(1,2,(3,4),(5,6))_} (0.00s)
+FAIL
+FAIL	github.com/benhoyt/goawk/awkgo	21.268s
+FAIL

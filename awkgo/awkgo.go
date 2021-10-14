@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -12,34 +14,48 @@ import (
 )
 
 func main() {
+	if len(os.Args) < 2 {
+		fmt.Fprintln(os.Stderr, "usage: awkgo 'prog'")
+		os.Exit(1)
+	}
+
+	prog, err := ParseProgram([]byte(os.Args[1]), nil)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "parse error: %v\n", err)
+		os.Exit(1)
+	}
+
+	err = compile(prog, os.Stdout)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "compile error: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+func compile(prog *Program, writer io.Writer) (err error) {
 	defer func() {
 		r := recover()
 		switch r := r.(type) {
-		case *errorExit:
-			fmt.Fprintln(os.Stderr, r.message)
-			os.Exit(1)
 		case nil:
 			break
+		case *errorExit:
+			err = errors.New(r.message)
 		default:
 			panic(r)
 		}
 	}()
 
-	prog, err := ParseProgram([]byte(os.Args[1]), nil)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-
 	t := newTyper()
 	t.program(prog)
 	t.program(prog)
-	t.dump()
+	//t.dump()
 
 	c := &compiler{
-		typer: t,
+		typer:  t,
+		writer: writer,
 	}
 	c.program(prog)
+	return nil
 }
 
 type errorExit struct {
@@ -55,12 +71,13 @@ func errorf(format string, args ...interface{}) error {
 }
 
 type compiler struct {
-	prog  *Program
-	typer *typer
+	prog   *Program
+	typer  *typer
+	writer io.Writer
 }
 
 func (c *compiler) output(s string) {
-	fmt.Print(s)
+	fmt.Fprint(c.writer, s)
 }
 
 func (c *compiler) program(prog *Program) {
@@ -246,12 +263,17 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 			panic(errorf("print redirection not yet supported"))
 		}
 		c.output("fmt.Fprintln(_output, ")
-		for i, arg := range s.Args {
-			if i > 0 {
-				c.output(", ")
+		if len(s.Args) > 0 {
+			for i, arg := range s.Args {
+				if i > 0 {
+					c.output(", ")
+				}
+				str := c.expr(arg) // TODO: need to handle type?
+				c.output(str)
 			}
-			str := c.expr(arg) // TODO: need to handle type?
-			c.output(str)
+		} else {
+			// "print" with no args is equivalent to "print $0"
+			c.output("_line")
 		}
 		c.output(")")
 
@@ -505,7 +527,7 @@ func (c *compiler) expr(expr Expr) string {
 		// shall automatically create it."
 		switch e.Array.Scope {
 		case ScopeSpecial:
-			panic(fmt.Sprintf("special variable %s not yet supported", e.Array.Name))
+			panic(errorf("special variable %s not yet supported", e.Array.Name))
 		case ScopeGlobal:
 			return e.Array.Name + "[" + c.index(e.Index) + "]"
 		default:
@@ -729,7 +751,7 @@ func (c *compiler) special(name string, index int) string {
 	//case V_RS:
 	//case V_SUBSEP:
 	default:
-		panic(fmt.Sprintf("special variable %s not yet supported", name))
+		panic(errorf("special variable %s not yet supported", name))
 	}
 }
 
