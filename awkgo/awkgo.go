@@ -115,6 +115,13 @@ func main() {
 	_scanner = bufio.NewScanner(os.Stdin)
 `)
 
+	for i, action := range prog.Actions {
+		if len(action.Pattern) == 2 {
+			// Booleans to keep track of range pattern state
+			c.output(fmt.Sprintf("_inRange%d := false\n", i))
+		}
+	}
+
 	for name, typ := range c.typer.globals {
 		switch typ {
 		case typeArrayStr, typeArrayNum:
@@ -159,7 +166,7 @@ func main() {
 }
 
 func (c *compiler) actions(actions []Action) {
-	for _, action := range actions {
+	for i, action := range actions {
 		c.output("\n")
 		switch len(action.Pattern) {
 		case 0:
@@ -171,7 +178,9 @@ func (c *compiler) actions(actions []Action) {
 			c.output(" {\n")
 		case 2:
 			// Range pattern (matches between start and stop lines)
-			panic(errorf("range patterns not yet supported"))
+			c.output(fmt.Sprintf("if !_inRange%d { _inRange%d = %s }\n",
+				i, i, c.cond(action.Pattern[0])))
+			c.output(fmt.Sprintf("if _inRange%d {\n", i))
 		}
 
 		if len(action.Stmts) == 0 {
@@ -181,7 +190,11 @@ func (c *compiler) actions(actions []Action) {
 			c.stmts(action.Stmts)
 		}
 
-		if len(action.Pattern) == 1 {
+		switch len(action.Pattern) {
+		case 1:
+			c.output("}\n")
+		case 2:
+			c.output(fmt.Sprintf("\n_inRange%d = !(%s)\n", i, c.cond(action.Pattern[1])))
 			c.output("}\n")
 		}
 	}

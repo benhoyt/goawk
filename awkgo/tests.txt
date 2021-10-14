@@ -14,9 +14,7 @@
 === RUN   TestAWKGo/$1=="42"
 === RUN   TestAWKGo//foo/
 === RUN   TestAWKGo/NR==2,_NR==4
-    awkgo_test.go:637: compile error: range patterns not yet supported
 === RUN   TestAWKGo/_NR==2,_NR==4_{_print_$0_}_NR==3,_NR==5_{_print_NR_}_
-    awkgo_test.go:637: compile error: range patterns not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_"x",_"y"_}
 === RUN   TestAWKGo/BEGIN_{_print_OFS;_OFS_=_",";_print_"x",_"y"_}
     awkgo_test.go:637: compile error: special variable OFS not yet supported
@@ -495,8 +493,8 @@
     --- PASS: TestAWKGo/$1==42
     --- PASS: TestAWKGo/$1=="42"
     --- PASS: TestAWKGo//foo/
-    --- FAIL: TestAWKGo/NR==2,_NR==4
-    --- FAIL: TestAWKGo/_NR==2,_NR==4_{_print_$0_}_NR==3,_NR==5_{_print_NR_}_
+    --- PASS: TestAWKGo/NR==2,_NR==4
+    --- PASS: TestAWKGo/_NR==2,_NR==4_{_print_$0_}_NR==3,_NR==5_{_print_NR_}_
     --- PASS: TestAWKGo/BEGIN_{_print_"x",_"y"_}
     --- FAIL: TestAWKGo/BEGIN_{_print_OFS;_OFS_=_",";_print_"x",_"y"_}
     --- FAIL: TestAWKGo/BEGIN_{_print_ORS;_ORS_=_".";_print_"x",_"y"_}
@@ -787,5 +785,5 @@
     --- PASS: TestAWKGo/BEGIN_{_print_(1,2),(3,4)_}
     --- PASS: TestAWKGo/BEGIN_{_print_(1,2,(3,4),(5,6))_}
 FAIL
-FAIL	github.com/benhoyt/goawk/awkgo	24.985s
+FAIL	github.com/benhoyt/goawk/awkgo
 FAIL
