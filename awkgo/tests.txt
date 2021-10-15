@@ -80,11 +80,15 @@
 === RUN   TestAWKGo/BEGIN_{_next_}
 === RUN   TestAWKGo/END_{_next_}
 === RUN   TestAWKGo/BEGIN_{_a["x"]_=_3;_print_"x"_in_a,_"y"_in_a_}
-    awkgo_test.go:637: compile error: *ast.InExpr not yet supported
 === RUN   TestAWKGo/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_delete_a["x"];_for_(k_in_a)_print_k,_a
 === RUN   TestAWKGo/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_for_(k_in_a)_delete_a[k];_for_(k_in_a)
 === RUN   TestAWKGo/BEGIN_{_a["x"];_"y"_in_a;_for_(k_in_a)_print_k,_a[k]_}
-    awkgo_test.go:637: compile error: *ast.InExpr not yet supported
+    awkgo_test.go:649: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo/001/test_64.go:34:5: undefined: a
+        /tmp/TestAWKGo/001/test_64.go:35:29: undefined: a
+        /tmp/TestAWKGo/001/test_64.go:36:16: undefined: a
+        /tmp/TestAWKGo/001/test_64.go:37:29: undefined: a
 === RUN   TestAWKGo/BEGIN_{_a[]_}
 === RUN   TestAWKGo/BEGIN_{_delete_a[]_}
 === RUN   TestAWKGo/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_delete_a;_for_(k_in_a)_print_k,_a[k]_}
@@ -537,7 +541,7 @@
     --- FAIL: TestAWKGo/{_if_(NR==2)_next;_print_}
     --- PASS: TestAWKGo/BEGIN_{_next_}
     --- PASS: TestAWKGo/END_{_next_}
-    --- FAIL: TestAWKGo/BEGIN_{_a["x"]_=_3;_print_"x"_in_a,_"y"_in_a_}
+    --- PASS: TestAWKGo/BEGIN_{_a["x"]_=_3;_print_"x"_in_a,_"y"_in_a_}
     --- PASS: TestAWKGo/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_delete_a["x"];_for_(k_in_a)_print_k,_a
     --- PASS: TestAWKGo/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_for_(k_in_a)_delete_a[k];_for_(k_in_a)
     --- FAIL: TestAWKGo/BEGIN_{_a["x"];_"y"_in_a;_for_(k_in_a)_print_k,_a[k]_}

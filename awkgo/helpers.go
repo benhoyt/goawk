@@ -108,18 +108,14 @@ func _regexMatch(str, pattern string) bool {
 	return re.MatchString(str)
 }
 
-func _containsNum(array map[string]float64, index string) float64 {
-	if _, ok := array[index]; ok {
-		return 1
-	}
-	return 0
+func _containsNum(array map[string]float64, index string) bool {
+	_, ok := array[index]
+	return ok
 }
 
-func _containsStr(array map[string]string, index string) float64 {
-	if _, ok := array[index]; ok {
-		return 1
-	}
-	return 0
+func _containsStr(array map[string]string, index string) bool {
+	_, ok := array[index]
+	return ok
 }
 
 func _assignNum(p *float64, v float64) float64 {

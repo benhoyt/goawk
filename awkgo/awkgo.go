@@ -341,7 +341,14 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 
 	case *IfStmt:
 		c.output("if ")
-		c.output(c.cond(s.Cond))
+		switch cond := s.Cond.(type) {
+		case *InExpr:
+			// if _, _ok := a[k]; ok { ... }
+			c.output(fmt.Sprintf("_, _ok := %s[%s]; _ok ",
+				cond.Array.Name, c.index(cond.Index)))
+		default:
+			c.output(c.cond(s.Cond))
+		}
 		c.output(" {\n")
 		c.stmts(s.Body)
 		c.output("}")
@@ -610,18 +617,11 @@ func (c *compiler) expr(expr Expr) string {
 			panic(errorf("unexpected unary operation: %s", e.Op))
 		}
 
-	//case *InExpr:
-	//	if e.Array.Scope != ScopeGlobal {
-	//		panic(errorf("scope %v not yet supported", e.Array.Scope))
-	//	}
-	//	arrayType := c.globalType(e.Array.Name)
-	//	if arrayType == typeUnknown {
-	//		panic(errorf("%q not yet assigned to; type not known", e.Array.Name))
-	//	}
-	//	if arrayType == typeNum {
-	//		return "_containsNum(" + e.Array.Name + ", " + c.index(e.Index) + ")", typeNum
-	//	}
-	//	return "_containsStr(" + e.Array.Name + ", " + c.index(e.Index) + ")", arrayType
+	case *InExpr:
+		if c.typer.globals[e.Array.Name] == typeArrayNum {
+			return "_boolToNum(_containsNum(" + e.Array.Name + ", " + c.index(e.Index) + "))"
+		}
+		return "_boolToNum(_containsStr(" + e.Array.Name + ", " + c.index(e.Index) + "))"
 
 	//case *UserCallExpr:
 	//	return "TODO", 0
