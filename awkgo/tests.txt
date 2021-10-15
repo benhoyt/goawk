@@ -152,7 +152,9 @@
 === RUN   TestAWKGo/BEGIN_{_print_-(11102200000000000000000000000000000000_1040000)_}__#_!
     awkgo_test.go:652: expected "-inf\n", got "-Inf\n"
 === RUN   TestAWKGo/BEGIN_{_print_atan2(0,_8020020000000e20G-0)}
-    awkgo_test.go:637: compile error: atan2() not yet supported
+    awkgo_test.go:649: error running program: exit status 2:
+        # command-line-arguments
+        /tmp/TestAWKGo/001/test_109.go:33:82: undefined: G
 === RUN   TestAWKGo/BEGIN_{_print_1e1000,_-1e1000_}__#_!gawk
     awkgo_test.go:649: error running program: exit status 2:
         # command-line-arguments
@@ -288,25 +290,23 @@
     awkgo_test.go:652: expected "\n0\n-2\n-2\n", got "0\n0\n-2\n-2\n"
 === RUN   TestAWKGo/BEGIN_{_s++;_s++;_print_s_}
 === RUN   TestAWKGo/BEGIN_{_y="_";_--x[y_=_y_y];_print_length(y)_}
-    awkgo_test.go:637: compile error: length() not yet supported
 === RUN   TestAWKGo/BEGIN_{_x[y++]++;_print_y_}
 === RUN   TestAWKGo/BEGIN_{_x[y++]_+=_3;_print_y_}
 === RUN   TestAWKGo/BEGIN_{_$(y++)++;_print_y_}
     awkgo_test.go:637: compile error: Incr of field not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_sin(0),_sin(0.5),_sin(1),_sin(-1)_}
-    awkgo_test.go:637: compile error: sin() not yet supported
+    awkgo_test.go:652: expected "0 0.479426 0.841471 -0.841471\n", got "0 0.479425538604203 0.8414709848078965 -0.8414709848078965\n"
 === RUN   TestAWKGo/BEGIN_{_print_cos(0),_cos(0.5),_cos(1),_cos(-1)_}
-    awkgo_test.go:637: compile error: cos() not yet supported
+    awkgo_test.go:652: expected "1 0.877583 0.540302 0.540302\n", got "1 0.8775825618903728 0.5403023058681398 0.5403023058681398\n"
 === RUN   TestAWKGo/BEGIN_{_print_exp(0),_exp(0.5),_exp(1),_exp(-1)_}
-    awkgo_test.go:637: compile error: exp() not yet supported
+    awkgo_test.go:652: expected "1 1.64872 2.71828 0.367879\n", got "1 1.6487212707001282 2.718281828459045 0.36787944117144233\n"
 === RUN   TestAWKGo/BEGIN_{_print_log(0),_log(0.5),_log(1)_}
-    awkgo_test.go:637: compile error: log() not yet supported
+    awkgo_test.go:652: expected "-inf -0.693147 0\n", got "-Inf -0.6931471805599453 0\n"
 === RUN   TestAWKGo/BEGIN_{_print_log(-1)_}__#_!gawk_-_gawk_prints_warning_for_this_as_wel
-    awkgo_test.go:637: compile error: log() not yet supported
+    awkgo_test.go:652: expected "nan\n", got "NaN\n"
 === RUN   TestAWKGo/BEGIN_{_print_sqrt(0),_sqrt(2),_sqrt(4)_}
-    awkgo_test.go:637: compile error: sqrt() not yet supported
+    awkgo_test.go:652: expected "0 1.41421 2\n", got "0 1.4142135623730951 2\n"
 === RUN   TestAWKGo/BEGIN_{_print_int(3.5),_int("1.9"),_int(4),_int(-3.6),_int("x"),_int("
-    awkgo_test.go:637: compile error: int() not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_match("food",_"foo"),_RSTART,_RLENGTH_}
     awkgo_test.go:637: compile error: match() not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_match("x_food_y",_"fo"),_RSTART,_RLENGTH_}
@@ -316,11 +316,9 @@
 === RUN   TestAWKGo/BEGIN_{_print_match("x_food_y",_/[fod]+/),_RSTART,_RLENGTH_}
     awkgo_test.go:637: compile error: match() not yet supported
 === RUN   TestAWKGo/{_print_length,_length(),_length("buzz"),_length("")_}
-    awkgo_test.go:637: compile error: length() not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_index("foo",_"f"),_index("foo0",_0),_index("foo",_"o"),_
-    awkgo_test.go:637: compile error: index() not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_atan2(1,_0.5),_atan2(-1,_0)_}
-    awkgo_test.go:637: compile error: atan2() not yet supported
+    awkgo_test.go:652: expected "1.10715 -1.5708\n", got "1.1071487177940904 -1.5707963267948966\n"
 === RUN   TestAWKGo/BEGIN_{_print_sprintf("%3d",_42)_}
     awkgo_test.go:637: compile error: sprintf() not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_sprintf("%d",_12,_34)_}
@@ -383,7 +381,6 @@
     awkgo_test.go:637: compile error: sub() not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_tolower("Foo_BaR")_}
 === RUN   TestAWKGo/BEGIN_{_print_toupper("Foo_BaR")_}
-    awkgo_test.go:637: compile error: toupper() not yet supported
 === RUN   TestAWKGo/_BEGIN_{__srand(1)__a_=_rand();_b_=_rand();_c_=_rand()__srand(1)__x_=_
     awkgo_test.go:637: compile error: srand() not yet supported
 === RUN   TestAWKGo/_BEGIN_{__for_(i_=_0;_i_<_1000;_i++)_{___if_(rand()_<_0.5)_n++__}__pri
@@ -674,7 +671,7 @@
     --- FAIL: TestAWKGo/BEGIN_{_print_x;_print_x++;_print_++x;_print_x_}
     --- FAIL: TestAWKGo/BEGIN_{_print_x;_print_x--;_print_--x;_print_x_}
     --- PASS: TestAWKGo/BEGIN_{_s++;_s++;_print_s_}
-    --- FAIL: TestAWKGo/BEGIN_{_y="_";_--x[y_=_y_y];_print_length(y)_}
+    --- PASS: TestAWKGo/BEGIN_{_y="_";_--x[y_=_y_y];_print_length(y)_}
     --- PASS: TestAWKGo/BEGIN_{_x[y++]++;_print_y_}
     --- PASS: TestAWKGo/BEGIN_{_x[y++]_+=_3;_print_y_}
     --- FAIL: TestAWKGo/BEGIN_{_$(y++)++;_print_y_}
@@ -684,13 +681,13 @@
     --- FAIL: TestAWKGo/BEGIN_{_print_log(0),_log(0.5),_log(1)_}
     --- FAIL: TestAWKGo/BEGIN_{_print_log(-1)_}__#_!gawk_-_gawk_prints_warning_for_this_as_wel
     --- FAIL: TestAWKGo/BEGIN_{_print_sqrt(0),_sqrt(2),_sqrt(4)_}
-    --- FAIL: TestAWKGo/BEGIN_{_print_int(3.5),_int("1.9"),_int(4),_int(-3.6),_int("x"),_int("
+    --- PASS: TestAWKGo/BEGIN_{_print_int(3.5),_int("1.9"),_int(4),_int(-3.6),_int("x"),_int("
     --- FAIL: TestAWKGo/BEGIN_{_print_match("food",_"foo"),_RSTART,_RLENGTH_}
     --- FAIL: TestAWKGo/BEGIN_{_print_match("x_food_y",_"fo"),_RSTART,_RLENGTH_}
     --- FAIL: TestAWKGo/BEGIN_{_print_match("x_food_y",_"fox"),_RSTART,_RLENGTH_}
     --- FAIL: TestAWKGo/BEGIN_{_print_match("x_food_y",_/[fod]+/),_RSTART,_RLENGTH_}
-    --- FAIL: TestAWKGo/{_print_length,_length(),_length("buzz"),_length("")_}
-    --- FAIL: TestAWKGo/BEGIN_{_print_index("foo",_"f"),_index("foo0",_0),_index("foo",_"o"),_
+    --- PASS: TestAWKGo/{_print_length,_length(),_length("buzz"),_length("")_}
+    --- PASS: TestAWKGo/BEGIN_{_print_index("foo",_"f"),_index("foo0",_0),_index("foo",_"o"),_
     --- FAIL: TestAWKGo/BEGIN_{_print_atan2(1,_0.5),_atan2(-1,_0)_}
     --- FAIL: TestAWKGo/BEGIN_{_print_sprintf("%3d",_42)_}
     --- FAIL: TestAWKGo/BEGIN_{_print_sprintf("%d",_12,_34)_}
@@ -723,7 +720,7 @@
     --- FAIL: TestAWKGo/{_print_gsub("0",_"x\\\\y");_print_$0_}__#_!awk_!gawk_--_our_behaviour
     --- FAIL: TestAWKGo/sub("",_"\\e",_FS)__#_!awk_!gawk
     --- PASS: TestAWKGo/BEGIN_{_print_tolower("Foo_BaR")_}
-    --- FAIL: TestAWKGo/BEGIN_{_print_toupper("Foo_BaR")_}
+    --- PASS: TestAWKGo/BEGIN_{_print_toupper("Foo_BaR")_}
     --- FAIL: TestAWKGo/_BEGIN_{__srand(1)__a_=_rand();_b_=_rand();_c_=_rand()__srand(1)__x_=_
     --- FAIL: TestAWKGo/_BEGIN_{__for_(i_=_0;_i_<_1000;_i++)_{___if_(rand()_<_0.5)_n++__}__pri
     --- FAIL: TestAWKGo/BEGIN_{_print_system("echo_foo");_print_system("echo_bar")_}__#_!fuzz

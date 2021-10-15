@@ -279,6 +279,9 @@ func (t *typer) expr(expr Expr) (typ valueType) {
 		return typeNum
 
 	case *CallExpr:
+		for _, arg := range e.Args {
+			t.expr(arg)
+		}
 		switch e.Func {
 		case F_ATAN2, F_CLOSE, F_COS, F_EXP, F_FFLUSH, F_GSUB, F_INDEX, F_INT,
 			F_LENGTH, F_LOG, F_MATCH, F_RAND, F_SIN, F_SPLIT, F_SQRT, F_SRAND,

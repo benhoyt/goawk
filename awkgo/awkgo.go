@@ -583,8 +583,44 @@ func (c *compiler) expr(expr Expr) string {
 
 	case *CallExpr:
 		switch e.Func {
+		case F_ATAN2:
+			return "math.Atan2(" + c.numExpr(e.Args[0]) + ", " + c.numExpr(e.Args[1]) + ")"
+		//case F_CLOSE:
+		case F_COS:
+			return "math.Cos(" + c.numExpr(e.Args[0]) + ")"
+		case F_EXP:
+			return "math.Exp(" + c.numExpr(e.Args[0]) + ")"
+		//case F_FFLUSH
+		//case F_GSUB
+		case F_INDEX:
+			return "float64(strings.Index(" + c.strExpr(e.Args[0]) + ", " + c.strExpr(e.Args[1]) + ") + 1)"
+		case F_INT:
+			return "float64(" + c.intExpr(e.Args[0]) + ")"
+		case F_LENGTH:
+			switch len(e.Args) {
+			case 0:
+				return "float64(len(_line))"
+			default:
+				return "float64(len(" + c.strExpr(e.Args[0]) + "))"
+			}
+		case F_LOG:
+			return "math.Log(" + c.numExpr(e.Args[0]) + ")"
+		//case F_MATCH
+		//case F_RAND
+		case F_SIN:
+			return "math.Sin(" + c.numExpr(e.Args[0]) + ")"
+		//case F_SPLIT
+		//case F_SPRINTF
+		case F_SQRT:
+			return "math.Sqrt(" + c.numExpr(e.Args[0]) + ")"
+		//case F_SRAND
+		//case F_SUB
+		//case F_SUBSTR
+		//case F_SYSTEM
 		case F_TOLOWER:
 			return "strings.ToLower(" + c.expr(e.Args[0]) + ")"
+		case F_TOUPPER:
+			return "strings.ToUpper(" + c.expr(e.Args[0]) + ")"
 		default:
 			panic(errorf("%s() not yet supported", e.Func))
 		}
@@ -729,9 +765,14 @@ func (c *compiler) numExpr(expr Expr) string {
 }
 
 func (c *compiler) intExpr(expr Expr) string {
-	e, ok := expr.(*NumExpr)
-	if ok && e.Value == float64(int(e.Value)) {
+	switch e := expr.(type) {
+	case *NumExpr:
 		return strconv.Itoa(int(e.Value))
+	case *UnaryExpr:
+		ne, ok := e.Value.(*NumExpr)
+		if ok && e.Op == SUB {
+			return "-" + strconv.Itoa(int(ne.Value))
+		}
 	}
 	return "int(" + c.numExpr(expr) + ")"
 }
