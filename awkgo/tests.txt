@@ -59,9 +59,6 @@
 === RUN   TestAWKGo/BEGIN_{_for_(i=0;_i<10;_i++)_{_if_(i_<_5)_continue;_printf_"%d_",_i_}_
     awkgo_test.go:652: expected "5 6 7 8 9 ", got "%!d(float64=5) %!d(float64=6) %!d(float64=7) %!d(float64=8) %!d(float64=9) "
 === RUN   TestAWKGo/BEGIN_{_a[1]=1;_a[2]=1;_for_(k_in_a)_{_s++;_break_}_print_s_}
-    awkgo_test.go:649: error running program: exit status 2:
-        # command-line-arguments
-        /tmp/TestAWKGo/001/test_46.go:39:5: k declared but not used
 === RUN   TestAWKGo/BEGIN_{_a[1]=1;_a[2]=1;_a[3]=1;_for_(k_in_a)_{_if_(k==2)_continue;_s++
 === RUN   TestAWKGo/BEGIN_{_while_(i<3)_{_i++;_s++;_break_}_print_s_}
 === RUN   TestAWKGo/BEGIN_{_while_(i<3)_{_i++;_if_(i==2)_continue;_s++_}_print_s_}
@@ -87,7 +84,7 @@
         # command-line-arguments
         /tmp/TestAWKGo/001/test_64.go:34:5: undefined: a
         /tmp/TestAWKGo/001/test_64.go:35:29: undefined: a
-        /tmp/TestAWKGo/001/test_64.go:36:16: undefined: a
+        /tmp/TestAWKGo/001/test_64.go:36:15: undefined: a
         /tmp/TestAWKGo/001/test_64.go:37:29: undefined: a
 === RUN   TestAWKGo/BEGIN_{_a[]_}
 === RUN   TestAWKGo/BEGIN_{_delete_a[]_}
@@ -520,7 +517,7 @@
     --- FAIL: TestAWKGo/BEGIN_{_for_(i=5;_;_i++)_{_printf_"%d_",_i;_if_(i>8)_break;_}_}
     --- FAIL: TestAWKGo/BEGIN_{_for_(i=5;_i<8;_i++)_{_printf_"%d_",_i_}_}
     --- FAIL: TestAWKGo/BEGIN_{_for_(i=0;_i<10;_i++)_{_if_(i_<_5)_continue;_printf_"%d_",_i_}_
-    --- FAIL: TestAWKGo/BEGIN_{_a[1]=1;_a[2]=1;_for_(k_in_a)_{_s++;_break_}_print_s_}
+    --- PASS: TestAWKGo/BEGIN_{_a[1]=1;_a[2]=1;_for_(k_in_a)_{_s++;_break_}_print_s_}
     --- PASS: TestAWKGo/BEGIN_{_a[1]=1;_a[2]=1;_a[3]=1;_for_(k_in_a)_{_if_(k==2)_continue;_s++
     --- PASS: TestAWKGo/BEGIN_{_while_(i<3)_{_i++;_s++;_break_}_print_s_}
     --- PASS: TestAWKGo/BEGIN_{_while_(i<3)_{_i++;_if_(i==2)_continue;_s++_}_print_s_}

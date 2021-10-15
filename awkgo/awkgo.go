@@ -385,10 +385,9 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 		c.output("}")
 
 	case *ForInStmt:
-		// TODO: scoping of loop variable
 		c.output("for ")
 		c.output(s.Var.Name)
-		c.output(" := range ")
+		c.output(" = range ")
 		c.output(s.Array.Name)
 		c.output(" {\n")
 		c.stmts(s.Body)
