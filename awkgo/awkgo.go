@@ -597,7 +597,7 @@ func (c *compiler) expr(expr Expr) string {
 			if typ == typeStr {
 				str = "_strToNum(" + str + ")"
 			}
-			return "-" + str
+			return "(-" + str + ")"
 
 		case NOT:
 			if typ == typeStr {
@@ -611,7 +611,7 @@ func (c *compiler) expr(expr Expr) string {
 			if typ == typeStr {
 				str = "_strToNum(" + str + ")"
 			}
-			return "+" + str
+			return "(+" + str + ")"
 
 		default:
 			panic(errorf("unexpected unary operation: %s", e.Op))
