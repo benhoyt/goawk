@@ -21,6 +21,8 @@ func newTyper() *typer {
 	}
 	t.globals["OFS"] = typeStr
 	t.globals["ORS"] = typeStr
+	t.globals["RSTART"] = typeNum
+	t.globals["RLENGTH"] = typeNum
 	return t
 }
 

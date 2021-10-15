@@ -103,9 +103,23 @@ func _strToNum(s string) float64 {
 	return f // Returns infinity in case of "value out of range" error
 }
 
-func _regexMatch(str, pattern string) bool {
+func _regexMatches(str, pattern string) bool {
+	// TODO: cache these or pre-compile literal regexes
 	re := regexp.MustCompile(pattern)
 	return re.MatchString(str)
+}
+
+func _match(str, pattern string) float64 {
+	re := regexp.MustCompile(pattern)
+	loc := re.FindStringIndex(str)
+	if len(loc) > 0 {
+		RSTART = float64(loc[0] + 1)
+		RLENGTH = float64(loc[1] - loc[0])
+	} else {
+		RSTART = 0
+		RLENGTH = -1
+	}
+	return RSTART
 }
 
 func _containsNum(array map[string]float64, index string) bool {

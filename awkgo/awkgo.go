@@ -518,7 +518,7 @@ func (c *compiler) expr(expr Expr) string {
 
 	case *RegExpr:
 		// TODO: pre-compile regex literal as global
-		return fmt.Sprintf("_boolToNum(_regexMatch(_line, %q))", e.Regex)
+		return fmt.Sprintf("_boolToNum(_regexMatches(_line, %q))", e.Regex)
 
 	case *BinaryExpr:
 		return c.binaryExpr(e.Op, e.Left, e.Right)
@@ -604,7 +604,8 @@ func (c *compiler) expr(expr Expr) string {
 			}
 		case F_LOG:
 			return "math.Log(" + c.numExpr(e.Args[0]) + ")"
-		//case F_MATCH
+		case F_MATCH:
+			return "_match(" + c.strExpr(e.Args[0]) + ", " + c.strExpr(e.Args[1]) + ")"
 		//case F_RAND
 		case F_SIN:
 			return "math.Sin(" + c.numExpr(e.Args[0]) + ")"
@@ -725,7 +726,7 @@ func (c *compiler) boolExpr(op Token, l, r Expr) (string, bool) {
 		panic(errorf("unexpected types in %s (%s) %s %s (%s)", ls, lt, op.String(), rs, rt))
 	case MATCH, NOT_MATCH:
 		// TODO: pre-compile regex literals if r is string literal
-		return "_regexMatch(" + c.strExpr(l) + ", " + c.strExpr(r) + ")", true
+		return "_regexMatches(" + c.strExpr(l) + ", " + c.strExpr(r) + ")", true
 	case AND, OR:
 		// TODO: what to do about precedence / parentheses?
 		return c.cond(l) + " " + op.String() + " " + c.cond(r), true
@@ -743,7 +744,7 @@ func (c *compiler) cond(expr Expr) string {
 			return str
 		}
 	case *RegExpr:
-		return fmt.Sprintf("_regexMatch(_line, %q)", e.Regex)
+		return fmt.Sprintf("_regexMatches(_line, %q)", e.Regex)
 	}
 
 	str := c.expr(expr)
@@ -820,8 +821,10 @@ func (c *compiler) special(name string, index int) string {
 	case V_NR:
 		return "float64(_lineNum)"
 	//TODO:
-	//case V_RLENGTH:
-	//case V_RSTART:
+	case V_RLENGTH:
+		return "RLENGTH"
+	case V_RSTART:
+		return "RSTART"
 	//case V_FNR:
 	//case V_ARGC:
 	//case V_CONVFMT:
