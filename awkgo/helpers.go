@@ -163,5 +163,18 @@ func _postDecr(p *float64) float64 {
 	*p--
 	return x
 }
+
+func _srand(seed float64) float64 {
+	prev := _seed
+	_seed = seed
+	_rand.Seed(int64(math.Float64bits(seed)))
+	return prev
+}
+
+func _srandNow() float64 {
+	prev := _seed
+	_rand.Seed(time.Now().UnixNano())
+	return prev
+}
 `)
 }

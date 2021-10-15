@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -87,10 +88,12 @@ import (
 	"bufio"
 	"fmt"
 	"math"
+	"math/rand"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var (
@@ -99,10 +102,18 @@ var (
 	_line    string
 	_fields  []string
 	_lineNum int
+	_seed    float64
+	_rand    *rand.Rand
 
 `)
 
-	for name, typ := range c.typer.globals {
+	globals := make([]string, 0, len(c.typer.globals))
+	for name := range c.typer.globals {
+		globals = append(globals, name)
+	}
+	sort.Strings(globals)
+	for _, name := range globals {
+		typ := c.typer.globals[name]
 		c.output(fmt.Sprintf("%s %s\n", name, c.goType(typ)))
 	}
 
@@ -116,6 +127,9 @@ func main() {
 
 	OFS = " "
 	ORS = "\n"
+	_seed = 1.0
+	_rand = rand.New(rand.NewSource(int64(math.Float64bits(_seed))))
+
 `)
 
 	for i, action := range prog.Actions {
@@ -125,7 +139,8 @@ func main() {
 		}
 	}
 
-	for name, typ := range c.typer.globals {
+	for _, name := range globals {
+		typ := c.typer.globals[name]
 		switch typ {
 		case typeArrayStr, typeArrayNum:
 			c.output(fmt.Sprintf("%s = make(%s)\n", name, c.goType(typ)))
@@ -606,14 +621,19 @@ func (c *compiler) expr(expr Expr) string {
 			return "math.Log(" + c.numExpr(e.Args[0]) + ")"
 		case F_MATCH:
 			return "_match(" + c.strExpr(e.Args[0]) + ", " + c.strExpr(e.Args[1]) + ")"
-		//case F_RAND
+		case F_RAND:
+			return "_rand.Float64()"
 		case F_SIN:
 			return "math.Sin(" + c.numExpr(e.Args[0]) + ")"
 		//case F_SPLIT
 		//case F_SPRINTF
 		case F_SQRT:
 			return "math.Sqrt(" + c.numExpr(e.Args[0]) + ")"
-		//case F_SRAND
+		case F_SRAND:
+			if len(e.Args) == 0 {
+				return "_srandNow()"
+			}
+			return "_srand(" + c.numExpr(e.Args[0]) + ")"
 		//case F_SUB
 		//case F_SUBSTR
 		//case F_SYSTEM
