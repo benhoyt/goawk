@@ -127,6 +127,7 @@ func main() {
 
 	OFS = " "
 	ORS = "\n"
+	SUBSEP = "\x1c"
 	_seed = 1.0
 	_rand = rand.New(rand.NewSource(int64(math.Float64bits(_seed))))
 
@@ -809,7 +810,7 @@ func (c *compiler) index(index []Expr) string {
 	indexStr := ""
 	for i, e := range index {
 		if i > 0 {
-			indexStr += ` + "\x1c" + `
+			indexStr += ` + SUBSEP + `
 		}
 		str := c.expr(e)
 		if c.typer.exprs[e] == typeNum {
@@ -840,7 +841,6 @@ func (c *compiler) special(name string, index int) string {
 		return "float64(len(_fields))"
 	case V_NR:
 		return "float64(_lineNum)"
-	//TODO:
 	case V_RLENGTH:
 		return "RLENGTH"
 	case V_RSTART:
@@ -856,7 +856,8 @@ func (c *compiler) special(name string, index int) string {
 	case V_ORS:
 		return "ORS"
 	//case V_RS:
-	//case V_SUBSEP:
+	case V_SUBSEP:
+		return "SUBSEP"
 	default:
 		panic(errorf("special variable %s not yet supported", name))
 	}
