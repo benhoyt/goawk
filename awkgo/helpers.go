@@ -176,5 +176,33 @@ func _srandNow() float64 {
 	_rand.Seed(time.Now().UnixNano())
 	return prev
 }
+
+func _substrLength(s string, pos, length int) string {
+	if pos > len(s) {
+		pos = len(s) + 1
+	}
+	if pos < 1 {
+		pos = 1
+	}
+	if length < 0 {
+		length = 0
+	}
+	maxLength := len(s) - pos + 1
+	if length > maxLength {
+		length = maxLength
+	}
+	return s[pos-1 : pos-1+length]
+}
+
+func _substr(s string, pos int) string {
+	if pos > len(s) {
+		pos = len(s) + 1
+	}
+	if pos < 1 {
+		pos = 1
+	}
+	length := len(s) - pos + 1
+	return s[pos-1 : pos-1+length]
+}
 `)
 }

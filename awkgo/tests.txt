@@ -321,27 +321,16 @@
 === RUN   TestAWKGo/BEGIN_{_print_sprintf("%_5d",_42)_}
     awkgo_test.go:637: compile error: sprintf() not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_substr("food",_1)_}
-    awkgo_test.go:637: compile error: substr() not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_substr("food",_1,_2)_}
-    awkgo_test.go:637: compile error: substr() not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_substr("food",_1,_4)_}
-    awkgo_test.go:637: compile error: substr() not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_substr("food",_1,_8)_}
-    awkgo_test.go:637: compile error: substr() not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_substr("food",_2)_}
-    awkgo_test.go:637: compile error: substr() not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_substr("food",_2,_2)_}
-    awkgo_test.go:637: compile error: substr() not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_substr("food",_2,_3)_}
-    awkgo_test.go:637: compile error: substr() not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_substr("food",_2,_8)_}
-    awkgo_test.go:637: compile error: substr() not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_substr("food",_0,_8)_}
-    awkgo_test.go:637: compile error: substr() not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_substr("food",_-1,_8)_}
-    awkgo_test.go:637: compile error: substr() not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_substr("food",_5,_8)_}
-    awkgo_test.go:637: compile error: substr() not yet supported
 === RUN   TestAWKGo/BEGIN_{_n_=_split("ab_c_d_",_a);_for_(i=1;_i<=n;_i++)_print_a[i]_}
     awkgo_test.go:637: compile error: split() not yet supported
 === RUN   TestAWKGo/BEGIN_{_n_=_split("ab,c,d,",_a,_",");_for_(i=1;_i<=n;_i++)_print_a[i]_
@@ -683,17 +672,17 @@
     --- FAIL: TestAWKGo/BEGIN_{_print_sprintf("%d")_}
     --- FAIL: TestAWKGo/BEGIN_{_print_sprintf("%d",_12,_34)_}#01
     --- FAIL: TestAWKGo/BEGIN_{_print_sprintf("%_5d",_42)_}
-    --- FAIL: TestAWKGo/BEGIN_{_print_substr("food",_1)_}
-    --- FAIL: TestAWKGo/BEGIN_{_print_substr("food",_1,_2)_}
-    --- FAIL: TestAWKGo/BEGIN_{_print_substr("food",_1,_4)_}
-    --- FAIL: TestAWKGo/BEGIN_{_print_substr("food",_1,_8)_}
-    --- FAIL: TestAWKGo/BEGIN_{_print_substr("food",_2)_}
-    --- FAIL: TestAWKGo/BEGIN_{_print_substr("food",_2,_2)_}
-    --- FAIL: TestAWKGo/BEGIN_{_print_substr("food",_2,_3)_}
-    --- FAIL: TestAWKGo/BEGIN_{_print_substr("food",_2,_8)_}
-    --- FAIL: TestAWKGo/BEGIN_{_print_substr("food",_0,_8)_}
-    --- FAIL: TestAWKGo/BEGIN_{_print_substr("food",_-1,_8)_}
-    --- FAIL: TestAWKGo/BEGIN_{_print_substr("food",_5,_8)_}
+    --- PASS: TestAWKGo/BEGIN_{_print_substr("food",_1)_}
+    --- PASS: TestAWKGo/BEGIN_{_print_substr("food",_1,_2)_}
+    --- PASS: TestAWKGo/BEGIN_{_print_substr("food",_1,_4)_}
+    --- PASS: TestAWKGo/BEGIN_{_print_substr("food",_1,_8)_}
+    --- PASS: TestAWKGo/BEGIN_{_print_substr("food",_2)_}
+    --- PASS: TestAWKGo/BEGIN_{_print_substr("food",_2,_2)_}
+    --- PASS: TestAWKGo/BEGIN_{_print_substr("food",_2,_3)_}
+    --- PASS: TestAWKGo/BEGIN_{_print_substr("food",_2,_8)_}
+    --- PASS: TestAWKGo/BEGIN_{_print_substr("food",_0,_8)_}
+    --- PASS: TestAWKGo/BEGIN_{_print_substr("food",_-1,_8)_}
+    --- PASS: TestAWKGo/BEGIN_{_print_substr("food",_5,_8)_}
     --- FAIL: TestAWKGo/BEGIN_{_n_=_split("ab_c_d_",_a);_for_(i=1;_i<=n;_i++)_print_a[i]_}
     --- FAIL: TestAWKGo/BEGIN_{_n_=_split("ab,c,d,",_a,_",");_for_(i=1;_i<=n;_i++)_print_a[i]_
     --- FAIL: TestAWKGo/BEGIN_{_n_=_split("ab,c.d,",_a,_/[,.]/);_for_(i=1;_i<=n;_i++)_print_a[

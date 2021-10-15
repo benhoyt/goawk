@@ -636,7 +636,11 @@ func (c *compiler) expr(expr Expr) string {
 			}
 			return "_srand(" + c.numExpr(e.Args[0]) + ")"
 		//case F_SUB
-		//case F_SUBSTR
+		case F_SUBSTR:
+			if len(e.Args) == 2 {
+				return "_substr(" + c.strExpr(e.Args[0]) + ", " + c.intExpr(e.Args[1]) + ")"
+			}
+			return "_substrLength(" + c.strExpr(e.Args[0]) + ", " + c.intExpr(e.Args[1]) + ", " + c.intExpr(e.Args[2]) + ")"
 		//case F_SYSTEM
 		case F_TOLOWER:
 			return "strings.ToLower(" + c.expr(e.Args[0]) + ")"
