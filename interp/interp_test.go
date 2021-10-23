@@ -545,20 +545,20 @@ BEGIN { early() }
 `, "", "x\n", "", ""},
 	{`BEGIN { return }`, "", "", "parse error at 1:9: return must be inside a function", "return"},
 	{`function f() { printf "x" }; BEGIN { f() } `, "", "x", "", ""},
-	{`function f(x) { 0 in _; f(_) }  BEGIN { f() }  # !awk !gawk`, "", "",
-		`parse error at 1:25: can't pass array "_" as scalar param`, ""},
+	{`BEGIN { arr[0]; f(arr) } function f(a) { printf "x" }`, "", "x", "", ""},
+	{`function f(x) { 0 in _; f(_) }  BEGIN { f() }  # !awk !gawk`, "", "", `calling "f" exceeded maximum call depth of 1000`, ""},
 	{`BEGIN { for (i=0; i<1001; i++) f(); print x }  function f() { x++ }`, "", "1001\n", "", ""},
 	{`
 function bar(y) { return y[1] }
 function foo() { return bar(x) }
 BEGIN { x[1] = 42; print foo() }
 `, "", "42\n", "", ""},
-	// TODO: failing because f1 doesn't use x, so resolver assumes its type is scalar
-	// 		{`
-	// function f1(x) { }
-	// function f2(x, y) { return x[y] }
-	// BEGIN { a[1]=2; f1(a); print f2(a, 1) }
-	// `, "", "2\n", "", ""},
+	{`
+function f1(x) { }
+function f2(x, y) { return x[y] }
+BEGIN { a[1]=2; f1(a); print f2(a, 1) }
+`, "", "2\n", "", ""},
+	{`BEGIN { arr[0]; f(arr) } function f(a) { print "x" }`, "", "x\n", "", ""},
 
 	// Type checking / resolver tests
 	{`BEGIN { a[x]; a=42 }`, "", "", `parse error at 1:15: can't use array "a" as scalar`, "array"},
@@ -946,12 +946,12 @@ BEGIN { x=4; y=5; print foo(x), bar(y) }
 				"foo": func(n int) int { return n * n },
 			}},
 		{`BEGIN { x["x"]=1; print f(x) }  function f(a) { return foo(a) }`, "", "",
-			`parse error at 1:25: can't pass array "x" as scalar param`,
+			`parse error at 1:56: can't pass array "a" to native function`,
 			map[string]interface{}{
 				"foo": func(n int) int { return n * n },
 			}},
 		{`function f(a) { return foo(a) }  BEGIN { x["x"]=1; print f(x) }`, "", "",
-			`parse error at 1:58: can't pass array "x" as scalar param`,
+			`parse error at 1:24: can't pass array "a" to native function`,
 			map[string]interface{}{
 				"foo": func(n int) int { return n * n },
 			}},
