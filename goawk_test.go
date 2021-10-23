@@ -326,6 +326,7 @@ func TestCommandLine(t *testing.T) {
 		{[]string{`$0`}, "one\n\nthree", "one\nthree\n", ""},
 		{[]string{`$0`, "-"}, "one\n\nthree", "one\nthree\n", ""},
 		{[]string{`$0`, "-", "-"}, "one\n\nthree", "one\nthree\n", ""},
+		{[]string{"-f", "testdata/t.0", "-"}, "one\ntwo\n", "one\ntwo\n", ""},
 
 		// Read input from file(s)
 		{[]string{`$0`, "testdata/g.1"}, "", "ONE\n", ""},

@@ -85,7 +85,7 @@ func main() {
 			i++
 			break
 		}
-		if !strings.HasPrefix(arg, "-") {
+		if arg == "-" || !strings.HasPrefix(arg, "-") {
 			break
 		}
 
