@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"reflect"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -219,6 +220,14 @@ BEGIN {
 	{`BEGIN { printf "\x1.\x01.\x0A\x10\xff\xFF\x41" }`, "", "\x01.\x01.\n\x10\xff\xffA", "", ""},
 	{`BEGIN { printf "\0\78\7\77\777\0 \141 " }  # !awk`, "", "\x00\a8\a?\xff\x00 a ", "", ""},
 	{`BEGIN { printf "\1\78\7\77\777\1 \141 " }`, "", "\x01\a8\a?\xff\x01 a ", "", ""},
+
+	// Unusual number/exponent handling
+	{`BEGIN { e="x"; E="X"; print 1e, 1E }`, "", "1x 1X\n", "", ""},
+	{`BEGIN { e="x"; E="X"; print 1e1e, 1E1E }`, "", "10x 10X\n", "", ""},
+	{`BEGIN { a=2; print 1e+a, 1E+a, 1e+1, 1E+1 }`, "", "12 12 10 10\n", "", ""},
+	{`BEGIN { a=2; print 1e-a, 1E-a, 1e-1, 1E-1 }`, "", "1-2 1-2 0.1 0.1\n", "", ""},
+	{`BEGIN { print 1e+ }`, "", "", "parse error at 1:19: expected expression instead of }", "syntax error"},
+	{`BEGIN { print 1e- }`, "", "", "parse error at 1:19: expected expression instead of }", "syntax error"},
 
 	// Conditional ?: expression
 	{`{ print /x/?"t":"f" }`, "x\ny\nxx\nz\n", "t\nf\nt\nf\n", "", ""},
@@ -536,20 +545,20 @@ BEGIN { early() }
 `, "", "x\n", "", ""},
 	{`BEGIN { return }`, "", "", "parse error at 1:9: return must be inside a function", "return"},
 	{`function f() { printf "x" }; BEGIN { f() } `, "", "x", "", ""},
-	{`function f(x) { 0 in _; f(_) }  BEGIN { f() }  # !awk !gawk`, "", "",
-		`parse error at 1:25: can't pass array "_" as scalar param`, ""},
+	{`BEGIN { arr[0]; f(arr) } function f(a) { printf "x" }`, "", "x", "", ""},
+	{`function f(x) { 0 in _; f(_) }  BEGIN { f() }  # !awk !gawk`, "", "", `calling "f" exceeded maximum call depth of 1000`, ""},
 	{`BEGIN { for (i=0; i<1001; i++) f(); print x }  function f() { x++ }`, "", "1001\n", "", ""},
 	{`
 function bar(y) { return y[1] }
 function foo() { return bar(x) }
 BEGIN { x[1] = 42; print foo() }
 `, "", "42\n", "", ""},
-	// TODO: failing because f1 doesn't use x, so resolver assumes its type is scalar
-	// 		{`
-	// function f1(x) { }
-	// function f2(x, y) { return x[y] }
-	// BEGIN { a[1]=2; f1(a); print f2(a, 1) }
-	// `, "", "2\n", "", ""},
+	{`
+function f1(x) { }
+function f2(x, y) { return x[y] }
+BEGIN { a[1]=2; f1(a); print f2(a, 1) }
+`, "", "2\n", "", ""},
+	{`BEGIN { arr[0]; f(arr) } function f(a) { print "x" }`, "", "x\n", "", ""},
 
 	// Type checking / resolver tests
 	{`BEGIN { a[x]; a=42 }`, "", "", `parse error at 1:15: can't use array "a" as scalar`, "array"},
@@ -616,7 +625,7 @@ BEGIN { foo(5); bar(10) }
 	{`BEGIN { printf "x"; { printf "y"; printf "z" } }`, "", "xyz", "", ""},
 
 	// Ensure syntax errors result in errors
-	// TODO: {`{ $1 = substr($1, 1, 3) print $1 }`, "", "", "ERROR", "syntax error"},
+	{`{ $1 = substr($1, 1, 3) print $1 }`, "", "", "parse error at 1:25: expected ; or newline between statements", "syntax error"},
 	{`BEGIN { f() }`, "", "", `parse error at 1:9: undefined function "f"`, "defined"},
 	{`function f() {} function f() {} BEGIN { }`, "", "", `parse error at 1:26: function "f" already defined`, "define"},
 	{`BEGIN { print (1,2),(3,4) }`, "", "", "parse error at 1:15: unexpected comma-separated expression", "syntax"},
@@ -937,12 +946,12 @@ BEGIN { x=4; y=5; print foo(x), bar(y) }
 				"foo": func(n int) int { return n * n },
 			}},
 		{`BEGIN { x["x"]=1; print f(x) }  function f(a) { return foo(a) }`, "", "",
-			`parse error at 1:25: can't pass array "x" as scalar param`,
+			`parse error at 1:56: can't pass array "a" to native function`,
 			map[string]interface{}{
 				"foo": func(n int) int { return n * n },
 			}},
 		{`function f(a) { return foo(a) }  BEGIN { x["x"]=1; print f(x) }`, "", "",
-			`parse error at 1:58: can't pass array "x" as scalar param`,
+			`parse error at 1:24: can't pass array "a" to native function`,
 			map[string]interface{}{
 				"foo": func(n int) int { return n * n },
 			}},
@@ -1026,6 +1035,30 @@ func TestConfigVarsCorrect(t *testing.T) {
 	expected := "length of config.Vars must be a multiple of 2, not 1"
 	if err == nil || err.Error() != expected {
 		t.Fatalf("expected error %q, got: %v", expected, err)
+	}
+}
+
+func TestShellCommand(t *testing.T) {
+	testGoAWK(t, `BEGIN { system("echo hello world") }`, "", "hello world\n", "", nil, nil)
+
+	if runtime.GOOS == "windows" {
+		testGoAWK(t, `BEGIN { system("echo hello world") }`, "", "hello world\n", "", nil,
+			func(config *interp.Config) {
+				config.ShellCommand = []string{"cmd.exe", "/c"}
+			})
+	} else {
+		testGoAWK(t, `BEGIN { system("world") }`, "", "hello world\n", "", nil,
+			func(config *interp.Config) {
+				config.ShellCommand = []string{"/bin/echo", "hello"}
+			})
+		testGoAWK(t, `BEGIN { "world" | getline; print }`, "", "hello world\n", "", nil,
+			func(config *interp.Config) {
+				config.ShellCommand = []string{"/bin/echo", "hello"}
+			})
+		testGoAWK(t, `BEGIN { print "hello world" | "-" }`, "", "hello world\n", "", nil,
+			func(config *interp.Config) {
+				config.ShellCommand = []string{"/bin/cat"}
+			})
 	}
 }
 

@@ -43,8 +43,8 @@ import (
 )
 
 const (
-	version    = "v1.8.1"
-	copyright  = "GoAWK " + version + " - Copyright (c) 2019 Ben Hoyt"
+	version    = "v1.9.1"
+	copyright  = "GoAWK " + version + " - Copyright (c) 2021 Ben Hoyt"
 	shortUsage = "usage: goawk [-F fs] [-v var=value] [-f progfile | 'prog'] [file ...]"
 	longUsage  = `Standard AWK arguments:
   -F separator
@@ -85,7 +85,7 @@ func main() {
 			i++
 			break
 		}
-		if !strings.HasPrefix(arg, "-") {
+		if arg == "-" || !strings.HasPrefix(arg, "-") {
 			break
 		}
 

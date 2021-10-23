@@ -107,10 +107,11 @@ func (p *Program) String() string {
 // Parser state
 type parser struct {
 	// Lexer instance and current token values
-	lexer *Lexer
-	pos   Position // position of last token (tok)
-	tok   Token    // last lexed token
-	val   string   // string value of last token (or "")
+	lexer   *Lexer
+	pos     Position // position of last token (tok)
+	tok     Token    // last lexed token
+	prevTok Token    // previously lexed token
+	val     string   // string value of last token (or "")
 
 	// Parsing state
 	inAction  bool   // true if parsing an action (false in BEGIN or END)
@@ -392,6 +393,11 @@ func (p *parser) stmt() Stmt {
 		s = &BlockStmt{body}
 	default:
 		s = p.simpleStmt()
+	}
+
+	// Ensure statements are separated by ; or newline
+	if !p.matches(NEWLINE, SEMICOLON, RBRACE) && p.prevTok != NEWLINE && p.prevTok != SEMICOLON && p.prevTok != RBRACE {
+		panic(p.error("expected ; or newline between statements"))
 	}
 	for p.matches(NEWLINE, SEMICOLON) {
 		p.next()
@@ -938,6 +944,7 @@ func (p *parser) optionalNewlines() {
 
 // Parse next token into p.tok (and set p.pos and p.val).
 func (p *parser) next() {
+	p.prevTok = p.tok
 	p.pos, p.tok, p.val = p.lexer.Scan()
 	if p.tok == ILLEGAL {
 		panic(p.error("%s", p.val))
