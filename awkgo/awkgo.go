@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -345,13 +346,15 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 		if s.Dest != nil {
 			panic(errorf("printf redirection not yet supported"))
 		}
-		c.output("fmt.Fprintf(_output, ")
-		c.output(c.strExpr(s.Args[0]))
-		for _, a := range s.Args[1:] {
-			// TODO: hmm, need special handling for the types to avoid "%!d(string=1234)"
+		formatExpr, ok := s.Args[0].(*StrExpr)
+		if !ok {
+			panic(errorf("printf currently only supports literal format strings"))
+		}
+		format, args := c.printfArgs(formatExpr.Value, s.Args[1:])
+		c.output(fmt.Sprintf("fmt.Fprintf(_output, %q", format))
+		for _, arg := range args {
 			c.output(", ")
-			str := c.expr(a)
-			c.output(str)
+			c.output(arg)
 		}
 		c.output(")")
 
@@ -627,7 +630,19 @@ func (c *compiler) expr(expr Expr) string {
 		case F_SIN:
 			return "math.Sin(" + c.numExpr(e.Args[0]) + ")"
 		//case F_SPLIT
-		//case F_SPRINTF
+		case F_SPRINTF:
+			formatExpr, ok := e.Args[0].(*StrExpr)
+			if !ok {
+				panic(errorf("sprintf currently only supports literal format strings"))
+			}
+			format, args := c.printfArgs(formatExpr.Value, e.Args[1:])
+			str := fmt.Sprintf("fmt.Sprintf(%q", format)
+			for _, arg := range args {
+				str += ", " + arg
+			}
+			str += ")"
+			return str
+
 		case F_SQRT:
 			return "math.Sqrt(" + c.numExpr(e.Args[0]) + ")"
 		case F_SRAND:
@@ -880,4 +895,50 @@ func (c *compiler) goType(typ valueType) string {
 	default:
 		panic(errorf("can't convert type %s to Go type", typ))
 	}
+}
+
+func (c *compiler) printfArgs(format string, args []Expr) (string, []string) {
+	argIndex := 0
+	nextArg := func() Expr {
+		if argIndex >= len(args) {
+			panic(errorf("not enough arguments (%d) for format string %q", len(args), format))
+		}
+		arg := args[argIndex]
+		argIndex++
+		return arg
+	}
+
+	var argStrs []string
+	for i := 0; i < len(format); i++ {
+		if format[i] == '%' {
+			i++
+			if i >= len(format) {
+				panic(errorf("expected type specifier after %%"))
+			}
+			if format[i] == '%' {
+				continue
+			}
+			for i < len(format) && bytes.IndexByte([]byte(" .-+*#0123456789"), format[i]) >= 0 {
+				if format[i] == '*' {
+					argStrs = append(argStrs, c.intExpr(nextArg()))
+				}
+				i++
+			}
+			if i >= len(format) {
+				panic(errorf("expected type specifier after %%"))
+			}
+			switch format[i] {
+			case 's':
+				argStrs = append(argStrs, c.strExpr(nextArg()))
+			case 'd', 'i', 'o', 'x', 'X', 'u', 'c':
+				argStrs = append(argStrs, c.intExpr(nextArg()))
+			case 'f', 'e', 'E', 'g', 'G':
+				// TODO: could avoid float64() in many cases
+				argStrs = append(argStrs, "float64("+c.numExpr(nextArg())+")")
+			default:
+				panic(errorf("invalid format type %q", format[i]))
+			}
+		}
+	}
+	return format, argStrs
 }
