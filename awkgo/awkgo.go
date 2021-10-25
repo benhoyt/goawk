@@ -95,6 +95,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 var (
@@ -350,8 +351,8 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 		if !ok {
 			panic(errorf("printf currently only supports literal format strings"))
 		}
-		format, args := c.printfArgs(formatExpr.Value, s.Args[1:])
-		c.output(fmt.Sprintf("fmt.Fprintf(_output, %q", format))
+		args := c.printfArgs(formatExpr.Value, s.Args[1:])
+		c.output(fmt.Sprintf("fmt.Fprintf(_output, %q", formatExpr.Value))
 		for _, arg := range args {
 			c.output(", ")
 			c.output(arg)
@@ -630,8 +631,8 @@ func (c *compiler) expr(expr Expr) string {
 			if !ok {
 				panic(errorf("sprintf currently only supports literal format strings"))
 			}
-			format, args := c.printfArgs(formatExpr.Value, e.Args[1:])
-			str := fmt.Sprintf("fmt.Sprintf(%q", format)
+			args := c.printfArgs(formatExpr.Value, e.Args[1:])
+			str := fmt.Sprintf("fmt.Sprintf(%q", formatExpr.Value)
 			for _, arg := range args {
 				str += ", " + arg
 			}
@@ -892,7 +893,7 @@ func (c *compiler) goType(typ valueType) string {
 	}
 }
 
-func (c *compiler) printfArgs(format string, args []Expr) (string, []string) {
+func (c *compiler) printfArgs(format string, args []Expr) []string {
 	argIndex := 0
 	nextArg := func() Expr {
 		if argIndex >= len(args) {
@@ -922,18 +923,27 @@ func (c *compiler) printfArgs(format string, args []Expr) (string, []string) {
 			if i >= len(format) {
 				panic(errorf("expected type specifier after %%"))
 			}
+			var argStr string
 			switch format[i] {
 			case 's':
-				argStrs = append(argStrs, c.strExpr(nextArg()))
-			case 'd', 'i', 'o', 'x', 'X', 'u', 'c':
-				argStrs = append(argStrs, c.intExpr(nextArg()))
+				argStr = c.strExpr(nextArg())
+			case 'd', 'i', 'o', 'x', 'X', 'u':
+				argStr = c.intExpr(nextArg())
 			case 'f', 'e', 'E', 'g', 'G':
 				// TODO: could avoid float64() in many cases
-				argStrs = append(argStrs, "float64("+c.numExpr(nextArg())+")")
+				argStr = "float64(" + c.numExpr(nextArg()) + ")"
+			case 'c':
+				arg := nextArg()
+				if c.typer.exprs[arg] == typeStr {
+					argStr = fmt.Sprintf("_firstRune(%s)", arg)
+				} else {
+					argStr = c.intExpr(arg)
+				}
 			default:
 				panic(errorf("invalid format type %q", format[i]))
 			}
+			argStrs = append(argStrs, argStr)
 		}
 	}
-	return format, argStrs
+	return argStrs
 }

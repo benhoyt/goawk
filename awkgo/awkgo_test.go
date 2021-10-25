@@ -60,9 +60,9 @@ NR==3, NR==5 { print NR }
 	// 256, where awk is weird and we're like mawk
 	{`BEGIN { printf "%c", 0 }`, "", "\x00", ""},
 	{`BEGIN { printf "%c", 127 }`, "", "\x7f", ""},
-	{`BEGIN { printf "%c", 128 }  # !gawk`, "", "\x80", ""},
-	{`BEGIN { printf "%c", 255 }  # !gawk`, "", "\xff", ""},
-	{`BEGIN { printf "%c", 256 }  # !awk !gawk`, "", "\x00", ""},
+	{`BEGIN { printf "%c", 128 }  # !gawk`, "", "\u0080", ""},
+	{`BEGIN { printf "%c", 255 }  # !gawk`, "", "\u00ff", ""},
+	{`BEGIN { printf "%c", 256 }  # !awk !gawk`, "", "\u0100", ""},
 	{`BEGIN { printf "%c", "xyz" }`, "", "x", ""},
 	{`BEGIN { printf "%c", "" }  # !awk`, "", "\x00", ""},
 	{`BEGIN { printf }  # !awk - doesn't error on this`, "", "", "parse error at 1:16: expected printf args, got none"},

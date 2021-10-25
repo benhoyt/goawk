@@ -182,5 +182,13 @@ func _substr(s string, pos int) string {
 	length := len(s) - pos + 1
 	return s[pos-1 : pos-1+length]
 }
+
+func _firstRune(s string) int {
+	r, n := utf8.DecodeRuneInString(s)
+	if n == 0 {
+		return 0
+	}
+	return int(r)
+}
 `)
 }
