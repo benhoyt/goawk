@@ -366,8 +366,8 @@ func (p *parser) stmt() Stmt {
 		p.next()
 		s = &ContinueStmt{}
 	case NEXT:
-		if !p.inAction {
-			panic(p.error("next can't be in BEGIN or END"))
+		if !p.inAction && p.funcName == "" {
+			panic(p.error("next can't be inside BEGIN or END"))
 		}
 		p.next()
 		s = &NextStmt{}
