@@ -34,7 +34,7 @@ func _boolToNum(b bool) float64 {
 	return 0
 }
 
-func _numToStr(n float64) string {
+func _numToStrFormat(format string, n float64) string {
 	switch {
 	case math.IsNaN(n):
 		return "nan"
@@ -47,8 +47,12 @@ func _numToStr(n float64) string {
 	case n == float64(int(n)):
 		return strconv.Itoa(int(n))
 	default:
-		return fmt.Sprintf("%.6g", n)
+		return fmt.Sprintf(format, n)
 	}
+}
+
+func _numToStr(n float64) string {
+	return _numToStrFormat(CONVFMT, n)
 }
 
 var asciiSpace = [256]uint8{'\t': 1, '\n': 1, '\v': 1, '\f': 1, '\r': 1, ' ': 1}

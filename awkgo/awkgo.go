@@ -145,6 +145,7 @@ func main() {
 	OFS = " "
 	ORS = "\n"
 	OFMT = "%.6g"
+	CONVFMT = "%.6g"
 	SUBSEP = "\x1c"
 	_seed = 1.0
 	_rand = rand.New(rand.NewSource(int64(math.Float64bits(_seed))))
@@ -356,7 +357,7 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 				}
 				str := c.expr(arg)
 				if c.typer.exprs[arg] == typeNum {
-					str = fmt.Sprintf("fmt.Sprintf(OFMT, %s)", str)
+					str = fmt.Sprintf("_numToStrFormat(OFMT, %s)", str)
 				}
 				c.output(str)
 			}
@@ -889,7 +890,8 @@ func (c *compiler) special(name string, index int) string {
 		return "RSTART"
 	//case V_FNR:
 	//case V_ARGC:
-	//case V_CONVFMT:
+	case V_CONVFMT:
+		return "CONVFMT"
 	//case V_FILENAME:
 	//case V_FS:
 	case V_OFMT:
