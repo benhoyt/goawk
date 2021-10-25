@@ -142,28 +142,6 @@ func _assignStr(p *string, v string) string {
 	return v
 }
 
-func _preIncr(p *float64) float64 {
-	*p++
-	return *p
-}
-
-func _preDecr(p *float64) float64 {
-	*p--
-	return *p
-}
-
-func _postIncr(p *float64) float64 {
-	x := *p
-	*p++
-	return x
-}
-
-func _postDecr(p *float64) float64 {
-	x := *p
-	*p--
-	return x
-}
-
 func _srand(seed float64) float64 {
 	prev := _seed
 	_seed = seed

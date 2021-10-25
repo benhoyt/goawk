@@ -543,22 +543,17 @@ func (c *compiler) expr(expr Expr) string {
 		return c.binaryExpr(e.Op, e.Left, e.Right)
 
 	case *IncrExpr:
-		// TODO: hmm, this isn't going to handle m[k]++
-		switch {
-		case e.Op == INCR && e.Pre:
-			// ++x
-			return "_preIncr(&" + c.expr(e.Expr) + ")"
-		case e.Op == INCR && !e.Pre:
-			// x++
-			return "_postIncr(&" + c.expr(e.Expr) + ")"
-		case e.Op == DECR && e.Pre:
-			// --x
-			return "_preDecr(&" + c.expr(e.Expr) + ")"
-		case e.Op == DECR && !e.Pre:
-			// x--
-			return "_postDecr(&" + c.expr(e.Expr) + ")"
-		default:
-			panic(errorf("unexpected increment type %s (pre=%v)", e.Op, e.Pre))
+		exprStr := c.expr(e.Expr) // will be an lvalue (VarExpr, IndexExpr, FieldExpr)
+		if e.Pre {
+			// Change ++x expression to:
+			// func() float64 { x++; return x }()
+			return fmt.Sprintf("func() float64 { %s%s; return %s }()",
+				exprStr, e.Op, exprStr)
+		} else {
+			// Change x++ expression to:
+			// func() float64 { _t := x; x++; return _t }()
+			return fmt.Sprintf("func() float64 { _t := %s; %s%s; return _t }()",
+				exprStr, exprStr, e.Op)
 		}
 
 	case *AssignExpr:
