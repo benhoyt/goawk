@@ -10,8 +10,10 @@ import (
 )
 
 type typer struct {
-	globals map[string]valueType
-	exprs   map[Expr]valueType
+	globals  map[string]valueType
+	exprs    map[Expr]valueType
+	funcName string // function name if inside a func, else ""
+	nextUsed bool
 }
 
 func newTyper() *typer {
@@ -115,7 +117,14 @@ func (t *typer) stmt(stmt Stmt) {
 		t.stmts(s.Body)
 		t.expr(s.Cond)
 
-	case *BreakStmt, *ContinueStmt, *NextStmt:
+	case *BreakStmt, *ContinueStmt:
+		return
+
+	case *NextStmt:
+		if t.funcName != "" {
+			panic(errorf(`"next" inside a function not yet supported`))
+		}
+		t.nextUsed = true
 		return
 
 	case *ExitStmt:

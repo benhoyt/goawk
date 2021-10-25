@@ -113,8 +113,9 @@ BEGIN {
 
 	// next statement
 	{`{ if (NR==2) next; print }`, "a\nb\nc", "a\nc\n", ""},
-	{`BEGIN { next }`, "", "", "parse error at 1:9: next can't be in BEGIN or END"},
-	{`END { next }`, "", "", "parse error at 1:7: next can't be in BEGIN or END"},
+	{`{ if (NR==2) f(); print }  function f() { next }`, "a\nb\nc", "a\nc\n", "functions not yet supported"},
+	{`BEGIN { next }`, "", "", "parse error at 1:9: next can't be inside BEGIN or END"},
+	{`END { next }`, "", "", "parse error at 1:7: next can't be inside BEGIN or END"},
 
 	// Arrays, "in", and delete
 	{`BEGIN { a["x"] = 3; print "x" in a, "y" in a }`, "", "1 0\n", ""},

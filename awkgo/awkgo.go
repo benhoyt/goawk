@@ -155,6 +155,10 @@ func main() {
 		c.stmts(stmts)
 	}
 
+	if c.typer.nextUsed {
+		c.output("_nextLine:\n")
+	}
+
 	if len(prog.Actions) > 0 {
 		c.output(`
 	for _scanner.Scan() {
@@ -444,7 +448,8 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 		c.output("continue")
 
 	case *NextStmt:
-		panic(errorf(`"next" statement not supported`))
+		// typer ensures "next" is not used inside a function
+		c.output("goto _nextLine")
 
 	case *ExitStmt:
 		if s.Status != nil {
