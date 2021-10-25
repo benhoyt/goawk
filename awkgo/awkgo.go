@@ -1,3 +1,18 @@
+// AWKGo: AWK to Go compiler
+
+/*
+TODO:
+- figure out how to handle numStr types
+- make 'BEGIN { a["x"] }' fail in AWKGo, not during Go compilation
+- support functions
+- make print statement output more compact
+
+NOT SUPPORTED:
+- dynamic typing
+- null values (unset number variable should output "", we output "0")
+- "next" in functions
+*/
+
 package main
 
 import (
@@ -129,6 +144,7 @@ func main() {
 
 	OFS = " "
 	ORS = "\n"
+	OFMT = "%.6g"
 	SUBSEP = "\x1c"
 	_seed = 1.0
 	_rand = rand.New(rand.NewSource(int64(math.Float64bits(_seed))))
@@ -338,7 +354,10 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 				if i > 0 {
 					c.output(", OFS, ")
 				}
-				str := c.expr(arg) // TODO: need to handle type?
+				str := c.expr(arg)
+				if c.typer.exprs[arg] == typeNum {
+					str = fmt.Sprintf("fmt.Sprintf(OFMT, %s)", str)
+				}
 				c.output(str)
 			}
 		} else {
@@ -523,6 +542,9 @@ func (t valueType) String() string {
 func (c *compiler) expr(expr Expr) string {
 	switch e := expr.(type) {
 	case *NumExpr:
+		if e.Value == float64(int(e.Value)) {
+			return fmt.Sprintf("%d.0", int(e.Value))
+		}
 		return fmt.Sprintf("%g", e.Value)
 
 	case *StrExpr:
@@ -870,7 +892,8 @@ func (c *compiler) special(name string, index int) string {
 	//case V_CONVFMT:
 	//case V_FILENAME:
 	//case V_FS:
-	//case V_OFMT:
+	case V_OFMT:
+		return "OFMT"
 	case V_OFS:
 		return "OFS"
 	case V_ORS:
