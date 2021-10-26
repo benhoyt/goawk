@@ -293,13 +293,35 @@ func (t *typer) expr(expr Expr) (typ valueType) {
 		return typeNum
 
 	case *CallExpr:
+		switch e.Func {
+		case F_SPLIT:
+			// split's second arg is an array arg
+			t.expr(e.Args[0])
+			arrayExpr := e.Args[1].(*ArrayExpr)
+			if t.globals[arrayExpr.Name] != typeUnknown && t.globals[arrayExpr.Name] != typeArrayStr {
+				panic(errorf("variable %q already set to %s, can't use as %s in split()",
+					arrayExpr.Name, t.globals[arrayExpr.Name], typeArrayStr))
+			}
+			t.globals[arrayExpr.Name] = typeArrayStr
+			if len(e.Args) == 3 {
+				t.expr(e.Args[2])
+			}
+			return typeNum
+		case F_SUB, F_GSUB:
+			// sub and gsub's third arg is an lvalue
+			t.expr(e.Args[0])
+			t.expr(e.Args[1])
+			if len(e.Args) == 3 {
+				t.expr(e.Args[2]) // TODO: this is actually an lvalue
+			}
+			return typeNum
+		}
 		for _, arg := range e.Args {
 			t.expr(arg)
 		}
 		switch e.Func {
-		case F_ATAN2, F_CLOSE, F_COS, F_EXP, F_FFLUSH, F_GSUB, F_INDEX, F_INT,
-			F_LENGTH, F_LOG, F_MATCH, F_RAND, F_SIN, F_SPLIT, F_SQRT, F_SRAND,
-			F_SUB, F_SYSTEM:
+		case F_ATAN2, F_CLOSE, F_COS, F_EXP, F_FFLUSH, F_INDEX, F_INT, F_LENGTH,
+			F_LOG, F_MATCH, F_RAND, F_SIN, F_SQRT, F_SRAND, F_SYSTEM:
 			return typeNum
 		case F_SPRINTF, F_SUBSTR, F_TOLOWER, F_TOUPPER:
 			return typeStr

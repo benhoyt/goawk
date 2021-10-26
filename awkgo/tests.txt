@@ -296,13 +296,9 @@
 === RUN   TestAWKGo/BEGIN_{_print_substr("food",_-1,_8)_}
 === RUN   TestAWKGo/BEGIN_{_print_substr("food",_5,_8)_}
 === RUN   TestAWKGo/BEGIN_{_n_=_split("ab_c_d_",_a);_for_(i=1;_i<=n;_i++)_print_a[i]_}
-    awkgo_test.go: compile error: split() not yet supported
 === RUN   TestAWKGo/BEGIN_{_n_=_split("ab,c,d,",_a,_",");_for_(i=1;_i<=n;_i++)_print_a[i]_
-    awkgo_test.go: compile error: split() not yet supported
 === RUN   TestAWKGo/BEGIN_{_n_=_split("ab,c.d,",_a,_/[,.]/);_for_(i=1;_i<=n;_i++)_print_a[
-    awkgo_test.go: compile error: split() not yet supported
 === RUN   TestAWKGo/BEGIN_{_n_=_split("1_2",_a);_print_(n,_a[1],_a[2],_a[1]==1,_a[2]==2)_}
-    awkgo_test.go: compile error: split() not yet supported
 === RUN   TestAWKGo/BEGIN_{_x_=_"1.2.3";_print_sub(/\./,_",",_x);_print_x_}
     awkgo_test.go: compile error: sub() not yet supported
 === RUN   TestAWKGo/{_print_sub(/\./,_",");_print_$0_}
@@ -650,10 +646,10 @@
     --- PASS: TestAWKGo/BEGIN_{_print_substr("food",_0,_8)_}
     --- PASS: TestAWKGo/BEGIN_{_print_substr("food",_-1,_8)_}
     --- PASS: TestAWKGo/BEGIN_{_print_substr("food",_5,_8)_}
-    --- FAIL: TestAWKGo/BEGIN_{_n_=_split("ab_c_d_",_a);_for_(i=1;_i<=n;_i++)_print_a[i]_}
-    --- FAIL: TestAWKGo/BEGIN_{_n_=_split("ab,c,d,",_a,_",");_for_(i=1;_i<=n;_i++)_print_a[i]_
-    --- FAIL: TestAWKGo/BEGIN_{_n_=_split("ab,c.d,",_a,_/[,.]/);_for_(i=1;_i<=n;_i++)_print_a[
-    --- FAIL: TestAWKGo/BEGIN_{_n_=_split("1_2",_a);_print_(n,_a[1],_a[2],_a[1]==1,_a[2]==2)_}
+    --- PASS: TestAWKGo/BEGIN_{_n_=_split("ab_c_d_",_a);_for_(i=1;_i<=n;_i++)_print_a[i]_}
+    --- PASS: TestAWKGo/BEGIN_{_n_=_split("ab,c,d,",_a,_",");_for_(i=1;_i<=n;_i++)_print_a[i]_
+    --- PASS: TestAWKGo/BEGIN_{_n_=_split("ab,c.d,",_a,_/[,.]/);_for_(i=1;_i<=n;_i++)_print_a[
+    --- PASS: TestAWKGo/BEGIN_{_n_=_split("1_2",_a);_print_(n,_a[1],_a[2],_a[1]==1,_a[2]==2)_}
     --- FAIL: TestAWKGo/BEGIN_{_x_=_"1.2.3";_print_sub(/\./,_",",_x);_print_x_}
     --- FAIL: TestAWKGo/{_print_sub(/\./,_",");_print_$0_}
     --- FAIL: TestAWKGo/BEGIN_{_x_=_"1.2.3";_print_gsub(/\./,_",",_x);_print_x_}

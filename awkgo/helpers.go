@@ -17,7 +17,7 @@ func _getField(i int) string {
 func _setField(i int, s string) {
 	if i == 0 {
 		_line = s
-		_fields = strings.Fields(_line)
+		_fields = strings.Fields(_line) // TODO: use FS
 		return
 	}
 	for j := len(_fields); j < i; j++ {
@@ -136,6 +136,7 @@ func _containsStr(array map[string]string, index string) bool {
 	return ok
 }
 
+// TODO: do these with inline func literal
 func _assignNum(p *float64, v float64) float64 {
 	*p = v
 	return v
@@ -193,6 +194,27 @@ func _firstRune(s string) int {
 		return 0
 	}
 	return int(r)
+}
+
+func _split(s string, a map[string]string, fs string) float64 {
+	var parts []string
+	if fs == " " {
+		parts = strings.Fields(s)
+	} else if s == "" {
+		// NF should be 0 on empty line
+	} else if utf8.RuneCountInString(fs) <= 1 {
+		parts = strings.Split(s, fs)
+	} else {
+		re := regexp.MustCompile(fs)
+		parts = re.Split(s, -1)
+	}
+	for k := range a {
+		delete(a, k)
+	}
+	for i, part := range parts {
+		a[strconv.Itoa(i+1)] = part // TODO: should be a numeric string
+	}
+	return float64(len(a))
 }
 `)
 }

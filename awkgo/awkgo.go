@@ -181,7 +181,7 @@ func main() {
 	for _scanner.Scan() {
 		_lineNum++
 		_line = _scanner.Text()
-		_fields = strings.Fields(_line)
+		_fields = strings.Fields(_line) // TODO: use FS or call _split or similar
 `)
 		c.actions(prog.Actions)
 		c.output(`	}
@@ -627,17 +627,24 @@ func (c *compiler) expr(expr Expr) string {
 		switch e.Func {
 		case F_ATAN2:
 			return "math.Atan2(" + c.numExpr(e.Args[0]) + ", " + c.numExpr(e.Args[1]) + ")"
+
 		//case F_CLOSE:
+
 		case F_COS:
 			return "math.Cos(" + c.numExpr(e.Args[0]) + ")"
+
 		case F_EXP:
 			return "math.Exp(" + c.numExpr(e.Args[0]) + ")"
+
 		//case F_FFLUSH
 		//case F_GSUB
+
 		case F_INDEX:
 			return "float64(strings.Index(" + c.strExpr(e.Args[0]) + ", " + c.strExpr(e.Args[1]) + ") + 1)"
+
 		case F_INT:
 			return "float64(" + c.intExpr(e.Args[0]) + ")"
+
 		case F_LENGTH:
 			switch len(e.Args) {
 			case 0:
@@ -645,15 +652,30 @@ func (c *compiler) expr(expr Expr) string {
 			default:
 				return "float64(len(" + c.strExpr(e.Args[0]) + "))"
 			}
+
 		case F_LOG:
 			return "math.Log(" + c.numExpr(e.Args[0]) + ")"
+
 		case F_MATCH:
 			return "_match(" + c.strExpr(e.Args[0]) + ", " + c.strExpr(e.Args[1]) + ")"
+
 		case F_RAND:
 			return "_rand.Float64()"
+
 		case F_SIN:
 			return "math.Sin(" + c.numExpr(e.Args[0]) + ")"
-		//case F_SPLIT
+
+		case F_SPLIT:
+			arrayArg := e.Args[1].(*ArrayExpr)
+			str := fmt.Sprintf("_split(%s, %s, ", c.strExpr(e.Args[0]), arrayArg.Name)
+			if len(e.Args) == 3 {
+				str += c.strExpr(e.Args[2])
+			} else {
+				str += `" "` // TODO: use FS
+			}
+			str += ")"
+			return str
+
 		case F_SPRINTF:
 			formatExpr, ok := e.Args[0].(*StrExpr)
 			if !ok {
@@ -669,22 +691,29 @@ func (c *compiler) expr(expr Expr) string {
 
 		case F_SQRT:
 			return "math.Sqrt(" + c.numExpr(e.Args[0]) + ")"
+
 		case F_SRAND:
 			if len(e.Args) == 0 {
 				return "_srandNow()"
 			}
 			return "_srand(" + c.numExpr(e.Args[0]) + ")"
+
 		//case F_SUB
+
 		case F_SUBSTR:
 			if len(e.Args) == 2 {
 				return "_substr(" + c.strExpr(e.Args[0]) + ", " + c.intExpr(e.Args[1]) + ")"
 			}
 			return "_substrLength(" + c.strExpr(e.Args[0]) + ", " + c.intExpr(e.Args[1]) + ", " + c.intExpr(e.Args[2]) + ")"
+
 		//case F_SYSTEM
+
 		case F_TOLOWER:
 			return "strings.ToLower(" + c.expr(e.Args[0]) + ")"
+
 		case F_TOUPPER:
 			return "strings.ToUpper(" + c.expr(e.Args[0]) + ")"
+
 		default:
 			panic(errorf("%s() not yet supported", e.Func))
 		}
