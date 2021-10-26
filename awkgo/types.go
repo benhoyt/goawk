@@ -10,16 +10,20 @@ import (
 )
 
 type typer struct {
-	globals  map[string]valueType
-	exprs    map[Expr]valueType
-	funcName string // function name if inside a func, else ""
-	nextUsed bool
+	globals    map[string]valueType
+	scalarRefs map[string]bool
+	arrayRefs  map[string]bool
+	exprs      map[Expr]valueType
+	funcName   string // function name if inside a func, else ""
+	nextUsed   bool
 }
 
 func newTyper() *typer {
 	t := &typer{
-		globals: make(map[string]valueType),
-		exprs:   make(map[Expr]valueType),
+		globals:    make(map[string]valueType),
+		scalarRefs: make(map[string]bool),
+		arrayRefs:  make(map[string]bool),
+		exprs:      make(map[Expr]valueType),
 	}
 	t.globals["OFS"] = typeStr
 	t.globals["ORS"] = typeStr
@@ -51,6 +55,17 @@ func (t *typer) program(prog *Program) {
 	}
 	for range prog.Functions {
 		panic(errorf("functions not yet supported"))
+	}
+
+	for name := range t.scalarRefs {
+		if t.globals[name] == typeUnknown {
+			panic(errorf("type of %q not known; need assignment?", name))
+		}
+	}
+	for name := range t.arrayRefs {
+		if t.globals[name] == typeUnknown {
+			panic(errorf("type of array %q not known; need array assignment?", name))
+		}
 	}
 }
 
@@ -223,12 +238,14 @@ func (t *typer) expr(expr Expr) (typ valueType) {
 		case ScopeSpecial:
 			return t.specialType(e.Name, e.Index)
 		case ScopeGlobal:
+			t.scalarRefs[e.Name] = true
 			return t.globals[e.Name]
 		default:
 			panic(errorf("unexpected scope %v", e.Scope))
 		}
 
 	case *IndexExpr:
+		t.arrayRefs[e.Array.Name] = true
 		t.expr(e.Array)
 		for _, index := range e.Index {
 			t.expr(index)
@@ -299,7 +316,7 @@ func (t *typer) expr(expr Expr) (typ valueType) {
 			t.expr(e.Args[0])
 			arrayExpr := e.Args[1].(*ArrayExpr)
 			if t.globals[arrayExpr.Name] != typeUnknown && t.globals[arrayExpr.Name] != typeArrayStr {
-				panic(errorf("variable %q already set to %s, can't use as %s in split()",
+				panic(errorf("%q already set to %s, can't use as %s in split()",
 					arrayExpr.Name, t.globals[arrayExpr.Name], typeArrayStr))
 			}
 			t.globals[arrayExpr.Name] = typeArrayStr
@@ -308,11 +325,16 @@ func (t *typer) expr(expr Expr) (typ valueType) {
 			}
 			return typeNum
 		case F_SUB, F_GSUB:
-			// sub and gsub's third arg is an lvalue
 			t.expr(e.Args[0])
 			t.expr(e.Args[1])
 			if len(e.Args) == 3 {
-				t.expr(e.Args[2]) // TODO: this is actually an lvalue
+				// sub and gsub's third arg is actually an lvalue
+				switch left := e.Args[2].(type) {
+				case *VarExpr:
+					t.setType(left.Name, typeStr)
+				case *IndexExpr:
+					t.setType(left.Array.Name, typeArrayStr)
+				}
 			}
 			return typeNum
 		}

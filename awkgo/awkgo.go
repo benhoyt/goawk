@@ -3,7 +3,6 @@
 /*
 TODO:
 - figure out how to handle numStr types
-- make 'BEGIN { a["x"] }' fail in AWKGo, not during Go compilation
 - support functions
 - make print statement output more compact
 - pre-compile regex literals
@@ -12,6 +11,7 @@ TODO:
 - print redirection?
 - non-literal [s]printf format strings?
 - getline?
+- if referenced type not known, can we just default to typeStr?
 
 NOT SUPPORTED:
 - dynamic typing

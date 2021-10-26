@@ -67,12 +67,7 @@
 === RUN   TestAWKGo/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_delete_a["x"];_for_(k_in_a)_print_k,_a
 === RUN   TestAWKGo/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_for_(k_in_a)_delete_a[k];_for_(k_in_a)
 === RUN   TestAWKGo/BEGIN_{_a["x"];_"y"_in_a;_for_(k_in_a)_print_k,_a[k]_}
-    awkgo_test.go: go run error: exit status 2:
-        # command-line-arguments
-        /tmp/TestAWKGo/001/test_65.go:51:5: undefined: a
-        /tmp/TestAWKGo/001/test_65.go:52:29: undefined: a
-        /tmp/TestAWKGo/001/test_65.go:53:15: undefined: a
-        /tmp/TestAWKGo/001/test_65.go:54:29: undefined: a
+    awkgo_test.go: compile error: type of array "a" not known; need array assignment?
 === RUN   TestAWKGo/BEGIN_{_a[]_}
 === RUN   TestAWKGo/BEGIN_{_delete_a[]_}
 === RUN   TestAWKGo/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_delete_a;_for_(k_in_a)_print_k,_a[k]_}
@@ -119,9 +114,7 @@
     awkgo_test.go: expected "0 0 0 1 1\n", got "1 1 1 0 0\n"
 === RUN   TestAWKGo/BEGIN_{_print_1+2*3/4^5%6_7,_(1+2)*3/4^5%6_"7"_}
 === RUN   TestAWKGo/BEGIN_{_print_1,_1.,_.1,_1e0,_-1,_1e_}
-    awkgo_test.go: go run error: exit status 2:
-        # command-line-arguments
-        /tmp/TestAWKGo/001/test_103.go:50:207: undefined: e
+    awkgo_test.go: compile error: type of "e" not known; need assignment?
 === RUN   TestAWKGo/BEGIN_{_print_'\"'_'\''_'xy'_"z"_"'"_'\"'_}
 === RUN   TestAWKGo/{_print_/foo/_}
 === RUN   TestAWKGo//[a-/
@@ -129,9 +122,7 @@
 === RUN   TestAWKGo/BEGIN_{_print_"1e3"+0,_"1.2e-1"+0,_"1e+1"+0,_"1e"+0,_"1e+"+0_}
 === RUN   TestAWKGo/BEGIN_{_print_-(11102200000000000000000000000000000000_1040000)_}__#_!
 === RUN   TestAWKGo/BEGIN_{_print_atan2(0,_8020020000000e20G-0)}
-    awkgo_test.go: go run error: exit status 2:
-        # command-line-arguments
-        /tmp/TestAWKGo/001/test_110.go:50:106: undefined: G
+    awkgo_test.go: compile error: type of "G" not known; need assignment?
 === RUN   TestAWKGo/BEGIN_{_print_1e1000,_-1e1000_}__#_!gawk
     awkgo_test.go: go run error: exit status 2:
         # command-line-arguments
@@ -147,9 +138,7 @@
 === RUN   TestAWKGo/{_print_$0?1:0_}#01
 === RUN   TestAWKGo/BEGIN_{_$0="1";_print_($0?1:0)_}
 === RUN   TestAWKGo/BEGIN_{_print_0?1:0,_1?1:0,_""?1:0,_"0"?1:0,_"1"?1:0,_x?1:0_}
-    awkgo_test.go: go run error: exit status 2:
-        # command-line-arguments
-        /tmp/TestAWKGo/001/test_121.go:50: undefined: x
+    awkgo_test.go: compile error: type of "x" not known; need assignment?
 === RUN   TestAWKGo/_BEGIN_{__print_CONVFMT,_1.2345678_""__CONVFMT_=_"%.3g"__print_CONVFMT
 === RUN   TestAWKGo/BEGIN_{_FILENAME_=_"foo";_print_FILENAME_}
     awkgo_test.go: compile error: special variable FILENAME not yet supported
@@ -374,9 +363,9 @@
 === RUN   TestAWKGo/BEGIN_{_print_getline_x_<_"/no/such/file"_}__#_!fuzz
     awkgo_test.go: compile error: *ast.GetlineExpr not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_getline_x_<_"-";_print_x_}
-    awkgo_test.go: compile error: *ast.GetlineExpr not yet supported
+    awkgo_test.go: compile error: type of "x" not known; need assignment?
 === RUN   TestAWKGo/{_print_$0;_print_getline_x_<"-";_print_x_}
-    awkgo_test.go: compile error: *ast.GetlineExpr not yet supported
+    awkgo_test.go: compile error: type of "x" not known; need assignment?
 === RUN   TestAWKGo/BEGIN_{_print_"x"_>"-";_print_"y"_>"-"_}
     awkgo_test.go: compile error: print redirection not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_fflush();_print_fflush("")_}
