@@ -254,5 +254,25 @@ func _sub(regex, repl, in string, global bool) (out string, num int) {
 	})
 	return out, count
 }
+
+func _system(command string) float64 {
+	cmd := exec.Command("/bin/sh", "-c", command)
+	cmd.Stdout = _output
+	cmd.Stderr = os.Stderr
+	err := cmd.Start()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return -1
+	}
+	err = cmd.Wait()
+	if err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			return float64(exitErr.ProcessState.ExitCode())
+		}
+		fmt.Fprintf(os.Stderr, "unexpected error running command %q: %v\n", command, err)
+		return -1
+	}
+	return 0
+}
 `)
 }

@@ -69,10 +69,10 @@
 === RUN   TestAWKGo/BEGIN_{_a["x"];_"y"_in_a;_for_(k_in_a)_print_k,_a[k]_}
     awkgo_test.go: go run error: exit status 2:
         # command-line-arguments
-        /tmp/TestAWKGo/001/test_65.go:50:5: undefined: a
-        /tmp/TestAWKGo/001/test_65.go:51:29: undefined: a
-        /tmp/TestAWKGo/001/test_65.go:52:15: undefined: a
-        /tmp/TestAWKGo/001/test_65.go:53:29: undefined: a
+        /tmp/TestAWKGo/001/test_65.go:51:5: undefined: a
+        /tmp/TestAWKGo/001/test_65.go:52:29: undefined: a
+        /tmp/TestAWKGo/001/test_65.go:53:15: undefined: a
+        /tmp/TestAWKGo/001/test_65.go:54:29: undefined: a
 === RUN   TestAWKGo/BEGIN_{_a[]_}
 === RUN   TestAWKGo/BEGIN_{_delete_a[]_}
 === RUN   TestAWKGo/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_delete_a;_for_(k_in_a)_print_k,_a[k]_}
@@ -121,7 +121,7 @@
 === RUN   TestAWKGo/BEGIN_{_print_1,_1.,_.1,_1e0,_-1,_1e_}
     awkgo_test.go: go run error: exit status 2:
         # command-line-arguments
-        /tmp/TestAWKGo/001/test_103.go:49:207: undefined: e
+        /tmp/TestAWKGo/001/test_103.go:50:207: undefined: e
 === RUN   TestAWKGo/BEGIN_{_print_'\"'_'\''_'xy'_"z"_"'"_'\"'_}
 === RUN   TestAWKGo/{_print_/foo/_}
 === RUN   TestAWKGo//[a-/
@@ -131,11 +131,11 @@
 === RUN   TestAWKGo/BEGIN_{_print_atan2(0,_8020020000000e20G-0)}
     awkgo_test.go: go run error: exit status 2:
         # command-line-arguments
-        /tmp/TestAWKGo/001/test_110.go:49:106: undefined: G
+        /tmp/TestAWKGo/001/test_110.go:50:106: undefined: G
 === RUN   TestAWKGo/BEGIN_{_print_1e1000,_-1e1000_}__#_!gawk
     awkgo_test.go: go run error: exit status 2:
         # command-line-arguments
-        /tmp/TestAWKGo/001/test_111.go:49:44: undefined: Inf
+        /tmp/TestAWKGo/001/test_111.go:50:44: undefined: Inf
 === RUN   TestAWKGo/BEGIN_{_printf_"\x0.\x00.\x0A\x10\xff\xFF\x41"_}__#_!awk
 === RUN   TestAWKGo/BEGIN_{_printf_"\x1.\x01.\x0A\x10\xff\xFF\x41"_}
 === RUN   TestAWKGo/BEGIN_{_printf_"\0\78\7\77\777\0_\141_"_}__#_!awk
@@ -149,7 +149,7 @@
 === RUN   TestAWKGo/BEGIN_{_print_0?1:0,_1?1:0,_""?1:0,_"0"?1:0,_"1"?1:0,_x?1:0_}
     awkgo_test.go: go run error: exit status 2:
         # command-line-arguments
-        /tmp/TestAWKGo/001/test_121.go:49: undefined: x
+        /tmp/TestAWKGo/001/test_121.go:50: undefined: x
 === RUN   TestAWKGo/_BEGIN_{__print_CONVFMT,_1.2345678_""__CONVFMT_=_"%.3g"__print_CONVFMT
 === RUN   TestAWKGo/BEGIN_{_FILENAME_=_"foo";_print_FILENAME_}
     awkgo_test.go: compile error: special variable FILENAME not yet supported
@@ -315,9 +315,7 @@
 === RUN   TestAWKGo/_BEGIN_{__srand(1)__a_=_rand();_b_=_rand();_c_=_rand()__srand(1)__x_=_
 === RUN   TestAWKGo/_BEGIN_{__for_(i_=_0;_i_<_1000;_i++)_{___if_(rand()_<_0.5)_n++__}__pri
 === RUN   TestAWKGo/BEGIN_{_print_system("echo_foo");_print_system("echo_bar")_}__#_!fuzz
-    awkgo_test.go: compile error: system() not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_system(">&2_echo_error")_}__#_!fuzz
-    awkgo_test.go: compile error: system() not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_0?"t":"f"_}
 === RUN   TestAWKGo/BEGIN_{_print_1?"t":"f"_}
 === RUN   TestAWKGo/BEGIN_{_print_(1+2)?"t":"f"_}
@@ -655,8 +653,8 @@
     --- PASS: TestAWKGo/BEGIN_{_print_toupper("Foo_BaR")_}
     --- PASS: TestAWKGo/_BEGIN_{__srand(1)__a_=_rand();_b_=_rand();_c_=_rand()__srand(1)__x_=_
     --- PASS: TestAWKGo/_BEGIN_{__for_(i_=_0;_i_<_1000;_i++)_{___if_(rand()_<_0.5)_n++__}__pri
-    --- FAIL: TestAWKGo/BEGIN_{_print_system("echo_foo");_print_system("echo_bar")_}__#_!fuzz
-    --- FAIL: TestAWKGo/BEGIN_{_print_system(">&2_echo_error")_}__#_!fuzz
+    --- PASS: TestAWKGo/BEGIN_{_print_system("echo_foo");_print_system("echo_bar")_}__#_!fuzz
+    --- PASS: TestAWKGo/BEGIN_{_print_system(">&2_echo_error")_}__#_!fuzz
     --- PASS: TestAWKGo/BEGIN_{_print_0?"t":"f"_}
     --- PASS: TestAWKGo/BEGIN_{_print_1?"t":"f"_}
     --- PASS: TestAWKGo/BEGIN_{_print_(1+2)?"t":"f"_}

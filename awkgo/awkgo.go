@@ -7,6 +7,11 @@ TODO:
 - support functions
 - make print statement output more compact
 - pre-compile regex literals
+- AugAssign of field not yet supported
+- Incr of field not yet supported
+- print redirection?
+- non-literal [s]printf format strings?
+- getline?
 
 NOT SUPPORTED:
 - dynamic typing
@@ -107,6 +112,7 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
@@ -724,7 +730,8 @@ func (c *compiler) expr(expr Expr) string {
 			}
 			return "_substrLength(" + c.strExpr(e.Args[0]) + ", " + c.intExpr(e.Args[1]) + ", " + c.intExpr(e.Args[2]) + ")"
 
-		//case F_SYSTEM
+		case F_SYSTEM:
+			return "_system(" + c.strExpr(e.Args[0]) + ")"
 
 		case F_TOLOWER:
 			return "strings.ToLower(" + c.expr(e.Args[0]) + ")"
