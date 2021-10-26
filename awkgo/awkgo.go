@@ -643,8 +643,20 @@ func (c *compiler) expr(expr Expr) string {
 		case F_EXP:
 			return "math.Exp(" + c.numExpr(e.Args[0]) + ")"
 
-		//case F_FFLUSH
-		//case F_GSUB
+		case F_FFLUSH:
+			var arg string
+			if len(e.Args) > 0 {
+				switch argExpr := e.Args[0].(type) {
+				case *StrExpr:
+					arg = argExpr.Value
+				default:
+					arg = "not supported"
+				}
+			}
+			if arg != "" {
+				panic(errorf(`fflush() currently only supports no args or "" arg`))
+			}
+			return "_fflush()"
 
 		case F_INDEX:
 			return "float64(strings.Index(" + c.strExpr(e.Args[0]) + ", " + c.strExpr(e.Args[1]) + ") + 1)"

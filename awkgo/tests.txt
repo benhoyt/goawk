@@ -367,13 +367,11 @@
 === RUN   TestAWKGo/BEGIN_{_print_"x"_>"-";_print_"y"_>"-"_}
     awkgo_test.go: compile error: print redirection not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_fflush();_print_fflush("")_}
-    awkgo_test.go: compile error: fflush() not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_"x";_print_fflush();_print_"y";_print_fflush("")_}
-    awkgo_test.go: compile error: fflush() not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_"x"_>"out";_print_fflush("out");_print_"y";_print_fflush
     awkgo_test.go: compile error: print redirection not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_fflush("x")_}__#_!gawk
-    awkgo_test.go: compile error: fflush() not yet supported
+    awkgo_test.go: compile error: fflush() currently only supports no args or "" arg
 === RUN   TestAWKGo/BEGIN_{_"cat"_|_getline;_print_fflush("cat")_}__#_!gawk_!fuzz
     awkgo_test.go: compile error: *ast.GetlineExpr not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_"x"_>_"out"_}__#_!fuzz
@@ -681,8 +679,8 @@
     --- FAIL: TestAWKGo/BEGIN_{_print_getline_x_<_"-";_print_x_}
     --- FAIL: TestAWKGo/{_print_$0;_print_getline_x_<"-";_print_x_}
     --- FAIL: TestAWKGo/BEGIN_{_print_"x"_>"-";_print_"y"_>"-"_}
-    --- FAIL: TestAWKGo/BEGIN_{_print_fflush();_print_fflush("")_}
-    --- FAIL: TestAWKGo/BEGIN_{_print_"x";_print_fflush();_print_"y";_print_fflush("")_}
+    --- PASS: TestAWKGo/BEGIN_{_print_fflush();_print_fflush("")_}
+    --- PASS: TestAWKGo/BEGIN_{_print_"x";_print_fflush();_print_"y";_print_fflush("")_}
     --- FAIL: TestAWKGo/BEGIN_{_print_"x"_>"out";_print_fflush("out");_print_"y";_print_fflush
     --- FAIL: TestAWKGo/BEGIN_{_print_fflush("x")_}__#_!gawk
     --- FAIL: TestAWKGo/BEGIN_{_"cat"_|_getline;_print_fflush("cat")_}__#_!gawk_!fuzz

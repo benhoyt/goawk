@@ -274,5 +274,14 @@ func _system(command string) float64 {
 	}
 	return 0
 }
+
+func _fflush() float64 {
+	err := _output.Flush()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error flushing output: %v\n", err)
+		return -1
+	}
+	return 0
+}
 `)
 }
