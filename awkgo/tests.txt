@@ -124,9 +124,7 @@
 === RUN   TestAWKGo/BEGIN_{_print_atan2(0,_8020020000000e20G-0)}
     awkgo_test.go: compile error: type of "G" not known; need assignment?
 === RUN   TestAWKGo/BEGIN_{_print_1e1000,_-1e1000_}__#_!gawk
-    awkgo_test.go: go run error: exit status 2:
-        # command-line-arguments
-        /tmp/TestAWKGo/001/test_111.go:50:44: undefined: Inf
+    awkgo_test.go: compile error: number literal out of range
 === RUN   TestAWKGo/BEGIN_{_printf_"\x0.\x00.\x0A\x10\xff\xFF\x41"_}__#_!awk
 === RUN   TestAWKGo/BEGIN_{_printf_"\x1.\x01.\x0A\x10\xff\xFF\x41"_}
 === RUN   TestAWKGo/BEGIN_{_printf_"\0\78\7\77\777\0_\141_"_}__#_!awk

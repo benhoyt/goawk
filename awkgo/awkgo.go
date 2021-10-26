@@ -26,6 +26,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"sort"
 	"strconv"
@@ -548,6 +549,9 @@ func (c *compiler) expr(expr Expr) string {
 	case *NumExpr:
 		if e.Value == float64(int(e.Value)) {
 			return fmt.Sprintf("%d.0", int(e.Value))
+		}
+		if math.IsInf(e.Value, 0) {
+			panic(errorf("number literal out of range"))
 		}
 		return fmt.Sprintf("%g", e.Value)
 
