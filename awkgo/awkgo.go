@@ -6,6 +6,7 @@ TODO:
 - make 'BEGIN { a["x"] }' fail in AWKGo, not during Go compilation
 - support functions
 - make print statement output more compact
+- pre-compile regex literals
 
 NOT SUPPORTED:
 - dynamic typing
@@ -248,31 +249,27 @@ func (c *compiler) stmts(stmts Stmts) {
 	}
 }
 
+func (c *compiler) assign(left, right Expr) string {
+	switch left := left.(type) {
+	case *VarExpr:
+		// TODO: handle ScopeSpecial
+		return fmt.Sprintf("%s = %s", left.Name, c.expr(right))
+	case *IndexExpr:
+		return fmt.Sprintf("%s[%s] = %s", left.Array.Name, c.index(left.Index), c.expr(right))
+	case *FieldExpr:
+		// TODO: simplify to _fields[n-1] if n is int constant?
+		return fmt.Sprintf("_setField(%s, %s)", c.intExpr(left.Index), c.strExpr(right))
+	default:
+		panic(errorf("expected lvalue, not %s", left))
+	}
+}
+
 func (c *compiler) stmtNoNewline(stmt Stmt) {
 	switch s := stmt.(type) {
 	case *ExprStmt:
 		switch e := s.Expr.(type) {
 		case *AssignExpr:
-			switch left := e.Left.(type) {
-			case *VarExpr:
-				// TODO: handle ScopeSpecial
-				c.output(left.Name)
-				c.output(" = ")
-				c.output(c.expr(e.Right))
-			case *IndexExpr:
-				c.output(left.Array.Name)
-				c.output("[")
-				c.output(c.index(left.Index))
-				c.output("] = ")
-				c.output(c.expr(e.Right))
-			case *FieldExpr:
-				// TODO: simplify to _fields[n-1] if n is int constant?
-				c.output("_setField(")
-				c.output(c.intExpr(left.Index))
-				c.output(", ")
-				c.output(c.strExpr(e.Right))
-				c.output(")")
-			}
+			c.output(c.assign(e.Left, e.Right))
 
 		case *AugAssignExpr:
 			switch left := e.Left.(type) {
@@ -698,7 +695,28 @@ func (c *compiler) expr(expr Expr) string {
 			}
 			return "_srand(" + c.numExpr(e.Args[0]) + ")"
 
-		//case F_SUB
+		case F_SUB, F_GSUB:
+			// sub() is actually an assignment to "in" (an lvalue) or $0:
+			// n = sub(re, repl[, in])
+			str := fmt.Sprintf("func() float64 { out, n := _sub(%s, %s, ", c.strExpr(e.Args[0]), c.strExpr(e.Args[1]))
+			if len(e.Args) == 3 {
+				str += c.expr(e.Args[2])
+			} else {
+				str += "_line"
+			}
+			if e.Func == F_GSUB {
+				str += ", true); "
+			} else {
+				str += ", false); "
+			}
+			if len(e.Args) == 3 {
+				// TODO: hmm, passing VarExpr here is weird
+				str += c.assign(e.Args[2], &VarExpr{Name: "out", Scope: ScopeGlobal})
+			} else {
+				str += "_setField(0, out)"
+			}
+			str += "; return float64(n) }()"
+			return str
 
 		case F_SUBSTR:
 			if len(e.Args) == 2 {

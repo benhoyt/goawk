@@ -216,5 +216,43 @@ func _split(s string, a map[string]string, fs string) float64 {
 	}
 	return float64(len(a))
 }
+
+func _sub(regex, repl, in string, global bool) (out string, num int) {
+	re := regexp.MustCompile(regex)
+	count := 0
+	out = re.ReplaceAllStringFunc(in, func(s string) string {
+		// Only do the first replacement for sub(), or all for gsub()
+		if !global && count > 0 {
+			return s
+		}
+		count++
+		// Handle & (ampersand) properly in replacement string
+		r := make([]byte, 0, 64) // Up to 64 byte replacement won't require heap allocation
+		for i := 0; i < len(repl); i++ {
+			switch repl[i] {
+			case '&':
+				r = append(r, s...)
+			case '\\':
+				i++
+				if i < len(repl) {
+					switch repl[i] {
+					case '&':
+						r = append(r, '&')
+					case '\\':
+						r = append(r, '\\')
+					default:
+						r = append(r, '\\', repl[i])
+					}
+				} else {
+					r = append(r, '\\')
+				}
+			default:
+				r = append(r, repl[i])
+			}
+		}
+		return string(r)
+	})
+	return out, count
+}
 `)
 }

@@ -300,25 +300,16 @@
 === RUN   TestAWKGo/BEGIN_{_n_=_split("ab,c.d,",_a,_/[,.]/);_for_(i=1;_i<=n;_i++)_print_a[
 === RUN   TestAWKGo/BEGIN_{_n_=_split("1_2",_a);_print_(n,_a[1],_a[2],_a[1]==1,_a[2]==2)_}
 === RUN   TestAWKGo/BEGIN_{_x_=_"1.2.3";_print_sub(/\./,_",",_x);_print_x_}
-    awkgo_test.go: compile error: sub() not yet supported
 === RUN   TestAWKGo/{_print_sub(/\./,_",");_print_$0_}
-    awkgo_test.go: compile error: sub() not yet supported
 === RUN   TestAWKGo/BEGIN_{_x_=_"1.2.3";_print_gsub(/\./,_",",_x);_print_x_}
-    awkgo_test.go: compile error: gsub() not yet supported
 === RUN   TestAWKGo/{_print_gsub(/\./,_",");_print_$0_}
-    awkgo_test.go: compile error: gsub() not yet supported
 === RUN   TestAWKGo/{_print_gsub(/[0-9]/,_"(&)");_print_$0_}
-    awkgo_test.go: compile error: gsub() not yet supported
 === RUN   TestAWKGo/{_print_gsub(/[0-9]+/,_"(&)");_print_$0_}
-    awkgo_test.go: compile error: gsub() not yet supported
 === RUN   TestAWKGo/{_print_gsub(/[0-9]/,_"\\&");_print_$0_}
-    awkgo_test.go: compile error: gsub() not yet supported
 === RUN   TestAWKGo/{_print_gsub(/[0-9]/,_"\\z");_print_$0_}
-    awkgo_test.go: compile error: gsub() not yet supported
 === RUN   TestAWKGo/{_print_gsub("0",_"x\\\\y");_print_$0_}__#_!awk_!gawk_--_our_behaviour
-    awkgo_test.go: compile error: gsub() not yet supported
 === RUN   TestAWKGo/sub("",_"\\e",_FS)__#_!awk_!gawk
-    awkgo_test.go: expected error "invalid regex \"\\\\e \": error parsing regexp: invalid escape sequence: `\\e`", got "sub() not yet supported"
+    awkgo_test.go: expected error "invalid regex \"\\\\e \": error parsing regexp: invalid escape sequence: `\\e`", got "special variable FS not yet supported"
 === RUN   TestAWKGo/BEGIN_{_print_tolower("Foo_BaR")_}
 === RUN   TestAWKGo/BEGIN_{_print_toupper("Foo_BaR")_}
 === RUN   TestAWKGo/_BEGIN_{__srand(1)__a_=_rand();_b_=_rand();_c_=_rand()__srand(1)__x_=_
@@ -650,15 +641,15 @@
     --- PASS: TestAWKGo/BEGIN_{_n_=_split("ab,c,d,",_a,_",");_for_(i=1;_i<=n;_i++)_print_a[i]_
     --- PASS: TestAWKGo/BEGIN_{_n_=_split("ab,c.d,",_a,_/[,.]/);_for_(i=1;_i<=n;_i++)_print_a[
     --- PASS: TestAWKGo/BEGIN_{_n_=_split("1_2",_a);_print_(n,_a[1],_a[2],_a[1]==1,_a[2]==2)_}
-    --- FAIL: TestAWKGo/BEGIN_{_x_=_"1.2.3";_print_sub(/\./,_",",_x);_print_x_}
-    --- FAIL: TestAWKGo/{_print_sub(/\./,_",");_print_$0_}
-    --- FAIL: TestAWKGo/BEGIN_{_x_=_"1.2.3";_print_gsub(/\./,_",",_x);_print_x_}
-    --- FAIL: TestAWKGo/{_print_gsub(/\./,_",");_print_$0_}
-    --- FAIL: TestAWKGo/{_print_gsub(/[0-9]/,_"(&)");_print_$0_}
-    --- FAIL: TestAWKGo/{_print_gsub(/[0-9]+/,_"(&)");_print_$0_}
-    --- FAIL: TestAWKGo/{_print_gsub(/[0-9]/,_"\\&");_print_$0_}
-    --- FAIL: TestAWKGo/{_print_gsub(/[0-9]/,_"\\z");_print_$0_}
-    --- FAIL: TestAWKGo/{_print_gsub("0",_"x\\\\y");_print_$0_}__#_!awk_!gawk_--_our_behaviour
+    --- PASS: TestAWKGo/BEGIN_{_x_=_"1.2.3";_print_sub(/\./,_",",_x);_print_x_}
+    --- PASS: TestAWKGo/{_print_sub(/\./,_",");_print_$0_}
+    --- PASS: TestAWKGo/BEGIN_{_x_=_"1.2.3";_print_gsub(/\./,_",",_x);_print_x_}
+    --- PASS: TestAWKGo/{_print_gsub(/\./,_",");_print_$0_}
+    --- PASS: TestAWKGo/{_print_gsub(/[0-9]/,_"(&)");_print_$0_}
+    --- PASS: TestAWKGo/{_print_gsub(/[0-9]+/,_"(&)");_print_$0_}
+    --- PASS: TestAWKGo/{_print_gsub(/[0-9]/,_"\\&");_print_$0_}
+    --- PASS: TestAWKGo/{_print_gsub(/[0-9]/,_"\\z");_print_$0_}
+    --- PASS: TestAWKGo/{_print_gsub("0",_"x\\\\y");_print_$0_}__#_!awk_!gawk_--_our_behaviour
     --- FAIL: TestAWKGo/sub("",_"\\e",_FS)__#_!awk_!gawk
     --- PASS: TestAWKGo/BEGIN_{_print_tolower("Foo_BaR")_}
     --- PASS: TestAWKGo/BEGIN_{_print_toupper("Foo_BaR")_}
