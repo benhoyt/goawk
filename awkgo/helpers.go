@@ -126,27 +126,6 @@ func _match(str, pattern string) float64 {
 	return RSTART
 }
 
-func _containsNum(array map[string]float64, index string) bool {
-	_, ok := array[index]
-	return ok
-}
-
-func _containsStr(array map[string]string, index string) bool {
-	_, ok := array[index]
-	return ok
-}
-
-// TODO: do these with inline func literal
-func _assignNum(p *float64, v float64) float64 {
-	*p = v
-	return v
-}
-
-func _assignStr(p *string, v string) string {
-	*p = v
-	return v
-}
-
 func _srand(seed float64) float64 {
 	prev := _seed
 	_seed = seed

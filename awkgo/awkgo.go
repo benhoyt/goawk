@@ -2,7 +2,7 @@
 
 /*
 TODO:
-- figure out how to handle numStr types
+- figure out how or whether to handle numStr types
 - support functions
 - make print statement output more compact
 - pre-compile regex literals
@@ -596,10 +596,8 @@ func (c *compiler) expr(expr Expr) string {
 		right := c.expr(e.Right)
 		switch l := e.Left.(type) {
 		case *VarExpr:
-			if c.typer.exprs[e.Right] == typeNum {
-				return "_assignNum(&" + l.Name + ", " + right + ")"
-			}
-			return "_assignStr(&" + l.Name + ", " + right + ")"
+			return fmt.Sprintf("func () %s { %s = %s; return %s }()",
+				c.goType(c.typer.exprs[e.Right]), l.Name, right, l.Name)
 
 		//TODO: case *IndexExpr:
 
@@ -634,8 +632,6 @@ func (c *compiler) expr(expr Expr) string {
 		switch e.Func {
 		case F_ATAN2:
 			return "math.Atan2(" + c.numExpr(e.Args[0]) + ", " + c.numExpr(e.Args[1]) + ")"
-
-		//case F_CLOSE:
 
 		case F_COS:
 			return "math.Cos(" + c.numExpr(e.Args[0]) + ")"
@@ -788,10 +784,8 @@ func (c *compiler) expr(expr Expr) string {
 		}
 
 	case *InExpr:
-		if c.typer.globals[e.Array.Name] == typeArrayNum {
-			return "_boolToNum(_containsNum(" + e.Array.Name + ", " + c.index(e.Index) + "))"
-		}
-		return "_boolToNum(_containsStr(" + e.Array.Name + ", " + c.index(e.Index) + "))"
+		return fmt.Sprintf("func() float64 { _, ok := %s[%s]; if ok { return 1 }; return 0 }()",
+			e.Array.Name, c.index(e.Index))
 
 	//case *UserCallExpr:
 	//	return "TODO", 0
