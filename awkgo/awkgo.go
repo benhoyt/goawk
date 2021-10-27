@@ -11,10 +11,11 @@ TODO:
 - print redirection?
 - non-literal [s]printf format strings?
 - getline?
-- if referenced type not known, can we just default to typeStr?
+- a way to report line/col info in error messages? (parser doesn't record these)
 
 NOT SUPPORTED:
 - dynamic typing
+- assigning numStr values (but using $0 in conditionals works)
 - null values (unset number variable should output "", we output "0")
 - "next" in functions
 */
@@ -57,28 +58,34 @@ func main() {
 }
 
 func compile(prog *Program, writer io.Writer) (err error) {
+	// Both typer and compiler signal errors internally with
+	// panic(&errorExit{...}), so recover and return an error.
 	defer func() {
 		r := recover()
 		switch r := r.(type) {
 		case nil:
-			break
 		case *errorExit:
 			err = errors.New(r.message)
 		default:
-			panic(r)
+			panic(r) // another type, re-panic
 		}
 	}()
 
+	// Determine the types of variables and expressions.
 	t := newTyper()
 	t.program(prog)
+
+	// Do a second typing pass over the program to ensure we detect the types
+	// of variables assigned after they're used, for example:
+	// BEGIN { while (i<5) { i++; print i } }
 	t.program(prog)
-	//t.dump()
 
 	c := &compiler{
 		typer:  t,
 		writer: writer,
 	}
 	c.program(prog)
+
 	return nil
 }
 
@@ -766,12 +773,7 @@ func (c *compiler) expr(expr Expr) string {
 			return "(-" + str + ")"
 
 		case NOT:
-			if typ == typeStr {
-				str = str + ` == ""`
-			} else {
-				str = str + " == 0 "
-			}
-			return "_boolToNum(" + str + ")"
+			return "_boolToNum(!(" + c.cond(e.Value) + "))"
 
 		case ADD:
 			if typ == typeStr {
@@ -873,6 +875,12 @@ func (c *compiler) cond(expr Expr) string {
 		}
 	case *RegExpr:
 		return fmt.Sprintf("_regexMatches(_line, %q)", e.Regex)
+	case *FieldExpr:
+		return fmt.Sprintf("_isNumStrTrue(%s)", c.expr(e))
+	case *UnaryExpr:
+		if e.Op == NOT {
+			return "(!(" + c.cond(e.Value) + "))"
+		}
 	}
 
 	str := c.expr(expr)

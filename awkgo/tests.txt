@@ -76,7 +76,6 @@
 === RUN   TestAWKGo/BEGIN_{_print_+4,_+"3",_+0,_+-3,_-3,_-_-4,_-"3"_}
 === RUN   TestAWKGo/BEGIN_{_$0="1";_print_!$0_}
 === RUN   TestAWKGo/{_print_!$0_}
-    awkgo_test.go: expected "1\n", got "0\n"
 === RUN   TestAWKGo/{_print_!$0_}#01
 === RUN   TestAWKGo/!seen[$0]++
 === RUN   TestAWKGo/!seen[$0]--
@@ -132,7 +131,6 @@
 === RUN   TestAWKGo/{_print_/x/?"t":"f"_}
 === RUN   TestAWKGo/BEGIN_{_print_1?2?3:4:5,_1?0?3:4:5,_0?2?3:4:5_}
 === RUN   TestAWKGo/{_print_$0?1:0_}
-    awkgo_test.go: expected "0\n", got "1\n"
 === RUN   TestAWKGo/{_print_$0?1:0_}#01
 === RUN   TestAWKGo/BEGIN_{_$0="1";_print_($0?1:0)_}
 === RUN   TestAWKGo/BEGIN_{_print_0?1:0,_1?1:0,_""?1:0,_"0"?1:0,_"1"?1:0,_x?1:0_}
@@ -461,7 +459,7 @@
     --- PASS: TestAWKGo/BEGIN_{_print_!42,_!1,_!0,_!!42,_!!1,_!!0_}#01
     --- PASS: TestAWKGo/BEGIN_{_print_+4,_+"3",_+0,_+-3,_-3,_-_-4,_-"3"_}
     --- PASS: TestAWKGo/BEGIN_{_$0="1";_print_!$0_}
-    --- FAIL: TestAWKGo/{_print_!$0_}
+    --- PASS: TestAWKGo/{_print_!$0_}
     --- PASS: TestAWKGo/{_print_!$0_}#01
     --- PASS: TestAWKGo/!seen[$0]++
     --- PASS: TestAWKGo/!seen[$0]--
@@ -506,7 +504,7 @@
     --- PASS: TestAWKGo/BEGIN_{_printf_"\1\78\7\77\777\1_\141_"_}
     --- PASS: TestAWKGo/{_print_/x/?"t":"f"_}
     --- PASS: TestAWKGo/BEGIN_{_print_1?2?3:4:5,_1?0?3:4:5,_0?2?3:4:5_}
-    --- FAIL: TestAWKGo/{_print_$0?1:0_}
+    --- PASS: TestAWKGo/{_print_$0?1:0_}
     --- PASS: TestAWKGo/{_print_$0?1:0_}#01
     --- PASS: TestAWKGo/BEGIN_{_$0="1";_print_($0?1:0)_}
     --- FAIL: TestAWKGo/BEGIN_{_print_0?1:0,_1?1:0,_""?1:0,_"0"?1:0,_"1"?1:0,_x?1:0_}

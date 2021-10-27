@@ -107,6 +107,17 @@ func _strToNum(s string) float64 {
 	return f // Returns infinity in case of "value out of range" error
 }
 
+func _isNumStrTrue(s string) bool {
+	if s == "" {
+		return false
+	}
+	f, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
+	if err != nil {
+		return true
+	}
+	return f != 0
+}
+
 func _regexMatches(str, pattern string) bool {
 	// TODO: cache these or pre-compile literal regexes
 	re := regexp.MustCompile(pattern)
