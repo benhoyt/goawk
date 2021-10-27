@@ -2,7 +2,6 @@
 
 /*
 TODO:
-- figure out how or whether to handle numStr types
 - support functions
 - make print statement output more compact
 - pre-compile regex literals
@@ -529,7 +528,6 @@ const (
 	typeUnknown valueType = iota
 	typeStr
 	typeNum
-	typeNumStr // TODO: don't support this for now?
 	typeArrayStr
 	typeArrayNum
 )
@@ -540,8 +538,6 @@ func (t valueType) String() string {
 		return "str"
 	case typeNum:
 		return "num"
-	case typeNumStr:
-		return "numeric string"
 	case typeArrayStr:
 		return "array of str"
 	case typeArrayNum:
@@ -822,6 +818,11 @@ func (c *compiler) binaryExpr(op Token, l, r Expr) (str string) {
 func (c *compiler) boolExpr(op Token, l, r Expr) (string, bool) {
 	switch op {
 	case EQUALS, LESS, LTE, GREATER, GTE, NOT_EQUALS:
+		_, leftIsField := l.(*FieldExpr)
+		_, rightIsField := r.(*FieldExpr)
+		if leftIsField && rightIsField {
+			panic(errorf("can't compare two fields directly (%s %s %s); convert one to string or number", l, op, r))
+		}
 		ls := c.expr(l)
 		rs := c.expr(r)
 		lt := c.typer.exprs[l]
@@ -830,30 +831,19 @@ func (c *compiler) boolExpr(op Token, l, r Expr) (string, bool) {
 		case typeNum:
 			switch rt {
 			case typeNum:
-				return ls + " " + op.String() + " " + rs, true
+				return fmt.Sprintf("(%s %s %s)", ls, op, rs), true
 			case typeStr:
-				return "_numToStr(" + ls + ") " + op.String() + " " + rs, true
-			case typeNumStr:
-				return ls + " " + op.String() + " _strToNum(" + rs + ")", true
+				return fmt.Sprintf("(_numToStr(%s) %s %s)", ls, op, rs), true
 			}
 		case typeStr:
 			switch rt {
 			case typeNum:
-				return ls + " " + op.String() + " _numToStr(" + rs + ")", true
-			case typeStr, typeNumStr:
-				return ls + " " + op.String() + " " + rs, true
-			}
-		case typeNumStr:
-			switch rt {
-			case typeNum:
-				return "_strToNum(" + ls + ") " + op.String() + " " + rs, true
+				return fmt.Sprintf("(_strToNum(%s) %s %s)", ls, op, rs), true
 			case typeStr:
-				return ls + " " + op.String() + " " + rs, true
-			case typeNumStr:
-				panic(errorf("type on one side of %s comparison must be known", op))
+				return fmt.Sprintf("(%s %s %s)", ls, op, rs), true
 			}
 		}
-		panic(errorf("unexpected types in %s (%s) %s %s (%s)", ls, lt, op.String(), rs, rt))
+		panic(errorf("unexpected types in %s (%s) %s %s (%s)", ls, lt, op, rs, rt))
 	case MATCH, NOT_MATCH:
 		// TODO: pre-compile regex literals if r is string literal
 		return "_regexMatches(" + c.strExpr(l) + ", " + c.strExpr(r) + ")", true
@@ -876,7 +866,7 @@ func (c *compiler) cond(expr Expr) string {
 	case *RegExpr:
 		return fmt.Sprintf("_regexMatches(_line, %q)", e.Regex)
 	case *FieldExpr:
-		return fmt.Sprintf("_isNumStrTrue(%s)", c.expr(e))
+		return fmt.Sprintf("_isFieldTrue(%s)", c.expr(e))
 	case *UnaryExpr:
 		if e.Op == NOT {
 			return "(!(" + c.cond(e.Value) + "))"

@@ -190,7 +190,7 @@ func (t *typer) expr(expr Expr) (typ valueType) {
 	switch e := expr.(type) {
 	case *FieldExpr:
 		t.expr(e.Index)
-		return typeStr // TODO: should be typeNumStr
+		return typeStr
 
 	case *UnaryExpr:
 		t.expr(e.Value)

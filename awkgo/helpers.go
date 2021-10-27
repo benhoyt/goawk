@@ -107,7 +107,7 @@ func _strToNum(s string) float64 {
 	return f // Returns infinity in case of "value out of range" error
 }
 
-func _isNumStrTrue(s string) bool {
+func _isFieldTrue(s string) bool {
 	if s == "" {
 		return false
 	}
