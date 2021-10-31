@@ -2,21 +2,19 @@
 
 /*
 TODO:
-- support functions
-- make print statement output more compact
-- pre-compile regex literals
 - AugAssign of field not yet supported
 - Incr of field not yet supported
-- print redirection?
-- non-literal [s]printf format strings?
-- getline?
-- a way to report line/col info in error messages? (parser doesn't record these)
+- make output more compact (print statement output, for example)
 
 NOT SUPPORTED:
+- functions
 - dynamic typing
+- non-literal [s]printf format strings?
 - assigning numStr values (but using $0 in conditionals works)
 - null values (unset number variable should output "", we output "0")
 - "next" in functions
+- print redirection
+- getline
 */
 
 package main
@@ -30,7 +28,6 @@ import (
 	"os"
 	"sort"
 	"strconv"
-	"strings"
 
 	. "github.com/benhoyt/goawk/internal/ast"
 	. "github.com/benhoyt/goawk/lexer"
@@ -80,8 +77,9 @@ func compile(prog *Program, writer io.Writer) (err error) {
 	t.program(prog)
 
 	c := &compiler{
-		typer:  t,
-		writer: writer,
+		typer:   t,
+		writer:  writer,
+		regexen: make(map[string]int),
 	}
 	c.program(prog)
 
@@ -101,9 +99,10 @@ func errorf(format string, args ...interface{}) error {
 }
 
 type compiler struct {
-	prog   *Program
-	typer  *typer
-	writer io.Writer
+	prog    *Program
+	typer   *typer
+	writer  io.Writer
+	regexen map[string]int
 }
 
 func (c *compiler) output(s string) {
@@ -214,8 +213,23 @@ func main() {
 
 	c.output("}\n")
 
-	for _, f := range prog.Functions {
-		c.function(f)
+	type regex struct {
+		pattern string
+		n       int
+	}
+	var regexen []regex
+	for pattern, n := range c.regexen {
+		regexen = append(regexen, regex{pattern, n})
+	}
+	sort.Slice(regexen, func(i, j int) bool {
+		return regexen[i].n < regexen[j].n
+	})
+	if len(regexen) > 0 {
+		c.output("\nvar (\n")
+		for _, r := range regexen {
+			c.output(fmt.Sprintf("_re%d = regexp.MustCompile(%q)\n", r.n, r.pattern))
+		}
+		c.output(")\n")
 	}
 
 	c.outputHelpers()
@@ -575,8 +589,7 @@ func (c *compiler) expr(expr Expr) string {
 		}
 
 	case *RegExpr:
-		// TODO: pre-compile regex literal as global
-		return fmt.Sprintf("_boolToNum(_regexMatches(_line, %q))", e.Regex)
+		return fmt.Sprintf("_boolToNum(%s.MatchString(_line))", c.regexLiteral(e.Regex))
 
 	case *BinaryExpr:
 		return c.binaryExpr(e.Op, e.Left, e.Right)
@@ -675,7 +688,10 @@ func (c *compiler) expr(expr Expr) string {
 			return "math.Log(" + c.numExpr(e.Args[0]) + ")"
 
 		case F_MATCH:
-			return "_match(" + c.strExpr(e.Args[0]) + ", " + c.strExpr(e.Args[1]) + ")"
+			if strExpr, ok := e.Args[1].(*StrExpr); ok {
+				return fmt.Sprintf("_match(%s, %s)", c.strExpr(e.Args[0]), c.regexLiteral(strExpr.Value))
+			}
+			return fmt.Sprintf("_match(%s, _reCompile(%s))", c.strExpr(e.Args[0]), c.strExpr(e.Args[1]))
 
 		case F_RAND:
 			return "_rand.Float64()"
@@ -719,7 +735,13 @@ func (c *compiler) expr(expr Expr) string {
 		case F_SUB, F_GSUB:
 			// sub() is actually an assignment to "in" (an lvalue) or $0:
 			// n = sub(re, repl[, in])
-			str := fmt.Sprintf("func() float64 { out, n := _sub(%s, %s, ", c.strExpr(e.Args[0]), c.strExpr(e.Args[1]))
+			var reArg string
+			if strExpr, ok := e.Args[0].(*StrExpr); ok {
+				reArg = c.regexLiteral(strExpr.Value)
+			} else {
+				reArg = fmt.Sprintf("_reCompile(%s)", c.strExpr(e.Args[0]))
+			}
+			str := fmt.Sprintf("func() float64 { out, n := _sub(%s, %s, ", reArg, c.strExpr(e.Args[1]))
 			if len(e.Args) == 3 {
 				str += c.expr(e.Args[2])
 			} else {
@@ -845,8 +867,10 @@ func (c *compiler) boolExpr(op Token, l, r Expr) (string, bool) {
 		}
 		panic(errorf("unexpected types in %s (%s) %s %s (%s)", ls, lt, op, rs, rt))
 	case MATCH, NOT_MATCH:
-		// TODO: pre-compile regex literals if r is string literal
-		return "_regexMatches(" + c.strExpr(l) + ", " + c.strExpr(r) + ")", true
+		if strExpr, ok := r.(*StrExpr); ok {
+			return fmt.Sprintf("%s.MatchString(%s)", c.regexLiteral(strExpr.Value), c.strExpr(l)), true
+		}
+		return fmt.Sprintf("_reCompile(%s).MatchString(%s)", c.strExpr(l), c.strExpr(r)), true
 	case AND, OR:
 		// TODO: what to do about precedence / parentheses?
 		return c.cond(l) + " " + op.String() + " " + c.cond(r), true
@@ -864,7 +888,7 @@ func (c *compiler) cond(expr Expr) string {
 			return str
 		}
 	case *RegExpr:
-		return fmt.Sprintf("_regexMatches(_line, %q)", e.Regex)
+		return fmt.Sprintf("%s.MatchString(_line)", c.regexLiteral(e.Regex))
 	case *FieldExpr:
 		return fmt.Sprintf("_isFieldTrue(%s)", c.expr(e))
 	case *UnaryExpr:
@@ -904,6 +928,12 @@ func (c *compiler) intExpr(expr Expr) string {
 }
 
 func (c *compiler) strExpr(expr Expr) string {
+	if fieldExpr, ok := expr.(*FieldExpr); ok {
+		if numExpr, ok := fieldExpr.Index.(*NumExpr); ok && numExpr.Value == 0 {
+			// Optimize _getField(0) to just _line
+			return "_line"
+		}
+	}
 	str := c.expr(expr)
 	if c.typer.exprs[expr] == typeNum {
 		str = "_numToStr(" + str + ")"
@@ -924,20 +954,6 @@ func (c *compiler) index(index []Expr) string {
 		indexStr += str
 	}
 	return indexStr
-}
-
-func (c *compiler) function(f Function) {
-	// TODO: handle param types and return type (and use f.Arrays)
-	c.output("\nfunc ")
-	c.output(f.Name)
-	c.output("(")
-	if len(f.Params) > 0 {
-		c.output(strings.Join(f.Params, ", "))
-		c.output(" string")
-	}
-	c.output(") {\n")
-	c.stmts(f.Body)
-	c.output("}\n")
 }
 
 func (c *compiler) special(name string, index int) string {
@@ -1038,4 +1054,14 @@ func (c *compiler) printfArgs(format string, args []Expr) []string {
 		}
 	}
 	return argStrs
+}
+
+func (c *compiler) regexLiteral(pattern string) string {
+	n, ok := c.regexen[pattern]
+	if !ok {
+		n = len(c.regexen) + 1
+		c.regexen[pattern] = n
+	}
+	varName := fmt.Sprintf("_re%d", n)
+	return varName
 }

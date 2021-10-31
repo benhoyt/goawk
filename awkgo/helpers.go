@@ -118,14 +118,21 @@ func _isFieldTrue(s string) bool {
 	return f != 0
 }
 
-func _regexMatches(str, pattern string) bool {
-	// TODO: cache these or pre-compile literal regexes
+var _reCache = make(map[string]*regexp.Regexp)
+
+func _reCompile(pattern string) *regexp.Regexp {
+	if re, ok := _reCache[pattern]; ok {
+		return re
+	}
 	re := regexp.MustCompile(pattern)
-	return re.MatchString(str)
+	// Dumb, non-LRU cache: just cache the first N regexes
+	if len(_reCache) < 100 {
+		_reCache[pattern] = re
+	}
+	return re
 }
 
-func _match(str, pattern string) float64 {
-	re := regexp.MustCompile(pattern)
+func _match(str string, re *regexp.Regexp) float64 {
 	loc := re.FindStringIndex(str)
 	if len(loc) > 0 {
 		RSTART = float64(loc[0] + 1)
@@ -195,8 +202,7 @@ func _split(s string, a map[string]string, fs string) float64 {
 	} else if utf8.RuneCountInString(fs) <= 1 {
 		parts = strings.Split(s, fs)
 	} else {
-		re := regexp.MustCompile(fs)
-		parts = re.Split(s, -1)
+		parts = _reCompile(fs).Split(s, -1)
 	}
 	for k := range a {
 		delete(a, k)
@@ -207,8 +213,7 @@ func _split(s string, a map[string]string, fs string) float64 {
 	return float64(len(a))
 }
 
-func _sub(regex, repl, in string, global bool) (out string, num int) {
-	re := regexp.MustCompile(regex)
+func _sub(re *regexp.Regexp, repl, in string, global bool) (out string, num int) {
 	count := 0
 	out = re.ReplaceAllStringFunc(in, func(s string) string {
 		// Only do the first replacement for sub(), or all for gsub()
