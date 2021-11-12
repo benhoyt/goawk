@@ -233,7 +233,6 @@
 === RUN   TestAWKGo/BEGIN_{_x=12;_x%=5;_print_x_}
 === RUN   TestAWKGo/BEGIN_{_x=2;_x^=5;_print_x;_x^=0.5;_print_x_}
 === RUN   TestAWKGo/{_$2+=10;_print;_$3/=2;_print_}
-    awkgo_test.go: compile error: AugAssign of field not yet supported
 === RUN   TestAWKGo/BEGIN_{_a[2]_+=_1;_a["2"]_*=_3;_print_a[2]_}
 === RUN   TestAWKGo/BEGIN_{_print_x++;_print_x_}
 === RUN   TestAWKGo/BEGIN_{_print_x;_print_x++;_print_++x;_print_x_}
@@ -574,7 +573,7 @@
     --- PASS: TestAWKGo/BEGIN_{_x=6;_x/=3;_print_x;_x/=x;_print_x;_x/=.6;_print_x_}
     --- PASS: TestAWKGo/BEGIN_{_x=12;_x%=5;_print_x_}
     --- PASS: TestAWKGo/BEGIN_{_x=2;_x^=5;_print_x;_x^=0.5;_print_x_}
-    --- FAIL: TestAWKGo/{_$2+=10;_print;_$3/=2;_print_}
+    --- PASS: TestAWKGo/{_$2+=10;_print;_$3/=2;_print_}
     --- PASS: TestAWKGo/BEGIN_{_a[2]_+=_1;_a["2"]_*=_3;_print_a[2]_}
     --- PASS: TestAWKGo/BEGIN_{_print_x++;_print_x_}
     --- FAIL: TestAWKGo/BEGIN_{_print_x;_print_x++;_print_++x;_print_x_}

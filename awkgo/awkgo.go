@@ -5,6 +5,7 @@ TODO:
 - AugAssign of field not yet supported
 - Incr of field not yet supported
 - make output more compact (print statement output, for example)
+- only output helpers and imports we use
 
 NOT SUPPORTED:
 - functions
@@ -284,7 +285,6 @@ func (c *compiler) assign(left, right Expr) string {
 	case *IndexExpr:
 		return fmt.Sprintf("%s[%s] = %s", left.Array.Name, c.index(left.Index), c.expr(right))
 	case *FieldExpr:
-		// TODO: simplify to _fields[n-1] if n is int constant?
 		return fmt.Sprintf("_setField(%s, %s)", c.intExpr(left.Index), c.strExpr(right))
 	default:
 		panic(errorf("expected lvalue, not %s", left))
@@ -344,7 +344,19 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 					c.output(c.numExpr(e.Right))
 				}
 			case *FieldExpr:
-				panic(errorf("AugAssign of field not yet supported"))
+				switch e.Op {
+				case MOD, POW:
+					c.output(fmt.Sprintf("_setField(%s, _numToStr(", c.intExpr(left.Index)))
+					if e.Op == MOD {
+						c.output("math.Mod(")
+					} else {
+						c.output("math.Pow(")
+					}
+					c.output(fmt.Sprintf("_strToNum(_getField(%s)), %s)))", c.intExpr(left.Index), c.numExpr(e.Right)))
+				default:
+					c.output(fmt.Sprintf("_setField(%s, _numToStr(_strToNum(_getField(%s)) %s %s))",
+						c.intExpr(left.Index), c.intExpr(left.Index), e.Op, c.numExpr(e.Right)))
+				}
 			}
 
 		case *IncrExpr:
@@ -807,12 +819,6 @@ func (c *compiler) expr(expr Expr) string {
 		return fmt.Sprintf("func() float64 { _, ok := %s[%s]; if ok { return 1 }; return 0 }()",
 			e.Array.Name, c.index(e.Index))
 
-	//case *UserCallExpr:
-	//	return "TODO", 0
-
-	//case *GetlineExpr:
-	//	return "TODO", 0
-
 	default:
 		panic(errorf("%T not yet supported", expr))
 	}
@@ -872,8 +878,7 @@ func (c *compiler) boolExpr(op Token, l, r Expr) (string, bool) {
 		}
 		return fmt.Sprintf("_reCompile(%s).MatchString(%s)", c.strExpr(l), c.strExpr(r)), true
 	case AND, OR:
-		// TODO: what to do about precedence / parentheses?
-		return c.cond(l) + " " + op.String() + " " + c.cond(r), true
+		return fmt.Sprintf("(%s %s %s)", c.cond(l), op, c.cond(r)), true
 	default:
 		return "", false
 	}

@@ -1,7 +1,5 @@
 package main
 
-// TODO: we should include only the functions we use in the output
-
 func (c *compiler) outputHelpers() {
 	c.output(`
 func _getField(i int) string {
@@ -208,7 +206,7 @@ func _split(s string, a map[string]string, fs string) float64 {
 		delete(a, k)
 	}
 	for i, part := range parts {
-		a[strconv.Itoa(i+1)] = part // TODO: should be a numeric string
+		a[strconv.Itoa(i+1)] = part
 	}
 	return float64(len(a))
 }
