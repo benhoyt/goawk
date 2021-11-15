@@ -25,6 +25,7 @@ func newTyper() *typer {
 		arrayRefs:  make(map[string]bool),
 		exprs:      make(map[Expr]valueType),
 	}
+	t.globals["FS"] = typeStr
 	t.globals["OFS"] = typeStr
 	t.globals["ORS"] = typeStr
 	t.globals["OFMT"] = typeStr

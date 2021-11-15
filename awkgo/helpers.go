@@ -191,7 +191,7 @@ func _firstRune(s string) int {
 	return int(r)
 }
 
-func _split(s string, a map[string]string, fs string) float64 {
+func _splitHelper(s, fs string) []string {
 	var parts []string
 	if fs == " " {
 		parts = strings.Fields(s)
@@ -202,6 +202,11 @@ func _split(s string, a map[string]string, fs string) float64 {
 	} else {
 		parts = _reCompile(fs).Split(s, -1)
 	}
+	return parts
+}
+
+func _split(s string, a map[string]string, fs string) float64 {
+	parts := _splitHelper(s, fs)
 	for k := range a {
 		delete(a, k)
 	}

@@ -2,7 +2,6 @@
 
 /*
 TODO:
-- handle FS
 - move everything to main() / locals seeing we're not supporting functions?
 - make output more compact (print statement output, for example)
 - only output helpers and imports we use
@@ -157,6 +156,7 @@ func main() {
 
 	_scanner = bufio.NewScanner(os.Stdin)
 
+	FS = " "
 	OFS = " "
 	ORS = "\n"
 	OFMT = "%.6g"
@@ -196,7 +196,7 @@ func main() {
 	for _scanner.Scan() {
 		_lineNum++
 		_line = _scanner.Text()
-		_fields = strings.Fields(_line) // TODO: use FS or call _split or similar
+		_fields = _splitHelper(_line, FS)
 `)
 		c.actions(prog.Actions)
 		c.output(`	}
@@ -730,7 +730,7 @@ func (c *compiler) expr(expr Expr) string {
 			if len(e.Args) == 3 {
 				str += c.strExpr(e.Args[2])
 			} else {
-				str += `" "` // TODO: use FS
+				str += "FS"
 			}
 			str += ")"
 			return str
@@ -983,19 +983,20 @@ func (c *compiler) special(name string, index int) string {
 		return "RLENGTH"
 	case V_RSTART:
 		return "RSTART"
-	//case V_FNR:
-	//case V_ARGC:
+	//TODO: case V_FNR:
+	//TODO: case V_ARGC:
 	case V_CONVFMT:
 		return "CONVFMT"
-	//case V_FILENAME:
-	//case V_FS:
+	//TODO: case V_FILENAME:
+	case V_FS:
+		return "FS"
 	case V_OFMT:
 		return "OFMT"
 	case V_OFS:
 		return "OFS"
 	case V_ORS:
 		return "ORS"
-	//case V_RS:
+	//TODO: case V_RS:
 	case V_SUBSEP:
 		return "SUBSEP"
 	default:

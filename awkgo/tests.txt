@@ -141,11 +141,8 @@
 === RUN   TestAWKGo/{_print_FNR,_$0_}
     awkgo_test.go: compile error: special variable FNR not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_"|"_FS_"|";_FS=","_}_{_print_$1,_$2_}
-    awkgo_test.go: compile error: special variable FS not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_"|"_FS_"|";_FS="\\."_}_{_print_$1,_$2_}
-    awkgo_test.go: compile error: special variable FS not yet supported
 === RUN   TestAWKGo/BEGIN_{_FS="\\"_}_{_print_$1,_$2_}
-    awkgo_test.go: expected "a b\n", got "a\\b \n"
 === RUN   TestAWKGo/{_print_NF_}
 === RUN   TestAWKGo/BEGIN_{_NR_=_123;_print_NR_}
     awkgo_test.go: expected "123\n", got "0\n"
@@ -161,13 +158,13 @@
 === RUN   TestAWKGo/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#01
     awkgo_test.go: expected "1 (2):\n1\n2\n2 (2):\na\nb\n", got "1 (1):\n1\n2 (1):\n2\n3 (0):\n4 (1):\na\n5 (1):\nb\n"
 === RUN   TestAWKGo/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#02
-    awkgo_test.go: expected "1 (2):\na b\nc d\n2 (1):\ne f\n3 (1):\n  \n4 (1):\ng h\n", got "1 (2):\na\nb\n2 (2):\nc\nd\n3 (0):\n4 (2):\ne\nf\n5 (0):\n6 (0):\n7 (0):\n8 (0):\n9 (0):\n10 (2):\ng\nh\n11 (0):\n12 (0):\n"
+    awkgo_test.go: expected "1 (2):\na b\nc d\n2 (1):\ne f\n3 (1):\n  \n4 (1):\ng h\n", got "1 (1):\na b\n2 (1):\nc d\n3 (0):\n4 (1):\ne f\n5 (0):\n6 (0):\n7 (1):\n  \n8 (0):\n9 (0):\n10 (1):\ng h\n11 (0):\n12 (0):\n"
 === RUN   TestAWKGo/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#03
-    awkgo_test.go: expected "1 (1):\na b\n2 (1):\nc d\n", got "1 (0):\n2 (0):\n3 (2):\na\nb\n4 (0):\n5 (2):\nc\nd\n"
+    awkgo_test.go: expected "1 (1):\na b\n2 (1):\nc d\n", got "1 (0):\n2 (0):\n3 (1):\na b\n4 (0):\n5 (1):\nc d\n"
 === RUN   TestAWKGo/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#04
-    awkgo_test.go: expected "1 (1):\na b\n2 (1):\nc d\n", got "1 (0):\n2 (0):\n3 (2):\na\nb\n4 (0):\n5 (2):\nc\nd\n"
+    awkgo_test.go: expected "1 (1):\na b\n2 (1):\nc d\n", got "1 (0):\n2 (0):\n3 (1):\na b\n4 (0):\n5 (1):\nc d\n"
 === RUN   TestAWKGo/BEGIN_{_RS="";_FS="X"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=N
-    awkgo_test.go: expected "1 (4):\na|b|c|d|2 (2):\ne|f|3 (1):\n  |4 (2):\ng|h|", got "1 (1):\naXb|2 (1):\ncXd|3 (0):\n4 (1):\neXf|5 (0):\n6 (0):\n7 (0):\n8 (0):\n9 (0):\n10 (1):\ngXh|11 (0):\n12 (0):\n"
+    awkgo_test.go: expected "1 (4):\na|b|c|d|2 (2):\ne|f|3 (1):\n  |4 (2):\ng|h|", got "1 (2):\na|b|2 (2):\nc|d|3 (0):\n4 (2):\ne|f|5 (0):\n6 (0):\n7 (1):\n  |8 (0):\n9 (0):\n10 (2):\ng|h|11 (0):\n12 (0):\n"
 === RUN   TestAWKGo/BEGIN_{_RS_=_""_}__{_print_"got",_$0_}
     awkgo_test.go: expected "", got "got \ngot \ngot \ngot \n"
 === RUN   TestAWKGo/BEGIN_{_RS="\n"_}__{_print_}
@@ -288,7 +285,7 @@
 === RUN   TestAWKGo/{_print_gsub(/[0-9]/,_"\\z");_print_$0_}
 === RUN   TestAWKGo/{_print_gsub("0",_"x\\\\y");_print_$0_}__#_!awk_!gawk_--_our_behaviour
 === RUN   TestAWKGo/sub("",_"\\e",_FS)__#_!awk_!gawk
-    awkgo_test.go: expected error "invalid regex \"\\\\e \": error parsing regexp: invalid escape sequence: `\\e`", got "special variable FS not yet supported"
+    awkgo_test.go: expected error "invalid regex \"\\\\e \": error parsing regexp: invalid escape sequence: `\\e`", got "exit status 1"
 === RUN   TestAWKGo/BEGIN_{_print_tolower("Foo_BaR")_}
 === RUN   TestAWKGo/BEGIN_{_print_toupper("Foo_BaR")_}
 === RUN   TestAWKGo/_BEGIN_{__srand(1)__a_=_rand();_b_=_rand();_c_=_rand()__srand(1)__x_=_
@@ -507,9 +504,9 @@
     --- FAIL: TestAWKGo/BEGIN_{_FILENAME_=_"123.0";_print_(FILENAME==123)_}
     --- FAIL: TestAWKGo/BEGIN_{_FNR_=_123;_print_FNR_}
     --- FAIL: TestAWKGo/{_print_FNR,_$0_}
-    --- FAIL: TestAWKGo/BEGIN_{_print_"|"_FS_"|";_FS=","_}_{_print_$1,_$2_}
-    --- FAIL: TestAWKGo/BEGIN_{_print_"|"_FS_"|";_FS="\\."_}_{_print_$1,_$2_}
-    --- FAIL: TestAWKGo/BEGIN_{_FS="\\"_}_{_print_$1,_$2_}
+    --- PASS: TestAWKGo/BEGIN_{_print_"|"_FS_"|";_FS=","_}_{_print_$1,_$2_}
+    --- PASS: TestAWKGo/BEGIN_{_print_"|"_FS_"|";_FS="\\."_}_{_print_$1,_$2_}
+    --- PASS: TestAWKGo/BEGIN_{_FS="\\"_}_{_print_$1,_$2_}
     --- PASS: TestAWKGo/{_print_NF_}
     --- FAIL: TestAWKGo/BEGIN_{_NR_=_123;_print_NR_}
     --- PASS: TestAWKGo/{_print_NR,_$0_}
