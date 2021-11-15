@@ -2,8 +2,7 @@
 
 /*
 TODO:
-- AugAssign of field not yet supported
-- Incr of field not yet supported
+- move everything to main() / locals seeing we're not supporting functions?
 - make output more compact (print statement output, for example)
 - only output helpers and imports we use
 
@@ -106,6 +105,7 @@ type compiler struct {
 	regexen map[string]int
 }
 
+// TODO: also add outputf and simplify calls
 func (c *compiler) output(s string) {
 	fmt.Fprint(c.writer, s)
 }
@@ -301,7 +301,6 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 		case *AugAssignExpr:
 			switch left := e.Left.(type) {
 			case *VarExpr:
-				// TODO: handle ScopeSpecial
 				switch e.Op {
 				case MOD, POW:
 					c.output(left.Name)
@@ -319,6 +318,7 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 					c.output(" " + e.Op.String() + "= ")
 					c.output(c.numExpr(e.Right))
 				}
+
 			case *IndexExpr:
 				switch e.Op {
 				case MOD, POW:
@@ -343,26 +343,28 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 					c.output("] " + e.Op.String() + "= ")
 					c.output(c.numExpr(e.Right))
 				}
+
 			case *FieldExpr:
+				// We have to be careful not to evaluate left.Index twice, in
+				// case it has side effects, as in: $(y++) += 10
 				switch e.Op {
 				case MOD, POW:
-					c.output(fmt.Sprintf("_setField(%s, _numToStr(", c.intExpr(left.Index)))
+					c.output(fmt.Sprintf("func() { _t := %s; _setField(_t, _numToStr(", c.intExpr(left.Index)))
 					if e.Op == MOD {
 						c.output("math.Mod(")
 					} else {
 						c.output("math.Pow(")
 					}
-					c.output(fmt.Sprintf("_strToNum(_getField(%s)), %s)))", c.intExpr(left.Index), c.numExpr(e.Right)))
+					c.output(fmt.Sprintf("_strToNum(_getField(_t)), %s))) }()", c.numExpr(e.Right)))
 				default:
-					c.output(fmt.Sprintf("_setField(%s, _numToStr(_strToNum(_getField(%s)) %s %s))",
-						c.intExpr(left.Index), c.intExpr(left.Index), e.Op, c.numExpr(e.Right)))
+					c.output(fmt.Sprintf("func() { _t := %s; _setField(_t, _numToStr(_strToNum(_getField(_t)) %s %s)) }()",
+						c.intExpr(left.Index), e.Op, c.numExpr(e.Right)))
 				}
 			}
 
 		case *IncrExpr:
 			switch left := e.Expr.(type) {
 			case *VarExpr:
-				// TODO: handle ScopeSpecial
 				c.output(left.Name)
 				c.output(e.Op.String())
 			case *IndexExpr:
@@ -371,7 +373,14 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 				c.output(c.index(left.Index))
 				c.output("]" + e.Op.String())
 			case *FieldExpr:
-				panic(errorf("Incr of field not yet supported"))
+				// We have to be careful not to evaluate left.Index twice, in
+				// case it has side effects, as in: $(y++)++
+				op := "+"
+				if e.Op == DECR {
+					op = "-"
+				}
+				c.output(fmt.Sprintf("func() { _t := %s; _setField(_t, _numToStr(_strToNum(_getField(_t)) %s 1)) }()",
+					c.intExpr(left.Index), op))
 			}
 
 		default:

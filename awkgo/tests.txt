@@ -244,7 +244,6 @@
 === RUN   TestAWKGo/BEGIN_{_x[y++]++;_print_y_}
 === RUN   TestAWKGo/BEGIN_{_x[y++]_+=_3;_print_y_}
 === RUN   TestAWKGo/BEGIN_{_$(y++)++;_print_y_}
-    awkgo_test.go: compile error: Incr of field not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_sin(0),_sin(0.5),_sin(1),_sin(-1)_}
 === RUN   TestAWKGo/BEGIN_{_print_cos(0),_cos(0.5),_cos(1),_cos(-1)_}
 === RUN   TestAWKGo/BEGIN_{_print_exp(0),_exp(0.5),_exp(1),_exp(-1)_}
@@ -582,7 +581,7 @@
     --- PASS: TestAWKGo/BEGIN_{_y="_";_--x[y_=_y_y];_print_length(y)_}
     --- PASS: TestAWKGo/BEGIN_{_x[y++]++;_print_y_}
     --- PASS: TestAWKGo/BEGIN_{_x[y++]_+=_3;_print_y_}
-    --- FAIL: TestAWKGo/BEGIN_{_$(y++)++;_print_y_}
+    --- PASS: TestAWKGo/BEGIN_{_$(y++)++;_print_y_}
     --- PASS: TestAWKGo/BEGIN_{_print_sin(0),_sin(0.5),_sin(1),_sin(-1)_}
     --- PASS: TestAWKGo/BEGIN_{_print_cos(0),_cos(0.5),_cos(1),_cos(-1)_}
     --- PASS: TestAWKGo/BEGIN_{_print_exp(0),_exp(0.5),_exp(1),_exp(-1)_}
