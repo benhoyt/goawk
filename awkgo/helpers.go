@@ -15,7 +15,7 @@ func _getField(i int) string {
 func _setField(i int, s string) {
 	if i == 0 {
 		_line = s
-		_fields = strings.Fields(_line) // TODO: use FS
+		_fields = _splitHelper(_line, FS)
 		return
 	}
 	for j := len(_fields); j < i; j++ {
