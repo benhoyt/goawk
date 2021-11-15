@@ -105,9 +105,12 @@ type compiler struct {
 	regexen map[string]int
 }
 
-// TODO: also add outputf and simplify calls
 func (c *compiler) output(s string) {
 	fmt.Fprint(c.writer, s)
+}
+
+func (c *compiler) outputf(format string, args ...interface{}) {
+	fmt.Fprintf(c.writer, format, args...)
 }
 
 func (c *compiler) program(prog *Program) {
@@ -145,7 +148,7 @@ var (
 	sort.Strings(globals)
 	for _, name := range globals {
 		typ := c.typer.globals[name]
-		c.output(fmt.Sprintf("%s %s\n", name, c.goType(typ)))
+		c.outputf("%s %s\n", name, c.goType(typ))
 	}
 
 	c.output(`)
@@ -170,7 +173,7 @@ func main() {
 	for i, action := range prog.Actions {
 		if len(action.Pattern) == 2 {
 			// Booleans to keep track of range pattern state
-			c.output(fmt.Sprintf("_inRange%d := false\n", i))
+			c.outputf("_inRange%d := false\n", i)
 		}
 	}
 
@@ -178,7 +181,7 @@ func main() {
 		typ := c.typer.globals[name]
 		switch typ {
 		case typeArrayStr, typeArrayNum:
-			c.output(fmt.Sprintf("%s = make(%s)\n", name, c.goType(typ)))
+			c.outputf("%s = make(%s)\n", name, c.goType(typ))
 		}
 	}
 
@@ -229,7 +232,7 @@ func main() {
 	if len(regexen) > 0 {
 		c.output("\nvar (\n")
 		for _, r := range regexen {
-			c.output(fmt.Sprintf("_re%d = regexp.MustCompile(%q)\n", r.n, r.pattern))
+			c.outputf("_re%d = regexp.MustCompile(%q)\n", r.n, r.pattern)
 		}
 		c.output(")\n")
 	}
@@ -245,14 +248,11 @@ func (c *compiler) actions(actions []Action) {
 			// No pattern is equivalent to pattern evaluating to true
 		case 1:
 			// Single boolean pattern
-			c.output("if ")
-			c.output(c.cond(action.Pattern[0]))
-			c.output(" {\n")
+			c.outputf("if %s {\n", c.cond(action.Pattern[0]))
 		case 2:
 			// Range pattern (matches between start and stop lines)
-			c.output(fmt.Sprintf("if !_inRange%d { _inRange%d = %s }\n",
-				i, i, c.cond(action.Pattern[0])))
-			c.output(fmt.Sprintf("if _inRange%d {\n", i))
+			c.outputf("if !_inRange%d { _inRange%d = %s }\n", i, i, c.cond(action.Pattern[0]))
+			c.outputf("if _inRange%d {\n", i)
 		}
 
 		if len(action.Stmts) == 0 {
@@ -266,7 +266,7 @@ func (c *compiler) actions(actions []Action) {
 		case 1:
 			c.output("}\n")
 		case 2:
-			c.output(fmt.Sprintf("\n_inRange%d = !(%s)\n", i, c.cond(action.Pattern[1])))
+			c.outputf("\n_inRange%d = !(%s)\n", i, c.cond(action.Pattern[1]))
 			c.output("}\n")
 		}
 	}
@@ -309,39 +309,23 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 					} else {
 						c.output(" = math.Pow(")
 					}
-					c.output(left.Name)
-					c.output(", ")
-					c.output(c.numExpr(e.Right))
-					c.output(")")
+					c.outputf("%s, %s)", left.Name, c.numExpr(e.Right))
 				default:
-					c.output(left.Name)
-					c.output(" " + e.Op.String() + "= ")
-					c.output(c.numExpr(e.Right))
+					c.outputf("%s %s= %s", left.Name, e.Op, c.numExpr(e.Right))
 				}
 
 			case *IndexExpr:
 				switch e.Op {
 				case MOD, POW:
-					c.output(left.Array.Name)
-					c.output("[")
-					c.output(c.index(left.Index))
+					c.outputf("%s[%s", left.Array.Name, c.index(left.Index))
 					if e.Op == MOD {
 						c.output("] = math.Mod(")
 					} else {
 						c.output("] = math.Pow(")
 					}
-					c.output(left.Array.Name)
-					c.output("[")
-					c.output(c.index(left.Index))
-					c.output("], ")
-					c.output(c.numExpr(e.Right))
-					c.output(")")
+					c.outputf("%s[%s], %s)", left.Array.Name, c.index(left.Index), c.numExpr(e.Right))
 				default:
-					c.output(left.Array.Name)
-					c.output("[")
-					c.output(c.index(left.Index))
-					c.output("] " + e.Op.String() + "= ")
-					c.output(c.numExpr(e.Right))
+					c.outputf("%s[%s] %s= %s", left.Array.Name, c.index(left.Index), e.Op, c.numExpr(e.Right))
 				}
 
 			case *FieldExpr:
@@ -349,29 +333,25 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 				// case it has side effects, as in: $(y++) += 10
 				switch e.Op {
 				case MOD, POW:
-					c.output(fmt.Sprintf("func() { _t := %s; _setField(_t, _numToStr(", c.intExpr(left.Index)))
+					c.outputf("func() { _t := %s; _setField(_t, _numToStr(", c.intExpr(left.Index))
 					if e.Op == MOD {
 						c.output("math.Mod(")
 					} else {
 						c.output("math.Pow(")
 					}
-					c.output(fmt.Sprintf("_strToNum(_getField(_t)), %s))) }()", c.numExpr(e.Right)))
+					c.outputf("_strToNum(_getField(_t)), %s))) }()", c.numExpr(e.Right))
 				default:
-					c.output(fmt.Sprintf("func() { _t := %s; _setField(_t, _numToStr(_strToNum(_getField(_t)) %s %s)) }()",
-						c.intExpr(left.Index), e.Op, c.numExpr(e.Right)))
+					c.outputf("func() { _t := %s; _setField(_t, _numToStr(_strToNum(_getField(_t)) %s %s)) }()",
+						c.intExpr(left.Index), e.Op, c.numExpr(e.Right))
 				}
 			}
 
 		case *IncrExpr:
 			switch left := e.Expr.(type) {
 			case *VarExpr:
-				c.output(left.Name)
-				c.output(e.Op.String())
+				c.outputf("%s%s", left.Name, e.Op)
 			case *IndexExpr:
-				c.output(left.Array.Name)
-				c.output("[")
-				c.output(c.index(left.Index))
-				c.output("]" + e.Op.String())
+				c.outputf("%s[%s]%s", left.Array.Name, c.index(left.Index), e.Op)
 			case *FieldExpr:
 				// We have to be careful not to evaluate left.Index twice, in
 				// case it has side effects, as in: $(y++)++
@@ -379,14 +359,12 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 				if e.Op == DECR {
 					op = "-"
 				}
-				c.output(fmt.Sprintf("func() { _t := %s; _setField(_t, _numToStr(_strToNum(_getField(_t)) %s 1)) }()",
-					c.intExpr(left.Index), op))
+				c.outputf("func() { _t := %s; _setField(_t, _numToStr(_strToNum(_getField(_t)) %s 1)) }()",
+					c.intExpr(left.Index), op)
 			}
 
 		default:
-			c.output("_ = ")
-			str := c.expr(s.Expr)
-			c.output(str)
+			c.outputf("_ = %s", c.expr(s.Expr))
 		}
 
 	case *PrintStmt:
@@ -421,10 +399,9 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 			panic(errorf("printf currently only supports literal format strings"))
 		}
 		args := c.printfArgs(formatExpr.Value, s.Args[1:])
-		c.output(fmt.Sprintf("fmt.Fprintf(_output, %q", formatExpr.Value))
+		c.outputf("fmt.Fprintf(_output, %q", formatExpr.Value)
 		for _, arg := range args {
-			c.output(", ")
-			c.output(arg)
+			c.outputf(", %s", arg)
 		}
 		c.output(")")
 
@@ -433,8 +410,7 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 		switch cond := s.Cond.(type) {
 		case *InExpr:
 			// if _, _ok := a[k]; ok { ... }
-			c.output(fmt.Sprintf("_, _ok := %s[%s]; _ok ",
-				cond.Array.Name, c.index(cond.Index)))
+			c.outputf("_, _ok := %s[%s]; _ok ", cond.Array.Name, c.index(cond.Index))
 		default:
 			c.output(c.cond(s.Cond))
 		}
@@ -479,37 +455,26 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 		c.output("}")
 
 	case *ForInStmt:
-		c.output("for ")
-		c.output(s.Var.Name)
-		c.output(" = range ")
-		c.output(s.Array.Name)
-		c.output(" {\n")
+		c.outputf("for %s = range %s {\n", s.Var.Name, s.Array.Name)
 		c.stmts(s.Body)
 		c.output("}")
 
 	case *ReturnStmt:
 		if s.Value != nil {
-			c.output("return ")
-			str := c.expr(s.Value)
-			c.output(str)
+			c.outputf("return %s", c.expr(s.Value))
 		} else {
 			c.output("return")
 		}
 
 	case *WhileStmt:
-		c.output("for ")
-		c.output(c.cond(s.Cond))
-		c.output(" {\n")
+		c.outputf("for %s {\n", c.cond(s.Cond))
 		c.stmts(s.Body)
 		c.output("}")
 
 	case *DoWhileStmt:
 		c.output("for {\n")
 		c.stmts(s.Body)
-		c.output("if !(")
-		c.output(c.cond(s.Cond))
-		c.output(") {\nbreak\n}\n")
-		c.output("}")
+		c.outputf("if !(%s) {\nbreak\n}\n}", c.cond(s.Cond))
 
 	case *BreakStmt:
 		c.output("break")
@@ -523,9 +488,7 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 
 	case *ExitStmt:
 		if s.Status != nil {
-			c.output("os.Exit(")
-			c.output(c.intExpr(s.Status))
-			c.output(")")
+			c.outputf("os.Exit(%s)", c.intExpr(s.Status))
 		} else {
 			c.output("os.Exit(0)")
 		}
@@ -533,18 +496,10 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 	case *DeleteStmt:
 		if len(s.Index) > 0 {
 			// Delete single key from array
-			c.output("delete(")
-			c.output(s.Array.Name)
-			c.output(", ")
-			c.output(c.index(s.Index))
-			c.output(")")
+			c.outputf("delete(%s, %s)", s.Array.Name, c.index(s.Index))
 		} else {
 			// Delete every element in array
-			c.output("for k := range ")
-			c.output(s.Array.Name)
-			c.output(" {\ndelete(")
-			c.output(s.Array.Name)
-			c.output(", k)\n}")
+			c.outputf("for _k := range %s {\ndelete(%s, _k)\n}", s.Array.Name, s.Array.Name)
 		}
 
 	case *BlockStmt:

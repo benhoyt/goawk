@@ -361,7 +361,6 @@ func (t *typer) expr(expr Expr) (typ valueType) {
 	default:
 		panic(errorf("unexpected expression type %T", expr))
 	}
-	return typeUnknown
 }
 
 func (t *typer) specialType(name string, index int) valueType {
