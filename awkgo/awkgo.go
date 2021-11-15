@@ -2,6 +2,7 @@
 
 /*
 TODO:
+- handle FS
 - move everything to main() / locals seeing we're not supporting functions?
 - make output more compact (print statement output, for example)
 - only output helpers and imports we use
@@ -280,7 +281,6 @@ func (c *compiler) stmts(stmts Stmts) {
 func (c *compiler) assign(left, right Expr) string {
 	switch left := left.(type) {
 	case *VarExpr:
-		// TODO: handle ScopeSpecial
 		return fmt.Sprintf("%s = %s", left.Name, c.expr(right))
 	case *IndexExpr:
 		return fmt.Sprintf("%s[%s] = %s", left.Array.Name, c.index(left.Index), c.expr(right))
@@ -442,10 +442,15 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 		c.stmts(s.Body)
 		c.output("}")
 		if len(s.Else) > 0 {
-			// TODO: handle "else if"
-			c.output(" else {\n")
-			c.stmts(s.Else)
-			c.output("}")
+			if _, isIf := s.Else[0].(*IfStmt); isIf && len(s.Else) == 1 {
+				// Simplify runs if-else if
+				c.output(" else ")
+				c.stmt(s.Else[0])
+			} else {
+				c.output(" else {\n")
+				c.stmts(s.Else)
+				c.output("}")
+			}
 		}
 
 	case *ForStmt:
@@ -644,8 +649,7 @@ func (c *compiler) expr(expr Expr) string {
 			panic(errorf("unexpected lvalue type: %T", l))
 		}
 
-	//case *AugAssignExpr:
-	//	return "TODO", 0
+	//TODO: case *AugAssignExpr:
 
 	case *CondExpr:
 		return fmt.Sprintf("func() %s { if %s { return %s }; return %s }()",
@@ -774,7 +778,6 @@ func (c *compiler) expr(expr Expr) string {
 				str += ", false); "
 			}
 			if len(e.Args) == 3 {
-				// TODO: hmm, passing VarExpr here is weird
 				str += c.assign(e.Args[2], &VarExpr{Name: "out", Scope: ScopeGlobal})
 			} else {
 				str += "_setField(0, out)"
@@ -1052,7 +1055,6 @@ func (c *compiler) printfArgs(format string, args []Expr) []string {
 			case 'd', 'i', 'o', 'x', 'X', 'u':
 				argStr = c.intExpr(nextArg())
 			case 'f', 'e', 'E', 'g', 'G':
-				// TODO: could avoid float64() in many cases
 				argStr = "float64(" + c.numExpr(nextArg()) + ")"
 			case 'c':
 				arg := nextArg()
