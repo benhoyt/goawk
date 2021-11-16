@@ -2,9 +2,7 @@
 
 /*
 TODO:
-- move everything to main() / locals seeing we're not supporting functions?
 - make output more compact (print statement output, for example)
-- only output helpers and imports we use
 
 NOT SUPPORTED:
 - functions
@@ -368,15 +366,21 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 		}
 
 	case *PrintStmt:
-		// TODO: if OFS and ORS are never changed, use fmt.Fprintln() instead
 		if s.Dest != nil {
 			panic(errorf("print redirection not yet supported"))
 		}
-		c.output("fmt.Fprint(_output, ")
+		if c.typer.oFSRSChanged {
+			c.output("fmt.Fprint(_output, ")
+		} else {
+			c.output("fmt.Fprintln(_output, ")
+		}
 		if len(s.Args) > 0 {
 			for i, arg := range s.Args {
 				if i > 0 {
-					c.output(", OFS, ")
+					c.output(", ")
+					if c.typer.oFSRSChanged {
+						c.output("OFS, ")
+					}
 				}
 				str := c.expr(arg)
 				if c.typer.exprs[arg] == typeNum {
@@ -388,7 +392,10 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 			// "print" with no args is equivalent to "print $0"
 			c.output("_line")
 		}
-		c.output(", ORS)")
+		if c.typer.oFSRSChanged {
+			c.output(", ORS")
+		}
+		c.output(")")
 
 	case *PrintfStmt:
 		if s.Dest != nil {

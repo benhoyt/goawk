@@ -10,12 +10,13 @@ import (
 )
 
 type typer struct {
-	globals    map[string]valueType
-	scalarRefs map[string]bool
-	arrayRefs  map[string]bool
-	exprs      map[Expr]valueType
-	funcName   string // function name if inside a func, else ""
-	nextUsed   bool
+	globals      map[string]valueType
+	scalarRefs   map[string]bool
+	arrayRefs    map[string]bool
+	exprs        map[Expr]valueType
+	funcName     string // function name if inside a func, else ""
+	nextUsed     bool
+	oFSRSChanged bool
 }
 
 func newTyper() *typer {
@@ -265,6 +266,9 @@ func (t *typer) expr(expr Expr) (typ valueType) {
 		case *VarExpr:
 			// x = right
 			t.setType(left.Name, rightType)
+			if left.Name == "OFS" || left.Name == "ORS" {
+				t.oFSRSChanged = true
+			}
 		case *IndexExpr:
 			// m[k] = right
 			switch rightType {
@@ -285,12 +289,14 @@ func (t *typer) expr(expr Expr) (typ valueType) {
 		case *VarExpr:
 			// x += right
 			t.setType(left.Name, typeNum)
+			if left.Name == "OFS" || left.Name == "ORS" {
+				t.oFSRSChanged = true
+			}
 		case *IndexExpr:
 			// m[k] += right
 			t.setType(left.Array.Name, typeArrayNum)
 		case *FieldExpr:
 			// $1 += right
-			// TODO: this should probably return typeStr
 		}
 		t.expr(e.Left)
 		return typeNum
@@ -300,12 +306,14 @@ func (t *typer) expr(expr Expr) (typ valueType) {
 		case *VarExpr:
 			// x++
 			t.setType(left.Name, typeNum)
+			if left.Name == "OFS" || left.Name == "ORS" {
+				t.oFSRSChanged = true
+			}
 		case *IndexExpr:
 			// m[k]++
 			t.setType(left.Array.Name, typeArrayNum)
 		case *FieldExpr:
 			// $1++
-			// TODO: this should probably return typeStr
 		}
 		t.expr(e.Expr)
 		return typeNum
