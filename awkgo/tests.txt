@@ -137,9 +137,8 @@
 === RUN   TestAWKGo/BEGIN_{_FILENAME_=_"123.0";_print_(FILENAME==123)_}
     awkgo_test.go: compile error: special variable FILENAME not yet supported
 === RUN   TestAWKGo/BEGIN_{_FNR_=_123;_print_FNR_}
-    awkgo_test.go: compile error: special variable FNR not yet supported
+    awkgo_test.go: expected "123\n", got "0\n"
 === RUN   TestAWKGo/{_print_FNR,_$0_}
-    awkgo_test.go: compile error: special variable FNR not yet supported
 === RUN   TestAWKGo/BEGIN_{_print_"|"_FS_"|";_FS=","_}_{_print_$1,_$2_}
 === RUN   TestAWKGo/BEGIN_{_print_"|"_FS_"|";_FS="\\."_}_{_print_$1,_$2_}
 === RUN   TestAWKGo/BEGIN_{_FS="\\"_}_{_print_$1,_$2_}
@@ -503,7 +502,7 @@
     --- FAIL: TestAWKGo/BEGIN_{_FILENAME_=_"foo";_print_FILENAME_}
     --- FAIL: TestAWKGo/BEGIN_{_FILENAME_=_"123.0";_print_(FILENAME==123)_}
     --- FAIL: TestAWKGo/BEGIN_{_FNR_=_123;_print_FNR_}
-    --- FAIL: TestAWKGo/{_print_FNR,_$0_}
+    --- PASS: TestAWKGo/{_print_FNR,_$0_}
     --- PASS: TestAWKGo/BEGIN_{_print_"|"_FS_"|";_FS=","_}_{_print_$1,_$2_}
     --- PASS: TestAWKGo/BEGIN_{_print_"|"_FS_"|";_FS="\\."_}_{_print_$1,_$2_}
     --- PASS: TestAWKGo/BEGIN_{_FS="\\"_}_{_print_$1,_$2_}

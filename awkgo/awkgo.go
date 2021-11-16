@@ -2,7 +2,7 @@
 
 /*
 TODO:
-- make output more compact (print statement output, for example)
+- make output more compact
 
 NOT SUPPORTED:
 - functions
@@ -13,6 +13,8 @@ NOT SUPPORTED:
 - "next" in functions
 - print redirection
 - getline
+- reference to nonexistent array element should create it (POSIX, but yuck)
+- some forms of augmented assignment (no reason we can't, just TODO)
 */
 
 package main
@@ -618,10 +620,6 @@ func (c *compiler) expr(expr Expr) string {
 			c.goType(c.typer.exprs[e]), c.cond(e.Cond), c.expr(e.True), c.expr(e.False))
 
 	case *IndexExpr:
-		// TODO: see interp.go getArrayValue
-		// Strangely, per the POSIX spec, "Any other reference to a
-		// nonexistent array element [apart from "in" expressions]
-		// shall automatically create it."
 		switch e.Array.Scope {
 		case ScopeSpecial:
 			panic(errorf("special variable %s not yet supported", e.Array.Name))
@@ -939,17 +937,14 @@ func (c *compiler) special(name string, index int) string {
 	switch index {
 	case V_NF:
 		return "float64(len(_fields))"
-	case V_NR:
+	case V_NR, V_FNR:
 		return "float64(_lineNum)"
 	case V_RLENGTH:
 		return "RLENGTH"
 	case V_RSTART:
 		return "RSTART"
-	//TODO: case V_FNR:
-	//TODO: case V_ARGC:
 	case V_CONVFMT:
 		return "CONVFMT"
-	//TODO: case V_FILENAME:
 	case V_FS:
 		return "FS"
 	case V_OFMT:
@@ -958,7 +953,6 @@ func (c *compiler) special(name string, index int) string {
 		return "OFS"
 	case V_ORS:
 		return "ORS"
-	//TODO: case V_RS:
 	case V_SUBSEP:
 		return "SUBSEP"
 	default:
