@@ -2,7 +2,7 @@
 
 /*
 TODO:
-- make output more compact
+- add "awkgo -f" option for file input, tidy up CLI
 
 NOT SUPPORTED:
 - functions
@@ -158,6 +158,8 @@ func main() {
 	defer _output.Flush()
 
 	_scanner = bufio.NewScanner(os.Stdin)
+	_seed = 1.0
+	_rand = rand.New(rand.NewSource(int64(math.Float64bits(_seed))))
 
 	FS = " "
 	OFS = " "
@@ -165,8 +167,6 @@ func main() {
 	OFMT = "%.6g"
 	CONVFMT = "%.6g"
 	SUBSEP = "\x1c"
-	_seed = 1.0
-	_rand = rand.New(rand.NewSource(int64(math.Float64bits(_seed))))
 
 `)
 
@@ -386,7 +386,7 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 				}
 				str := c.expr(arg)
 				if c.typer.exprs[arg] == typeNum {
-					str = fmt.Sprintf("_numToStrFormat(OFMT, %s)", str)
+					str = fmt.Sprintf("_formatNum(%s)", str)
 				}
 				c.output(str)
 			}

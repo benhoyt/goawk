@@ -53,6 +53,10 @@ func _numToStr(n float64) string {
 	return _numToStrFormat(CONVFMT, n)
 }
 
+func _formatNum(n float64) string {
+	return _numToStrFormat(OFMT, n)
+}
+
 var asciiSpace = [256]uint8{'\t': 1, '\n': 1, '\v': 1, '\f': 1, '\r': 1, ' ': 1}
 
 // Like strconv.ParseFloat, but parses at the start of string and
