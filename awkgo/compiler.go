@@ -813,11 +813,16 @@ func (c *compiler) boolExpr(op Token, l, r Expr) (string, bool) {
 			}
 		}
 		panic(errorf("unexpected types in %s (%s) %s %s (%s)", ls, lt, op, rs, rt))
-	case MATCH, NOT_MATCH:
+	case MATCH:
 		if strExpr, ok := r.(*StrExpr); ok {
 			return fmt.Sprintf("%s.MatchString(%s)", c.regexLiteral(strExpr.Value), c.strExpr(l)), true
 		}
 		return fmt.Sprintf("_reCompile(%s).MatchString(%s)", c.strExpr(l), c.strExpr(r)), true
+	case NOT_MATCH:
+		if strExpr, ok := r.(*StrExpr); ok {
+			return fmt.Sprintf("(!%s.MatchString(%s))", c.regexLiteral(strExpr.Value), c.strExpr(l)), true
+		}
+		return fmt.Sprintf("(!_reCompile(%s).MatchString(%s))", c.strExpr(l), c.strExpr(r)), true
 	case AND, OR:
 		return fmt.Sprintf("(%s %s %s)", c.cond(l), op, c.cond(r)), true
 	default:

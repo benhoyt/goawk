@@ -97,7 +97,6 @@
 === RUN   TestAWKGo/BEGIN_{_print_1_2,_"x"_"yz",_1+2_3+4_}
 === RUN   TestAWKGo/BEGIN_{_print_"food"~/oo/,_"food"~/[oO]+d/,_"food"~"f",_"food"~"F",_"f
 === RUN   TestAWKGo/BEGIN_{_print_"food"!~/oo/,_"food"!~/[oO]+d/,_"food"!~"f",_"food"!~"F"
-    awkgo_test.go: expected "0 0 0 1 1\n", got "1 1 1 0 0\n"
 === RUN   TestAWKGo/BEGIN_{_print_1+2*3/4^5%6_7,_(1+2)*3/4^5%6_"7"_}
 === RUN   TestAWKGo/BEGIN_{_print_'\"'_'\''_'xy'_"z"_"'"_'\"'_}
 === RUN   TestAWKGo/{_print_/foo/_}
@@ -212,7 +211,7 @@
 === RUN   TestAWKGo/function_f()_{}_function_f()_{}_BEGIN_{_}
 === RUN   TestAWKGo/BEGIN_{_print_(1,2),(3,4)_}
 === RUN   TestAWKGo/BEGIN_{_print_(1,2,(3,4),(5,6))_}
---- FAIL: TestAWKGo
+--- PASS: TestAWKGo
     --- PASS: TestAWKGo/BEGIN_{_print_"b"_}
     --- PASS: TestAWKGo/BEGIN_{_print_"b"_}#01
     --- PASS: TestAWKGo/END_{_print_"e"_}
@@ -310,7 +309,7 @@
     --- PASS: TestAWKGo/BEGIN_{_print_2^3,_2^3^3,_2^-3,_-2^3,_"2"^"3",_3^.14_}
     --- PASS: TestAWKGo/BEGIN_{_print_1_2,_"x"_"yz",_1+2_3+4_}
     --- PASS: TestAWKGo/BEGIN_{_print_"food"~/oo/,_"food"~/[oO]+d/,_"food"~"f",_"food"~"F",_"f
-    --- FAIL: TestAWKGo/BEGIN_{_print_"food"!~/oo/,_"food"!~/[oO]+d/,_"food"!~"f",_"food"!~"F"
+    --- PASS: TestAWKGo/BEGIN_{_print_"food"!~/oo/,_"food"!~/[oO]+d/,_"food"!~"f",_"food"!~"F"
     --- PASS: TestAWKGo/BEGIN_{_print_1+2*3/4^5%6_7,_(1+2)*3/4^5%6_"7"_}
     --- PASS: TestAWKGo/BEGIN_{_print_'\"'_'\''_'xy'_"z"_"'"_'\"'_}
     --- PASS: TestAWKGo/{_print_/foo/_}
@@ -425,6 +424,5 @@
     --- PASS: TestAWKGo/function_f()_{}_function_f()_{}_BEGIN_{_}
     --- PASS: TestAWKGo/BEGIN_{_print_(1,2),(3,4)_}
     --- PASS: TestAWKGo/BEGIN_{_print_(1,2,(3,4),(5,6))_}
-FAIL
-FAIL	github.com/benhoyt/goawk/awkgo
-FAIL
+PASS
+ok  	github.com/benhoyt/goawk/awkgo
