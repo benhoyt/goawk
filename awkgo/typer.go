@@ -3,9 +3,6 @@
 package main
 
 import (
-	"fmt"
-	"os"
-
 	. "github.com/benhoyt/goawk/internal/ast"
 	. "github.com/benhoyt/goawk/lexer"
 	. "github.com/benhoyt/goawk/parser"
@@ -39,16 +36,6 @@ func newTyper() *typer {
 	t.globals["RLENGTH"] = typeNum
 	t.globals["SUBSEP"] = typeStr
 	return t
-}
-
-func (t *typer) dump() {
-	fmt.Fprintf(os.Stderr, "// DUMP:\n")
-	for name, t := range t.globals {
-		fmt.Fprintf(os.Stderr, "// var %s: %s\n", name, t)
-	}
-	for expr, t := range t.exprs {
-		fmt.Fprintf(os.Stderr, "// expr %s: %s\n", expr, t)
-	}
 }
 
 func (t *typer) program(prog *Program) {

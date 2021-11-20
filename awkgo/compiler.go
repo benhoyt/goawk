@@ -456,7 +456,6 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 		c.output("continue")
 
 	case *NextStmt:
-		// typer ensures "next" is not used inside a function
 		c.output("goto _nextLine")
 
 	case *ExitStmt:
