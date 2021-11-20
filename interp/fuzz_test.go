@@ -4,6 +4,7 @@
 // interpreter panics.
 
 //go:build gofuzzbeta
+// +build gofuzzbeta
 
 package interp_test
 

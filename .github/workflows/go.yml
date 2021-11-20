@@ -10,13 +10,19 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        go: ['1.17', '1.16', '1.15', '1.14', '1.13']
+
+    name: Go ${{ matrix.go }} Tests
+
     steps:
     - uses: actions/checkout@v2
 
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.17
+        go-version: ${{ matrix.go }}
 
     - name: Build and Test
       run: |
@@ -27,13 +33,19 @@ jobs:
   build-windows:
     runs-on: windows-latest
 
+    strategy:
+      matrix:
+        go: ['1.17', '1.13']
+
+    name: Go ${{ matrix.go }} Tests
+
     steps:
     - uses: actions/checkout@v2
 
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.17
+        go-version: ${{ matrix.go }}
 
     - name: Install Gawk
       run: choco install gawk
@@ -47,13 +59,19 @@ jobs:
   build-macos:
     runs-on: macos-latest
 
+    strategy:
+      matrix:
+        go: ['1.17', '1.13']
+
+    name: Go ${{ matrix.go }} Tests
+
     steps:
     - uses: actions/checkout@v2
 
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.17
+        go-version: ${{ matrix.go }}
 
     - name: Install Gawk
       run: brew install gawk
