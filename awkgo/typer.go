@@ -1,3 +1,5 @@
+// AWKGo: type
+
 package main
 
 import (
@@ -9,6 +11,8 @@ import (
 	. "github.com/benhoyt/goawk/parser"
 )
 
+// typer walks the parse tree and builds a mappings of variables and
+// expressions to their types.
 type typer struct {
 	globals      map[string]valueType
 	scalarRefs   map[string]bool

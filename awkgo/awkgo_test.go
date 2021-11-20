@@ -1,3 +1,5 @@
+// This is copied and hacked from goawk/interp/interp_test.go
+
 package main
 
 import (
@@ -18,7 +20,6 @@ type interpTest struct {
 	err string
 }
 
-// Note: a lot of these are really parser tests too.
 var interpTests = []interpTest{
 	// BEGIN and END work correctly
 	{`BEGIN { print "b" }`, "", "b\n", ""},
