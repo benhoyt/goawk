@@ -1,5 +1,8 @@
 // This is copied and hacked from goawk/interp/interp_test.go
 
+//go:build awkgotest
+// +build awkgotest
+
 package main
 
 import (
