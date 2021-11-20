@@ -245,6 +245,12 @@ func (c *compiler) stmts(stmts Stmts) {
 func (c *compiler) assign(left, right Expr) string {
 	switch left := left.(type) {
 	case *VarExpr:
+		if left.Scope == ScopeSpecial {
+			switch left.Index {
+			case V_NF, V_NR, V_FNR:
+				panic(errorf("can't assign to special variable %s", left.Name))
+			}
+		}
 		return fmt.Sprintf("%s = %s", left.Name, c.expr(right))
 	case *IndexExpr:
 		return fmt.Sprintf("%s[%s] = %s", left.Array.Name, c.index(left.Index), c.expr(right))
