@@ -438,13 +438,6 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 		c.stmts(s.Body)
 		c.output("}")
 
-	case *ReturnStmt:
-		if s.Value != nil {
-			c.outputf("return %s", c.expr(s.Value))
-		} else {
-			c.output("return")
-		}
-
 	case *WhileStmt:
 		c.outputf("for %s {\n", c.cond(s.Cond))
 		c.stmts(s.Body)

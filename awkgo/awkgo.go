@@ -7,7 +7,6 @@ NOT SUPPORTED:
 - non-literal [s]printf format strings?
 - assigning numStr values (but using $0 in conditionals works)
 - null values (unset number variable should output "", we output "0")
-- "next" in functions
 - print redirection
 - getline
 - reference to nonexistent array element should create it (POSIX, but yuck)
