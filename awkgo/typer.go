@@ -1,4 +1,4 @@
-// AWKGo: type
+// AWKGo: walk parse tree and determine expression and variable types
 
 package main
 
