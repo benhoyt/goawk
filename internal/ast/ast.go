@@ -456,7 +456,7 @@ func (s *WhileStmt) String() string {
 	return "while (" + trimParens(s.Cond.String()) + ") {\n" + s.Body.String() + "}"
 }
 
-// DoWhileStmt is a fo-while loop.
+// DoWhileStmt is a do-while loop.
 type DoWhileStmt struct {
 	Body Stmts
 	Cond Expr
