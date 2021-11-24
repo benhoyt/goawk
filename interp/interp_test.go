@@ -76,7 +76,7 @@ NR==3, NR==5 { print NR }
 	{`BEGIN { printf "%d", 12, 34 }`, "", "12", "", ""},
 	{`BEGIN { printf "%d" }`, "", "", "format error: got 0 args, expected 1", "not enough arg"},
 	// Our %c handling is mostly like awk's, except for multiples
-	// 256, where awk is weird and we're like mawk
+	// 256, where awk is weird, and we're like mawk
 	{`BEGIN { printf "%c", 0 }`, "", "\x00", "", ""},
 	{`BEGIN { printf "%c", 127 }`, "", "\x7f", "", ""},
 	{`BEGIN { printf "%c", 128 }  # !gawk`, "", "\x80", "", ""},

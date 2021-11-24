@@ -425,7 +425,7 @@ func writeOutput(w io.Writer, s string) error {
 	return err
 }
 
-// Close all streams, commands, etc (after program execution)
+// Close all streams, commands, etc. (after program execution)
 func (p *interp) closeAll() {
 	if prevInput, ok := p.input.(io.Closer); ok {
 		_ = prevInput.Close()

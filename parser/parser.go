@@ -31,8 +31,8 @@ func (e *ParseError) Error() string {
 	return fmt.Sprintf("parse error at %d:%d: %s", e.Position.Line, e.Position.Column, e.Message)
 }
 
-// ParseConfig lets you specify configuration for the parsing process
-// (for example printing type information for debugging).
+// ParserConfig lets you specify configuration for the parsing
+// process (for example printing type information for debugging).
 type ParserConfig struct {
 	// Enable printing of type information
 	DebugTypes bool
@@ -562,14 +562,14 @@ func (p *parser) _cond(higher func() Expr) Expr {
 	return expr
 }
 
-// Parse an || or expresion:
+// Parse an || or expression:
 //
 //     and [OR NEWLINE* and] [OR NEWLINE* and] ...
 //
 func (p *parser) or() Expr      { return p.binaryLeft(p.and, true, OR) }
 func (p *parser) printOr() Expr { return p.binaryLeft(p.printAnd, true, OR) }
 
-// Parse an && and expresion:
+// Parse an && and expression:
 //
 //     in [AND NEWLINE* in] [AND NEWLINE* in] ...
 //
@@ -769,7 +769,7 @@ func (p *parser) primary() Expr {
 		return &GetlineExpr{nil, varExpr, file}
 	// Below is the parsing of all the builtin function calls. We
 	// could unify these but several of them have special handling
-	// (array/lvalue/regex params, optional arguments, etc), and
+	// (array/lvalue/regex params, optional arguments, etc.), and
 	// doing it this way means we can check more at parse time.
 	case F_SUB, F_GSUB:
 		op := p.tok

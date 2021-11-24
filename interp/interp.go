@@ -715,7 +715,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 		// Pre-increment, post-increment, pre-decrement, post-decrement
 
 		// First evaluate the expression, but remember array or field
-		// index so we don't evaluate part of the expression twice
+		// index, so we don't evaluate part of the expression twice
 		exprValue, arrayIndex, fieldIndex, err := p.evalForAugAssign(e.Expr)
 		if err != nil {
 			return null(), err
@@ -731,7 +731,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 		}
 		incrValue := num(incr)
 
-		// Finally assign back to expression and return the correct value
+		// Finally, assign back to expression and return the correct value
 		err = p.assignAug(e.Expr, arrayIndex, fieldIndex, incrValue)
 		if err != nil {
 			return null(), err
