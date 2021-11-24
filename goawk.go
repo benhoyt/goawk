@@ -67,7 +67,7 @@ Additional GoAWK arguments:
 
 func main() {
 	// Parse command line arguments manually rather than using the
-	// "flag" package so we can support flags with no space between
+	// "flag" package, so we can support flags with no space between
 	// flag and argument, like '-F:' (allowed by POSIX)
 	var progFiles []string
 	var vars []string

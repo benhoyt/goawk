@@ -412,7 +412,7 @@ func (p *interp) nextLine() (string, error) {
 }
 
 // Write output string to given writer, producing correct line endings
-// on Windows (CR LF)
+// on Windows (CR LF).
 func writeOutput(w io.Writer, s string) error {
 	if crlfNewline {
 		// First normalize to \n, then convert all newlines to \r\n
@@ -425,7 +425,7 @@ func writeOutput(w io.Writer, s string) error {
 	return err
 }
 
-// Close all streams, commands, etc (after program execution)
+// Close all streams, commands, and so on (after program execution).
 func (p *interp) closeAll() {
 	if prevInput, ok := p.input.(io.Closer); ok {
 		_ = prevInput.Close()

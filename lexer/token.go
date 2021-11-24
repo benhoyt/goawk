@@ -12,6 +12,7 @@ const (
 	CONCAT // Not really a token, but used as an operator
 
 	// Symbols
+
 	ADD
 	ADD_ASSIGN
 	AND
@@ -53,6 +54,7 @@ const (
 	SUB_ASSIGN
 
 	// Keywords
+
 	BEGIN
 	BREAK
 	CONTINUE
@@ -73,6 +75,7 @@ const (
 	WHILE
 
 	// Built-in functions
+
 	F_ATAN2
 	F_CLOSE
 	F_COS
@@ -97,6 +100,7 @@ const (
 	F_TOUPPER
 
 	// Literals and names (variables and arrays)
+
 	NAME
 	NUMBER
 	STRING
