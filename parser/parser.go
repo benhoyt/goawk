@@ -769,8 +769,8 @@ func (p *parser) primary() Expr {
 		return &GetlineExpr{nil, varExpr, file}
 	// Below is the parsing of all the builtin function calls. We
 	// could unify these but several of them have special handling
-	// (array/lvalue/regex params, optional arguments, etc.), and
-	// doing it this way means we can check more at parse time.
+	// (array/lvalue/regex params, optional arguments, and so on).
+	// Doing it this way means we can check more at parse time.
 	case F_SUB, F_GSUB:
 		op := p.tok
 		p.next()

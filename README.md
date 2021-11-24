@@ -41,7 +41,7 @@ if err != nil {
 // baz
 ```
 
-Or you can use the `parser` module and then `interp.ExecProgram()` to control execution, set variables, etc.:
+Or you can use the `parser` module and then `interp.ExecProgram()` to control execution, set variables, and so on:
 
 ```go
 src := "{ print NR, tolower($0) }"
