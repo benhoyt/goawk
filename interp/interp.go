@@ -19,7 +19,6 @@ import (
 	"os/exec"
 	"regexp"
 	"runtime"
-	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -237,12 +236,12 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	}
 
 	// Setup ARGV and other variables from config
-	argvIndex := program.Arrays["ARGV"]
-	p.setArrayValue(ScopeGlobal, argvIndex, "0", str(config.Argv0))
-	p.argc = len(config.Args) + 1
-	for i, arg := range config.Args {
-		p.setArrayValue(ScopeGlobal, argvIndex, strconv.Itoa(i+1), str(arg))
-	}
+	//argvIndex := program.Arrays["ARGV"]
+	//p.setArrayValue(ScopeGlobal, argvIndex, "0", str(config.Argv0))
+	//p.argc = len(config.Args) + 1
+	//for i, arg := range config.Args {
+	//	p.setArrayValue(ScopeGlobal, argvIndex, strconv.Itoa(i+1), str(arg))
+	//}
 	p.filenameIndex = 1
 	p.hadFiles = false
 	for i := 0; i < len(config.Vars); i += 2 {
@@ -283,48 +282,49 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	defer p.closeAll()
 
 	// BEGIN { for (i=0; i<100000000; i++) s += i; print s }
-	chunk := code{
-		opcodes: []uint8{
-			opNum0,  // NUM 0
-			opSetg0, // SETG i
+	//chunk := code{
+	//	opcodes: []uint8{
+	//		opNum0,  // NUM 0
+	//		opSetg0, // SETG i
+	//
+	//		// loop:
+	//		opGetg0,  // GETG i
+	//		opNum1,   // NUM 100000000
+	//		opJge, 5, // JLESS
+	//
+	//		opGetg0,      // GETG i
+	//		opAddAssign1, // ADDASSIGN s
+	//
+	//		opIncrg0, // INCR i
+	//
+	//		opJump, 256 - 9, // JMP loop
+	//
+	//		// end:
+	//		opGetg1,  // GETG s
+	//		opPrint1, // PRINT 1
+	//	},
+	//	nums: []float64{0, 100000000},
+	//}
+	//p.execBytecode(chunk)
 
-			// loop:
-			opGetg0,  // GETG i
-			opNum1,   // NUM 100000000
-			opJge, 5, // JLESS
-
-			opGetg0,      // GETG i
-			opAddAssign1, // ADDASSIGN s
-
-			opIncrg0, // INCR i
-
-			opJump, 256 - 9, // JMP loop
-
-			// end:
-			opGetg1,  // GETG s
-			opPrint1, // PRINT 1
-		},
-		nums: []float64{0, 100000000},
-	}
-	p.execBytecode(chunk)
 	// Execute the program! BEGIN, then pattern/actions, then END
-	//err = p.execBeginEnd(program.Begin)
-	//if err != nil && err != errExit {
-	//	return 0, err
-	//}
-	//if program.Actions == nil && program.End == nil {
-	//	return p.exitStatus, nil
-	//}
-	//if err != errExit {
-	//	err = p.execActions(program.Actions)
-	//	if err != nil && err != errExit {
-	//		return 0, err
-	//	}
-	//}
-	//err = p.execBeginEnd(program.End)
-	//if err != nil && err != errExit {
-	//	return 0, err
-	//}
+	err = p.execBeginEnd(program.Begin)
+	if err != nil && err != errExit {
+		return 0, err
+	}
+	if program.Actions == nil && program.End == nil {
+		return p.exitStatus, nil
+	}
+	if err != errExit {
+		err = p.execActions(program.Actions)
+		if err != nil && err != errExit {
+			return 0, err
+		}
+	}
+	err = p.execBeginEnd(program.End)
+	if err != nil && err != errExit {
+		return 0, err
+	}
 	return p.exitStatus, nil
 }
 
@@ -360,8 +360,32 @@ func (p *interp) execBeginEnd(beginEnd []Stmts) error {
 
 // Execute pattern-action blocks (may be multiple)
 func (p *interp) execActions(actions []Action) error {
+	//{ for (i = 1; i <= NF; i++) counts[tolower($i)]++ }
+	chunk := code{
+		opcodes: []uint8{
+			opNum0,  // NUM 1
+			opSetg0, // SETG i
+
+			// loop:
+			opGetg0,            // GETG i
+			opGetSpecial, V_NF, // GETSPECIAL NF
+			opJg, 7, // JG end
+
+			opGetg0,    // GETG i
+			opGetField, // GETFIELD
+			opTolower,  // TOLOWER
+			opMapIncr0, // MAPINCR counts
+
+			opIncrg0,         // INCR i
+			opJump, 256 - 12, // JUMP loop
+
+			// end:
+		},
+		nums: []float64{1},
+	}
+
 	inRange := make([]bool, len(actions))
-lineLoop:
+	//lineLoop:
 	for {
 		// Read and setup next line of input
 		line, err := p.nextLine()
@@ -419,15 +443,16 @@ lineLoop:
 				continue
 			}
 
+			p.execBytecode(chunk)
 			// Execute the body statements
-			err := p.executes(action.Stmts)
-			if err == errNext {
-				// "next" statement skips straight to next line
-				continue lineLoop
-			}
-			if err != nil {
-				return err
-			}
+			//err := p.executes(action.Stmts)
+			//if err == errNext {
+			//	// "next" statement skips straight to next line
+			//	continue lineLoop
+			//}
+			//if err != nil {
+			//	return err
+			//}
 		}
 	}
 	return nil

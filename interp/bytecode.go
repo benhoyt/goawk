@@ -3,6 +3,8 @@ package interp
 import (
 	"fmt"
 	"strings"
+
+	"github.com/benhoyt/goawk/internal/ast"
 )
 
 const (
@@ -29,12 +31,17 @@ const (
 	opAdd
 	opLess
 	opJz
+	opJg
 	opJge
 	opJump
 	opPrint0
 	opPrint1
 	opPrint2
 	opPrint3
+	opGetSpecial
+	opGetField
+	opTolower
+	opMapIncr0
 )
 
 func opString(opcode uint8) string {
@@ -85,6 +92,8 @@ func opString(opcode uint8) string {
 		return "LESS"
 	case opJz:
 		return "JZ"
+	case opJg:
+		return "JG"
 	case opJge:
 		return "JGE"
 	case opJump:
@@ -97,6 +106,14 @@ func opString(opcode uint8) string {
 		return "PRINT2"
 	case opPrint3:
 		return "PRINT3"
+	case opGetSpecial:
+		return "GETSPECIAL"
+	case opGetField:
+		return "GETFIELD"
+	case opTolower:
+		return "TOLOWER"
+	case opMapIncr0:
+		return "MAPINCR0"
 	default:
 		return fmt.Sprintf("UNKNOWN OPCODE %d", opcode)
 	}
@@ -111,7 +128,7 @@ func (p *interp) execBytecode(chunk code) error {
 	opcodes := chunk.opcodes
 	for pc := 0; pc < len(opcodes); {
 		opcode := opcodes[pc]
-		//fmt.Printf("%d: %s %v\n", pc, opString(opcode), p.stack)
+		//fmt.Printf("%d: %s %v counts=%v\n", pc, opString(opcode), p.stack, p.arrays[0])
 		pc++
 		switch opcode {
 		case opNum0, opNum1, opNum2, opNum3:
@@ -127,6 +144,23 @@ func (p *interp) execBytecode(chunk code) error {
 			index := opcode - opAddAssign0
 			r := p.pop()
 			p.globals[index] = num(p.globals[index].num() + r.num())
+		case opGetSpecial:
+			index := int(opcodes[pc])
+			pc++
+			p.push(p.getVar(ast.ScopeSpecial, index))
+		case opGetField:
+			index := p.pop()
+			field, _ := p.getField(int(index.num()))
+			p.push(field)
+		case opTolower:
+			s := p.pop()
+			lower := strings.ToLower(p.toString(s))
+			p.push(str(lower))
+		case opMapIncr0:
+			index := p.pop()
+			indexStr := p.toString(index)
+			v := p.arrays[0][indexStr]
+			p.arrays[0][indexStr] = num(v.num() + 1)
 		case opAdd:
 			r := p.pop()
 			l := p.pop()
@@ -144,6 +178,20 @@ func (p *interp) execBytecode(chunk code) error {
 			pc++
 			if p.pop().n == 0 {
 				pc += offset
+			}
+		case opJg:
+			offset := int(int8(opcodes[pc]))
+			pc++
+			r := p.pop()
+			l := p.pop()
+			if l.isTrueStr() || r.isTrueStr() {
+				if p.toString(l) > p.toString(r) {
+					pc += offset
+				}
+			} else {
+				if l.n > r.n {
+					pc += offset
+				}
 			}
 		case opJge:
 			offset := int(int8(opcodes[pc]))
