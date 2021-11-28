@@ -289,17 +289,16 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 			opSetg0, // SETG i
 
 			// loop:
-			opGetg0, // GETG i
-			opNum1,  // NUM 100000000
-			opLess,  // LESS
-			opJz, 5, // JZ end
+			opGetg0,  // GETG i
+			opNum1,   // NUM 100000000
+			opJge, 5, // JLESS
 
 			opGetg0,      // GETG i
 			opAddAssign1, // ADDASSIGN s
 
 			opIncrg0, // INCR i
 
-			opJump, 256 - 10, // JMP loop
+			opJump, 256 - 9, // JMP loop
 
 			// end:
 			opGetg1,  // GETG s

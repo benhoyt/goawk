@@ -29,6 +29,7 @@ const (
 	opAdd
 	opLess
 	opJz
+	opJge
 	opJump
 	opPrint0
 	opPrint1
@@ -84,6 +85,8 @@ func opString(opcode uint8) string {
 		return "LESS"
 	case opJz:
 		return "JZ"
+	case opJge:
+		return "JGE"
 	case opJump:
 		return "JUMP"
 	case opPrint0:
@@ -141,6 +144,20 @@ func (p *interp) execBytecode(chunk code) error {
 			pc++
 			if p.pop().n == 0 {
 				pc += offset
+			}
+		case opJge:
+			offset := int(int8(opcodes[pc]))
+			pc++
+			r := p.pop()
+			l := p.pop()
+			if l.isTrueStr() || r.isTrueStr() {
+				if p.toString(l) >= p.toString(r) {
+					pc += offset
+				}
+			} else {
+				if l.n >= r.n {
+					pc += offset
+				}
 			}
 		case opJump:
 			offset := int(int8(opcodes[pc]))
