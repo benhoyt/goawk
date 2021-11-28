@@ -6,24 +6,54 @@ import (
 )
 
 const (
-	opNum = iota
-	opGetg
-	opSetg
+	opNum0 = iota
+	opNum1
+	opNum2
+	opNum3
+	opGetg0
+	opGetg1
+	opGetg2
+	opGetg3
+	opSetg0
+	opSetg1
+	opSetg2
+	opSetg3
 	opAdd
 	opLess
 	opJz
 	opJump
-	opPrint
+	opPrint0
+	opPrint1
+	opPrint2
+	opPrint3
 )
 
 func opString(opcode uint8) string {
 	switch opcode {
-	case opNum:
-		return "NUM"
-	case opGetg:
-		return "GETG"
-	case opSetg:
-		return "SETG"
+	case opNum0:
+		return "NUM0"
+	case opNum1:
+		return "NUM1"
+	case opNum2:
+		return "NUM2"
+	case opNum3:
+		return "NUM3"
+	case opGetg0:
+		return "GETG0"
+	case opGetg1:
+		return "GETG1"
+	case opGetg2:
+		return "GETG2"
+	case opGetg3:
+		return "GETG3"
+	case opSetg0:
+		return "SETG0"
+	case opSetg1:
+		return "SETG1"
+	case opSetg2:
+		return "SETG2"
+	case opSetg3:
+		return "SETG3"
 	case opAdd:
 		return "ADD"
 	case opLess:
@@ -32,8 +62,14 @@ func opString(opcode uint8) string {
 		return "JZ"
 	case opJump:
 		return "JUMP"
-	case opPrint:
-		return "PRINT"
+	case opPrint0:
+		return "PRINT0"
+	case opPrint1:
+		return "PRINT1"
+	case opPrint2:
+		return "PRINT2"
+	case opPrint3:
+		return "PRINT3"
 	default:
 		return fmt.Sprintf("UNKNOWN OPCODE %d", opcode)
 	}
@@ -51,18 +87,12 @@ func (p *interp) execBytecode(chunk code) error {
 		//fmt.Printf("%d: %s %v\n", pc, opString(opcode), p.stack)
 		pc++
 		switch opcode {
-		case opNum:
-			index := opcodes[pc]
-			pc++
-			p.push(num(chunk.nums[index]))
-		case opGetg:
-			index := opcodes[pc]
-			pc++
-			p.push(p.globals[index])
-		case opSetg:
-			index := opcodes[pc]
-			pc++
-			p.globals[index] = p.pop()
+		case opNum0, opNum1, opNum2, opNum3:
+			p.push(num(chunk.nums[opcode-opNum0]))
+		case opGetg0, opGetg1, opGetg2, opGetg3:
+			p.push(p.globals[opcode-opGetg0])
+		case opSetg0, opSetg1, opSetg2, opSetg3:
+			p.globals[opcode-opSetg0] = p.pop()
 		case opAdd:
 			r := p.pop()
 			l := p.pop()
@@ -84,9 +114,8 @@ func (p *interp) execBytecode(chunk code) error {
 		case opJump:
 			offset := int(int8(opcodes[pc]))
 			pc += 1 + offset
-		case opPrint:
-			numArgs := int(opcodes[pc])
-			pc++
+		case opPrint0, opPrint1, opPrint2, opPrint3:
+			numArgs := int(opcode - opPrint0)
 			// Print OFS-separated args followed by ORS (usually newline)
 			var line string
 			if numArgs > 0 {

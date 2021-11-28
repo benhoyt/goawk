@@ -285,29 +285,29 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	// BEGIN { for (i=0; i<100000000; i++) s += i; print s }
 	chunk := code{
 		opcodes: []uint8{
-			opNum, 0, // NUM 0
-			opSetg, 0, // SETG i
+			opNum0,  // NUM 0
+			opSetg0, // SETG i
 
 			// loop:
-			opGetg, 0, // GETG i
-			opNum, 1, // NUM 100000000
+			opGetg0,  // GETG i
+			opNum1,   // NUM 100000000
 			opLess,   // LESS
-			opJz, 16, // JZ end
+			opJz, 10, // JZ end
 
-			opGetg, 1, // GETG s
-			opGetg, 0, // GETG i
-			opAdd,     // ADD
-			opSetg, 1, // SETG s
+			opGetg1, // GETG s
+			opGetg0, // GETG i
+			opAdd,   // ADD
+			opSetg1, // SETG s
 
-			opGetg, 0, // GETG i
-			opNum, 2, // NUM1
-			opAdd,     // ADD
-			opSetg, 0, // SETG i
-			opJump, 256 - 23, // JMP loop
+			opGetg0,          // GETG i
+			opNum2,           // NUM1
+			opAdd,            // ADD
+			opSetg0,          // SETG i
+			opJump, 256 - 15, // JMP loop
 
 			// end:
-			opGetg, 1, // GETG s
-			opPrint, 1, // PRINT 1
+			opGetg1,  // GETG s
+			opPrint1, // PRINT 1
 		},
 		nums: []float64{0, 100000000, 1},
 	}
