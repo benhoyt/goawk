@@ -282,24 +282,54 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	p.scanners = make(map[string]*bufio.Scanner)
 	defer p.closeAll()
 
+	// BEGIN { for (i=0; i<100000000; i++) s += i; print s }
+	chunk := code{
+		opcodes: []uint8{
+			opNum, 0, // NUM 0
+			opSetg, 0, // SETG i
+
+			// loop:
+			opGetg, 0, // GETG i
+			opNum, 1, // NUM 100000000
+			opLess,   // LESS
+			opJz, 16, // JZ end
+
+			opGetg, 1, // GETG s
+			opGetg, 0, // GETG i
+			opAdd,     // ADD
+			opSetg, 1, // SETG s
+
+			opGetg, 0, // GETG i
+			opNum, 2, // NUM1
+			opAdd,     // ADD
+			opSetg, 0, // SETG i
+			opJump, 256 - 23, // JMP loop
+
+			// end:
+			opGetg, 1, // GETG s
+			opPrint, 1, // PRINT 1
+		},
+		nums: []float64{0, 100000000, 1},
+	}
+	p.execBytecode(chunk)
 	// Execute the program! BEGIN, then pattern/actions, then END
-	err = p.execBeginEnd(program.Begin)
-	if err != nil && err != errExit {
-		return 0, err
-	}
-	if program.Actions == nil && program.End == nil {
-		return p.exitStatus, nil
-	}
-	if err != errExit {
-		err = p.execActions(program.Actions)
-		if err != nil && err != errExit {
-			return 0, err
-		}
-	}
-	err = p.execBeginEnd(program.End)
-	if err != nil && err != errExit {
-		return 0, err
-	}
+	//err = p.execBeginEnd(program.Begin)
+	//if err != nil && err != errExit {
+	//	return 0, err
+	//}
+	//if program.Actions == nil && program.End == nil {
+	//	return p.exitStatus, nil
+	//}
+	//if err != errExit {
+	//	err = p.execActions(program.Actions)
+	//	if err != nil && err != errExit {
+	//		return 0, err
+	//	}
+	//}
+	//err = p.execBeginEnd(program.End)
+	//if err != nil && err != errExit {
+	//	return 0, err
+	//}
 	return p.exitStatus, nil
 }
 

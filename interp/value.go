@@ -25,6 +25,21 @@ type value struct {
 	n   float64   // Numeric value (for typeNum and typeNumStr)
 }
 
+func (v value) String() string {
+	switch v.typ {
+	case typeNull:
+		return "null"
+	case typeStr:
+		return fmt.Sprintf("str(%q)", v.s)
+	case typeNumStr:
+		return fmt.Sprintf("numStr(%q)", v.s)
+	case typeNum:
+		return fmt.Sprintf("num(%s)", v.str("%.6g"))
+	default:
+		return fmt.Sprintf("unknown(%v)", v)
+	}
+}
+
 // Create a new null value
 func null() value {
 	return value{}
