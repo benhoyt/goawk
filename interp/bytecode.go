@@ -18,6 +18,10 @@ const (
 	opSetg1
 	opSetg2
 	opSetg3
+	opIncrg0
+	opIncrg1
+	opIncrg2
+	opIncrg3
 	opAdd
 	opLess
 	opJz
@@ -54,6 +58,14 @@ func opString(opcode uint8) string {
 		return "SETG2"
 	case opSetg3:
 		return "SETG3"
+	case opIncrg0:
+		return "INCRG0"
+	case opIncrg1:
+		return "INCRG1"
+	case opIncrg2:
+		return "INCRG2"
+	case opIncrg3:
+		return "INCRG3"
 	case opAdd:
 		return "ADD"
 	case opLess:
@@ -93,6 +105,9 @@ func (p *interp) execBytecode(chunk code) error {
 			p.push(p.globals[opcode-opGetg0])
 		case opSetg0, opSetg1, opSetg2, opSetg3:
 			p.globals[opcode-opSetg0] = p.pop()
+		case opIncrg0, opIncrg1, opIncrg2, opIncrg3:
+			index := opcode - opIncrg0
+			p.globals[index] = num(p.globals[index].num() + 1)
 		case opAdd:
 			r := p.pop()
 			l := p.pop()

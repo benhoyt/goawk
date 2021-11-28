@@ -289,27 +289,25 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 			opSetg0, // SETG i
 
 			// loop:
-			opGetg0,  // GETG i
-			opNum1,   // NUM 100000000
-			opLess,   // LESS
-			opJz, 10, // JZ end
+			opGetg0, // GETG i
+			opNum1,  // NUM 100000000
+			opLess,  // LESS
+			opJz, 7, // JZ end
 
 			opGetg1, // GETG s
 			opGetg0, // GETG i
 			opAdd,   // ADD
 			opSetg1, // SETG s
 
-			opGetg0,          // GETG i
-			opNum2,           // NUM1
-			opAdd,            // ADD
-			opSetg0,          // SETG i
-			opJump, 256 - 15, // JMP loop
+			opIncrg0, // INCR i
+
+			opJump, 256 - 12, // JMP loop
 
 			// end:
 			opGetg1,  // GETG s
 			opPrint1, // PRINT 1
 		},
-		nums: []float64{0, 100000000, 1},
+		nums: []float64{0, 100000000},
 	}
 	p.execBytecode(chunk)
 	// Execute the program! BEGIN, then pattern/actions, then END
