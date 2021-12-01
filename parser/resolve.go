@@ -469,6 +469,5 @@ func (p *parser) checkMultiExprs() {
 			min = pos
 		}
 	}
-	message := fmt.Sprintf("unexpected comma-separated expression")
-	panic(&ParseError{min, message})
+	panic(&ParseError{min, "unexpected comma-separated expression"})
 }

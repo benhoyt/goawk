@@ -63,7 +63,6 @@ func errorf(format string, args ...interface{}) error {
 }
 
 type compiler struct {
-	prog    *Program
 	typer   *typer
 	writer  io.Writer
 	regexen map[string]int
