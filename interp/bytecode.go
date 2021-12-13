@@ -1,3 +1,10 @@
+/*
+To test this, use:
+
+go build .
+time ./goawk '{ for (i = 1; i <= NF; i++) counts[tolower($i)]++ } END { for (k in counts) print k, counts[k] }' < ../countwords/kjvbible_x10.txt >/dev/null
+*/
+
 package interp
 
 import (
