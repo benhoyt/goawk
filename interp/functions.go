@@ -709,7 +709,8 @@ func (p *interp) sprintf(format string, args []value) (string, error) {
 			v = uint32(a.num())
 		case 'c':
 			var c []byte
-			if a.isTrueStr() {
+			n, isStr := a.isTrueStr()
+			if isStr {
 				s := p.toString(a)
 				if len(s) > 0 {
 					c = []byte{s[0]}
@@ -719,7 +720,7 @@ func (p *interp) sprintf(format string, args []value) (string, error) {
 			} else {
 				// Follow the behaviour of awk and mawk, where %c
 				// operates on bytes (0-255), not Unicode codepoints
-				c = []byte{byte(a.num())}
+				c = []byte{byte(n)}
 			}
 			v = c
 		}

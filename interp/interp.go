@@ -1160,22 +1160,28 @@ func (p *interp) evalBinary(op Token, l, r value) (value, error) {
 	case SUB:
 		return num(l.num() - r.num()), nil
 	case EQUALS:
-		if l.isTrueStr() || r.isTrueStr() {
+		ln, lIsStr := l.isTrueStr()
+		rn, rIsStr := r.isTrueStr()
+		if lIsStr || rIsStr {
 			return boolean(p.toString(l) == p.toString(r)), nil
 		} else {
-			return boolean(l.n == r.n), nil
+			return boolean(ln == rn), nil
 		}
 	case LESS:
-		if l.isTrueStr() || r.isTrueStr() {
+		ln, lIsStr := l.isTrueStr()
+		rn, rIsStr := r.isTrueStr()
+		if lIsStr || rIsStr {
 			return boolean(p.toString(l) < p.toString(r)), nil
 		} else {
-			return boolean(l.n < r.n), nil
+			return boolean(ln < rn), nil
 		}
 	case LTE:
-		if l.isTrueStr() || r.isTrueStr() {
+		ln, lIsStr := l.isTrueStr()
+		rn, rIsStr := r.isTrueStr()
+		if lIsStr || rIsStr {
 			return boolean(p.toString(l) <= p.toString(r)), nil
 		} else {
-			return boolean(l.n <= r.n), nil
+			return boolean(ln <= rn), nil
 		}
 	case CONCAT:
 		return str(p.toString(l) + p.toString(r)), nil
@@ -1188,22 +1194,28 @@ func (p *interp) evalBinary(op Token, l, r value) (value, error) {
 		}
 		return num(l.num() / rf), nil
 	case GREATER:
-		if l.isTrueStr() || r.isTrueStr() {
+		ln, lIsStr := l.isTrueStr()
+		rn, rIsStr := r.isTrueStr()
+		if lIsStr || rIsStr {
 			return boolean(p.toString(l) > p.toString(r)), nil
 		} else {
-			return boolean(l.n > r.n), nil
+			return boolean(ln > rn), nil
 		}
 	case GTE:
-		if l.isTrueStr() || r.isTrueStr() {
+		ln, lIsStr := l.isTrueStr()
+		rn, rIsStr := r.isTrueStr()
+		if lIsStr || rIsStr {
 			return boolean(p.toString(l) >= p.toString(r)), nil
 		} else {
-			return boolean(l.n >= r.n), nil
+			return boolean(ln >= rn), nil
 		}
 	case NOT_EQUALS:
-		if l.isTrueStr() || r.isTrueStr() {
+		ln, lIsStr := l.isTrueStr()
+		rn, rIsStr := r.isTrueStr()
+		if lIsStr || rIsStr {
 			return boolean(p.toString(l) != p.toString(r)), nil
 		} else {
-			return boolean(l.n != r.n), nil
+			return boolean(ln != rn), nil
 		}
 	case MATCH:
 		re, err := p.compileRegex(p.toString(r))
