@@ -1114,6 +1114,33 @@ func TestFlushError(t *testing.T) {
 	}
 }
 
+func TestEnviron(t *testing.T) {
+	os.Setenv("GOAWK_TEN", "10") // to test that ENVIRON[x] is numeric string
+	src := `
+BEGIN {
+	n = 0
+	for (k in ENVIRON)
+		n++
+	print(n, ENVIRON["USER"], ENVIRON["GOAWK_TEN"] < 2)
+}`
+	expected := fmt.Sprintf("%d %s 0\n", len(os.Environ()), os.Getenv("USER"))
+	testGoAWK(t, src, "", expected, "", nil, nil)
+
+	expected = "2 bob 0\n"
+	testGoAWK(t, src, "", expected, "", nil, func(config *interp.Config) {
+		config.Environ = []string{"USER", "bob", "GOAWK_TEN", "10"}
+	})
+
+	expected = "0  1\n"
+	testGoAWK(t, src, "", expected, "", nil, func(config *interp.Config) {
+		config.Environ = []string{}
+	})
+
+	testGoAWK(t, src, "", "", "length of config.Environ must be a multiple of 2, not 3", nil, func(config *interp.Config) {
+		config.Environ = []string{"b", "a", "d"}
+	})
+}
+
 func benchmarkProgram(b *testing.B, funcs map[string]interface{},
 	input, expected, srcFormat string, args ...interface{},
 ) {

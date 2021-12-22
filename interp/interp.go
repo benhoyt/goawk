@@ -194,6 +194,11 @@ type Config struct {
 	// Exec args used to run system shell. Typically, this will
 	// be {"/bin/sh", "-c"}
 	ShellCommand []string
+
+	// List of name-value pairs to be assigned to the ENVIRON special
+	// array, for example []string{"USER", "bob", "HOME", "/home/bob"}.
+	// If nil (the default), values from os.Environ() are used.
+	Environ []string
 }
 
 // ExecProgram executes the parsed program using the given interpreter
@@ -203,6 +208,9 @@ type Config struct {
 func ExecProgram(program *Program, config *Config) (int, error) {
 	if len(config.Vars)%2 != 0 {
 		return 0, newError("length of config.Vars must be a multiple of 2, not %d", len(config.Vars))
+	}
+	if len(config.Environ)%2 != 0 {
+		return 0, newError("length of config.Environ must be a multiple of 2, not %d", len(config.Environ))
 	}
 
 	p := &interp{program: program}
@@ -249,6 +257,21 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 		err := p.setVarByName(config.Vars[i], config.Vars[i+1])
 		if err != nil {
 			return 0, err
+		}
+	}
+
+	// Setup ENVIRON from config or environment variables
+	environIndex := program.Arrays["ENVIRON"]
+	if config.Environ != nil {
+		for i := 0; i < len(config.Environ); i += 2 {
+			p.setArrayValue(ScopeGlobal, environIndex, config.Environ[i], numStr(config.Environ[i+1]))
+		}
+	} else {
+		for _, kv := range os.Environ() {
+			eq := strings.IndexByte(kv, '=')
+			if eq >= 0 {
+				p.setArrayValue(ScopeGlobal, environIndex, kv[:eq], numStr(kv[eq+1:]))
+			}
 		}
 	}
 
