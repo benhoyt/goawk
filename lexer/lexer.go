@@ -408,7 +408,7 @@ func (l *Lexer) next() {
 	if ch == '\n' {
 		l.nextPos.Line++
 		l.nextPos.Column = 1
-	} else {
+	} else if ch != '\r' {
 		l.nextPos.Column++
 	}
 	l.ch = ch
