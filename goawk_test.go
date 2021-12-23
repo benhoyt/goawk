@@ -391,11 +391,21 @@ func TestCommandLine(t *testing.T) {
 		{[]string{"-v"}, "", "", "flag needs an argument: -v"},
 		{[]string{"-z"}, "", "", "flag provided but not defined: -z"},
 		{[]string{"{ print }", "notexist"}, "", "", `file "notexist" not found`},
-		{[]string{"@"}, "", "", "-----------------------------------\n@\n^\n-----------------------------------\nparse error at 1:1: unexpected char"},
 		{[]string{"BEGIN { print 1/0 }"}, "", "", "division by zero"},
 		{[]string{"-v", "foo", "BEGIN {}"}, "", "", "-v flag must be in format name=value"},
 		{[]string{"--", "{ print $1 }", "-file"}, "", "", `file "-file" not found`},
 		{[]string{"{ print $1 }", "-file"}, "", "", `file "-file" not found`},
+
+		// Parse error formatting
+		{[]string{"@"}, "", "", "<cmdline>:1:1: unexpected char\n@\n^"},
+		{[]string{"BEGIN {\n\tx*;\n}"}, "", "", "<cmdline>:2:4: expected expression instead of ;\n    x*;\n      ^"},
+		{[]string{"-f", "-"}, "\n ++", "", "<stdin>:2:4: expected expression instead of <newline>\n ++\n   ^"},
+		{[]string{"-f", "testdata/parseerror/good.awk", "-f", "testdata/parseerror/bad.awk"},
+			"", "", "testdata/parseerror/bad.awk:2:3: expected expression instead of <newline>\nx*\n  ^"},
+		{[]string{"-f", "testdata/parseerror/bad.awk", "-f", "testdata/parseerror/good.awk"},
+			"", "", "testdata/parseerror/bad.awk:2:3: expected expression instead of <newline>\nx*\n  ^"},
+		{[]string{"-f", "testdata/parseerror/good.awk", "-f", "-", "-f", "testdata/parseerror/bad.awk"},
+			"@", "", "<stdin>:1:1: unexpected char\n@\n^"},
 	}
 	for _, test := range tests {
 		testName := strings.Join(test.args, " ")
