@@ -413,41 +413,7 @@ func TestCommandLine(t *testing.T) {
 	for _, test := range tests {
 		testName := strings.Join(test.args, " ")
 		t.Run(testName, func(t *testing.T) {
-			cmd := exec.Command(awkExe, test.args...)
-			if test.stdin != "" {
-				cmd.Stdin = bytes.NewReader([]byte(test.stdin))
-			}
-			errBuf := &bytes.Buffer{}
-			cmd.Stderr = errBuf
-			output, err := cmd.Output()
-			if err != nil {
-				if test.error == "" {
-					t.Fatalf("expected no error, got AWK error: %v (%s)", err, errBuf.String())
-				}
-			} else {
-				if test.error != "" {
-					t.Fatalf("expected AWK error, got none")
-				}
-			}
-			stdout := string(normalizeNewlines(output))
-			if stdout != test.output {
-				t.Fatalf("expected AWK to give %q, got %q", test.output, stdout)
-			}
-
-			stdout, stderr, err := runGoAWK(test.args, test.stdin)
-			if err != nil {
-				stderr = strings.TrimSpace(stderr)
-				if stderr != test.error {
-					t.Fatalf("expected GoAWK error %q, got %q", test.error, stderr)
-				}
-			} else {
-				if test.error != "" {
-					t.Fatalf("expected GoAWK error %q, got none", test.error)
-				}
-			}
-			if stdout != test.output {
-				t.Fatalf("expected GoAWK to give %q, got %q", test.output, stdout)
-			}
+			runAWKs(t, test.args, test.stdin, test.output, test.error)
 		})
 	}
 }
@@ -463,6 +429,44 @@ func runGoAWK(args []string, stdin string) (stdout, stderr string, err error) {
 	stdout = string(normalizeNewlines(output))
 	stderr = string(normalizeNewlines(errBuf.Bytes()))
 	return stdout, stderr, err
+}
+
+func runAWKs(t *testing.T, testArgs []string, testStdin, testOutput, testError string) {
+	cmd := exec.Command(awkExe, testArgs...)
+	if testStdin != "" {
+		cmd.Stdin = bytes.NewReader([]byte(testStdin))
+	}
+	errBuf := &bytes.Buffer{}
+	cmd.Stderr = errBuf
+	output, err := cmd.Output()
+	if err != nil {
+		if testError == "" {
+			t.Fatalf("expected no error, got AWK error: %v (%s)", err, errBuf.String())
+		}
+	} else {
+		if testError != "" {
+			t.Fatalf("expected AWK error, got none")
+		}
+	}
+	stdout := string(normalizeNewlines(output))
+	if stdout != testOutput {
+		t.Fatalf("expected AWK to give %q, got %q", testOutput, stdout)
+	}
+
+	stdout, stderr, err := runGoAWK(testArgs, testStdin)
+	if err != nil {
+		stderr = strings.TrimSpace(stderr)
+		if stderr != testError {
+			t.Fatalf("expected GoAWK error %q, got %q", testError, stderr)
+		}
+	} else {
+		if testError != "" {
+			t.Fatalf("expected GoAWK error %q, got none", testError)
+		}
+	}
+	if stdout != testOutput {
+		t.Fatalf("expected GoAWK to give %q, got %q", testOutput, stdout)
+	}
 }
 
 func TestWildcards(t *testing.T) {
@@ -511,6 +515,29 @@ func TestWildcards(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFILENAME(t *testing.T) {
+	origGoAWKExe := goAWKExe
+	goAWKExe = "../../" + goAWKExe
+	defer func() { goAWKExe = origGoAWKExe }()
+
+	origDir, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Chdir("testdata/filename")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(origDir)
+
+	src := `
+BEGIN { FILENAME = "10"; print(FILENAME, FILENAME<2) }
+BEGIN { FILENAME = 10; print(FILENAME, FILENAME<2) }
+{ print(FILENAME, FILENAME<2) }
+`
+	runAWKs(t, []string{src, "10", "10x"}, "", "10 1\n10 0\n10 0\n10x 1\n", "")
 }
 
 func normalizeNewlines(b []byte) []byte {

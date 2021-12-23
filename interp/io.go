@@ -282,7 +282,7 @@ func (s byteSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, 
 
 // Setup for a new input file with given name (empty string if stdin)
 func (p *interp) setFile(filename string) {
-	p.filename = filename
+	p.filename = numStr(filename)
 	p.fileLineNum = 0
 }
 

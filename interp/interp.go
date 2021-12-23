@@ -88,7 +88,7 @@ type interp struct {
 	nativeFuncs []nativeFunc
 
 	// File, line, and field handling
-	filename    string
+	filename    value
 	line        string
 	lineNum     int
 	fileLineNum int
@@ -977,7 +977,7 @@ func (p *interp) getVar(scope VarScope, index int) value {
 		case V_CONVFMT:
 			return str(p.convertFormat)
 		case V_FILENAME:
-			return str(p.filename)
+			return p.filename
 		case V_FS:
 			return str(p.fieldSep)
 		case V_OFMT:
@@ -1051,7 +1051,7 @@ func (p *interp) setVar(scope VarScope, index int, v value) error {
 		case V_CONVFMT:
 			p.convertFormat = p.toString(v)
 		case V_FILENAME:
-			p.filename = p.toString(v)
+			p.filename = v
 		case V_FS:
 			p.fieldSep = p.toString(v)
 			if utf8.RuneCountInString(p.fieldSep) > 1 {
