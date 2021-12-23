@@ -249,7 +249,7 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	p.setArrayValue(ScopeGlobal, argvIndex, "0", str(config.Argv0))
 	p.argc = len(config.Args) + 1
 	for i, arg := range config.Args {
-		p.setArrayValue(ScopeGlobal, argvIndex, strconv.Itoa(i+1), str(arg))
+		p.setArrayValue(ScopeGlobal, argvIndex, strconv.Itoa(i+1), numStr(arg))
 	}
 	p.filenameIndex = 1
 	p.hadFiles = false

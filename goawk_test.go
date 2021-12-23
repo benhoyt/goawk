@@ -383,6 +383,8 @@ func TestCommandLine(t *testing.T) {
 			"A=1, B=0\n\tARGV[1] = B=2\n\tARGV[2] = testdata/test.countries\nA=1, B=2\n", ""},
 		{[]string{`END { print (x==42) }`, "x=42.0"}, "", "1\n", ""},
 		{[]string{"-v", "x=42.0", `BEGIN { print (x==42) }`}, "", "1\n", ""},
+		{[]string{`BEGIN { print(ARGV[1]<2, ARGV[2]<2); ARGV[1]="10"; ARGV[2]="10x"; print(ARGV[1]<2, ARGV[2]<2) }`,
+			"10", "10x"}, "", "0 1\n1 1\n", ""},
 
 		// Error handling
 		{[]string{}, "", "", "usage: goawk [-F fs] [-v var=value] [-f progfile | 'prog'] [file ...]"},
