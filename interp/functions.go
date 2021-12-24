@@ -79,7 +79,7 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 				return null(), err
 			}
 		} else {
-			p.setLine(out, false)
+			p.setLine(out, true)
 		}
 		return num(float64(n)), nil
 	}
