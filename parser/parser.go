@@ -632,7 +632,7 @@ func (p *parser) _compare(ops ...Token) Expr {
 
 func (p *parser) concat() Expr {
 	expr := p.add()
-	for p.matches(DOLLAR, NOT, NAME, NUMBER, STRING, LPAREN) ||
+	for p.matches(DOLLAR, NOT, NAME, NUMBER, STRING, LPAREN, INCR, DECR) ||
 		(p.tok >= FIRST_FUNC && p.tok <= LAST_FUNC) {
 		right := p.add()
 		expr = &BinaryExpr{expr, CONCAT, right}
@@ -674,10 +674,7 @@ func (p *parser) preIncr() Expr {
 
 func (p *parser) postIncr() Expr {
 	expr := p.primary()
-	if p.tok == INCR || p.tok == DECR {
-		if !IsLValue(expr) {
-			panic(p.error("expected lvalue before ++ or --"))
-		}
+	if (p.tok == INCR || p.tok == DECR) && IsLValue(expr) {
 		op := p.tok
 		p.next()
 		return &IncrExpr{expr, op, false}

@@ -391,6 +391,7 @@ BEGIN {
 	{`BEGIN { x[y++]++; print y }`, "", "1\n", "", ""},
 	{`BEGIN { x[y++] += 3; print y }`, "", "1\n", "", ""},
 	{`BEGIN { $(y++)++; print y }`, "", "1\n", "", ""},
+	{`BEGIN { print "s" ++n; print "s" --n }`, "", "s1\ns0\n", "", ""},
 
 	// Builtin functions
 	{`BEGIN { print sin(0), sin(0.5), sin(1), sin(-1) }`, "", "0 0.479426 0.841471 -0.841471\n", "", ""},
