@@ -67,7 +67,7 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 			}
 			in = p.toString(inValue)
 		} else {
-			in = p.line
+			in = p.toString(p.line)
 		}
 		out, n, err := p.sub(regex, repl, in, op == F_GSUB)
 		if err != nil {
@@ -79,7 +79,7 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 				return null(), err
 			}
 		} else {
-			p.setLine(out)
+			p.setLine(out, false)
 		}
 		return num(float64(n)), nil
 	}
@@ -100,7 +100,7 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 	case F_LENGTH:
 		switch len(args) {
 		case 0:
-			return num(float64(len(p.line))), nil
+			return num(float64(len(p.toString(p.line)))), nil
 		default:
 			return num(float64(len(p.toString(args[0])))), nil
 		}

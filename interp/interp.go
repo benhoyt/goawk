@@ -89,10 +89,10 @@ type interp struct {
 
 	// File, line, and field handling
 	filename    value
-	line        string
+	line        value
 	lineNum     int
 	fileLineNum int
-	fields      []string
+	fields      []value
 	numFields   int
 	haveFields  bool
 
@@ -369,7 +369,7 @@ lineLoop:
 		if err != nil {
 			return err
 		}
-		p.setLine(line)
+		p.setLine(line, true)
 
 		// Execute all the pattern-action blocks for each line
 		for i, action := range actions {
@@ -410,7 +410,7 @@ lineLoop:
 
 			// No action is equivalent to { print $0 }
 			if action.Stmts == nil {
-				err := p.printLine(p.output, p.line)
+				err := p.printLine(p.output, p.toString(p.line))
 				if err != nil {
 					return err
 				}
@@ -465,7 +465,7 @@ func (p *interp) execute(stmt Stmt) error {
 			line = strings.Join(strs, p.outputFieldSep)
 		} else {
 			// "print" with no args is equivalent to "print $0"
-			line = p.line
+			line = p.toString(p.line)
 		}
 		output, err := p.getOutputStream(s.Redirect, s.Dest)
 		if err != nil {
@@ -698,7 +698,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 		if err != nil {
 			return null(), err
 		}
-		return boolean(re.MatchString(p.line)), nil
+		return boolean(re.MatchString(p.toString(p.line))), nil
 
 	case *BinaryExpr:
 		// Binary expression. Note that && and || are special cases
@@ -906,7 +906,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 				return null(), err
 			}
 		} else {
-			p.setLine(line)
+			p.setLine(line, true)
 		}
 		return num(1), nil
 
@@ -1035,9 +1035,13 @@ func (p *interp) setVar(scope VarScope, index int, v value) error {
 				p.fields = p.fields[:p.numFields]
 			}
 			for i := len(p.fields); i < p.numFields; i++ {
-				p.fields = append(p.fields, "")
+				p.fields = append(p.fields, str(""))
 			}
-			p.line = strings.Join(p.fields, p.outputFieldSep)
+			fields := make([]string, len(p.fields))
+			for i, f := range p.fields {
+				fields[i] = p.toString(f)
+			}
+			p.line = str(strings.Join(fields, p.outputFieldSep))
 		case V_NR:
 			p.lineNum = int(v.num())
 		case V_RLENGTH:
@@ -1119,19 +1123,19 @@ func (p *interp) getField(index int) (value, error) {
 		return null(), newError("field index negative: %d", index)
 	}
 	if index == 0 {
-		return numStr(p.line), nil
+		return p.line, nil
 	}
 	p.ensureFields()
 	if index > len(p.fields) {
 		return str(""), nil
 	}
-	return numStr(p.fields[index-1]), nil
+	return p.fields[index-1], nil
 }
 
 // Sets a single field, equivalent to "$index = value"
 func (p *interp) setField(index int, value string) error {
 	if index == 0 {
-		p.setLine(value)
+		p.setLine(value, false)
 		return nil
 	}
 	if index < 0 {
@@ -1143,11 +1147,15 @@ func (p *interp) setField(index int, value string) error {
 	// If there aren't enough fields, add empty string fields in between
 	p.ensureFields()
 	for i := len(p.fields); i < index; i++ {
-		p.fields = append(p.fields, "")
+		p.fields = append(p.fields, str(""))
 	}
-	p.fields[index-1] = value
+	p.fields[index-1] = str(value)
 	p.numFields = len(p.fields)
-	p.line = strings.Join(p.fields, p.outputFieldSep)
+	fields := make([]string, len(p.fields))
+	for i, f := range p.fields {
+		fields[i] = p.toString(f)
+	}
+	p.line = str(strings.Join(fields, p.outputFieldSep))
 	return nil
 }
 

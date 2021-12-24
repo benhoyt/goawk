@@ -288,8 +288,12 @@ func (p *interp) setFile(filename string) {
 
 // Setup for a new input line (but don't parse it into fields till we
 // need to)
-func (p *interp) setLine(line string) {
-	p.line = line
+func (p *interp) setLine(line string, isNumStr bool) {
+	if isNumStr {
+		p.line = numStr(line)
+	} else {
+		p.line = str(line)
+	}
 	p.haveFields = false
 }
 
@@ -301,17 +305,23 @@ func (p *interp) ensureFields() {
 	}
 	p.haveFields = true
 
+	line := p.toString(p.line)
+	var fields []string
 	if p.fieldSep == " " {
 		// FS space (default) means split fields on any whitespace
-		p.fields = strings.Fields(p.line)
-	} else if p.line == "" {
-		p.fields = nil
+		fields = strings.Fields(line)
+	} else if line == "" {
+		fields = nil
 	} else if utf8.RuneCountInString(p.fieldSep) <= 1 {
 		// 1-char FS is handled as plain split (not regex)
-		p.fields = strings.Split(p.line, p.fieldSep)
+		fields = strings.Split(line, p.fieldSep)
 	} else {
 		// Split on FS as a regex
-		p.fields = p.fieldSepRegex.Split(p.line, -1)
+		fields = p.fieldSepRegex.Split(line, -1)
+	}
+	p.fields = make([]value, len(fields))
+	for i, f := range fields {
+		p.fields[i] = numStr(f)
 	}
 
 	// Special case for when RS=="" and FS is single character,
@@ -320,13 +330,16 @@ func (p *interp) ensureFields() {
 	if p.recordSep == "" && utf8.RuneCountInString(p.fieldSep) == 1 {
 		fields := make([]string, 0, len(p.fields))
 		for _, field := range p.fields {
-			lines := strings.Split(field, "\n")
+			lines := strings.Split(p.toString(field), "\n")
 			for _, line := range lines {
 				trimmed := strings.TrimSuffix(line, "\r")
 				fields = append(fields, trimmed)
 			}
 		}
-		p.fields = fields
+		p.fields = make([]value, len(fields))
+		for i, f := range fields {
+			p.fields[i] = numStr(f)
+		}
 	}
 
 	p.numFields = len(p.fields)
