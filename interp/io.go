@@ -288,8 +288,9 @@ func (p *interp) setFile(filename string) {
 
 // Setup for a new input line (but don't parse it into fields till we
 // need to)
-func (p *interp) setLine(line string) {
+func (p *interp) setLine(line string, isTrueStr bool) {
 	p.line = line
+	p.lineIsTrueStr = isTrueStr
 	p.haveFields = false
 }
 
@@ -329,6 +330,7 @@ func (p *interp) ensureFields() {
 		p.fields = fields
 	}
 
+	p.fieldsIsTrueStr = make([]bool, len(p.fields))
 	p.numFields = len(p.fields)
 }
 

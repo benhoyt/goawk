@@ -88,13 +88,15 @@ type interp struct {
 	nativeFuncs []nativeFunc
 
 	// File, line, and field handling
-	filename    value
-	line        string
-	lineNum     int
-	fileLineNum int
-	fields      []string
-	numFields   int
-	haveFields  bool
+	filename        value
+	line            string
+	lineIsTrueStr   bool
+	lineNum         int
+	fileLineNum     int
+	fields          []string
+	fieldsIsTrueStr []bool
+	numFields       int
+	haveFields      bool
 
 	// Built-in variables
 	argc            int
@@ -369,7 +371,7 @@ lineLoop:
 		if err != nil {
 			return err
 		}
-		p.setLine(line)
+		p.setLine(line, false)
 
 		// Execute all the pattern-action blocks for each line
 		for i, action := range actions {
@@ -906,7 +908,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 				return null(), err
 			}
 		} else {
-			p.setLine(line)
+			p.setLine(line, false)
 		}
 		return num(1), nil
 
@@ -1033,11 +1035,14 @@ func (p *interp) setVar(scope VarScope, index int, v value) error {
 			p.numFields = numFields
 			if p.numFields < len(p.fields) {
 				p.fields = p.fields[:p.numFields]
+				p.fieldsIsTrueStr = p.fieldsIsTrueStr[:p.numFields]
 			}
 			for i := len(p.fields); i < p.numFields; i++ {
 				p.fields = append(p.fields, "")
+				p.fieldsIsTrueStr = append(p.fieldsIsTrueStr, false)
 			}
 			p.line = strings.Join(p.fields, p.outputFieldSep)
+			p.lineIsTrueStr = true
 		case V_NR:
 			p.lineNum = int(v.num())
 		case V_RLENGTH:
@@ -1119,19 +1124,27 @@ func (p *interp) getField(index int) (value, error) {
 		return null(), newError("field index negative: %d", index)
 	}
 	if index == 0 {
-		return numStr(p.line), nil
+		if p.lineIsTrueStr {
+			return str(p.line), nil
+		} else {
+			return numStr(p.line), nil
+		}
 	}
 	p.ensureFields()
 	if index > len(p.fields) {
 		return str(""), nil
 	}
-	return numStr(p.fields[index-1]), nil
+	if p.fieldsIsTrueStr[index-1] {
+		return str(p.fields[index-1]), nil
+	} else {
+		return numStr(p.fields[index-1]), nil
+	}
 }
 
 // Sets a single field, equivalent to "$index = value"
 func (p *interp) setField(index int, value string) error {
 	if index == 0 {
-		p.setLine(value)
+		p.setLine(value, true)
 		return nil
 	}
 	if index < 0 {
@@ -1144,10 +1157,13 @@ func (p *interp) setField(index int, value string) error {
 	p.ensureFields()
 	for i := len(p.fields); i < index; i++ {
 		p.fields = append(p.fields, "")
+		p.fieldsIsTrueStr = append(p.fieldsIsTrueStr, true)
 	}
 	p.fields[index-1] = value
+	p.fieldsIsTrueStr[index-1] = true
 	p.numFields = len(p.fields)
 	p.line = strings.Join(p.fields, p.outputFieldSep)
+	p.lineIsTrueStr = true
 	return nil
 }
 
