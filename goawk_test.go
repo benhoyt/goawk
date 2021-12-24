@@ -233,7 +233,7 @@ func TestGAWK(t *testing.T) {
 		"parse1": true, // incorrect parsing of $$a++++ (see TODOs in interp_test.go too)
 
 		// "nfldstr": true, // invalid handling of '!$0' when $0="0"
-		// "zeroe0":  true, // difference in handling of numStr typing when setting $0 and $1
+		"zeroe0":  true, // difference in handling of numStr typing when setting $0 and $1
 	}
 
 	dontRunOnWindows := map[string]bool{
