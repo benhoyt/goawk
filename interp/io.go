@@ -34,7 +34,7 @@ type bufferedWriteCloser struct {
 	io.Closer
 }
 
-func newBufferedWriteClose(w io.WriteCloser) *bufferedWriteCloser {
+func newBufferedWriteCloser(w io.WriteCloser) *bufferedWriteCloser {
 	writer := bufio.NewWriterSize(w, outputBufSize)
 	return &bufferedWriteCloser{writer, w}
 }
@@ -73,6 +73,7 @@ func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
 		if p.noFileWrites {
 			return nil, newError("can't write to file due to NoFileWrites")
 		}
+		p.flushOutputAndError()
 		flags := os.O_CREATE | os.O_WRONLY
 		if redirect == GREATER {
 			flags |= os.O_TRUNC
@@ -83,7 +84,7 @@ func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
 		if err != nil {
 			return nil, newError("output redirection error: %s", err)
 		}
-		buffered := newBufferedWriteClose(w)
+		buffered := newBufferedWriteCloser(w)
 		p.outputStreams[name] = buffered
 		return buffered, nil
 
@@ -99,14 +100,14 @@ func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
 		}
 		cmd.Stdout = p.output
 		cmd.Stderr = p.errorOutput
-		_ = p.flushAll() // flush output streams to ensure synchronization
+		p.flushOutputAndError() // ensure synchronization
 		err = cmd.Start()
 		if err != nil {
-			fmt.Fprintln(p.errorOutput, err)
+			p.printErrorf("%s\n", err)
 			return ioutil.Discard, nil
 		}
 		p.commands[name] = cmd
-		buffered := newBufferedWriteClose(w)
+		buffered := newBufferedWriteCloser(w)
 		p.outputStreams[name] = buffered
 		return buffered, nil
 
@@ -155,10 +156,10 @@ func (p *interp) getInputScannerPipe(name string) (*bufio.Scanner, error) {
 	if err != nil {
 		return nil, newError("error connecting to stdout pipe: %v", err)
 	}
-	_ = p.flushAll() // flush output streams to ensure synchronization
+	p.flushOutputAndError() // ensure synchronization
 	err = cmd.Start()
 	if err != nil {
-		fmt.Fprintln(p.errorOutput, err)
+		p.printErrorf("%s\n", err)
 		return bufio.NewScanner(strings.NewReader("")), nil
 	}
 	scanner := p.newScanner(r)
@@ -456,7 +457,7 @@ func (p *interp) flushAll() bool {
 func (p *interp) flushStream(name string) bool {
 	writer := p.outputStreams[name]
 	if writer == nil {
-		fmt.Fprintf(p.errorOutput, "error flushing %q: not an output file or pipe\n", name)
+		p.printErrorf("error flushing %q: not an output file or pipe\n", name)
 		return false
 	}
 	return p.flushWriter(name, writer)
@@ -469,11 +470,35 @@ type flusher interface {
 // Flush given output writer, and report whether it was flushed successfully
 // (logging an error if not).
 func (p *interp) flushWriter(name string, writer io.Writer) bool {
-	flusher := writer.(flusher)
+	flusher, ok := writer.(flusher)
+	if !ok {
+		return true // not a flusher, don't error
+	}
 	err := flusher.Flush()
 	if err != nil {
-		fmt.Fprintf(p.errorOutput, "error flushing %q: %v\n", name, err)
+		p.printErrorf("error flushing %q: %v\n", name, err)
 		return false
 	}
 	return true
+}
+
+// Flush output and error streams.
+func (p *interp) flushOutputAndError() {
+	if flusher, ok := p.output.(flusher); ok {
+		_ = flusher.Flush()
+	}
+	if flusher, ok := p.errorOutput.(flusher); ok {
+		_ = flusher.Flush()
+	}
+}
+
+// Print a message to the error output stream, flushing as necessary.
+func (p *interp) printErrorf(format string, args ...interface{}) {
+	if flusher, ok := p.output.(flusher); ok {
+		_ = flusher.Flush() // ensure synchronization
+	}
+	fmt.Fprintf(p.errorOutput, format, args...)
+	if flusher, ok := p.errorOutput.(flusher); ok {
+		_ = flusher.Flush()
+	}
 }

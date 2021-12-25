@@ -196,10 +196,10 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 		cmd := exec.Command("sh", "-c", cmdline)
 		cmd.Stdout = p.output
 		cmd.Stderr = p.errorOutput
-		_ = p.flushAll() // flush output streams to ensure synchronization
+		_ = p.flushAll() // ensure synchronization
 		err := cmd.Start()
 		if err != nil {
-			fmt.Fprintln(p.errorOutput, err)
+			p.printErrorf("%s\n", err)
 			return num(-1), nil
 		}
 		err = cmd.Wait()
@@ -208,11 +208,11 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 				if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
 					return num(float64(status.ExitStatus())), nil
 				} else {
-					fmt.Fprintf(p.errorOutput, "couldn't get exit status for %q: %v\n", cmdline, err)
+					p.printErrorf("couldn't get exit status for %q: %v\n", cmdline, err)
 					return num(-1), nil
 				}
 			} else {
-				fmt.Fprintf(p.errorOutput, "unexpected error running command %q: %v\n", cmdline, err)
+				p.printErrorf("unexpected error running command %q: %v\n", cmdline, err)
 				return num(-1), nil
 			}
 		}
