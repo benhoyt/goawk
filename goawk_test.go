@@ -395,6 +395,11 @@ func TestCommandLine(t *testing.T) {
 		{[]string{"--", "{ print $1 }", "-file"}, "", "", `file "-file" not found`},
 		{[]string{"{ print $1 }", "-file"}, "", "", `file "-file" not found`},
 
+		// Output synchronization
+		{[]string{`BEGIN { print "1"; print "2">"/dev/stdout" }`}, "", "1\n2\n", ""},
+		{[]string{`BEGIN { print "1"; print "2"|"cat" }`}, "", "1\n2\n", ""},
+		{[]string{`BEGIN { print "1"; "echo 2" | getline x; print x }`}, "", "1\n2\n", ""},
+
 		// Parse error formatting
 		{[]string{"@"}, "", "", "<cmdline>:1:1: unexpected char\n@\n^"},
 		{[]string{"BEGIN {\n\tx*;\n}"}, "", "", "<cmdline>:2:4: expected expression instead of ;\n    x*;\n      ^"},
