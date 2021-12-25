@@ -76,7 +76,7 @@ func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
 		if p.noFileWrites {
 			return nil, newError("can't write to file due to NoFileWrites")
 		}
-		p.flushOutputAndError()
+		p.flushOutputAndError() // ensure synchronization
 		flags := os.O_CREATE | os.O_WRONLY
 		if redirect == GREATER {
 			flags |= os.O_TRUNC
