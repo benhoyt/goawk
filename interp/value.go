@@ -6,8 +6,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
-
-	"github.com/benhoyt/goawk/internal/strutil"
+	"strings"
 )
 
 type valueType uint8
@@ -22,8 +21,8 @@ const (
 // An AWK value (these are passed around by value)
 type value struct {
 	typ valueType // Type of value
-	s   string    // String value (for typeStr)
-	n   float64   // Numeric value (for typeNum and typeNumStr)
+	s   string    // String value (for typeStr and typeNumStr)
+	n   float64   // Numeric value (for typeNum)
 }
 
 // Create a new null value
@@ -41,15 +40,9 @@ func str(s string) value {
 	return value{typ: typeStr, s: s}
 }
 
-// Create a new value for a "numeric string" context, converting the
-// string to a number if possible.
+// Create a new value to represent a "numeric string" from an input field
 func numStr(s string) value {
-	f, err := strconv.ParseFloat(strutil.TrimSpace(s), 64)
-	if err != nil {
-		// Doesn't parse as number, make it a "true string"
-		return value{typ: typeStr, s: s}
-	}
-	return value{typ: typeNumStr, s: s, n: f}
+	return value{typ: typeNumStr, s: s}
 }
 
 // Create a numeric value from a Go bool
@@ -60,19 +53,38 @@ func boolean(b bool) value {
 	return num(0)
 }
 
-// Return true if value is a "true string" (string but not a "numeric
-// string")
-func (v value) isTrueStr() bool {
-	return v.typ == typeStr
+// Return true if value is a "true string" (a string or a "numeric string"
+// from an input field that can't be converted to a number). If false,
+// also return the (possibly converted) number.
+func (v value) isTrueStr() (float64, bool) {
+	switch v.typ {
+	case typeStr:
+		return 0, true
+	case typeNumStr:
+		f, err := strconv.ParseFloat(strings.TrimSpace(v.s), 64)
+		if err != nil {
+			return 0, true
+		}
+		return f, false
+	default: // typeNum, typeNull
+		return v.n, false
+	}
 }
 
 // Return Go bool value of AWK value. For numbers or numeric strings,
 // zero is false and everything else is true. For strings, empty
 // string is false and everything else is true.
 func (v value) boolean() bool {
-	if v.isTrueStr() {
+	switch v.typ {
+	case typeStr:
 		return v.s != ""
-	} else {
+	case typeNumStr:
+		f, err := strconv.ParseFloat(strings.TrimSpace(v.s), 64)
+		if err != nil {
+			return v.s != ""
+		}
+		return f != 0
+	default: // typeNum, typeNull
 		return v.n != 0
 	}
 }
@@ -97,29 +109,30 @@ func (v value) str(floatFormat string) string {
 			return fmt.Sprintf(floatFormat, v.n)
 		}
 	}
-	// For typeStr and typeStrNum we already have the string, for
+	// For typeStr and typeNumStr we already have the string, for
 	// typeNull v.s == "".
 	return v.s
 }
 
 // Return value's number value, converting from string if necessary
 func (v value) num() float64 {
-	if v.typ == typeStr {
+	switch v.typ {
+	case typeStr, typeNumStr:
 		// Ensure string starts with a float and convert it
 		return parseFloatPrefix(v.s)
+	default: // typeNum, typeNull
+		return v.n
 	}
-	// Handle case for typeNum and typeStrNum. If it's a numeric
-	// string, we already have the float value from the numStr()
-	// call. For typeNull v.n == 0.
-	return v.n
 }
+
+var asciiSpace = [256]uint8{'\t': 1, '\n': 1, '\v': 1, '\f': 1, '\r': 1, ' ': 1}
 
 // Like strconv.ParseFloat, but parses at the start of string and
 // allows things like "1.5foo"
 func parseFloatPrefix(s string) float64 {
 	// Skip whitespace at start
 	i := 0
-	for i < len(s) && strutil.IsASCIISpace(s[i]) {
+	for i < len(s) && asciiSpace[s[i]] != 0 {
 		i++
 	}
 	start := i

@@ -10,10 +10,10 @@ AWK is a fascinating text-processing language, and somehow after reading the del
 
 ## Basic usage
 
-To use the command-line version, simply use `go get` to install it, and then run it using `goawk` (assuming `$GOPATH/bin` is in your `PATH`):
+To use the command-line version, simply use `go install` to install it, and then run it using `goawk` (assuming `$GOPATH/bin` is in your `PATH`):
 
 ```shell
-$ go get github.com/benhoyt/goawk
+$ go install github.com/benhoyt/goawk@latest
 $ goawk 'BEGIN { print "foo", 42 }'
 foo 42
 $ echo 1 2 3 | goawk '{ print $1 + $3 }'
@@ -41,7 +41,7 @@ if err != nil {
 // baz
 ```
 
-Or you can use the `parser` module and then `interp.ExecProgram()` to control execution, set variables, etc:
+Or you can use the `parser` module and then `interp.ExecProgram()` to control execution, set variables, and so on:
 
 ```go
 src := "{ print NR, tolower($0) }"

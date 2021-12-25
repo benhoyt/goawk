@@ -52,7 +52,7 @@ func (l *Lexer) HadSpace() bool {
 }
 
 // Scan scans the next token and returns its position (line/column),
-// token value (one of the uppercased token constants), and the
+// token value (one of the uppercase token constants), and the
 // string value of the token. For most tokens, the token value is
 // empty. For NAME, NUMBER, STRING, and REGEX tokens, it's the
 // token's value. For an ILLEGAL token, it's the error message.
@@ -102,7 +102,7 @@ func (l *Lexer) scan() (Position, Token, string) {
 	// Names: keywords and functions
 	if isNameStart(ch) {
 		start := l.offset - 2
-		for isNameStart(l.ch) || (l.ch >= '0' && l.ch <= '9') {
+		for isNameStart(l.ch) || isDigit(l.ch) {
 			l.next()
 		}
 		name := string(l.src[start : l.offset-1])
@@ -126,14 +126,14 @@ func (l *Lexer) scan() (Position, Token, string) {
 		gotDigit := false
 		if ch != '.' {
 			gotDigit = true
-			for l.ch >= '0' && l.ch <= '9' {
+			for isDigit(l.ch) {
 				l.next()
 			}
 			if l.ch == '.' {
 				l.next()
 			}
 		}
-		for l.ch >= '0' && l.ch <= '9' {
+		for isDigit(l.ch) {
 			gotDigit = true
 			l.next()
 		}
@@ -148,13 +148,17 @@ func (l *Lexer) scan() (Position, Token, string) {
 				l.next()
 			}
 			gotDigit = false
-			for l.ch >= '0' && l.ch <= '9' {
+			for isDigit(l.ch) {
 				l.next()
 				gotDigit = true
 			}
-			// Per awk/gawk, "1e" is allowed, but not "1e+"
-			if gotSign && !gotDigit {
-				return l.pos, ILLEGAL, "expected digits"
+			// Per awk/gawk, "1e" is allowed and parsed as "1 e" (with "e"
+			// considered a variable). "1e+" is parsed as "1e + ...".
+			if !gotDigit {
+				if gotSign {
+					l.unread() // unread the '+' or '-'
+				}
+				l.unread() // unread the 'e' or 'E'
 			}
 		}
 		tok = NUMBER
@@ -396,6 +400,7 @@ func (l *Lexer) next() {
 		if l.ch != 0 {
 			l.ch = 0
 			l.offset++
+			l.nextPos.Column++
 		}
 		return
 	}
@@ -403,22 +408,34 @@ func (l *Lexer) next() {
 	if ch == '\n' {
 		l.nextPos.Line++
 		l.nextPos.Column = 1
-	} else {
+	} else if ch != '\r' {
 		l.nextPos.Column++
 	}
 	l.ch = ch
 	l.offset++
 }
 
+// Un-read the character just scanned (doesn't handle line boundaries).
+func (l *Lexer) unread() {
+	l.offset--
+	l.pos.Column--
+	l.nextPos.Column--
+	l.ch = l.src[l.offset-1]
+}
+
 func isNameStart(ch byte) bool {
 	return ch == '_' || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')
+}
+
+func isDigit(ch byte) bool {
+	return ch >= '0' && ch <= '9'
 }
 
 // Return the hex digit 0-15 corresponding to the given ASCII byte,
 // or -1 if it's not a valid hex digit.
 func hexDigit(ch byte) int {
 	switch {
-	case ch >= '0' && ch <= '9':
+	case isDigit(ch):
 		return int(ch - '0')
 	case ch >= 'a' && ch <= 'f':
 		return int(ch - 'a' + 10)

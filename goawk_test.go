@@ -231,9 +231,6 @@ func TestGAWK(t *testing.T) {
 		"sigpipe1":     true, // probable race condition: sometimes fails, sometimes passes
 
 		"parse1": true, // incorrect parsing of $$a++++ (see TODOs in interp_test.go too)
-
-		"nfldstr": true, // invalid handling of '!$0' when $0="0"
-		"zeroe0":  true, // difference in handling of numStr typing when setting $0 and $1
 	}
 
 	dontRunOnWindows := map[string]bool{
@@ -326,6 +323,7 @@ func TestCommandLine(t *testing.T) {
 		{[]string{`$0`}, "one\n\nthree", "one\nthree\n", ""},
 		{[]string{`$0`, "-"}, "one\n\nthree", "one\nthree\n", ""},
 		{[]string{`$0`, "-", "-"}, "one\n\nthree", "one\nthree\n", ""},
+		{[]string{"-f", "testdata/t.0", "-"}, "one\ntwo\n", "one\ntwo\n", ""},
 
 		// Read input from file(s)
 		{[]string{`$0`, "testdata/g.1"}, "", "ONE\n", ""},
@@ -335,8 +333,9 @@ func TestCommandLine(t *testing.T) {
 		{[]string{`$0`, "testdata/g.1", "-", "testdata/g.2"}, "STDIN", "ONE\nSTDIN\nTWO\n", ""},
 		{[]string{`$0`, "testdata/g.1", "-", "testdata/g.2", "-"}, "STDIN", "ONE\nSTDIN\nTWO\n", ""},
 		{[]string{"-F", " ", "--", "$0", "testdata/g.1"}, "", "ONE\n", ""},
-		{[]string{"--", "$0", "-ftest"}, "", "used in tests; do not delete\n", ""}, // Issue #53
-		{[]string{"$0", "-ftest"}, "", "used in tests; do not delete\n", ""},
+		// I've deleted the "-ftest" file for now as it was causing problems with "go install" zip files
+		// {[]string{"--", "$0", "-ftest"}, "", "used in tests; do not delete\n", ""}, // Issue #53
+		// {[]string{"$0", "-ftest"}, "", "used in tests; do not delete\n", ""},
 
 		// Specifying field separator with -F
 		{[]string{`{ print $1, $3 }`}, "1 2 3\n4 5 6", "1 3\n4 6\n", ""},
@@ -381,6 +380,8 @@ func TestCommandLine(t *testing.T) {
 			"A=1, B=0\n\tARGV[1] = B=2\n\tARGV[2] = testdata/test.countries\nA=1, B=2\n", ""},
 		{[]string{`END { print (x==42) }`, "x=42.0"}, "", "1\n", ""},
 		{[]string{"-v", "x=42.0", `BEGIN { print (x==42) }`}, "", "1\n", ""},
+		{[]string{`BEGIN { print(ARGV[1]<2, ARGV[2]<2); ARGV[1]="10"; ARGV[2]="10x"; print(ARGV[1]<2, ARGV[2]<2) }`,
+			"10", "10x"}, "", "0 1\n1 1\n", ""},
 
 		// Error handling
 		{[]string{}, "", "", "usage: goawk [-F fs] [-v var=value] [-f progfile | 'prog'] [file ...]"},
@@ -389,50 +390,27 @@ func TestCommandLine(t *testing.T) {
 		{[]string{"-v"}, "", "", "flag needs an argument: -v"},
 		{[]string{"-z"}, "", "", "flag provided but not defined: -z"},
 		{[]string{"{ print }", "notexist"}, "", "", `file "notexist" not found`},
-		{[]string{"@"}, "", "", "-----------------------------------\n@\n^\n-----------------------------------\nparse error at 1:1: unexpected char"},
 		{[]string{"BEGIN { print 1/0 }"}, "", "", "division by zero"},
 		{[]string{"-v", "foo", "BEGIN {}"}, "", "", "-v flag must be in format name=value"},
 		{[]string{"--", "{ print $1 }", "-file"}, "", "", `file "-file" not found`},
 		{[]string{"{ print $1 }", "-file"}, "", "", `file "-file" not found`},
+
+		// Parse error formatting
+		{[]string{"@"}, "", "", "<cmdline>:1:1: unexpected char\n@\n^"},
+		{[]string{"BEGIN {\n\tx*;\n}"}, "", "", "<cmdline>:2:4: expected expression instead of ;\n    x*;\n      ^"},
+		{[]string{"BEGIN {\n\tx*\r\n}"}, "", "", "<cmdline>:2:4: expected expression instead of <newline>\n    x*\n      ^"},
+		{[]string{"-f", "-"}, "\n ++", "", "<stdin>:2:4: expected expression instead of <newline>\n ++\n   ^"},
+		{[]string{"-f", "testdata/parseerror/good.awk", "-f", "testdata/parseerror/bad.awk"},
+			"", "", "testdata/parseerror/bad.awk:2:3: expected expression instead of <newline>\nx*\n  ^"},
+		{[]string{"-f", "testdata/parseerror/bad.awk", "-f", "testdata/parseerror/good.awk"},
+			"", "", "testdata/parseerror/bad.awk:2:3: expected expression instead of <newline>\nx*\n  ^"},
+		{[]string{"-f", "testdata/parseerror/good.awk", "-f", "-", "-f", "testdata/parseerror/bad.awk"},
+			"@", "", "<stdin>:1:1: unexpected char\n@\n^"},
 	}
 	for _, test := range tests {
 		testName := strings.Join(test.args, " ")
 		t.Run(testName, func(t *testing.T) {
-			cmd := exec.Command(awkExe, test.args...)
-			if test.stdin != "" {
-				cmd.Stdin = bytes.NewReader([]byte(test.stdin))
-			}
-			errBuf := &bytes.Buffer{}
-			cmd.Stderr = errBuf
-			output, err := cmd.Output()
-			if err != nil {
-				if test.error == "" {
-					t.Fatalf("expected no error, got AWK error: %v (%s)", err, errBuf.String())
-				}
-			} else {
-				if test.error != "" {
-					t.Fatalf("expected AWK error, got none")
-				}
-			}
-			stdout := string(normalizeNewlines(output))
-			if stdout != test.output {
-				t.Fatalf("expected AWK to give %q, got %q", test.output, stdout)
-			}
-
-			stdout, stderr, err := runGoAWK(test.args, test.stdin)
-			if err != nil {
-				stderr = strings.TrimSpace(stderr)
-				if stderr != test.error {
-					t.Fatalf("expected GoAWK error %q, got %q", test.error, stderr)
-				}
-			} else {
-				if test.error != "" {
-					t.Fatalf("expected GoAWK error %q, got none", test.error)
-				}
-			}
-			if stdout != test.output {
-				t.Fatalf("expected GoAWK to give %q, got %q", test.output, stdout)
-			}
+			runAWKs(t, test.args, test.stdin, test.output, test.error)
 		})
 	}
 }
@@ -448,6 +426,44 @@ func runGoAWK(args []string, stdin string) (stdout, stderr string, err error) {
 	stdout = string(normalizeNewlines(output))
 	stderr = string(normalizeNewlines(errBuf.Bytes()))
 	return stdout, stderr, err
+}
+
+func runAWKs(t *testing.T, testArgs []string, testStdin, testOutput, testError string) {
+	cmd := exec.Command(awkExe, testArgs...)
+	if testStdin != "" {
+		cmd.Stdin = bytes.NewReader([]byte(testStdin))
+	}
+	errBuf := &bytes.Buffer{}
+	cmd.Stderr = errBuf
+	output, err := cmd.Output()
+	if err != nil {
+		if testError == "" {
+			t.Fatalf("expected no error, got AWK error: %v (%s)", err, errBuf.String())
+		}
+	} else {
+		if testError != "" {
+			t.Fatalf("expected AWK error, got none")
+		}
+	}
+	stdout := string(normalizeNewlines(output))
+	if stdout != testOutput {
+		t.Fatalf("expected AWK to give %q, got %q", testOutput, stdout)
+	}
+
+	stdout, stderr, err := runGoAWK(testArgs, testStdin)
+	if err != nil {
+		stderr = strings.TrimSpace(stderr)
+		if stderr != testError {
+			t.Fatalf("expected GoAWK error %q, got %q", testError, stderr)
+		}
+	} else {
+		if testError != "" {
+			t.Fatalf("expected GoAWK error %q, got none", testError)
+		}
+	}
+	if stdout != testOutput {
+		t.Fatalf("expected GoAWK to give %q, got %q", testOutput, stdout)
+	}
 }
 
 func TestWildcards(t *testing.T) {
@@ -496,6 +512,29 @@ func TestWildcards(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFILENAME(t *testing.T) {
+	origGoAWKExe := goAWKExe
+	goAWKExe = "../../" + goAWKExe
+	defer func() { goAWKExe = origGoAWKExe }()
+
+	origDir, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Chdir("testdata/filename")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(origDir)
+
+	src := `
+BEGIN { FILENAME = "10"; print(FILENAME, FILENAME<2) }
+BEGIN { FILENAME = 10; print(FILENAME, FILENAME<2) }
+{ print(FILENAME, FILENAME<2) }
+`
+	runAWKs(t, []string{src, "10", "10x"}, "", "10 1\n10 0\n10 0\n10x 1\n", "")
 }
 
 func normalizeNewlines(b []byte) []byte {

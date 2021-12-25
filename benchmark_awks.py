@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Benchmark GoAWK against other AWK versions
 
 from __future__ import print_function
@@ -13,11 +13,11 @@ import time
 AWKS = [
     './goawk',
     './orig', # GoAWK without perf improvements (commit 8ab5446)
-    'awk',
+    'original-awk',
     'gawk',
     'mawk',
 ]
-NORM_INDEX = AWKS.index('awk')
+NORM_INDEX = AWKS.index('original-awk')
 # Only get the mean of these tests because these are the only ones
 # we show in the GoAWK article.
 TESTS_TO_MEAN = [
@@ -52,7 +52,8 @@ def repeat_file(input_file, repeated_file, n):
 
 print('Test      ', end='')
 for awk in AWKS:
-    display_awk = awk[2:] if awk.startswith('./') else awk
+    display_awk = os.path.basename(awk)
+    display_awk = display_awk.replace('original-awk', 'awk')
     print('| {:>5} '.format(display_awk), end='')
 print()
 print('-'*9 + ' | -----'*len(AWKS))

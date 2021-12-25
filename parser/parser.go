@@ -31,8 +31,8 @@ func (e *ParseError) Error() string {
 	return fmt.Sprintf("parse error at %d:%d: %s", e.Position.Line, e.Position.Column, e.Message)
 }
 
-// ParseConfig lets you specify configuration for the parsing process
-// (for example printing type information for debugging).
+// ParserConfig lets you specify configuration for the parsing
+// process (for example printing type information for debugging).
 type ParserConfig struct {
 	// Enable printing of type information
 	DebugTypes bool
@@ -107,10 +107,11 @@ func (p *Program) String() string {
 // Parser state
 type parser struct {
 	// Lexer instance and current token values
-	lexer *Lexer
-	pos   Position // position of last token (tok)
-	tok   Token    // last lexed token
-	val   string   // string value of last token (or "")
+	lexer   *Lexer
+	pos     Position // position of last token (tok)
+	tok     Token    // last lexed token
+	prevTok Token    // previously lexed token
+	val     string   // string value of last token (or "")
 
 	// Parsing state
 	inAction  bool   // true if parsing an action (false in BEGIN or END)
@@ -365,8 +366,8 @@ func (p *parser) stmt() Stmt {
 		p.next()
 		s = &ContinueStmt{}
 	case NEXT:
-		if !p.inAction {
-			panic(p.error("next can't be in BEGIN or END"))
+		if !p.inAction && p.funcName == "" {
+			panic(p.error("next can't be inside BEGIN or END"))
 		}
 		p.next()
 		s = &NextStmt{}
@@ -392,6 +393,11 @@ func (p *parser) stmt() Stmt {
 		s = &BlockStmt{body}
 	default:
 		s = p.simpleStmt()
+	}
+
+	// Ensure statements are separated by ; or newline
+	if !p.matches(NEWLINE, SEMICOLON, RBRACE) && p.prevTok != NEWLINE && p.prevTok != SEMICOLON && p.prevTok != RBRACE {
+		panic(p.error("expected ; or newline between statements"))
 	}
 	for p.matches(NEWLINE, SEMICOLON) {
 		p.next()
@@ -556,14 +562,14 @@ func (p *parser) _cond(higher func() Expr) Expr {
 	return expr
 }
 
-// Parse an || or expresion:
+// Parse an || or expression:
 //
 //     and [OR NEWLINE* and] [OR NEWLINE* and] ...
 //
 func (p *parser) or() Expr      { return p.binaryLeft(p.and, true, OR) }
 func (p *parser) printOr() Expr { return p.binaryLeft(p.printAnd, true, OR) }
 
-// Parse an && and expresion:
+// Parse an && and expression:
 //
 //     in [AND NEWLINE* in] [AND NEWLINE* in] ...
 //
@@ -626,7 +632,7 @@ func (p *parser) _compare(ops ...Token) Expr {
 
 func (p *parser) concat() Expr {
 	expr := p.add()
-	for p.matches(DOLLAR, NOT, NAME, NUMBER, STRING, LPAREN) ||
+	for p.matches(DOLLAR, NOT, NAME, NUMBER, STRING, LPAREN, INCR, DECR) ||
 		(p.tok >= FIRST_FUNC && p.tok <= LAST_FUNC) {
 		right := p.add()
 		expr = &BinaryExpr{expr, CONCAT, right}
@@ -668,10 +674,7 @@ func (p *parser) preIncr() Expr {
 
 func (p *parser) postIncr() Expr {
 	expr := p.primary()
-	if p.tok == INCR || p.tok == DECR {
-		if !IsLValue(expr) {
-			panic(p.error("expected lvalue before ++ or --"))
-		}
+	if (p.tok == INCR || p.tok == DECR) && IsLValue(expr) {
 		op := p.tok
 		p.next()
 		return &IncrExpr{expr, op, false}
@@ -763,8 +766,8 @@ func (p *parser) primary() Expr {
 		return &GetlineExpr{nil, varExpr, file}
 	// Below is the parsing of all the builtin function calls. We
 	// could unify these but several of them have special handling
-	// (array/lvalue/regex params, optional arguments, etc), and
-	// doing it this way means we can check more at parse time.
+	// (array/lvalue/regex params, optional arguments, and so on).
+	// Doing it this way means we can check more at parse time.
 	case F_SUB, F_GSUB:
 		op := p.tok
 		p.next()
@@ -938,6 +941,7 @@ func (p *parser) optionalNewlines() {
 
 // Parse next token into p.tok (and set p.pos and p.val).
 func (p *parser) next() {
+	p.prevTok = p.tok
 	p.pos, p.tok, p.val = p.lexer.Scan()
 	if p.tok == ILLEGAL {
 		panic(p.error("%s", p.val))

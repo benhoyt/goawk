@@ -75,7 +75,8 @@ func (p *parser) initResolve() {
 	p.varTypes = make(map[string]map[string]typeInfo)
 	p.varTypes[""] = make(map[string]typeInfo) // globals
 	p.functions = make(map[string]int)
-	p.arrayRef("ARGV", Position{1, 1}) // interpreter relies on ARGV being present
+	p.arrayRef("ARGV", Position{1, 1})    // interpreter relies on ARGV being present
+	p.arrayRef("ENVIRON", Position{1, 1}) // and ENVIRON
 	p.multiExprs = make(map[*MultiExpr]Position, 3)
 }
 
@@ -305,6 +306,31 @@ func (p *parser) resolveVars(prog *Program) {
 		p.varTypes[""][name] = info
 	}
 
+	// Fill in unknown parameter types that are being called with arrays,
+	// for example, as in the following code:
+	//
+	// BEGIN { arr[0]; f(arr) }
+	// function f(a) { }
+	for _, c := range p.userCalls {
+		if c.call.Native {
+			continue
+		}
+		function := prog.Functions[c.call.Index]
+		for i, arg := range c.call.Args {
+			varExpr, ok := arg.(*VarExpr)
+			if !ok {
+				continue
+			}
+			funcName := p.getVarFuncName(prog, varExpr.Name, c.inFunc)
+			argType := p.varTypes[funcName][varExpr.Name]
+			paramType := p.varTypes[function.Name][function.Params[i]]
+			if argType.typ == typeArray && paramType.typ == typeUnknown {
+				paramType.typ = argType.typ
+				p.varTypes[function.Name][function.Params[i]] = paramType
+			}
+		}
+	}
+
 	// Resolve local variables (assign indexes in order of params).
 	// Also patch up Function.Arrays (tells interpreter which args
 	// are arrays).
@@ -444,6 +470,5 @@ func (p *parser) checkMultiExprs() {
 			min = pos
 		}
 	}
-	message := fmt.Sprintf("unexpected comma-separated expression")
-	panic(&ParseError{min, message})
+	panic(&ParseError{min, "unexpected comma-separated expression"})
 }

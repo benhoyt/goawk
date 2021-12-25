@@ -76,6 +76,7 @@ type interp struct {
 	noExec        bool
 	noFileWrites  bool
 	noFileReads   bool
+	shellCommand  []string
 
 	// Scalars, arrays, and function state
 	globals     []value
@@ -87,13 +88,15 @@ type interp struct {
 	nativeFuncs []nativeFunc
 
 	// File, line, and field handling
-	filename    string
-	line        string
-	lineNum     int
-	fileLineNum int
-	fields      []string
-	numFields   int
-	haveFields  bool
+	filename        value
+	line            string
+	lineIsTrueStr   bool
+	lineNum         int
+	fileLineNum     int
+	fields          []string
+	fieldsIsTrueStr []bool
+	numFields       int
+	haveFields      bool
 
 	// Built-in variables
 	argc            int
@@ -189,6 +192,15 @@ type Config struct {
 	NoExec       bool
 	NoFileWrites bool
 	NoFileReads  bool
+
+	// Exec args used to run system shell. Typically, this will
+	// be {"/bin/sh", "-c"}
+	ShellCommand []string
+
+	// List of name-value pairs to be assigned to the ENVIRON special
+	// array, for example []string{"USER", "bob", "HOME", "/home/bob"}.
+	// If nil (the default), values from os.Environ() are used.
+	Environ []string
 }
 
 // ExecProgram executes the parsed program using the given interpreter
@@ -198,6 +210,9 @@ type Config struct {
 func ExecProgram(program *Program, config *Config) (int, error) {
 	if len(config.Vars)%2 != 0 {
 		return 0, newError("length of config.Vars must be a multiple of 2, not %d", len(config.Vars))
+	}
+	if len(config.Environ)%2 != 0 {
+		return 0, newError("length of config.Environ must be a multiple of 2, not %d", len(config.Environ))
 	}
 
 	p := &interp{program: program}
@@ -236,7 +251,7 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	p.setArrayValue(ScopeGlobal, argvIndex, "0", str(config.Argv0))
 	p.argc = len(config.Args) + 1
 	for i, arg := range config.Args {
-		p.setArrayValue(ScopeGlobal, argvIndex, strconv.Itoa(i+1), str(arg))
+		p.setArrayValue(ScopeGlobal, argvIndex, strconv.Itoa(i+1), numStr(arg))
 	}
 	p.filenameIndex = 1
 	p.hadFiles = false
@@ -245,6 +260,32 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 		if err != nil {
 			return 0, err
 		}
+	}
+
+	// Setup ENVIRON from config or environment variables
+	environIndex := program.Arrays["ENVIRON"]
+	if config.Environ != nil {
+		for i := 0; i < len(config.Environ); i += 2 {
+			p.setArrayValue(ScopeGlobal, environIndex, config.Environ[i], numStr(config.Environ[i+1]))
+		}
+	} else {
+		for _, kv := range os.Environ() {
+			eq := strings.IndexByte(kv, '=')
+			if eq >= 0 {
+				p.setArrayValue(ScopeGlobal, environIndex, kv[:eq], numStr(kv[eq+1:]))
+			}
+		}
+	}
+
+	// Setup system shell command
+	if len(config.ShellCommand) != 0 {
+		p.shellCommand = config.ShellCommand
+	} else {
+		executable := "/bin/sh"
+		if runtime.GOOS == "windows" {
+			executable = "sh"
+		}
+		p.shellCommand = []string{executable, "-c"}
 	}
 
 	// Setup I/O structures
@@ -330,7 +371,7 @@ lineLoop:
 		if err != nil {
 			return err
 		}
-		p.setLine(line)
+		p.setLine(line, false)
 
 		// Execute all the pattern-action blocks for each line
 		for i, action := range actions {
@@ -699,7 +740,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 		// Pre-increment, post-increment, pre-decrement, post-decrement
 
 		// First evaluate the expression, but remember array or field
-		// index so we don't evaluate part of the expression twice
+		// index, so we don't evaluate part of the expression twice
 		exprValue, arrayIndex, fieldIndex, err := p.evalForAugAssign(e.Expr)
 		if err != nil {
 			return null(), err
@@ -715,7 +756,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 		}
 		incrValue := num(incr)
 
-		// Finally assign back to expression and return the correct value
+		// Finally, assign back to expression and return the correct value
 		err = p.assignAug(e.Expr, arrayIndex, fieldIndex, incrValue)
 		if err != nil {
 			return null(), err
@@ -868,7 +909,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 				return null(), err
 			}
 		} else {
-			p.setLine(line)
+			p.setLine(line, false)
 		}
 		return num(1), nil
 
@@ -939,7 +980,7 @@ func (p *interp) getVar(scope VarScope, index int) value {
 		case V_CONVFMT:
 			return str(p.convertFormat)
 		case V_FILENAME:
-			return str(p.filename)
+			return p.filename
 		case V_FS:
 			return str(p.fieldSep)
 		case V_OFMT:
@@ -995,11 +1036,14 @@ func (p *interp) setVar(scope VarScope, index int, v value) error {
 			p.numFields = numFields
 			if p.numFields < len(p.fields) {
 				p.fields = p.fields[:p.numFields]
+				p.fieldsIsTrueStr = p.fieldsIsTrueStr[:p.numFields]
 			}
 			for i := len(p.fields); i < p.numFields; i++ {
 				p.fields = append(p.fields, "")
+				p.fieldsIsTrueStr = append(p.fieldsIsTrueStr, false)
 			}
 			p.line = strings.Join(p.fields, p.outputFieldSep)
+			p.lineIsTrueStr = true
 		case V_NR:
 			p.lineNum = int(v.num())
 		case V_RLENGTH:
@@ -1013,7 +1057,7 @@ func (p *interp) setVar(scope VarScope, index int, v value) error {
 		case V_CONVFMT:
 			p.convertFormat = p.toString(v)
 		case V_FILENAME:
-			p.filename = p.toString(v)
+			p.filename = v
 		case V_FS:
 			p.fieldSep = p.toString(v)
 			if utf8.RuneCountInString(p.fieldSep) > 1 {
@@ -1081,19 +1125,27 @@ func (p *interp) getField(index int) (value, error) {
 		return null(), newError("field index negative: %d", index)
 	}
 	if index == 0 {
-		return numStr(p.line), nil
+		if p.lineIsTrueStr {
+			return str(p.line), nil
+		} else {
+			return numStr(p.line), nil
+		}
 	}
 	p.ensureFields()
 	if index > len(p.fields) {
 		return str(""), nil
 	}
-	return numStr(p.fields[index-1]), nil
+	if p.fieldsIsTrueStr[index-1] {
+		return str(p.fields[index-1]), nil
+	} else {
+		return numStr(p.fields[index-1]), nil
+	}
 }
 
 // Sets a single field, equivalent to "$index = value"
 func (p *interp) setField(index int, value string) error {
 	if index == 0 {
-		p.setLine(value)
+		p.setLine(value, true)
 		return nil
 	}
 	if index < 0 {
@@ -1106,10 +1158,13 @@ func (p *interp) setField(index int, value string) error {
 	p.ensureFields()
 	for i := len(p.fields); i < index; i++ {
 		p.fields = append(p.fields, "")
+		p.fieldsIsTrueStr = append(p.fieldsIsTrueStr, true)
 	}
 	p.fields[index-1] = value
+	p.fieldsIsTrueStr[index-1] = true
 	p.numFields = len(p.fields)
 	p.line = strings.Join(p.fields, p.outputFieldSep)
+	p.lineIsTrueStr = true
 	return nil
 }
 
@@ -1145,22 +1200,28 @@ func (p *interp) evalBinary(op Token, l, r value) (value, error) {
 	case SUB:
 		return num(l.num() - r.num()), nil
 	case EQUALS:
-		if l.isTrueStr() || r.isTrueStr() {
+		ln, lIsStr := l.isTrueStr()
+		rn, rIsStr := r.isTrueStr()
+		if lIsStr || rIsStr {
 			return boolean(p.toString(l) == p.toString(r)), nil
 		} else {
-			return boolean(l.n == r.n), nil
+			return boolean(ln == rn), nil
 		}
 	case LESS:
-		if l.isTrueStr() || r.isTrueStr() {
+		ln, lIsStr := l.isTrueStr()
+		rn, rIsStr := r.isTrueStr()
+		if lIsStr || rIsStr {
 			return boolean(p.toString(l) < p.toString(r)), nil
 		} else {
-			return boolean(l.n < r.n), nil
+			return boolean(ln < rn), nil
 		}
 	case LTE:
-		if l.isTrueStr() || r.isTrueStr() {
+		ln, lIsStr := l.isTrueStr()
+		rn, rIsStr := r.isTrueStr()
+		if lIsStr || rIsStr {
 			return boolean(p.toString(l) <= p.toString(r)), nil
 		} else {
-			return boolean(l.n <= r.n), nil
+			return boolean(ln <= rn), nil
 		}
 	case CONCAT:
 		return str(p.toString(l) + p.toString(r)), nil
@@ -1173,22 +1234,28 @@ func (p *interp) evalBinary(op Token, l, r value) (value, error) {
 		}
 		return num(l.num() / rf), nil
 	case GREATER:
-		if l.isTrueStr() || r.isTrueStr() {
+		ln, lIsStr := l.isTrueStr()
+		rn, rIsStr := r.isTrueStr()
+		if lIsStr || rIsStr {
 			return boolean(p.toString(l) > p.toString(r)), nil
 		} else {
-			return boolean(l.n > r.n), nil
+			return boolean(ln > rn), nil
 		}
 	case GTE:
-		if l.isTrueStr() || r.isTrueStr() {
+		ln, lIsStr := l.isTrueStr()
+		rn, rIsStr := r.isTrueStr()
+		if lIsStr || rIsStr {
 			return boolean(p.toString(l) >= p.toString(r)), nil
 		} else {
-			return boolean(l.n >= r.n), nil
+			return boolean(ln >= rn), nil
 		}
 	case NOT_EQUALS:
-		if l.isTrueStr() || r.isTrueStr() {
+		ln, lIsStr := l.isTrueStr()
+		rn, rIsStr := r.isTrueStr()
+		if lIsStr || rIsStr {
 			return boolean(p.toString(l) != p.toString(r)), nil
 		} else {
-			return boolean(l.n != r.n), nil
+			return boolean(ln != rn), nil
 		}
 	case MATCH:
 		re, err := p.compileRegex(p.toString(r))

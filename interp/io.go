@@ -9,7 +9,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -69,6 +68,10 @@ func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
 
 	switch redirect {
 	case GREATER, APPEND:
+		if name == "-" {
+			// filename of "-" means write to stdout, eg: print "x" >"-"
+			return p.output, nil
+		}
 		// Write or append to file
 		if p.noFileWrites {
 			return nil, newError("can't write to file due to NoFileWrites")
@@ -93,7 +96,7 @@ func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
 		if p.noExec {
 			return nil, newError("can't write to pipe due to NoExec")
 		}
-		cmd := exec.Command("sh", "-c", name)
+		cmd := p.execShell(name)
 		w, err := cmd.StdinPipe()
 		if err != nil {
 			return nil, newError("error connecting to stdin pipe: %v", err)
@@ -125,6 +128,15 @@ func (p *interp) getInputScannerFile(name string) (*bufio.Scanner, error) {
 	if _, ok := p.inputStreams[name]; ok {
 		return p.scanners[name], nil
 	}
+	if name == "-" {
+		// filename of "-" means read from stdin, eg: getline <"-"
+		if scanner, ok := p.scanners["-"]; ok {
+			return scanner, nil
+		}
+		scanner := p.newScanner(p.stdin)
+		p.scanners[name] = scanner
+		return scanner, nil
+	}
 	if p.noFileReads {
 		return nil, newError("can't read from file due to NoFileReads")
 	}
@@ -149,7 +161,7 @@ func (p *interp) getInputScannerPipe(name string) (*bufio.Scanner, error) {
 	if p.noExec {
 		return nil, newError("can't read from pipe due to NoExec")
 	}
-	cmd := exec.Command("sh", "-c", name)
+	cmd := p.execShell(name)
 	cmd.Stdin = p.stdin
 	cmd.Stderr = p.errorOutput
 	r, err := cmd.StdoutPipe()
@@ -273,14 +285,15 @@ func (s byteSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, 
 
 // Setup for a new input file with given name (empty string if stdin)
 func (p *interp) setFile(filename string) {
-	p.filename = filename
+	p.filename = numStr(filename)
 	p.fileLineNum = 0
 }
 
 // Setup for a new input line (but don't parse it into fields till we
 // need to)
-func (p *interp) setLine(line string) {
+func (p *interp) setLine(line string, isTrueStr bool) {
 	p.line = line
+	p.lineIsTrueStr = isTrueStr
 	p.haveFields = false
 }
 
@@ -320,6 +333,7 @@ func (p *interp) ensureFields() {
 		p.fields = fields
 	}
 
+	p.fieldsIsTrueStr = make([]bool, len(p.fields))
 	p.numFields = len(p.fields)
 }
 
@@ -403,7 +417,7 @@ func (p *interp) nextLine() (string, error) {
 }
 
 // Write output string to given writer, producing correct line endings
-// on Windows (CR LF)
+// on Windows (CR LF).
 func writeOutput(w io.Writer, s string) error {
 	if crlfNewline {
 		// First normalize to \n, then convert all newlines to \r\n
@@ -416,7 +430,7 @@ func writeOutput(w io.Writer, s string) error {
 	return err
 }
 
-// Close all streams, commands, etc (after program execution)
+// Close all streams, commands, and so on (after program execution).
 func (p *interp) closeAll() {
 	if prevInput, ok := p.input.(io.Closer); ok {
 		_ = prevInput.Close()
