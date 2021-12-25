@@ -114,6 +114,20 @@ gawk:
 * builtin.c:efwrite: fflush(fp) if output_is_tty and some other conditions met
 * builtin.c:do_printf and do_print
 
+mawk:
+* bi_funct.c: bi_fflush(): built-in fflush() function
+* bi_funct.c: bi_system(): flush_all_output() before fork
+* bi_funct.c: bi_system(): if exec error, fflush(stderr) after printing error message
+* bi_funct.c: bi_getline(): built-in getline() calls file_find() if type is F_IN or PIPE_IN
+* files.c: file_flush(STRING * sval): flushes named file or all files if sval==""
+* files.c: get_pipe(): fflush(stdout); fflush(stderr) - "to keep output ordered correctly"
+* files.c: file_find(sval, type): calls get_pipe() if stream not yet created and type is PIPE_OUT or PIPE_IN (i.e., real pipe, not file)
+* files.c: file_find() calls tfopen() if type is F_TRUNC or F_APPEND
+* files.c: tfopen(): fopen() but no buffering if isatty(fd)
+* print.c: bi_print(): built-in print() calls file_find() when redirecting
+* print.c: bi_printf(): built-in printf() calls file_find() when redirecting
+* fin.c: FINdopen(fd, main_flag): calls isatty(fd) and sets fin->fp based on that and other conditions
+
 
 // add test that ensures output is flushed before system()
 // add test that ensures output is flushed before getline reading from stdin
