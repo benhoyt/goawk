@@ -396,7 +396,6 @@ func TestCommandLine(t *testing.T) {
 		{[]string{"{ print $1 }", "-file"}, "", "", `file "-file" not found`},
 
 		// Output synchronization
-		{[]string{`BEGIN { print "1"; print "2">"/dev/stdout" }`}, "", "1\n2\n", ""},
 		{[]string{`BEGIN { print "1"; print "2"|"cat" }`}, "", "1\n2\n", ""},
 		{[]string{`BEGIN { print "1"; "echo 2" | getline x; print x }`}, "", "1\n2\n", ""},
 
@@ -418,6 +417,13 @@ func TestCommandLine(t *testing.T) {
 			runAWKs(t, test.args, test.stdin, test.output, test.error)
 		})
 	}
+}
+
+func TestDevStdout(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("/dev/stdout not presnt on Windows")
+	}
+	runAWKs(t, []string{`BEGIN { print "1"; print "2">"/dev/stdout" }`}, "", "1\n2\n", "")
 }
 
 func runGoAWK(args []string, stdin string) (stdout, stderr string, err error) {
