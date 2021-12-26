@@ -195,9 +195,10 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 		cmd := p.execShell(cmdline)
 		cmd.Stdout = p.output
 		cmd.Stderr = p.errorOutput
+		_ = p.flushAll() // ensure synchronization
 		err := cmd.Start()
 		if err != nil {
-			fmt.Fprintln(p.errorOutput, err)
+			p.printErrorf("%s\n", err)
 			return num(-1), nil
 		}
 		err = cmd.Wait()
@@ -206,7 +207,7 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 				code := exitErr.ProcessState.ExitCode()
 				return num(float64(code)), nil
 			} else {
-				fmt.Fprintf(p.errorOutput, "unexpected error running command %q: %v\n", cmdline, err)
+				p.printErrorf("unexpected error running command %q: %v\n", cmdline, err)
 				return num(-1), nil
 			}
 		}

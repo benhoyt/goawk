@@ -1099,6 +1099,38 @@ BEGIN {
 	if !reflect.DeepEqual(f.flushes, expected) {
 		t.Fatalf("expected flushes %q, got %q", expected, f.flushes)
 	}
+
+	// Ensure output is flushed before getline reads from stdin
+	src = `
+BEGIN {
+	printf "Prompt: "
+	getline x
+	print x
+}`
+	f = &mockFlusher{}
+	testGoAWK(t, src, "42\n", "", "", nil, func(config *interp.Config) {
+		config.Output = f
+	})
+	expected = []string{"Prompt: ", "Prompt: 42\n"}
+	if !reflect.DeepEqual(f.flushes, expected) {
+		t.Fatalf("expected flushes %q, got %q", expected, f.flushes)
+	}
+
+	// Ensure output is flushed before system()
+	src = `
+BEGIN {
+  print "one"
+  system("echo .")
+  print "two"
+}`
+	f = &mockFlusher{}
+	testGoAWK(t, src, "", "", "", nil, func(config *interp.Config) {
+		config.Output = f
+	})
+	expected = []string{"one\n", "one\n.\ntwo\n"}
+	if !reflect.DeepEqual(f.flushes, expected) {
+		t.Fatalf("expected flushes %q, got %q", expected, f.flushes)
+	}
 }
 
 type errorFlusher struct {

@@ -893,6 +893,7 @@ func (p *interp) eval(expr Expr) (value, error) {
 			}
 			line = scanner.Text()
 		default:
+			p.flushOutputAndError() // Flush output in case they've written a prompt
 			var err error
 			line, err = p.nextLine()
 			if err == io.EOF {
