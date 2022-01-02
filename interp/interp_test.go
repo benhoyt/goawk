@@ -664,6 +664,7 @@ func TestInterp(t *testing.T) {
 				if test.in != "" {
 					cmd.Stdin = strings.NewReader(test.in)
 				}
+				cmd.Env = []string{"LC_ALL=en_US.UTF-8"} // enforce UTF-8 on Windows
 				out, err := cmd.CombinedOutput()
 				if err != nil {
 					if test.awkErr != "" {
