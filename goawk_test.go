@@ -351,6 +351,10 @@ func TestCommandLine(t *testing.T) {
 		{[]string{"-v", "RS=;", `$0`}, "a b;c\nd;e", "a b\nc\nd\ne\n", ""},
 		{[]string{"-vRS=;", `$0`}, "a b;c\nd;e", "a b\nc\nd\ne\n", ""},
 
+		// Byte index vs character index mode
+		{[]string{`{ print length }`}, "絵\n", "1\n", ""},
+		{[]string{"-b", `{ print length }`}, "絵\n", "3\n", ""},
+
 		// ARGV/ARGC handling
 		{[]string{`
 			BEGIN {
