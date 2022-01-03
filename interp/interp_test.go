@@ -417,16 +417,16 @@ BEGIN {
 	{`BEGIN { print sprintf("%d") }`, "", "", "format error: got 0 args, expected 1", "not enough arg"},
 	{`BEGIN { print sprintf("%d", 12, 34) }`, "", "12\n", "", ""},
 	{`BEGIN { print sprintf("% 5d", 42) }`, "", "   42\n", "", ""},
-	{`BEGIN { print substr("food", 1), substr("fööd", 1) }`, "", "food fööd\n", "", ""},
-	{`BEGIN { print substr("food", 1, 2), substr("fööd", 1, 2) }`, "", "fo fö\n", "", ""},
-	{`BEGIN { print substr("food", 1, 4), substr("fööd", 1, 4) }`, "", "food fööd\n", "", ""},
-	{`BEGIN { print substr("food", 1, 8), substr("fööd", 1, 8) }`, "", "food fööd\n", "", ""},
-	{`BEGIN { print substr("food", 2), substr("fööd", 2) }`, "", "ood ööd\n", "", ""},
-	{`BEGIN { print substr("food", 2, 2), substr("fööd", 2, 2) }`, "", "oo öö\n", "", ""},
-	{`BEGIN { print substr("food", 2, 3), substr("fööd", 2, 3) }`, "", "ood ööd\n", "", ""},
-	{`BEGIN { print substr("food", 2, 8), substr("fööd", 2, 8) }`, "", "ood ööd\n", "", ""},
-	{`BEGIN { print substr("food", 0, 8), substr("fööd", 0, 8) }`, "", "food fööd\n", "", ""},
-	{`BEGIN { print substr("food", -1, 8), substr("fööd", -1, 8) }`, "", "food fööd\n", "", ""},
+	{`BEGIN { print substr("food", 1), substr("fööd", 1) }  # !windows`, "", "food fööd\n", "", ""},
+	{`BEGIN { print substr("food", 1, 2), substr("fööd", 1, 2) }  # !windows`, "", "fo fö\n", "", ""},
+	{`BEGIN { print substr("food", 1, 4), substr("fööd", 1, 4) }  # !windows`, "", "food fööd\n", "", ""},
+	{`BEGIN { print substr("food", 1, 8), substr("fööd", 1, 8) }  # !windows`, "", "food fööd\n", "", ""},
+	{`BEGIN { print substr("food", 2), substr("fööd", 2) }  # !windows`, "", "ood ööd\n", "", ""},
+	{`BEGIN { print substr("food", 2, 2), substr("fööd", 2, 2) }  # !windows`, "", "oo öö\n", "", ""},
+	{`BEGIN { print substr("food", 2, 3), substr("fööd", 2, 3) }  # !windows`, "", "ood ööd\n", "", ""},
+	{`BEGIN { print substr("food", 2, 8), substr("fööd", 2, 8) }  # !windows`, "", "ood ööd\n", "", ""},
+	{`BEGIN { print substr("food", 0, 8), substr("fööd", 0, 8) }  # !windows`, "", "food fööd\n", "", ""},
+	{`BEGIN { print substr("food", -1, 8), substr("fööd", -1, 8) }  # !windows`, "", "food fööd\n", "", ""},
 	{`BEGIN { print substr("food", 5, 8), substr("fööd", 5, 8) }`, "", " \n", "", ""},
 	{`BEGIN { print substr("food", 2, -3), substr("fööd", 2, -3) }`, "", " \n", "", ""},
 	{`BEGIN { n = split("ab c d ", a); for (i=1; i<=n; i++) print a[i] }`, "", "ab\nc\nd\n", "", ""},
@@ -657,34 +657,37 @@ func TestInterp(t *testing.T) {
 			testName = testName[:70]
 		}
 
-		if awkExe != "" && !strings.Contains(test.src, "!"+awkExe) {
-			// Run it through external awk program first
-			t.Run("awk_"+testName, func(t *testing.T) {
-				cmd := exec.Command(awkExe, test.src, "-")
-				if test.in != "" {
-					cmd.Stdin = strings.NewReader(test.in)
-				}
-				cmd.Env = []string{"LC_ALL=en_US.UTF-8"} // enforce UTF-8 on Windows
-				out, err := cmd.CombinedOutput()
-				if err != nil {
-					if test.awkErr != "" {
-						if strings.Contains(string(out), test.awkErr) {
-							return
-						}
-						t.Fatalf("expected error %q, got:\n%s", test.awkErr, out)
-					} else {
-						t.Fatalf("error running %s: %v:\n%s", awkExe, err, out)
-					}
-				}
+		// Run it through external awk program first
+		t.Run("awk_"+testName, func(t *testing.T) {
+			if awkExe != "" && strings.Contains(test.src, "!"+awkExe) {
+				t.Skipf("skipping under %s", awkExe)
+			}
+			if strings.Contains(test.src, "!"+runtime.GOOS) {
+				t.Skipf("skipping on %s", runtime.GOOS)
+			}
+			cmd := exec.Command(awkExe, test.src, "-")
+			if test.in != "" {
+				cmd.Stdin = strings.NewReader(test.in)
+			}
+			out, err := cmd.CombinedOutput()
+			if err != nil {
 				if test.awkErr != "" {
-					t.Fatalf(`expected error %q, got ""`, test.awkErr)
+					if strings.Contains(string(out), test.awkErr) {
+						return
+					}
+					t.Fatalf("expected error %q, got:\n%s", test.awkErr, out)
+				} else {
+					t.Fatalf("error running %s: %v:\n%s", awkExe, err, out)
 				}
-				normalized := normalizeNewlines(string(out))
-				if normalized != test.out {
-					t.Fatalf("expected %q, got %q", test.out, normalized)
-				}
-			})
-		}
+			}
+			if test.awkErr != "" {
+				t.Fatalf(`expected error %q, got ""`, test.awkErr)
+			}
+			normalized := normalizeNewlines(string(out))
+			if normalized != test.out {
+				t.Fatalf("expected %q, got %q", test.out, normalized)
+			}
+		})
 
 		// Then test it in GoAWK
 		t.Run(testName, func(t *testing.T) {
