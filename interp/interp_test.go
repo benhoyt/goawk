@@ -417,16 +417,16 @@ BEGIN {
 	{`BEGIN { print sprintf("%d") }`, "", "", "format error: got 0 args, expected 1", "not enough arg"},
 	{`BEGIN { print sprintf("%d", 12, 34) }`, "", "12\n", "", ""},
 	{`BEGIN { print sprintf("% 5d", 42) }`, "", "   42\n", "", ""},
-	{`BEGIN { print substr("food", 1), substr("fööd", 1) }  # !windows`, "", "food fööd\n", "", ""},
-	{`BEGIN { print substr("food", 1, 2), substr("fööd", 1, 2) }  # !windows`, "", "fo fö\n", "", ""},
+	{`BEGIN { print substr("food", 1), substr("fööd", 1) }  # !windows-gawk`, "", "food fööd\n", "", ""},
+	{`BEGIN { print substr("food", 1, 2), substr("fööd", 1, 2) }  # !windows-gawk`, "", "fo fö\n", "", ""},
 	{`BEGIN { print substr("food", 1, 4), substr("fööd", 1, 4) }  # !windows`, "", "food fööd\n", "", ""},
-	{`BEGIN { print substr("food", 1, 8), substr("fööd", 1, 8) }  # !windows`, "", "food fööd\n", "", ""},
-	{`BEGIN { print substr("food", 2), substr("fööd", 2) }  # !windows`, "", "ood ööd\n", "", ""},
-	{`BEGIN { print substr("food", 2, 2), substr("fööd", 2, 2) }  # !windows`, "", "oo öö\n", "", ""},
-	{`BEGIN { print substr("food", 2, 3), substr("fööd", 2, 3) }  # !windows`, "", "ood ööd\n", "", ""},
-	{`BEGIN { print substr("food", 2, 8), substr("fööd", 2, 8) }  # !windows`, "", "ood ööd\n", "", ""},
-	{`BEGIN { print substr("food", 0, 8), substr("fööd", 0, 8) }  # !windows`, "", "food fööd\n", "", ""},
-	{`BEGIN { print substr("food", -1, 8), substr("fööd", -1, 8) }  # !windows`, "", "food fööd\n", "", ""},
+	{`BEGIN { print substr("food", 1, 8), substr("fööd", 1, 8) }  # !windows-gawk`, "", "food fööd\n", "", ""},
+	{`BEGIN { print substr("food", 2), substr("fööd", 2) }  # !windows-gawk`, "", "ood ööd\n", "", ""},
+	{`BEGIN { print substr("food", 2, 2), substr("fööd", 2, 2) }  # !windows-gawk`, "", "oo öö\n", "", ""},
+	{`BEGIN { print substr("food", 2, 3), substr("fööd", 2, 3) }  # !windows-gawk`, "", "ood ööd\n", "", ""},
+	{`BEGIN { print substr("food", 2, 8), substr("fööd", 2, 8) }  # !windows-gawk`, "", "ood ööd\n", "", ""},
+	{`BEGIN { print substr("food", 0, 8), substr("fööd", 0, 8) }  # !windows-gawk`, "", "food fööd\n", "", ""},
+	{`BEGIN { print substr("food", -1, 8), substr("fööd", -1, 8) }  # !windows-gawk`, "", "food fööd\n", "", ""},
 	{`BEGIN { print substr("food", 5, 8), substr("fööd", 5, 8) }`, "", " \n", "", ""},
 	{`BEGIN { print substr("food", 2, -3), substr("fööd", 2, -3) }`, "", " \n", "", ""},
 	{`BEGIN { n = split("ab c d ", a); for (i=1; i<=n; i++) print a[i] }`, "", "ab\nc\nd\n", "", ""},
@@ -662,8 +662,8 @@ func TestInterp(t *testing.T) {
 			if awkExe != "" && strings.Contains(test.src, "!"+awkExe) {
 				t.Skipf("skipping under %s", awkExe)
 			}
-			if strings.Contains(test.src, "!"+runtime.GOOS) {
-				t.Skipf("skipping on %s", runtime.GOOS)
+			if strings.Contains(test.src, "!"+runtime.GOOS+"-"+awkExe) {
+				t.Skipf("skipping on %s under %s", runtime.GOOS, awkExe)
 			}
 			cmd := exec.Command(awkExe, test.src, "-")
 			if test.in != "" {
