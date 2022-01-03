@@ -419,7 +419,7 @@ BEGIN {
 	{`BEGIN { print sprintf("% 5d", 42) }`, "", "   42\n", "", ""},
 	{`BEGIN { print substr("food", 1), substr("fööd", 1) }  # !windows-gawk`, "", "food fööd\n", "", ""},
 	{`BEGIN { print substr("food", 1, 2), substr("fööd", 1, 2) }  # !windows-gawk`, "", "fo fö\n", "", ""},
-	{`BEGIN { print substr("food", 1, 4), substr("fööd", 1, 4) }  # !windows`, "", "food fööd\n", "", ""},
+	{`BEGIN { print substr("food", 1, 4), substr("fööd", 1, 4) }  # !windows-gawk`, "", "food fööd\n", "", ""},
 	{`BEGIN { print substr("food", 1, 8), substr("fööd", 1, 8) }  # !windows-gawk`, "", "food fööd\n", "", ""},
 	{`BEGIN { print substr("food", 2), substr("fööd", 2) }  # !windows-gawk`, "", "ood ööd\n", "", ""},
 	{`BEGIN { print substr("food", 2, 2), substr("fööd", 2, 2) }  # !windows-gawk`, "", "oo öö\n", "", ""},
