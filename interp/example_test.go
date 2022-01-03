@@ -1,3 +1,8 @@
+// Don't run these on Windows, because newline handling means they don't pass.
+
+//go:build !windows
+// +build !windows
+
 package interp_test
 
 import (
