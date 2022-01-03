@@ -57,7 +57,7 @@ NR==3, NR==5 { print NR }
 	{`BEGIN { printf "%% %d %x %c %f %s", 42, 42, 42, 42, 42 }`, "", "% 42 2a * 42.000000 42", ""},
 	{`BEGIN { printf "%3d", 42 }`, "", " 42", ""},
 	{`BEGIN { printf "%3s", "x" }`, "", "  x", ""},
-	// {`BEGIN { printf "%.1g", 42 }`, "", "4e+01", ""}, // TODO: comment out for now, for some reason gives "4e+001" on Windows
+	// {`BEGIN { printf "%.1g", 42 }`, "", "4e+01", ""}, // Comment out for now, for some reason gives "4e+001" on Windows
 	{`BEGIN { printf "%d", 12, 34 }`, "", "12", ""},
 	{`BEGIN { printf "%d" }`, "", "", `not enough arguments (0) for format string "%d"`},
 	// Our %c handling is mostly like awk's, except for multiples
@@ -134,7 +134,7 @@ BEGIN {
 	{`BEGIN { print !42, !1, !0, !!42, !!1, !!0 }`, "", "0 0 1 1 1 0\n", ""},
 	{`BEGIN { print !42, !1, !0, !!42, !!1, !!0 }`, "", "0 0 1 1 1 0\n", ""},
 	{`BEGIN { print +4, +"3", +0, +-3, -3, - -4, -"3" }`, "", "4 3 0 -3 -3 4 -3\n", ""},
-	// TODO: {`BEGIN { $0="0"; print !$0 }`, "", "0\n", ""},
+	// {`BEGIN { $0="0"; print !$0 }`, "", "0\n", ""},
 	{`BEGIN { $0="1"; print !$0 }`, "", "0\n", ""},
 	{`{ print !$0 }`, "0\n", "1\n", ""},
 	{`{ print !$0 }`, "1\n", "0\n", ""},
@@ -210,7 +210,7 @@ BEGIN {
 	// Conditional ?: expression
 	{`{ print /x/?"t":"f" }`, "x\ny\nxx\nz\n", "t\nf\nt\nf\n", ""},
 	{`BEGIN { print 1?2?3:4:5, 1?0?3:4:5, 0?2?3:4:5 }`, "", "3 4 5\n", ""},
-	// TODO: {`BEGIN { $0="0"; print ($0?1:0) }`, "", "1\n", ""},
+	// {`BEGIN { $0="0"; print ($0?1:0) }`, "", "1\n", ""},
 	{`{ print $0?1:0 }`, "0\n", "0\n", ""},
 	{`{ print $0?1:0 }`, "1\n", "1\n", ""},
 	{`BEGIN { $0="1"; print ($0?1:0) }`, "", "1\n", ""},
@@ -301,9 +301,9 @@ BEGIN {
 	{`BEGIN { $1234567=1 }`, "", "", "field index too large: 1234567"},
 	{`0 in FS  # !awk - doesn't flag this as an error`, "x", "",
 		`parse error at 1:6: can't use scalar "FS" as array`},
-	// TODO: I think this is happening because we parse this as ($($0))++ rather than ($($0++))
-	// TODO: {`{ $$0++; print $0 }`, "2 3 4", "3\n", ""},
-	// TODO: {`BEGIN { $0="3 4 5 6 7 8 9"; a=3; print $$a++++; print }`, "", "7\n3 4 6 6 8 8 9\n", ""},
+	// I think this is happening because we parse this as ($($0))++ rather than ($($0++))
+	// {`{ $$0++; print $0 }`, "2 3 4", "3\n", ""},
+	// {`BEGIN { $0="3 4 5 6 7 8 9"; a=3; print $$a++++; print }`, "", "7\n3 4 6 6 8 8 9\n", ""},
 
 	// Lots of NF tests with different combinations of NF, $, and number
 	// of input fields. Some of these cause segmentation faults on awk
@@ -531,7 +531,7 @@ BEGIN {
 	//function foo() { return bar(x) }
 	//BEGIN { x[1] = 42; print foo() }
 	//`, "", "42\n", ""},
-	// TODO: failing because f1 doesn't use x, so resolver assumes its type is scalar
+	// failing because f1 doesn't use x, so resolver assumes its type is scalar
 	// 		{`
 	// function f1(x) { }
 	// function f2(x, y) { return x[y] }
@@ -563,18 +563,18 @@ BEGIN {
 	//	{`function f(x) { print x, x(); }  BEGIN { f() }`, "", "", `parse error at 1:27: can't call local variable "x" as function`},
 
 	// Redirected I/O (we give explicit errors, awk and gawk don't)
-	// TODO: the following two tests sometimes fail under TravisCI with: "write |1: broken pipe"
+	// the following two tests sometimes fail under TravisCI with: "write |1: broken pipe"
 	// {`BEGIN { print >"out"; getline <"out" }  # !awk !gawk`, "", "", "can't read from writer stream"},
 	// {`BEGIN { print |"out"; getline <"out" }  # !awk !gawk`, "", "", "can't read from writer stream"},
 	//{`BEGIN { print >"out"; close("out"); getline <"out"; print >"out" }  # !awk !gawk`, "", "", "can't write to reader stream"},
 	//{`BEGIN { print >"out"; close("out"); getline <"out"; print |"out" }  # !awk !gawk`, "", "", "can't write to reader stream"},
-	// TODO: currently we support "getline var" but not "getline lvalue"
-	// TODO: {`BEGIN { getline a[1]; print a[1] }`, "foo", "foo\n", ""},
-	// TODO: {`BEGIN { getline $1; print $1 }`, "foo", "foo\n", ""},
+	// currently we support "getline var" but not "getline lvalue"
+	// {`BEGIN { getline a[1]; print a[1] }`, "foo", "foo\n", ""},
+	// {`BEGIN { getline $1; print $1 }`, "foo", "foo\n", ""},
 	//{`BEGIN { print "foo" |"sort"; print "bar" |"sort" }  # !fuzz`, "", "bar\nfoo\n", ""},
 	//{`BEGIN { print "foo" |">&2 echo error" }  # !fuzz`, "", "error\n", ""},
 	//{`BEGIN { "cat" | getline; print }  # !fuzz`, "bar", "bar\n", ""},
-	// TODO: fix test flakiness on Windows (sometimes returns "\nerror\n")
+	// fix test flakiness on Windows (sometimes returns "\nerror\n")
 	// {`BEGIN { ">&2 echo error" | getline; print }`, "", "error\n\n", ""},
 	//{`BEGIN { print getline x < "/no/such/file" }  # !fuzz`, "", "-1\n", ""},
 
@@ -603,7 +603,7 @@ BEGIN {
 	{`BEGIN { printf "x"; { printf "y"; printf "z" } }`, "", "xyz", ""},
 
 	// Ensure syntax errors result in errors
-	// TODO: {`{ $1 = substr($1, 1, 3) print $1 }`, "", "", "ERROR"},
+	// {`{ $1 = substr($1, 1, 3) print $1 }`, "", "", "ERROR"},
 	{`BEGIN { f() }`, "", "", `parse error at 1:9: undefined function "f"`},
 	{`function f() {} function f() {} BEGIN { }`, "", "", `parse error at 1:26: function "f" already defined`},
 	{`BEGIN { print (1,2),(3,4) }`, "", "", "parse error at 1:15: unexpected comma-separated expression"},

@@ -10,7 +10,7 @@ NOT SUPPORTED:
 - print redirection
 - getline
 - reference to nonexistent array element should create it (POSIX, but yuck)
-- some forms of augmented assignment (no reason we can't, just TODO)
+- some forms of augmented assignment (no reason we can't, just not done yet)
 */
 
 package main

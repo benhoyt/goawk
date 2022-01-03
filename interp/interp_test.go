@@ -331,8 +331,8 @@ BEGIN {
 	{`0 in FS  # !awk - doesn't flag this as an error`, "x", "",
 		`parse error at 1:6: can't use scalar "FS" as array`, "array"},
 	// TODO: I think this is happening because we parse this as ($($0))++ rather than ($($0++))
-	// TODO: {`{ $$0++; print $0 }`, "2 3 4", "3\n", "", ""},
-	// TODO: {`BEGIN { $0="3 4 5 6 7 8 9"; a=3; print $$a++++; print }`, "", "7\n3 4 6 6 8 8 9\n", "", ""},
+	// {`{ $$0++; print $0 }`, "2 3 4", "3\n", "", ""},
+	// {`BEGIN { $0="3 4 5 6 7 8 9"; a=3; print $$a++++; print }`, "", "7\n3 4 6 6 8 8 9\n", "", ""},
 
 	// Lots of NF tests with different combinations of NF, $, and number
 	// of input fields. Some of these cause segmentation faults on awk
@@ -603,8 +603,8 @@ BEGIN { foo(5); bar(10) }
 	{`BEGIN { print >"out"; close("out"); getline <"out"; print >"out" }  # !awk !gawk`, "", "", "can't write to reader stream", ""},
 	{`BEGIN { print >"out"; close("out"); getline <"out"; print |"out" }  # !awk !gawk`, "", "", "can't write to reader stream", ""},
 	// TODO: currently we support "getline var" but not "getline lvalue"
-	// TODO: {`BEGIN { getline a[1]; print a[1] }`, "foo", "foo\n", "", ""},
-	// TODO: {`BEGIN { getline $1; print $1 }`, "foo", "foo\n", "", ""},
+	// {`BEGIN { getline a[1]; print a[1] }`, "foo", "foo\n", "", ""},
+	// {`BEGIN { getline $1; print $1 }`, "foo", "foo\n", "", ""},
 	{`BEGIN { print "foo" |"sort"; print "bar" |"sort" }  # !fuzz`, "", "bar\nfoo\n", "", ""},
 	{`BEGIN { print "foo" |">&2 echo error" }  # !gawk !fuzz`, "", "error\n", "", ""},
 	{`BEGIN { "cat" | getline; print }  # !fuzz`, "bar", "bar\n", "", ""},
