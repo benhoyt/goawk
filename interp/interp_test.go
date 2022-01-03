@@ -607,7 +607,6 @@ BEGIN { foo(5); bar(10) }
 	{`BEGIN { print "foo" |"sort"; print "bar" |"sort" }  # !fuzz`, "", "bar\nfoo\n", "", ""},
 	{`BEGIN { print "foo" |">&2 echo error" }  # !gawk !fuzz`, "", "error\n", "", ""},
 	{`BEGIN { "cat" | getline; print }  # !fuzz`, "bar", "bar\n", "", ""},
-	{`BEGIN { ">&2 echo error" | getline; print }`, "", "error\n\n", "", ""},
 	{`BEGIN { print getline x < "/no/such/file" }  # !fuzz`, "", "-1\n", "", ""},
 
 	// Redirecting to or from a filename of "-" means write to stdout or read from stdin
