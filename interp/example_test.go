@@ -1,9 +1,3 @@
-// Don't run these on Windows, because newline handling means they
-// don't pass (TODO: report a Go bug?)
-
-//go:build !windows
-// +build !windows
-
 package interp_test
 
 import (
