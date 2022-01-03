@@ -72,7 +72,7 @@ NR==3, NR==5 { print NR }
 	{`BEGIN { printf "%% %d %x %c %f %s", 42, 42, 42, 42, 42 }`, "", "% 42 2a * 42.000000 42", "", ""},
 	{`BEGIN { printf "%3d", 42 }`, "", " 42", "", ""},
 	{`BEGIN { printf "%3s", "x" }`, "", "  x", "", ""},
-	{`BEGIN { printf "%.1g", 42 }`, "", "4e+01", "", ""},
+	{`BEGIN { printf "%.1g", 42 }  # !windows-gawk`, "", "4e+01", "", ""}, // for some reason gawk gives "4e+001" on Windows
 	{`BEGIN { printf "%d", 12, 34 }`, "", "12", "", ""},
 	{`BEGIN { printf "%d" }`, "", "", "format error: got 0 args, expected 1", "not enough arg"},
 	// Our %c handling is mostly like awk's, except for multiples
