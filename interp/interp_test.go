@@ -606,7 +606,7 @@ BEGIN { foo(5); bar(10) }
 	// TODO: {`BEGIN { getline a[1]; print a[1] }`, "foo", "foo\n", "", ""},
 	// TODO: {`BEGIN { getline $1; print $1 }`, "foo", "foo\n", "", ""},
 	{`BEGIN { print "foo" |"sort"; print "bar" |"sort" }  # !fuzz`, "", "bar\nfoo\n", "", ""},
-	{`BEGIN { print "foo" |">&2 echo error" }  # !fuzz`, "", "error\n", "", ""},
+	{`BEGIN { print "foo" |">&2 echo error" }  # !gawk !fuzz`, "", "error\n", "", ""},
 	{`BEGIN { "cat" | getline; print }  # !fuzz`, "bar", "bar\n", "", ""},
 	// TODO: fix test flakiness on Windows (sometimes returns "\nerror\n")
 	// {`BEGIN { ">&2 echo error" | getline; print }`, "", "error\n\n", "", ""},
