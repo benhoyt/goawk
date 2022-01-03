@@ -406,25 +406,29 @@ BEGIN {
 	{`BEGIN { print match("x food y", "fo"), RSTART, RLENGTH }`, "", "3 3 2\n", "", ""},
 	{`BEGIN { print match("x food y", "fox"), RSTART, RLENGTH }`, "", "0 0 -1\n", "", ""},
 	{`BEGIN { print match("x food y", /[fod]+/), RSTART, RLENGTH }`, "", "3 3 4\n", "", ""},
+	{`BEGIN { print match("絵 fööd y", /[föd]+/), RSTART, RLENGTH }`, "", "3 3 4\n", "", ""},
 	{`{ print length, length(), length("buzz"), length("") }`, "foo bar", "7 7 4 0\n", "", ""},
+	{`BEGIN { print length("a"), length("絵") }  # !awk`, "", "1 1\n", "", ""},
 	{`BEGIN { print index("foo", "f"), index("foo0", 0), index("foo", "o"), index("foo", "x") }`, "", "1 4 2 0\n", "", ""},
+	{`BEGIN { print index("föö", "f"), index("föö0", 0), index("föö", "ö"), index("föö", "x") }`, "", "1 4 2 0\n", "", ""},
 	{`BEGIN { print atan2(1, 0.5), atan2(-1, 0) }`, "", "1.10715 -1.5708\n", "", ""},
 	{`BEGIN { print sprintf("%3d", 42) }`, "", " 42\n", "", ""},
 	{`BEGIN { print sprintf("%d", 12, 34) }`, "", "12\n", "", ""},
 	{`BEGIN { print sprintf("%d") }`, "", "", "format error: got 0 args, expected 1", "not enough arg"},
 	{`BEGIN { print sprintf("%d", 12, 34) }`, "", "12\n", "", ""},
 	{`BEGIN { print sprintf("% 5d", 42) }`, "", "   42\n", "", ""},
-	{`BEGIN { print substr("food", 1) }`, "", "food\n", "", ""},
-	{`BEGIN { print substr("food", 1, 2) }`, "", "fo\n", "", ""},
-	{`BEGIN { print substr("food", 1, 4) }`, "", "food\n", "", ""},
-	{`BEGIN { print substr("food", 1, 8) }`, "", "food\n", "", ""},
-	{`BEGIN { print substr("food", 2) }`, "", "ood\n", "", ""},
-	{`BEGIN { print substr("food", 2, 2) }`, "", "oo\n", "", ""},
-	{`BEGIN { print substr("food", 2, 3) }`, "", "ood\n", "", ""},
-	{`BEGIN { print substr("food", 2, 8) }`, "", "ood\n", "", ""},
-	{`BEGIN { print substr("food", 0, 8) }`, "", "food\n", "", ""},
-	{`BEGIN { print substr("food", -1, 8) }`, "", "food\n", "", ""},
-	{`BEGIN { print substr("food", 5, 8) }`, "", "\n", "", ""},
+	{`BEGIN { print substr("food", 1), substr("fööd", 1) }  # !windows-gawk`, "", "food fööd\n", "", ""},
+	{`BEGIN { print substr("food", 1, 2), substr("fööd", 1, 2) }  # !windows-gawk`, "", "fo fö\n", "", ""},
+	{`BEGIN { print substr("food", 1, 4), substr("fööd", 1, 4) }  # !windows-gawk`, "", "food fööd\n", "", ""},
+	{`BEGIN { print substr("food", 1, 8), substr("fööd", 1, 8) }  # !windows-gawk`, "", "food fööd\n", "", ""},
+	{`BEGIN { print substr("food", 2), substr("fööd", 2) }  # !windows-gawk`, "", "ood ööd\n", "", ""},
+	{`BEGIN { print substr("food", 2, 2), substr("fööd", 2, 2) }  # !windows-gawk`, "", "oo öö\n", "", ""},
+	{`BEGIN { print substr("food", 2, 3), substr("fööd", 2, 3) }  # !windows-gawk`, "", "ood ööd\n", "", ""},
+	{`BEGIN { print substr("food", 2, 8), substr("fööd", 2, 8) }  # !windows-gawk`, "", "ood ööd\n", "", ""},
+	{`BEGIN { print substr("food", 0, 8), substr("fööd", 0, 8) }  # !windows-gawk`, "", "food fööd\n", "", ""},
+	{`BEGIN { print substr("food", -1, 8), substr("fööd", -1, 8) }  # !windows-gawk`, "", "food fööd\n", "", ""},
+	{`BEGIN { print substr("food", 5, 8), substr("fööd", 5, 8) }`, "", " \n", "", ""},
+	{`BEGIN { print substr("food", 2, -3), substr("fööd", 2, -3) }`, "", " \n", "", ""},
 	{`BEGIN { n = split("ab c d ", a); for (i=1; i<=n; i++) print a[i] }`, "", "ab\nc\nd\n", "", ""},
 	{`BEGIN { n = split("ab,c,d,", a, ","); for (i=1; i<=n; i++) print a[i] }`, "", "ab\nc\nd\n\n", "", ""},
 	{`BEGIN { n = split("ab,c.d,", a, /[,.]/); for (i=1; i<=n; i++) print a[i] }`, "", "ab\nc\nd\n\n", "", ""},
@@ -653,33 +657,37 @@ func TestInterp(t *testing.T) {
 			testName = testName[:70]
 		}
 
-		if awkExe != "" && !strings.Contains(test.src, "!"+awkExe) {
-			// Run it through external awk program first
-			t.Run("awk_"+testName, func(t *testing.T) {
-				cmd := exec.Command(awkExe, test.src, "-")
-				if test.in != "" {
-					cmd.Stdin = strings.NewReader(test.in)
-				}
-				out, err := cmd.CombinedOutput()
-				if err != nil {
-					if test.awkErr != "" {
-						if strings.Contains(string(out), test.awkErr) {
-							return
-						}
-						t.Fatalf("expected error %q, got:\n%s", test.awkErr, out)
-					} else {
-						t.Fatalf("error running %s: %v:\n%s", awkExe, err, out)
-					}
-				}
+		// Run it through external awk program first
+		t.Run("awk_"+testName, func(t *testing.T) {
+			if awkExe != "" && strings.Contains(test.src, "!"+awkExe) {
+				t.Skipf("skipping under %s", awkExe)
+			}
+			if strings.Contains(test.src, "!"+runtime.GOOS+"-"+awkExe) {
+				t.Skipf("skipping on %s under %s", runtime.GOOS, awkExe)
+			}
+			cmd := exec.Command(awkExe, test.src, "-")
+			if test.in != "" {
+				cmd.Stdin = strings.NewReader(test.in)
+			}
+			out, err := cmd.CombinedOutput()
+			if err != nil {
 				if test.awkErr != "" {
-					t.Fatalf(`expected error %q, got ""`, test.awkErr)
+					if strings.Contains(string(out), test.awkErr) {
+						return
+					}
+					t.Fatalf("expected error %q, got:\n%s", test.awkErr, out)
+				} else {
+					t.Fatalf("error running %s: %v:\n%s", awkExe, err, out)
 				}
-				normalized := normalizeNewlines(string(out))
-				if normalized != test.out {
-					t.Fatalf("expected %q, got %q", test.out, normalized)
-				}
-			})
-		}
+			}
+			if test.awkErr != "" {
+				t.Fatalf(`expected error %q, got ""`, test.awkErr)
+			}
+			normalized := normalizeNewlines(string(out))
+			if normalized != test.out {
+				t.Fatalf("expected %q, got %q", test.out, normalized)
+			}
+		})
 
 		// Then test it in GoAWK
 		t.Run(testName, func(t *testing.T) {
@@ -1023,6 +1031,47 @@ func TestSafeMode(t *testing.T) {
 				config.NoExec = true
 				config.NoFileWrites = true
 				config.NoFileReads = true
+			})
+		})
+	}
+}
+
+func TestBytesMode(t *testing.T) {
+	tests := []struct {
+		src string
+		in  string
+		out string
+	}{
+		{`BEGIN { print match("food", "foo"), RSTART, RLENGTH }`, "", "1 1 3\n"},
+		{`BEGIN { print match("x food y", "fo"), RSTART, RLENGTH }`, "", "3 3 2\n"},
+		{`BEGIN { print match("x food y", "fox"), RSTART, RLENGTH }`, "", "0 0 -1\n"},
+		{`BEGIN { print match("x food y", /[fod]+/), RSTART, RLENGTH }`, "", "3 3 4\n"},
+		{`BEGIN { print match("絵 fööd y", /[föd]+/), RSTART, RLENGTH }`, "", "5 5 6\n"},
+		{`{ print length, length(), length("buzz"), length("") }`, "foo bar", "7 7 4 0\n"},
+		{`BEGIN { print length("a"), length("絵") }  # !awk`, "", "1 3\n"},
+		{`BEGIN { print index("foo", "f"), index("foo0", 0), index("foo", "o"), index("foo", "x") }`, "", "1 4 2 0\n"},
+		{`BEGIN { print index("föö", "f"), index("föö0", 0), index("föö", "ö"), index("föö", "x") }`, "", "1 6 2 0\n"},
+		{`BEGIN { print substr("food", 1), substr("fööd", 1) }`, "", "food fööd\n"},
+		{`BEGIN { print substr("food", 1, 2), substr("fööd", 1, 2) }`, "", "fo f\xc3\n"},
+		{`BEGIN { print substr("food", 1, 4), substr("fööd", 1, 4) }`, "", "food fö\xc3\n"},
+		{`BEGIN { print substr("food", 1, 8), substr("fööd", 1, 8) }`, "", "food fööd\n"},
+		{`BEGIN { print substr("food", 2), substr("fööd", 2) }`, "", "ood ööd\n"},
+		{`BEGIN { print substr("food", 2, 2), substr("fööd", 2, 2) }`, "", "oo ö\n"},
+		{`BEGIN { print substr("food", 2, 3), substr("fööd", 2, 3) }`, "", "ood ö\xc3\n"},
+		{`BEGIN { print substr("food", 2, 8), substr("fööd", 2, 8) }`, "", "ood ööd\n"},
+		{`BEGIN { print substr("food", 0, 8), substr("fööd", 0, 8) }`, "", "food fööd\n"},
+		{`BEGIN { print substr("food", -1, 8), substr("fööd", -1, 8) }`, "", "food fööd\n"},
+		{`BEGIN { print substr("food", 5, 8), substr("fööd", 5, 8) }`, "", " \xb6d\n"},
+		{`BEGIN { print substr("food", 2, -3), substr("fööd", 2, -3) }`, "", " \n"},
+	}
+	for _, test := range tests {
+		testName := test.src
+		if len(testName) > 70 {
+			testName = testName[:70]
+		}
+		t.Run(testName, func(t *testing.T) {
+			testGoAWK(t, test.src, test.in, test.out, "", nil, func(config *interp.Config) {
+				config.Bytes = true
 			})
 		})
 	}
