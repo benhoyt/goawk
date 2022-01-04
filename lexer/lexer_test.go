@@ -151,6 +151,34 @@ func TestHadSpace(t *testing.T) {
 	}
 }
 
+func TestPeekByte(t *testing.T) {
+	l := NewLexer([]byte("foo()"))
+	b := l.PeekByte()
+	if b != 'f' {
+		t.Errorf("expected 'f', got %q", b)
+	}
+	_, tok, _ := l.Scan()
+	if tok != NAME {
+		t.Errorf("expected name, got %s", tok)
+	}
+	b = l.PeekByte()
+	if b != '(' {
+		t.Errorf("expected '(', got %q", b)
+	}
+	_, tok, _ = l.Scan()
+	if tok != LPAREN {
+		t.Errorf("expected (, got %s", tok)
+	}
+	_, tok, _ = l.Scan()
+	if tok != RPAREN {
+		t.Errorf("expected ), got %s", tok)
+	}
+	b = l.PeekByte()
+	if b != 0 {
+		t.Errorf("expected 0, got %q", b)
+	}
+}
+
 func TestKeywordToken(t *testing.T) {
 	tests := []struct {
 		name string

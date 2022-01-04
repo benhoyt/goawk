@@ -71,8 +71,7 @@ func TestAWK(t *testing.T) {
 		"t.intest2": true,
 	}
 	dontRunOnWindows := map[string]bool{
-		"p.50":      true, // because this pipes to Unix sort "sort -t: +0 -1 +2nr"
-		"t.printf2": true, // TODO: until we fix discrepancies here
+		"p.50": true, // because this pipes to Unix sort "sort -t: +0 -1 +2nr"
 	}
 
 	infos, err := ioutil.ReadDir(testsDir)
@@ -219,11 +218,10 @@ func sortedLines(data []byte) []byte {
 
 func TestGAWK(t *testing.T) {
 	skip := map[string]bool{ // TODO: fix these
-		"inputred": true, // getInputScanner errors
-
 		"getline":  true, // getline syntax issues (may be okay, see grammar notes at http://pubs.opengroup.org/onlinepubs/007904975/utilities/awk.html#tag_04_06_13_14)
 		"getline3": true, // getline syntax issues (similar to above)
 		"getline5": true, // getline syntax issues (similar to above)
+		"inputred": true, // getline syntax issues (similar to above)
 
 		"gsubtst7":     true, // something wrong with gsub or field split/join
 		"splitwht":     true, // other awks handle split(s, a, " ") differently from split(s, a, / /)
@@ -232,8 +230,8 @@ func TestGAWK(t *testing.T) {
 
 		"parse1": true, // incorrect parsing of $$a++++ (see TODOs in interp_test.go too)
 
-		"nfldstr": true, // invalid handling of '!$0' when $0="0"
-		"zeroe0":  true, // difference in handling of numStr typing when setting $0 and $1
+		"rscompat": true, // GoAWK allows multi-char RS by default
+		"rsstart2": true, // GoAWK ^ and $ anchors match beginning and end of line, not file (unlike Gawk)
 	}
 
 	dontRunOnWindows := map[string]bool{
@@ -354,6 +352,10 @@ func TestCommandLine(t *testing.T) {
 		{[]string{"-v", "RS=;", `$0`}, "a b;c\nd;e", "a b\nc\nd\ne\n", ""},
 		{[]string{"-vRS=;", `$0`}, "a b;c\nd;e", "a b\nc\nd\ne\n", ""},
 
+		// Byte index vs character index mode
+		{[]string{`{ print length }  # !windows-gawk`}, "絵\n", "1\n", ""},
+		{[]string{"-b", `{ print length }`}, "絵\n", "3\n", ""},
+
 		// ARGV/ARGC handling
 		{[]string{`
 			BEGIN {
@@ -383,6 +385,8 @@ func TestCommandLine(t *testing.T) {
 			"A=1, B=0\n\tARGV[1] = B=2\n\tARGV[2] = testdata/test.countries\nA=1, B=2\n", ""},
 		{[]string{`END { print (x==42) }`, "x=42.0"}, "", "1\n", ""},
 		{[]string{"-v", "x=42.0", `BEGIN { print (x==42) }`}, "", "1\n", ""},
+		{[]string{`BEGIN { print(ARGV[1]<2, ARGV[2]<2); ARGV[1]="10"; ARGV[2]="10x"; print(ARGV[1]<2, ARGV[2]<2) }`,
+			"10", "10x"}, "", "0 1\n1 1\n", ""},
 
 		// Error handling
 		{[]string{}, "", "", "usage: goawk [-F fs] [-v var=value] [-f progfile | 'prog'] [file ...]"},
@@ -391,52 +395,40 @@ func TestCommandLine(t *testing.T) {
 		{[]string{"-v"}, "", "", "flag needs an argument: -v"},
 		{[]string{"-z"}, "", "", "flag provided but not defined: -z"},
 		{[]string{"{ print }", "notexist"}, "", "", `file "notexist" not found`},
-		{[]string{"@"}, "", "", "-----------------------------------\n@\n^\n-----------------------------------\nparse error at 1:1: unexpected char"},
 		{[]string{"BEGIN { print 1/0 }"}, "", "", "division by zero"},
 		{[]string{"-v", "foo", "BEGIN {}"}, "", "", "-v flag must be in format name=value"},
 		{[]string{"--", "{ print $1 }", "-file"}, "", "", `file "-file" not found`},
 		{[]string{"{ print $1 }", "-file"}, "", "", `file "-file" not found`},
+
+		// Output synchronization
+		{[]string{`BEGIN { print "1"; print "2"|"cat" }`}, "", "1\n2\n", ""},
+		{[]string{`BEGIN { print "1"; "echo 2" | getline x; print x }`}, "", "1\n2\n", ""},
+
+		// Parse error formatting
+		{[]string{"@"}, "", "", "<cmdline>:1:1: unexpected char\n@\n^"},
+		{[]string{"BEGIN {\n\tx*;\n}"}, "", "", "<cmdline>:2:4: expected expression instead of ;\n    x*;\n      ^"},
+		{[]string{"BEGIN {\n\tx*\r\n}"}, "", "", "<cmdline>:2:4: expected expression instead of <newline>\n    x*\n      ^"},
+		{[]string{"-f", "-"}, "\n ++", "", "<stdin>:2:4: expected expression instead of <newline>\n ++\n   ^"},
+		{[]string{"-f", "testdata/parseerror/good.awk", "-f", "testdata/parseerror/bad.awk"},
+			"", "", "testdata/parseerror/bad.awk:2:3: expected expression instead of <newline>\nx*\n  ^"},
+		{[]string{"-f", "testdata/parseerror/bad.awk", "-f", "testdata/parseerror/good.awk"},
+			"", "", "testdata/parseerror/bad.awk:2:3: expected expression instead of <newline>\nx*\n  ^"},
+		{[]string{"-f", "testdata/parseerror/good.awk", "-f", "-", "-f", "testdata/parseerror/bad.awk"},
+			"@", "", "<stdin>:1:1: unexpected char\n@\n^"},
 	}
 	for _, test := range tests {
 		testName := strings.Join(test.args, " ")
 		t.Run(testName, func(t *testing.T) {
-			cmd := exec.Command(awkExe, test.args...)
-			if test.stdin != "" {
-				cmd.Stdin = bytes.NewReader([]byte(test.stdin))
-			}
-			errBuf := &bytes.Buffer{}
-			cmd.Stderr = errBuf
-			output, err := cmd.Output()
-			if err != nil {
-				if test.error == "" {
-					t.Fatalf("expected no error, got AWK error: %v (%s)", err, errBuf.String())
-				}
-			} else {
-				if test.error != "" {
-					t.Fatalf("expected AWK error, got none")
-				}
-			}
-			stdout := string(normalizeNewlines(output))
-			if stdout != test.output {
-				t.Fatalf("expected AWK to give %q, got %q", test.output, stdout)
-			}
-
-			stdout, stderr, err := runGoAWK(test.args, test.stdin)
-			if err != nil {
-				stderr = strings.TrimSpace(stderr)
-				if stderr != test.error {
-					t.Fatalf("expected GoAWK error %q, got %q", test.error, stderr)
-				}
-			} else {
-				if test.error != "" {
-					t.Fatalf("expected GoAWK error %q, got none", test.error)
-				}
-			}
-			if stdout != test.output {
-				t.Fatalf("expected GoAWK to give %q, got %q", test.output, stdout)
-			}
+			runAWKs(t, test.args, test.stdin, test.output, test.error)
 		})
 	}
+}
+
+func TestDevStdout(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("/dev/stdout not presnt on Windows")
+	}
+	runAWKs(t, []string{`BEGIN { print "1"; print "2">"/dev/stdout" }`}, "", "1\n2\n", "")
 }
 
 func runGoAWK(args []string, stdin string) (stdout, stderr string, err error) {
@@ -450,6 +442,49 @@ func runGoAWK(args []string, stdin string) (stdout, stderr string, err error) {
 	stdout = string(normalizeNewlines(output))
 	stderr = string(normalizeNewlines(errBuf.Bytes()))
 	return stdout, stderr, err
+}
+
+func runAWKs(t *testing.T, testArgs []string, testStdin, testOutput, testError string) {
+	for _, arg := range testArgs {
+		if strings.Contains(arg, "!"+runtime.GOOS+"-"+awkExe) {
+			t.Skipf("skipping on %s under %s", runtime.GOOS, awkExe)
+		}
+	}
+	cmd := exec.Command(awkExe, testArgs...)
+	if testStdin != "" {
+		cmd.Stdin = bytes.NewReader([]byte(testStdin))
+	}
+	errBuf := &bytes.Buffer{}
+	cmd.Stderr = errBuf
+	output, err := cmd.Output()
+	if err != nil {
+		if testError == "" {
+			t.Fatalf("expected no error, got AWK error: %v (%s)", err, errBuf.String())
+		}
+	} else {
+		if testError != "" {
+			t.Fatalf("expected AWK error, got none")
+		}
+	}
+	stdout := string(normalizeNewlines(output))
+	if stdout != testOutput {
+		t.Fatalf("expected AWK to give %q, got %q", testOutput, stdout)
+	}
+
+	stdout, stderr, err := runGoAWK(testArgs, testStdin)
+	if err != nil {
+		stderr = strings.TrimSpace(stderr)
+		if stderr != testError {
+			t.Fatalf("expected GoAWK error %q, got %q", testError, stderr)
+		}
+	} else {
+		if testError != "" {
+			t.Fatalf("expected GoAWK error %q, got none", testError)
+		}
+	}
+	if stdout != testOutput {
+		t.Fatalf("expected GoAWK to give %q, got %q", testOutput, stdout)
+	}
 }
 
 func TestWildcards(t *testing.T) {
@@ -498,6 +533,29 @@ func TestWildcards(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFILENAME(t *testing.T) {
+	origGoAWKExe := goAWKExe
+	goAWKExe = "../../" + goAWKExe
+	defer func() { goAWKExe = origGoAWKExe }()
+
+	origDir, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Chdir("testdata/filename")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(origDir)
+
+	src := `
+BEGIN { FILENAME = "10"; print(FILENAME, FILENAME<2) }
+BEGIN { FILENAME = 10; print(FILENAME, FILENAME<2) }
+{ print(FILENAME, FILENAME<2) }
+`
+	runAWKs(t, []string{src, "10", "10x"}, "", "10 1\n10 0\n10 0\n10x 1\n", "")
 }
 
 func normalizeNewlines(b []byte) []byte {

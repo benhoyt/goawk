@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -33,7 +34,7 @@ type bufferedWriteCloser struct {
 	io.Closer
 }
 
-func newBufferedWriteClose(w io.WriteCloser) *bufferedWriteCloser {
+func newBufferedWriteCloser(w io.WriteCloser) *bufferedWriteCloser {
 	writer := bufio.NewWriterSize(w, outputBufSize)
 	return &bufferedWriteCloser{writer, w}
 }
@@ -76,6 +77,7 @@ func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
 		if p.noFileWrites {
 			return nil, newError("can't write to file due to NoFileWrites")
 		}
+		p.flushOutputAndError() // ensure synchronization
 		flags := os.O_CREATE | os.O_WRONLY
 		if redirect == GREATER {
 			flags |= os.O_TRUNC
@@ -86,7 +88,7 @@ func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
 		if err != nil {
 			return nil, newError("output redirection error: %s", err)
 		}
-		buffered := newBufferedWriteClose(w)
+		buffered := newBufferedWriteCloser(w)
 		p.outputStreams[name] = buffered
 		return buffered, nil
 
@@ -102,13 +104,14 @@ func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
 		}
 		cmd.Stdout = p.output
 		cmd.Stderr = p.errorOutput
+		p.flushOutputAndError() // ensure synchronization
 		err = cmd.Start()
 		if err != nil {
-			fmt.Fprintln(p.errorOutput, err)
+			p.printErrorf("%s\n", err)
 			return ioutil.Discard, nil
 		}
 		p.commands[name] = cmd
-		buffered := newBufferedWriteClose(w)
+		buffered := newBufferedWriteCloser(w)
 		p.outputStreams[name] = buffered
 		return buffered, nil
 
@@ -166,9 +169,10 @@ func (p *interp) getInputScannerPipe(name string) (*bufio.Scanner, error) {
 	if err != nil {
 		return nil, newError("error connecting to stdout pipe: %v", err)
 	}
+	p.flushOutputAndError() // ensure synchronization
 	err = cmd.Start()
 	if err != nil {
-		fmt.Fprintln(p.errorOutput, err)
+		p.printErrorf("%s\n", err)
 		return bufio.NewScanner(strings.NewReader("")), nil
 	}
 	scanner := p.newScanner(r)
@@ -181,14 +185,19 @@ func (p *interp) getInputScannerPipe(name string) (*bufio.Scanner, error) {
 // Create a new buffered Scanner for reading input records
 func (p *interp) newScanner(input io.Reader) *bufio.Scanner {
 	scanner := bufio.NewScanner(input)
-	switch p.recordSep {
-	case "\n":
+	switch {
+	case p.recordSep == "\n":
 		// Scanner default is to split on newlines
-	case "":
+	case p.recordSep == "":
 		// Empty string for RS means split on \n\n (blank lines)
-		scanner.Split(scanLinesBlank)
-	default:
+		splitter := blankLineSplitter{&p.recordTerminator}
+		scanner.Split(splitter.scan)
+	case len(p.recordSep) == 1:
 		splitter := byteSplitter{p.recordSep[0]}
+		scanner.Split(splitter.scan)
+	case utf8.RuneCountInString(p.recordSep) >= 1:
+		// Multi-byte and single char but multi-byte RS use regex
+		splitter := regexSplitter{p.recordSepRegex, &p.recordTerminator}
 		scanner.Split(splitter.scan)
 	}
 	buffer := make([]byte, inputBufSize)
@@ -212,7 +221,11 @@ func dropLF(data []byte) []byte {
 	return data
 }
 
-func scanLinesBlank(data []byte, atEOF bool) (advance int, token []byte, err error) {
+type blankLineSplitter struct {
+	terminator *string
+}
+
+func (s blankLineSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	if atEOF && len(data) == 0 {
 		return 0, nil, nil
 	}
@@ -239,6 +252,7 @@ func scanLinesBlank(data []byte, atEOF bool) (advance int, token []byte, err err
 			for i < len(data) && (data[i] == '\n' || data[i] == '\r') {
 				i++ // Skip newlines at end of record
 			}
+			*s.terminator = string(data[end:i])
 			return i, dropCR(data[start:end]), nil
 		}
 		if i+2 < len(data) && data[i+1] == '\r' && data[i+2] == '\n' {
@@ -246,20 +260,23 @@ func scanLinesBlank(data []byte, atEOF bool) (advance int, token []byte, err err
 			for i < len(data) && (data[i] == '\n' || data[i] == '\r') {
 				i++ // Skip newlines at end of record
 			}
+			*s.terminator = string(data[end:i])
 			return i, dropCR(data[start:end]), nil
 		}
 	}
 
 	// If we're at EOF, we have one final record; return it
 	if atEOF {
-		return len(data), dropCR(dropLF(data[start:])), nil
+		token = dropCR(dropLF(data[start:]))
+		*s.terminator = string(data[len(token):])
+		return len(data), token, nil
 	}
 
 	// Request more data
 	return 0, nil, nil
 }
 
-// Splitter function that splits records on the given separator byte
+// Splitter that splits records on the given separator byte
 type byteSplitter struct {
 	sep byte
 }
@@ -270,7 +287,7 @@ func (s byteSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, 
 	}
 	if i := bytes.IndexByte(data, s.sep); i >= 0 {
 		// We have a full sep-terminated record
-		return i + 1, data[0:i], nil
+		return i + 1, data[:i], nil
 	}
 	// If at EOF, we have a final, non-terminated record; return it
 	if atEOF {
@@ -280,16 +297,43 @@ func (s byteSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, 
 	return 0, nil, nil
 }
 
+// Splitter that splits records on the given regular expression
+type regexSplitter struct {
+	re         *regexp.Regexp
+	terminator *string
+}
+
+func (s regexSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	if atEOF && len(data) == 0 {
+		return 0, nil, nil
+	}
+	loc := s.re.FindIndex(data)
+	// Note: for a regex such as "()", loc[0]==loc[1]. Gawk behavior for this
+	// case is to match the entire input.
+	if loc != nil && loc[0] != loc[1] {
+		*s.terminator = string(data[loc[0]:loc[1]]) // set RT special variable
+		return loc[1], data[:loc[0]], nil
+	}
+	// If at EOF, we have a final, non-terminated record; return it
+	if atEOF {
+		*s.terminator = ""
+		return len(data), data, nil
+	}
+	// Request more data
+	return 0, nil, nil
+}
+
 // Setup for a new input file with given name (empty string if stdin)
 func (p *interp) setFile(filename string) {
-	p.filename = filename
+	p.filename = numStr(filename)
 	p.fileLineNum = 0
 }
 
 // Setup for a new input line (but don't parse it into fields till we
 // need to)
-func (p *interp) setLine(line string) {
+func (p *interp) setLine(line string, isTrueStr bool) {
 	p.line = line
+	p.lineIsTrueStr = isTrueStr
 	p.haveFields = false
 }
 
@@ -301,15 +345,16 @@ func (p *interp) ensureFields() {
 	}
 	p.haveFields = true
 
-	if p.fieldSep == " " {
+	switch {
+	case p.fieldSep == " ":
 		// FS space (default) means split fields on any whitespace
 		p.fields = strings.Fields(p.line)
-	} else if p.line == "" {
+	case p.line == "":
 		p.fields = nil
-	} else if utf8.RuneCountInString(p.fieldSep) <= 1 {
+	case utf8.RuneCountInString(p.fieldSep) <= 1:
 		// 1-char FS is handled as plain split (not regex)
 		p.fields = strings.Split(p.line, p.fieldSep)
-	} else {
+	default:
 		// Split on FS as a regex
 		p.fields = p.fieldSepRegex.Split(p.line, -1)
 	}
@@ -329,6 +374,7 @@ func (p *interp) ensureFields() {
 		p.fields = fields
 	}
 
+	p.fieldsIsTrueStr = make([]bool, len(p.fields))
 	p.numFields = len(p.fields)
 }
 
@@ -394,11 +440,13 @@ func (p *interp) nextLine() (string, error) {
 			}
 			p.scanner = p.newScanner(p.input)
 		}
+		p.recordTerminator = p.recordSep // will be overridden if RS is "" or multiple chars
 		if p.scanner.Scan() {
 			// We scanned some input, break and return it
 			break
 		}
-		if err := p.scanner.Err(); err != nil {
+		err := p.scanner.Err()
+		if err != nil {
 			return "", fmt.Errorf("error reading from input: %s", err)
 		}
 		// Signal loop to move onto next file
@@ -466,7 +514,7 @@ func (p *interp) flushAll() bool {
 func (p *interp) flushStream(name string) bool {
 	writer := p.outputStreams[name]
 	if writer == nil {
-		fmt.Fprintf(p.errorOutput, "error flushing %q: not an output file or pipe\n", name)
+		p.printErrorf("error flushing %q: not an output file or pipe\n", name)
 		return false
 	}
 	return p.flushWriter(name, writer)
@@ -479,11 +527,35 @@ type flusher interface {
 // Flush given output writer, and report whether it was flushed successfully
 // (logging an error if not).
 func (p *interp) flushWriter(name string, writer io.Writer) bool {
-	flusher := writer.(flusher)
+	flusher, ok := writer.(flusher)
+	if !ok {
+		return true // not a flusher, don't error
+	}
 	err := flusher.Flush()
 	if err != nil {
-		fmt.Fprintf(p.errorOutput, "error flushing %q: %v\n", name, err)
+		p.printErrorf("error flushing %q: %v\n", name, err)
 		return false
 	}
 	return true
+}
+
+// Flush output and error streams.
+func (p *interp) flushOutputAndError() {
+	if flusher, ok := p.output.(flusher); ok {
+		_ = flusher.Flush()
+	}
+	if flusher, ok := p.errorOutput.(flusher); ok {
+		_ = flusher.Flush()
+	}
+}
+
+// Print a message to the error output stream, flushing as necessary.
+func (p *interp) printErrorf(format string, args ...interface{}) {
+	if flusher, ok := p.output.(flusher); ok {
+		_ = flusher.Flush() // ensure synchronization
+	}
+	fmt.Fprintf(p.errorOutput, format, args...)
+	if flusher, ok := p.errorOutput.(flusher); ok {
+		_ = flusher.Flush()
+	}
 }

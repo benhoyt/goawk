@@ -3,8 +3,8 @@
 // These are extremely simple right now, and really only test for parser and
 // interpreter panics.
 
-//go:build gofuzzbeta
-// +build gofuzzbeta
+//go:build go1.18
+// +build go1.18
 
 package interp_test
 

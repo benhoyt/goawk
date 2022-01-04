@@ -30,6 +30,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -43,7 +44,7 @@ import (
 )
 
 const (
-	version    = "v1.9.2"
+	version    = "v1.13.0"
 	copyright  = "GoAWK " + version + " - Copyright (c) 2021 Ben Hoyt"
 	shortUsage = "usage: goawk [-F fs] [-v var=value] [-f progfile | 'prog'] [file ...]"
 	longUsage  = `Standard AWK arguments:
@@ -55,6 +56,7 @@ const (
         load AWK source from progfile (multiple allowed)
 
 Additional GoAWK arguments:
+  -b    use byte indexes for index(), length(), match(), and substr()
   -cpuprofile file
         write CPU profile to file
   -d    debug mode (print parsed AST to stderr)
@@ -76,6 +78,7 @@ func main() {
 	debug := false
 	debugTypes := false
 	memprofile := ""
+	useBytes := false
 
 	var i int
 	for i = 1; i < len(os.Args); i++ {
@@ -108,6 +111,8 @@ func main() {
 			}
 			i++
 			vars = append(vars, os.Args[i])
+		case "-b":
+			useBytes = true
 		case "-cpuprofile":
 			if i+1 >= len(os.Args) {
 				errorExitf("flag needs an argument: -cpuprofile")
@@ -152,16 +157,19 @@ func main() {
 	args := os.Args[i:]
 
 	var src []byte
+	var stdinBytes []byte // used if there's a parse error
 	if len(progFiles) > 0 {
 		// Read source: the concatenation of all source files specified
 		buf := &bytes.Buffer{}
 		progFiles = expandWildcardsOnWindows(progFiles)
 		for _, progFile := range progFiles {
 			if progFile == "-" {
-				_, err := buf.ReadFrom(os.Stdin)
+				b, err := ioutil.ReadAll(os.Stdin)
 				if err != nil {
 					errorExit(err)
 				}
+				stdinBytes = b
+				_, _ = buf.Write(b)
 			} else {
 				f, err := os.Open(progFile)
 				if err != nil {
@@ -193,11 +201,14 @@ func main() {
 	}
 	prog, err := parser.ParseProgram(src, parserConfig)
 	if err != nil {
-		errMsg := fmt.Sprintf("%s", err)
 		if err, ok := err.(*parser.ParseError); ok {
-			showSourceLine(src, err.Position, len(errMsg))
+			name, line := errorFileLine(progFiles, stdinBytes, err.Position.Line)
+			fmt.Fprintf(os.Stderr, "%s:%d:%d: %s\n",
+				name, line, err.Position.Column, err.Message)
+			showSourceLine(src, err.Position)
+			os.Exit(1)
 		}
-		errorExitf("%s", errMsg)
+		errorExitf("%s", err)
 	}
 	if debug {
 		fmt.Fprintln(os.Stderr, prog)
@@ -205,6 +216,7 @@ func main() {
 	config := &interp.Config{
 		Argv0: filepath.Base(os.Args[0]),
 		Args:  expandWildcardsOnWindows(args),
+		Bytes: useBytes,
 		Vars:  []string{"FS", fieldSep},
 	}
 	for _, v := range vars {
@@ -249,28 +261,47 @@ func main() {
 	os.Exit(status)
 }
 
-// For parse errors, show source line and position of error, eg:
+// Show source line and position of error, for example:
 //
-// -----------------------------------------------------
 // BEGIN { x*; }
 //           ^
-// -----------------------------------------------------
-// parse error at 1:11: expected expression instead of ;
-//
-func showSourceLine(src []byte, pos lexer.Position, dividerLen int) {
-	divider := strings.Repeat("-", dividerLen)
-	if divider != "" {
-		fmt.Fprintln(os.Stderr, divider)
-	}
+func showSourceLine(src []byte, pos lexer.Position) {
 	lines := bytes.Split(src, []byte{'\n'})
 	srcLine := string(lines[pos.Line-1])
 	numTabs := strings.Count(srcLine[:pos.Column-1], "\t")
 	runeColumn := utf8.RuneCountInString(srcLine[:pos.Column-1])
 	fmt.Fprintln(os.Stderr, strings.Replace(srcLine, "\t", "    ", -1))
 	fmt.Fprintln(os.Stderr, strings.Repeat(" ", runeColumn)+strings.Repeat("   ", numTabs)+"^")
-	if divider != "" {
-		fmt.Fprintln(os.Stderr, divider)
+}
+
+// Determine which filename and line number to display for the overall
+// error line number.
+func errorFileLine(progFiles []string, stdinBytes []byte, errorLine int) (string, int) {
+	if len(progFiles) == 0 {
+		return "<cmdline>", errorLine
 	}
+	startLine := 1
+	for _, progFile := range progFiles {
+		var content []byte
+		if progFile == "-" {
+			progFile = "<stdin>"
+			content = stdinBytes
+		} else {
+			b, err := ioutil.ReadFile(progFile)
+			if err != nil {
+				return "<unknown>", errorLine
+			}
+			content = b
+		}
+		content = append(content, '\n')
+
+		numLines := bytes.Count(content, []byte{'\n'})
+		if errorLine >= startLine && errorLine < startLine+numLines {
+			return progFile, errorLine - startLine + 1
+		}
+		startLine += numLines
+	}
+	return "<unknown>", errorLine
 }
 
 func errorExit(err error) {

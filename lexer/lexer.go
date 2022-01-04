@@ -408,7 +408,7 @@ func (l *Lexer) next() {
 	if ch == '\n' {
 		l.nextPos.Line++
 		l.nextPos.Column = 1
-	} else {
+	} else if ch != '\r' {
 		l.nextPos.Column++
 	}
 	l.ch = ch
@@ -452,4 +452,10 @@ func (l *Lexer) choice(ch byte, one, two Token) Token {
 		return two
 	}
 	return one
+}
+
+// PeekByte returns the next unscanned byte; used when parsing
+// "getline lvalue" expressions. Returns 0 at end of input.
+func (l *Lexer) PeekByte() byte {
+	return l.ch
 }

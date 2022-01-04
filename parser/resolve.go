@@ -75,7 +75,8 @@ func (p *parser) initResolve() {
 	p.varTypes = make(map[string]map[string]typeInfo)
 	p.varTypes[""] = make(map[string]typeInfo) // globals
 	p.functions = make(map[string]int)
-	//p.arrayRef("ARGV", Position{1, 1}) // interpreter relies on ARGV being present
+	//p.arrayRef("ARGV", Position{1, 1})    // interpreter relies on ARGV being present
+	//p.arrayRef("ENVIRON", Position{1, 1}) // and ENVIRON
 	p.multiExprs = make(map[*MultiExpr]Position, 3)
 }
 
@@ -128,11 +129,11 @@ func (p *parser) resolveUserCalls(prog *Program) {
 		if !ok {
 			f, haveNative := p.nativeFuncs[c.call.Name]
 			if !haveNative {
-				panic(&ParseError{c.pos, fmt.Sprintf("undefined function %q", c.call.Name)})
+				panic(p.posErrorf(c.pos, "undefined function %q", c.call.Name))
 			}
 			typ := reflect.TypeOf(f)
 			if !typ.IsVariadic() && len(c.call.Args) > typ.NumIn() {
-				panic(&ParseError{c.pos, fmt.Sprintf("%q called with more arguments than declared", c.call.Name)})
+				panic(p.posErrorf(c.pos, "%q called with more arguments than declared", c.call.Name))
 			}
 			c.call.Native = true
 			c.call.Index = nativeIndexes[c.call.Name]
@@ -140,7 +141,7 @@ func (p *parser) resolveUserCalls(prog *Program) {
 		}
 		function := prog.Functions[index]
 		if len(c.call.Args) > len(function.Params) {
-			panic(&ParseError{c.pos, fmt.Sprintf("%q called with more arguments than declared", c.call.Name)})
+			panic(p.posErrorf(c.pos, "%q called with more arguments than declared", c.call.Name))
 		}
 		c.call.Index = index
 	}
@@ -194,7 +195,7 @@ func (p *parser) varRef(name string, pos Position) *VarExpr {
 func (p *parser) arrayRef(name string, pos Position) *ArrayExpr {
 	scope, funcName := p.getScope(name)
 	if scope == ScopeSpecial {
-		panic(p.error("can't use scalar %q as array", name))
+		panic(p.errorf("can't use scalar %q as array", name))
 	}
 	expr := &ArrayExpr{scope, 0, name}
 	p.arrayRefs = append(p.arrayRefs, arrayRef{funcName, expr, pos})
@@ -277,7 +278,7 @@ func (p *parser) resolveVars(prog *Program) {
 			break
 		}
 		if i >= maxResolveIterations {
-			panic(p.error("too many iterations trying to resolve variable types"))
+			panic(p.errorf("too many iterations trying to resolve variable types"))
 		}
 	}
 
@@ -289,7 +290,7 @@ func (p *parser) resolveVars(prog *Program) {
 		_, isFunc := p.functions[name]
 		if isFunc {
 			// Global var can't also be the name of a function
-			panic(p.error("global var %q can't also be a function", name))
+			panic(p.errorf("global var %q can't also be a function", name))
 		}
 		var index int
 		if info.scope == ScopeSpecial {
@@ -375,8 +376,7 @@ func (p *parser) resolveVars(prog *Program) {
 				funcName := p.getVarFuncName(prog, varExpr.Name, c.inFunc)
 				info := p.varTypes[funcName][varExpr.Name]
 				if info.typ == typeArray {
-					message := fmt.Sprintf("can't pass array %q to native function", varExpr.Name)
-					panic(&ParseError{c.pos, message})
+					panic(p.posErrorf(c.pos, "can't pass array %q to native function", varExpr.Name))
 				}
 			}
 			continue
@@ -388,20 +388,17 @@ func (p *parser) resolveVars(prog *Program) {
 			varExpr, ok := arg.(*VarExpr)
 			if !ok {
 				if function.Arrays[i] {
-					message := fmt.Sprintf("can't pass scalar %s as array param", arg)
-					panic(&ParseError{c.pos, message})
+					panic(p.posErrorf(c.pos, "can't pass scalar %s as array param", arg))
 				}
 				continue
 			}
 			funcName := p.getVarFuncName(prog, varExpr.Name, c.inFunc)
 			info := p.varTypes[funcName][varExpr.Name]
 			if info.typ == typeArray && !function.Arrays[i] {
-				message := fmt.Sprintf("can't pass array %q as scalar param", varExpr.Name)
-				panic(&ParseError{c.pos, message})
+				panic(p.posErrorf(c.pos, "can't pass array %q as scalar param", varExpr.Name))
 			}
 			if info.typ != typeArray && function.Arrays[i] {
-				message := fmt.Sprintf("can't pass scalar %q as array param", varExpr.Name)
-				panic(&ParseError{c.pos, message})
+				panic(p.posErrorf(c.pos, "can't pass scalar %q as array param", varExpr.Name))
 			}
 		}
 	}
@@ -415,16 +412,14 @@ func (p *parser) resolveVars(prog *Program) {
 	for _, varRef := range p.varRefs {
 		info := p.varTypes[varRef.funcName][varRef.ref.Name]
 		if info.typ == typeArray && !varRef.isArg {
-			message := fmt.Sprintf("can't use array %q as scalar", varRef.ref.Name)
-			panic(&ParseError{varRef.pos, message})
+			panic(p.posErrorf(varRef.pos, "can't use array %q as scalar", varRef.ref.Name))
 		}
 		varRef.ref.Index = info.index
 	}
 	for _, arrayRef := range p.arrayRefs {
 		info := p.varTypes[arrayRef.funcName][arrayRef.ref.Name]
 		if info.typ == typeScalar {
-			message := fmt.Sprintf("can't use scalar %q as array", arrayRef.ref.Name)
-			panic(&ParseError{arrayRef.pos, message})
+			panic(p.posErrorf(arrayRef.pos, "can't use scalar %q as array", arrayRef.ref.Name))
 		}
 		arrayRef.ref.Index = info.index
 	}
@@ -469,6 +464,5 @@ func (p *parser) checkMultiExprs() {
 			min = pos
 		}
 	}
-	message := fmt.Sprintf("unexpected comma-separated expression")
-	panic(&ParseError{min, message})
+	panic(p.posErrorf(min, "unexpected comma-separated expression"))
 }

@@ -63,7 +63,6 @@ func errorf(format string, args ...interface{}) error {
 }
 
 type compiler struct {
-	prog    *Program
 	typer   *typer
 	writer  io.Writer
 	regexen map[string]int
@@ -566,16 +565,9 @@ func (c *compiler) expr(expr Expr) string {
 		case *VarExpr:
 			return fmt.Sprintf("func () %s { %s = %s; return %s }()",
 				c.goType(c.typer.exprs[e.Right]), l.Name, right, l.Name)
-
-		//TODO: case *IndexExpr:
-
-		//TODO: case *FieldExpr:
-
 		default:
-			panic(errorf("unexpected lvalue type: %T", l))
+			panic(errorf("lvalue type %T not yet supported", l))
 		}
-
-	//TODO: case *AugAssignExpr:
 
 	case *CondExpr:
 		return fmt.Sprintf("func() %s { if %s { return %s }; return %s }()",

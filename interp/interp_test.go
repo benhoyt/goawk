@@ -72,7 +72,7 @@ NR==3, NR==5 { print NR }
 	{`BEGIN { printf "%% %d %x %c %f %s", 42, 42, 42, 42, 42 }`, "", "% 42 2a * 42.000000 42", "", ""},
 	{`BEGIN { printf "%3d", 42 }`, "", " 42", "", ""},
 	{`BEGIN { printf "%3s", "x" }`, "", "  x", "", ""},
-	// {`BEGIN { printf "%.1g", 42 }`, "", "4e+01", "", ""}, // TODO: comment out for now, for some reason gives "4e+001" on Windows
+	{`BEGIN { printf "%.1g", 42 }  # !windows-gawk`, "", "4e+01", "", ""}, // for some reason gawk gives "4e+001" on Windows
 	{`BEGIN { printf "%d", 12, 34 }`, "", "12", "", ""},
 	{`BEGIN { printf "%d" }`, "", "", "format error: got 0 args, expected 1", "not enough arg"},
 	// Our %c handling is mostly like awk's, except for multiples
@@ -149,7 +149,7 @@ BEGIN {
 	{`BEGIN { print !42, !1, !0, !!42, !!1, !!0 }`, "", "0 0 1 1 1 0\n", "", ""},
 	{`BEGIN { print !42, !1, !0, !!42, !!1, !!0 }`, "", "0 0 1 1 1 0\n", "", ""},
 	{`BEGIN { print +4, +"3", +0, +-3, -3, - -4, -"3" }`, "", "4 3 0 -3 -3 4 -3\n", "", ""},
-	// TODO: {`BEGIN { $0="0"; print !$0 }`, "", "0\n", "", ""},
+	{`BEGIN { $0="0"; print !$0 }`, "", "0\n", "", ""},
 	{`BEGIN { $0="1"; print !$0 }`, "", "0\n", "", ""},
 	{`{ print !$0 }`, "0\n", "1\n", "", ""},
 	{`{ print !$0 }`, "1\n", "0\n", "", ""},
@@ -171,6 +171,12 @@ BEGIN {
 	{`{ print ($1>2) }`, "1\n1.0\n+1", "0\n0\n0\n", "", ""},
 	{`BEGIN { print (0>=1, 1>=1, 2>=1, "12">="2") }`, "", "0 1 1 0\n", "", ""},
 	{`{ print ($1>=2) }`, "1\n1.0\n+1", "0\n0\n0\n", "", ""},
+	{`{ print($0<2) }`, "10", "0\n", "", ""},
+	{`{ print($1<2) }`, "10", "0\n", "", ""},
+	{`{ print($1<2) }`, "10x", "1\n", "", ""},
+	{`BEGIN { $0="10"; print($0<2) }`, "", "1\n", "", ""},
+	{`BEGIN { $1="10"; print($1<2) }`, "", "1\n", "", ""},
+	{`BEGIN { $1="10x"; print($1<2) }`, "", "1\n", "", ""},
 
 	// Short-circuit && and || operators
 	{`
@@ -233,7 +239,7 @@ BEGIN {
 	// Conditional ?: expression
 	{`{ print /x/?"t":"f" }`, "x\ny\nxx\nz\n", "t\nf\nt\nf\n", "", ""},
 	{`BEGIN { print 1?2?3:4:5, 1?0?3:4:5, 0?2?3:4:5 }`, "", "3 4 5\n", "", ""},
-	// TODO: {`BEGIN { $0="0"; print ($0?1:0) }`, "", "1\n", "", ""},
+	{`BEGIN { $0="0"; print ($0?1:0) }`, "", "1\n", "", ""},
 	{`{ print $0?1:0 }`, "0\n", "0\n", "", ""},
 	{`{ print $0?1:0 }`, "1\n", "1\n", "", ""},
 	{`BEGIN { $0="1"; print ($0?1:0) }`, "", "1\n", "", ""},
@@ -291,6 +297,22 @@ BEGIN {
 	{`BEGIN { RS = "" }  { print "got", $0 }`,
 		"\n\n\n\n", "", "", ""},
 	{`BEGIN { RS="\n" }  { print }`, "a\n\nb\nc", "a\n\nb\nc\n", "", ""},
+	{`BEGIN { RS="ö" }  { print }  # !windows-gawk`, "1ötwoöthree", "1\ntwo\nthree\n", "", ""},
+	{`BEGIN { RS="\\.+" }  { print }`, "1.two..three...4.", "1\ntwo\nthree\n4\n", "", ""},
+	{`BEGIN { RS = "\n|( *[[:upper:]]+ *)" } { print "Record =", $0,"and RT = [" RT "]" }`, // from https://www.gnu.org/software/gawk/manual/html_node/gawk-split-records.html
+		"record 1 AAAA record 2 BBBB record 3\n",
+		`Record = record 1 and RT = [ AAAA ]
+Record = record 2 and RT = [ BBBB ]
+Record = record 3 and RT = [
+]
+`, "", ""},
+	{`BEGIN { RS = "\n|( *[[:upper:]]+ *)" } { print "Record =", $0,"and RT = [" RT "]" }`, // from https://www.gnu.org/software/gawk/manual/html_node/gawk-split-records.html
+		"record 1 AAAA record 2 BBBB record 3",
+		`Record = record 1 and RT = [ AAAA ]
+Record = record 2 and RT = [ BBBB ]
+Record = record 3 and RT = []
+`, "", ""},
+	{`BEGIN { RS=".." } { print $0 RT }`, "foo bar bazz", "fo\no \nba\nr \nba\nzz\n", "", ""},
 	{`
 BEGIN {
 	print SUBSEP
@@ -325,8 +347,8 @@ BEGIN {
 	{`0 in FS  # !awk - doesn't flag this as an error`, "x", "",
 		`parse error at 1:6: can't use scalar "FS" as array`, "array"},
 	// TODO: I think this is happening because we parse this as ($($0))++ rather than ($($0++))
-	// TODO: {`{ $$0++; print $0 }`, "2 3 4", "3\n", "", ""},
-	// TODO: {`BEGIN { $0="3 4 5 6 7 8 9"; a=3; print $$a++++; print }`, "", "7\n3 4 6 6 8 8 9\n", "", ""},
+	// {`{ $$0++; print $0 }`, "2 3 4", "3\n", "", ""},
+	// {`BEGIN { $0="3 4 5 6 7 8 9"; a=3; print $$a++++; print }`, "", "7\n3 4 6 6 8 8 9\n", "", ""},
 
 	// Lots of NF tests with different combinations of NF, $, and number
 	// of input fields. Some of these cause segmentation faults on awk
@@ -385,6 +407,7 @@ BEGIN {
 	{`BEGIN { x[y++]++; print y }`, "", "1\n", "", ""},
 	{`BEGIN { x[y++] += 3; print y }`, "", "1\n", "", ""},
 	{`BEGIN { $(y++)++; print y }`, "", "1\n", "", ""},
+	{`BEGIN { print "s" ++n; print "s" --n }`, "", "s1\ns0\n", "", ""},
 
 	// Builtin functions
 	{`BEGIN { print sin(0), sin(0.5), sin(1), sin(-1) }`, "", "0 0.479426 0.841471 -0.841471\n", "", ""},
@@ -399,25 +422,29 @@ BEGIN {
 	{`BEGIN { print match("x food y", "fo"), RSTART, RLENGTH }`, "", "3 3 2\n", "", ""},
 	{`BEGIN { print match("x food y", "fox"), RSTART, RLENGTH }`, "", "0 0 -1\n", "", ""},
 	{`BEGIN { print match("x food y", /[fod]+/), RSTART, RLENGTH }`, "", "3 3 4\n", "", ""},
+	{`BEGIN { print match("絵 fööd y", /[föd]+/), RSTART, RLENGTH }`, "", "3 3 4\n", "", ""},
 	{`{ print length, length(), length("buzz"), length("") }`, "foo bar", "7 7 4 0\n", "", ""},
+	{`BEGIN { print length("a"), length("絵") }  # !awk`, "", "1 1\n", "", ""},
 	{`BEGIN { print index("foo", "f"), index("foo0", 0), index("foo", "o"), index("foo", "x") }`, "", "1 4 2 0\n", "", ""},
+	{`BEGIN { print index("föö", "f"), index("föö0", 0), index("föö", "ö"), index("föö", "x") }`, "", "1 4 2 0\n", "", ""},
 	{`BEGIN { print atan2(1, 0.5), atan2(-1, 0) }`, "", "1.10715 -1.5708\n", "", ""},
 	{`BEGIN { print sprintf("%3d", 42) }`, "", " 42\n", "", ""},
 	{`BEGIN { print sprintf("%d", 12, 34) }`, "", "12\n", "", ""},
 	{`BEGIN { print sprintf("%d") }`, "", "", "format error: got 0 args, expected 1", "not enough arg"},
 	{`BEGIN { print sprintf("%d", 12, 34) }`, "", "12\n", "", ""},
 	{`BEGIN { print sprintf("% 5d", 42) }`, "", "   42\n", "", ""},
-	{`BEGIN { print substr("food", 1) }`, "", "food\n", "", ""},
-	{`BEGIN { print substr("food", 1, 2) }`, "", "fo\n", "", ""},
-	{`BEGIN { print substr("food", 1, 4) }`, "", "food\n", "", ""},
-	{`BEGIN { print substr("food", 1, 8) }`, "", "food\n", "", ""},
-	{`BEGIN { print substr("food", 2) }`, "", "ood\n", "", ""},
-	{`BEGIN { print substr("food", 2, 2) }`, "", "oo\n", "", ""},
-	{`BEGIN { print substr("food", 2, 3) }`, "", "ood\n", "", ""},
-	{`BEGIN { print substr("food", 2, 8) }`, "", "ood\n", "", ""},
-	{`BEGIN { print substr("food", 0, 8) }`, "", "food\n", "", ""},
-	{`BEGIN { print substr("food", -1, 8) }`, "", "food\n", "", ""},
-	{`BEGIN { print substr("food", 5, 8) }`, "", "\n", "", ""},
+	{`BEGIN { print substr("food", 1), substr("fööd", 1) }  # !windows-gawk`, "", "food fööd\n", "", ""},
+	{`BEGIN { print substr("food", 1, 2), substr("fööd", 1, 2) }  # !windows-gawk`, "", "fo fö\n", "", ""},
+	{`BEGIN { print substr("food", 1, 4), substr("fööd", 1, 4) }  # !windows-gawk`, "", "food fööd\n", "", ""},
+	{`BEGIN { print substr("food", 1, 8), substr("fööd", 1, 8) }  # !windows-gawk`, "", "food fööd\n", "", ""},
+	{`BEGIN { print substr("food", 2), substr("fööd", 2) }  # !windows-gawk`, "", "ood ööd\n", "", ""},
+	{`BEGIN { print substr("food", 2, 2), substr("fööd", 2, 2) }  # !windows-gawk`, "", "oo öö\n", "", ""},
+	{`BEGIN { print substr("food", 2, 3), substr("fööd", 2, 3) }  # !windows-gawk`, "", "ood ööd\n", "", ""},
+	{`BEGIN { print substr("food", 2, 8), substr("fööd", 2, 8) }  # !windows-gawk`, "", "ood ööd\n", "", ""},
+	{`BEGIN { print substr("food", 0, 8), substr("fööd", 0, 8) }  # !windows-gawk`, "", "food fööd\n", "", ""},
+	{`BEGIN { print substr("food", -1, 8), substr("fööd", -1, 8) }  # !windows-gawk`, "", "food fööd\n", "", ""},
+	{`BEGIN { print substr("food", 5, 8), substr("fööd", 5, 8) }`, "", " \n", "", ""},
+	{`BEGIN { print substr("food", 2, -3), substr("fööd", 2, -3) }`, "", " \n", "", ""},
 	{`BEGIN { n = split("ab c d ", a); for (i=1; i<=n; i++) print a[i] }`, "", "ab\nc\nd\n", "", ""},
 	{`BEGIN { n = split("ab,c,d,", a, ","); for (i=1; i<=n; i++) print a[i] }`, "", "ab\nc\nd\n\n", "", ""},
 	{`BEGIN { n = split("ab,c.d,", a, /[,.]/); for (i=1; i<=n; i++) print a[i] }`, "", "ab\nc\nd\n\n", "", ""},
@@ -585,21 +612,36 @@ BEGIN { foo(5); bar(10) }
 		"", "", `parse error at 1:46: global var "foo" can't also be a function`, "function"},
 	{`function f(x) { print x, x(); }  BEGIN { f() }`, "", "", `parse error at 1:27: can't call local variable "x" as function`, "function"},
 
-	// Redirected I/O (we give explicit errors, awk and gawk don't)
-	// TODO: the following two tests sometimes fail under TravisCI with: "write |1: broken pipe"
-	// {`BEGIN { print >"out"; getline <"out" }  # !awk !gawk`, "", "", "can't read from writer stream", ""},
-	// {`BEGIN { print |"out"; getline <"out" }  # !awk !gawk`, "", "", "can't read from writer stream", ""},
+	// Redirected I/O
+	{`BEGIN { getline a[1]; print a[1] }`, "foo", "foo\n", "", ""},
+	{`BEGIN { getline $1; print $1 }`, "foo", "foo\n", "", ""},
+	{`BEGIN { "echo foo" | getline a[1]; print a[1] }`, "", "foo\n", "", ""},
+	{`BEGIN { "echo foo" | getline $1; print $1 }`, "", "foo\n", "", ""},
+	{`BEGIN { print "foo" |"sort"; print "bar" |"sort" }  # !fuzz`, "", "bar\nfoo\n", "", ""},
+	{`BEGIN { print "foo" |">&2 echo error" }  # !gawk !fuzz`, "", "error\n", "", ""},
+	{`BEGIN { "cat" | getline; print }  # !fuzz`, "bar", "bar\n", "", ""},
+	{`BEGIN { print getline x < "/no/such/file" }  # !fuzz`, "", "-1\n", "", ""},
+	{`BEGIN { print getline "z"; print $0 }`, "foo", "1z\nfoo\n", "", ""},
+	{`BEGIN { print getline x+1; print x }`, "foo", "2\nfoo\n", "", ""},
+	{`BEGIN { print getline (x+1); print $0 }`, "foo", "11\nfoo\n", "", ""},
+	{`BEGIN { print getline foo(); print $0 } function foo() { print "z" }`, "foo", "z\n1\nfoo\n", "", ""},
+	// TODO: these forms don't yet work under GoAWK
+	//{`BEGIN { print("echo foo" | getline x+1); print x }`, "", "2\nfoo\n", "", ""},
+	//{`BEGIN { print("echo foo" | getline $0+1); print }`, "", "2\nfoo\n", "", ""},
+	//{`BEGIN { print("echo foo" | getline ($0+1)); print }`, "", "11\nfoo\n", "", ""},
+	//{`BEGIN { print("echo foo" | getline foo()); print } function foo() { print "z" }`, "", "z\n1\nfoo\n", "", ""},
+
+	// Ensure data returned by getline (in various forms) is treated as numeric string
+	{`BEGIN { getline; print($0==0) }`, "0.0", "1\n", "", ""},
+	{`BEGIN { getline x; print(x==0) }`, "0.0", "1\n", "", ""},
+	{`BEGIN { "echo 0.0" | getline; print($0==0) }`, "", "1\n", "", ""},
+	{`BEGIN { "echo 0.0" | getline x; print(x==0) }`, "", "1\n", "", ""},
+
+	// Redirected I/O errors (we give explicit errors, awk and gawk don't)
+	{`BEGIN { print >"out"; getline <"out" }  # !awk !gawk`, "", "", "can't read from writer stream", ""},
+	{`BEGIN { print |"out"; getline <"out" }  # !awk !gawk`, "", "", "can't read from writer stream", ""},
 	{`BEGIN { print >"out"; close("out"); getline <"out"; print >"out" }  # !awk !gawk`, "", "", "can't write to reader stream", ""},
 	{`BEGIN { print >"out"; close("out"); getline <"out"; print |"out" }  # !awk !gawk`, "", "", "can't write to reader stream", ""},
-	// TODO: currently we support "getline var" but not "getline lvalue"
-	// TODO: {`BEGIN { getline a[1]; print a[1] }`, "foo", "foo\n", "", ""},
-	// TODO: {`BEGIN { getline $1; print $1 }`, "foo", "foo\n", "", ""},
-	{`BEGIN { print "foo" |"sort"; print "bar" |"sort" }  # !fuzz`, "", "bar\nfoo\n", "", ""},
-	{`BEGIN { print "foo" |">&2 echo error" }  # !fuzz`, "", "error\n", "", ""},
-	{`BEGIN { "cat" | getline; print }  # !fuzz`, "bar", "bar\n", "", ""},
-	// TODO: fix test flakiness on Windows (sometimes returns "\nerror\n")
-	// {`BEGIN { ">&2 echo error" | getline; print }`, "", "error\n\n", "", ""},
-	{`BEGIN { print getline x < "/no/such/file" }  # !fuzz`, "", "-1\n", "", ""},
 
 	// Redirecting to or from a filename of "-" means write to stdout or read from stdin
 	{`BEGIN { print getline x < "-"; print x }`, "a\nb\n", "1\na\n", "", ""},
@@ -646,33 +688,37 @@ func TestInterp(t *testing.T) {
 			testName = testName[:70]
 		}
 
-		if awkExe != "" && !strings.Contains(test.src, "!"+awkExe) {
-			// Run it through external awk program first
-			t.Run("awk_"+testName, func(t *testing.T) {
-				cmd := exec.Command(awkExe, test.src, "-")
-				if test.in != "" {
-					cmd.Stdin = strings.NewReader(test.in)
-				}
-				out, err := cmd.CombinedOutput()
-				if err != nil {
-					if test.awkErr != "" {
-						if strings.Contains(string(out), test.awkErr) {
-							return
-						}
-						t.Fatalf("expected error %q, got:\n%s", test.awkErr, out)
-					} else {
-						t.Fatalf("error running %s: %v:\n%s", awkExe, err, out)
-					}
-				}
+		// Run it through external awk program first
+		t.Run("awk_"+testName, func(t *testing.T) {
+			if awkExe != "" && strings.Contains(test.src, "!"+awkExe) {
+				t.Skipf("skipping under %s", awkExe)
+			}
+			if strings.Contains(test.src, "!"+runtime.GOOS+"-"+awkExe) {
+				t.Skipf("skipping on %s under %s", runtime.GOOS, awkExe)
+			}
+			cmd := exec.Command(awkExe, test.src, "-")
+			if test.in != "" {
+				cmd.Stdin = strings.NewReader(test.in)
+			}
+			out, err := cmd.CombinedOutput()
+			if err != nil {
 				if test.awkErr != "" {
-					t.Fatalf(`expected error %q, got ""`, test.awkErr)
+					if strings.Contains(string(out), test.awkErr) {
+						return
+					}
+					t.Fatalf("expected error %q, got:\n%s", test.awkErr, out)
+				} else {
+					t.Fatalf("error running %s: %v:\n%s", awkExe, err, out)
 				}
-				normalized := normalizeNewlines(string(out))
-				if normalized != test.out {
-					t.Fatalf("expected %q, got %q", test.out, normalized)
-				}
-			})
-		}
+			}
+			if test.awkErr != "" {
+				t.Fatalf(`expected error %q, got ""`, test.awkErr)
+			}
+			normalized := normalizeNewlines(string(out))
+			if normalized != test.out {
+				t.Fatalf("expected %q, got %q", test.out, normalized)
+			}
+		})
 
 		// Then test it in GoAWK
 		t.Run(testName, func(t *testing.T) {
@@ -1021,6 +1067,47 @@ func TestSafeMode(t *testing.T) {
 	}
 }
 
+func TestBytesMode(t *testing.T) {
+	tests := []struct {
+		src string
+		in  string
+		out string
+	}{
+		{`BEGIN { print match("food", "foo"), RSTART, RLENGTH }`, "", "1 1 3\n"},
+		{`BEGIN { print match("x food y", "fo"), RSTART, RLENGTH }`, "", "3 3 2\n"},
+		{`BEGIN { print match("x food y", "fox"), RSTART, RLENGTH }`, "", "0 0 -1\n"},
+		{`BEGIN { print match("x food y", /[fod]+/), RSTART, RLENGTH }`, "", "3 3 4\n"},
+		{`BEGIN { print match("絵 fööd y", /[föd]+/), RSTART, RLENGTH }`, "", "5 5 6\n"},
+		{`{ print length, length(), length("buzz"), length("") }`, "foo bar", "7 7 4 0\n"},
+		{`BEGIN { print length("a"), length("絵") }  # !awk`, "", "1 3\n"},
+		{`BEGIN { print index("foo", "f"), index("foo0", 0), index("foo", "o"), index("foo", "x") }`, "", "1 4 2 0\n"},
+		{`BEGIN { print index("föö", "f"), index("föö0", 0), index("föö", "ö"), index("föö", "x") }`, "", "1 6 2 0\n"},
+		{`BEGIN { print substr("food", 1), substr("fööd", 1) }`, "", "food fööd\n"},
+		{`BEGIN { print substr("food", 1, 2), substr("fööd", 1, 2) }`, "", "fo f\xc3\n"},
+		{`BEGIN { print substr("food", 1, 4), substr("fööd", 1, 4) }`, "", "food fö\xc3\n"},
+		{`BEGIN { print substr("food", 1, 8), substr("fööd", 1, 8) }`, "", "food fööd\n"},
+		{`BEGIN { print substr("food", 2), substr("fööd", 2) }`, "", "ood ööd\n"},
+		{`BEGIN { print substr("food", 2, 2), substr("fööd", 2, 2) }`, "", "oo ö\n"},
+		{`BEGIN { print substr("food", 2, 3), substr("fööd", 2, 3) }`, "", "ood ö\xc3\n"},
+		{`BEGIN { print substr("food", 2, 8), substr("fööd", 2, 8) }`, "", "ood ööd\n"},
+		{`BEGIN { print substr("food", 0, 8), substr("fööd", 0, 8) }`, "", "food fööd\n"},
+		{`BEGIN { print substr("food", -1, 8), substr("fööd", -1, 8) }`, "", "food fööd\n"},
+		{`BEGIN { print substr("food", 5, 8), substr("fööd", 5, 8) }`, "", " \xb6d\n"},
+		{`BEGIN { print substr("food", 2, -3), substr("fööd", 2, -3) }`, "", " \n"},
+	}
+	for _, test := range tests {
+		testName := test.src
+		if len(testName) > 70 {
+			testName = testName[:70]
+		}
+		t.Run(testName, func(t *testing.T) {
+			testGoAWK(t, test.src, test.in, test.out, "", nil, func(config *interp.Config) {
+				config.Bytes = true
+			})
+		})
+	}
+}
+
 func TestConfigVarsCorrect(t *testing.T) {
 	prog, err := parser.ParseProgram([]byte(`BEGIN { print x }`), nil)
 	if err != nil {
@@ -1092,6 +1179,38 @@ BEGIN {
 	if !reflect.DeepEqual(f.flushes, expected) {
 		t.Fatalf("expected flushes %q, got %q", expected, f.flushes)
 	}
+
+	// Ensure output is flushed before getline reads from stdin
+	src = `
+BEGIN {
+	printf "Prompt: "
+	getline x
+	print x
+}`
+	f = &mockFlusher{}
+	testGoAWK(t, src, "42\n", "", "", nil, func(config *interp.Config) {
+		config.Output = f
+	})
+	expected = []string{"Prompt: ", "Prompt: 42\n"}
+	if !reflect.DeepEqual(f.flushes, expected) {
+		t.Fatalf("expected flushes %q, got %q", expected, f.flushes)
+	}
+
+	// Ensure output is flushed before system()
+	src = `
+BEGIN {
+  print "one"
+  system("echo .")
+  print "two"
+}`
+	f = &mockFlusher{}
+	testGoAWK(t, src, "", "", "", nil, func(config *interp.Config) {
+		config.Output = f
+	})
+	expected = []string{"one\n", "one\n.\ntwo\n"}
+	if !reflect.DeepEqual(f.flushes, expected) {
+		t.Fatalf("expected flushes %q, got %q", expected, f.flushes)
+	}
 }
 
 type errorFlusher struct {
@@ -1112,6 +1231,33 @@ func TestFlushError(t *testing.T) {
 	if f.String() != expected {
 		t.Fatalf("expected %q, got %q", expected, f.String())
 	}
+}
+
+func TestEnviron(t *testing.T) {
+	os.Setenv("GOAWK_TEN", "10") // to test that ENVIRON[x] is numeric string
+	src := `
+BEGIN {
+	n = 0
+	for (k in ENVIRON)
+		n++
+	print(n, ENVIRON["USER"], ENVIRON["GOAWK_TEN"] < 2)
+}`
+	expected := fmt.Sprintf("%d %s 0\n", len(os.Environ()), os.Getenv("USER"))
+	testGoAWK(t, src, "", expected, "", nil, nil)
+
+	expected = "2 bob 0\n"
+	testGoAWK(t, src, "", expected, "", nil, func(config *interp.Config) {
+		config.Environ = []string{"USER", "bob", "GOAWK_TEN", "10"}
+	})
+
+	expected = "0  1\n"
+	testGoAWK(t, src, "", expected, "", nil, func(config *interp.Config) {
+		config.Environ = []string{}
+	})
+
+	testGoAWK(t, src, "", "", "length of config.Environ must be a multiple of 2, not 3", nil, func(config *interp.Config) {
+		config.Environ = []string{"b", "a", "d"}
+	})
 }
 
 func benchmarkProgram(b *testing.B, funcs map[string]interface{},

@@ -88,6 +88,10 @@ Things AWK has over GoAWK:
 
 This project has a good suite of tests, and I've used it a bunch personally, but it's certainly not battle-tested or heavily used, so please use at your own risk. I intend not to change the Go API in a breaking way.
 
+## AWKGo
+
+The GoAWK repository also includes the creatively-named AWKGo, an AWK-to-Go compiler. This is experimental and is not subject to the stability requirements of GoAWK itself. You can [read more about AWKGo](https://benhoyt.com/writings/awkgo/) or [browse the AWKGo code](https://github.com/benhoyt/goawk/tree/master/awkgo).
+
 ## License
 
 GoAWK is licensed under an open source [MIT license](https://github.com/benhoyt/goawk/blob/master/LICENSE.txt).

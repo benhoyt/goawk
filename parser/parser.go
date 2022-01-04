@@ -235,7 +235,7 @@ func (p *parser) simpleStmt() Stmt {
 			return &PrintStmt{args, redirect, dest}
 		} else {
 			if len(args) == 0 {
-				panic(p.error("expected printf args, got none"))
+				panic(p.errorf("expected printf args, got none"))
 			}
 			return &PrintfStmt{args, redirect, dest}
 		}
@@ -248,13 +248,13 @@ func (p *parser) simpleStmt() Stmt {
 			p.next()
 			index = p.exprList(p.expr)
 			if len(index) == 0 {
-				panic(p.error("expected expression instead of ]"))
+				panic(p.errorf("expected expression instead of ]"))
 			}
 			p.expect(RBRACKET)
 		}
 		return &DeleteStmt{ref, index}
 	case IF, FOR, WHILE, DO, BREAK, CONTINUE, NEXT, EXIT, RETURN:
-		panic(p.error("expected print/printf, delete, or expression"))
+		panic(p.errorf("expected print/printf, delete, or expression"))
 	default:
 		return &ExprStmt{p.expr()}
 	}
@@ -302,18 +302,18 @@ func (p *parser) stmt() Stmt {
 			p.optionalNewlines()
 			exprStmt, ok := pre.(*ExprStmt)
 			if !ok {
-				panic(p.error("expected 'for (var in array) ...'"))
+				panic(p.errorf("expected 'for (var in array) ...'"))
 			}
 			inExpr, ok := (exprStmt.Expr).(*InExpr)
 			if !ok {
-				panic(p.error("expected 'for (var in array) ...'"))
+				panic(p.errorf("expected 'for (var in array) ...'"))
 			}
 			if len(inExpr.Index) != 1 {
-				panic(p.error("expected 'for (var in array) ...'"))
+				panic(p.errorf("expected 'for (var in array) ...'"))
 			}
 			varExpr, ok := (inExpr.Index[0]).(*VarExpr)
 			if !ok {
-				panic(p.error("expected 'for (var in array) ...'"))
+				panic(p.errorf("expected 'for (var in array) ...'"))
 			}
 			body := p.loopStmts()
 			s = &ForInStmt{varExpr, inExpr.Array, body}
@@ -355,19 +355,19 @@ func (p *parser) stmt() Stmt {
 		s = &DoWhileStmt{body, cond}
 	case BREAK:
 		if p.loopDepth == 0 {
-			panic(p.error("break must be inside a loop body"))
+			panic(p.errorf("break must be inside a loop body"))
 		}
 		p.next()
 		s = &BreakStmt{}
 	case CONTINUE:
 		if p.loopDepth == 0 {
-			panic(p.error("continue must be inside a loop body"))
+			panic(p.errorf("continue must be inside a loop body"))
 		}
 		p.next()
 		s = &ContinueStmt{}
 	case NEXT:
 		if !p.inAction && p.funcName == "" {
-			panic(p.error("next can't be inside BEGIN or END"))
+			panic(p.errorf("next can't be inside BEGIN or END"))
 		}
 		p.next()
 		s = &NextStmt{}
@@ -380,7 +380,7 @@ func (p *parser) stmt() Stmt {
 		s = &ExitStmt{status}
 	case RETURN:
 		if p.funcName == "" {
-			panic(p.error("return must be inside a function"))
+			panic(p.errorf("return must be inside a function"))
 		}
 		p.next()
 		var value Expr
@@ -397,7 +397,7 @@ func (p *parser) stmt() Stmt {
 
 	// Ensure statements are separated by ; or newline
 	if !p.matches(NEWLINE, SEMICOLON, RBRACE) && p.prevTok != NEWLINE && p.prevTok != SEMICOLON && p.prevTok != RBRACE {
-		panic(p.error("expected ; or newline between statements"))
+		panic(p.errorf("expected ; or newline between statements"))
 	}
 	for p.matches(NEWLINE, SEMICOLON) {
 		p.next()
@@ -421,12 +421,12 @@ func (p *parser) function() Function {
 	if p.funcName != "" {
 		// Should never actually get here (FUNCTION token is only
 		// handled at the top level), but just in case.
-		panic(p.error("can't nest functions"))
+		panic(p.errorf("can't nest functions"))
 	}
 	p.next()
 	name := p.val
 	if _, ok := p.functions[name]; ok {
-		panic(p.error("function %q already defined", name))
+		panic(p.errorf("function %q already defined", name))
 	}
 	p.expect(NAME)
 	p.expect(LPAREN)
@@ -440,10 +440,10 @@ func (p *parser) function() Function {
 		first = false
 		param := p.val
 		if param == name {
-			panic(p.error("can't use function name as parameter name"))
+			panic(p.errorf("can't use function name as parameter name"))
 		}
 		if p.locals[param] {
-			panic(p.error("duplicate parameter name %q", param))
+			panic(p.errorf("duplicate parameter name %q", param))
 		}
 		p.expect(NAME)
 		params = append(params, param)
@@ -487,21 +487,17 @@ func (p *parser) exprList(parse func() Expr) []Expr {
 func (p *parser) expr() Expr      { return p.getLine() }
 func (p *parser) printExpr() Expr { return p._assign(p.printCond) }
 
-// Parse an "expr | getline [var]" expression:
+// Parse an "expr | getline [lvalue]" expression:
 //
-//     assign [PIPE GETLINE [NAME]]
+//     assign [PIPE GETLINE [lvalue]]
 //
 func (p *parser) getLine() Expr {
 	expr := p._assign(p.cond)
 	if p.tok == PIPE {
 		p.next()
 		p.expect(GETLINE)
-		var varExpr *VarExpr
-		if p.tok == NAME {
-			varExpr = p.varRef(p.val, p.pos)
-			p.next()
-		}
-		return &GetlineExpr{expr, varExpr, nil}
+		target := p.optionalLValue()
+		return &GetlineExpr{expr, target, nil}
 	}
 	return expr
 }
@@ -632,7 +628,7 @@ func (p *parser) _compare(ops ...Token) Expr {
 
 func (p *parser) concat() Expr {
 	expr := p.add()
-	for p.matches(DOLLAR, NOT, NAME, NUMBER, STRING, LPAREN) ||
+	for p.matches(DOLLAR, NOT, NAME, NUMBER, STRING, LPAREN, INCR, DECR) ||
 		(p.tok >= FIRST_FUNC && p.tok <= LAST_FUNC) {
 		right := p.add()
 		expr = &BinaryExpr{expr, CONCAT, right}
@@ -663,9 +659,10 @@ func (p *parser) preIncr() Expr {
 	if p.tok == INCR || p.tok == DECR {
 		op := p.tok
 		p.next()
+		exprPos := p.pos
 		expr := p.preIncr()
 		if !IsLValue(expr) {
-			panic(p.error("expected lvalue after ++ or --"))
+			panic(p.posErrorf(exprPos, "expected lvalue after ++ or --"))
 		}
 		return &IncrExpr{expr, op, true}
 	}
@@ -674,10 +671,7 @@ func (p *parser) preIncr() Expr {
 
 func (p *parser) postIncr() Expr {
 	expr := p.primary()
-	if p.tok == INCR || p.tok == DECR {
-		if !IsLValue(expr) {
-			panic(p.error("expected lvalue before ++ or --"))
-		}
+	if (p.tok == INCR || p.tok == DECR) && IsLValue(expr) {
 		op := p.tok
 		p.next()
 		return &IncrExpr{expr, op, false}
@@ -718,13 +712,13 @@ func (p *parser) primary() Expr {
 			p.next()
 			index := p.exprList(p.expr)
 			if len(index) == 0 {
-				panic(p.error("expected expression instead of ]"))
+				panic(p.errorf("expected expression instead of ]"))
 			}
 			p.expect(RBRACKET)
 			return &IndexExpr{p.arrayRef(name, namePos), index}
 		} else if p.tok == LPAREN && !p.lexer.HadSpace() {
 			if p.locals[name] {
-				panic(p.error("can't call local variable %q as function", name))
+				panic(p.errorf("can't call local variable %q as function", name))
 			}
 			// Grammar requires no space between function name and
 			// left paren for user function calls, hence the funky
@@ -738,7 +732,7 @@ func (p *parser) primary() Expr {
 		exprs := p.exprList(p.expr)
 		switch len(exprs) {
 		case 0:
-			panic(p.error("expected expression, not %s", p.tok))
+			panic(p.errorf("expected expression, not %s", p.tok))
 		case 1:
 			p.expect(RPAREN)
 			return exprs[0]
@@ -756,17 +750,13 @@ func (p *parser) primary() Expr {
 		}
 	case GETLINE:
 		p.next()
-		var varExpr *VarExpr
-		if p.tok == NAME {
-			varExpr = p.varRef(p.val, p.pos)
-			p.next()
-		}
+		target := p.optionalLValue()
 		var file Expr
 		if p.tok == LESS {
 			p.next()
-			file = p.expr()
+			file = p.primary()
 		}
-		return &GetlineExpr{nil, varExpr, file}
+		return &GetlineExpr{nil, target, file}
 	// Below is the parsing of all the builtin function calls. We
 	// could unify these but several of them have special handling
 	// (array/lvalue/regex params, optional arguments, and so on).
@@ -781,9 +771,10 @@ func (p *parser) primary() Expr {
 		args := []Expr{regex, repl}
 		if p.tok == COMMA {
 			p.commaNewlines()
+			inPos := p.pos
 			in := p.expr()
 			if !IsLValue(in) {
-				panic(p.error("3rd arg to sub/gsub must be lvalue"))
+				panic(p.posErrorf(inPos, "3rd arg to sub/gsub must be lvalue"))
 			}
 			args = append(args, in)
 		}
@@ -888,7 +879,37 @@ func (p *parser) primary() Expr {
 		p.expect(RPAREN)
 		return &CallExpr{op, []Expr{arg1, arg2}}
 	default:
-		panic(p.error("expected expression instead of %s", p.tok))
+		panic(p.errorf("expected expression instead of %s", p.tok))
+	}
+}
+
+// Parse an optional lvalue
+func (p *parser) optionalLValue() Expr {
+	switch p.tok {
+	case NAME:
+		if p.lexer.PeekByte() == '(' {
+			// User function call, e.g., foo() not lvalue.
+			return nil
+		}
+		name := p.val
+		namePos := p.pos
+		p.next()
+		if p.tok == LBRACKET {
+			// a[x] or a[x, y] array index expression
+			p.next()
+			index := p.exprList(p.expr)
+			if len(index) == 0 {
+				panic(p.errorf("expected expression instead of ]"))
+			}
+			p.expect(RBRACKET)
+			return &IndexExpr{p.arrayRef(name, namePos), index}
+		}
+		return p.varRef(name, namePos)
+	case DOLLAR:
+		p.next()
+		return &FieldExpr{p.primary()}
+	default:
+		return nil
 	}
 }
 
@@ -947,7 +968,7 @@ func (p *parser) next() {
 	p.prevTok = p.tok
 	p.pos, p.tok, p.val = p.lexer.Scan()
 	if p.tok == ILLEGAL {
-		panic(p.error("%s", p.val))
+		panic(p.errorf("%s", p.val))
 	}
 }
 
@@ -956,12 +977,12 @@ func (p *parser) next() {
 func (p *parser) nextRegex() string {
 	p.pos, p.tok, p.val = p.lexer.ScanRegex()
 	if p.tok == ILLEGAL {
-		panic(p.error("%s", p.val))
+		panic(p.errorf("%s", p.val))
 	}
 	regex := p.val
 	_, err := regexp.Compile(regex)
 	if err != nil {
-		panic(p.error("%v", err))
+		panic(p.errorf("%v", err))
 	}
 	p.next()
 	return regex
@@ -970,7 +991,7 @@ func (p *parser) nextRegex() string {
 // Ensure current token is tok, and parse next token into p.tok.
 func (p *parser) expect(tok Token) {
 	if p.tok != tok {
-		panic(p.error("expected %s instead of %s", tok, p.tok))
+		panic(p.errorf("expected %s instead of %s", tok, p.tok))
 	}
 	p.next()
 }
@@ -988,9 +1009,14 @@ func (p *parser) matches(operators ...Token) bool {
 
 // Format given string and args with Sprintf and return *ParseError
 // with that message and the current position.
-func (p *parser) error(format string, args ...interface{}) error {
+func (p *parser) errorf(format string, args ...interface{}) error {
+	return p.posErrorf(p.pos, format, args...)
+}
+
+// Like errorf, but with an explicit position.
+func (p *parser) posErrorf(pos Position, format string, args ...interface{}) error {
 	message := fmt.Sprintf(format, args...)
-	return &ParseError{p.pos, message}
+	return &ParseError{pos, message}
 }
 
 // Parse call to a user-defined function (and record call site for
