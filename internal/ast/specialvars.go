@@ -17,6 +17,7 @@ const (
 	V_RLENGTH
 	V_RS
 	V_RSTART
+	V_RT
 	V_SUBSEP
 
 	V_LAST = V_SUBSEP
@@ -36,6 +37,7 @@ var specialVars = map[string]int{
 	"RLENGTH":  V_RLENGTH,
 	"RS":       V_RS,
 	"RSTART":   V_RSTART,
+	"RT":       V_RT,
 	"SUBSEP":   V_SUBSEP,
 }
 

@@ -99,17 +99,19 @@ type interp struct {
 	haveFields      bool
 
 	// Built-in variables
-	argc            int
-	convertFormat   string
-	outputFormat    string
-	fieldSep        string
-	fieldSepRegex   *regexp.Regexp
-	recordSep       string
-	outputFieldSep  string
-	outputRecordSep string
-	subscriptSep    string
-	matchLength     int
-	matchStart      int
+	argc             int
+	convertFormat    string
+	outputFormat     string
+	fieldSep         string
+	fieldSepRegex    *regexp.Regexp
+	recordSep        string
+	recordSepRegex   *regexp.Regexp
+	recordTerminator string
+	outputFieldSep   string
+	outputRecordSep  string
+	subscriptSep     string
+	matchLength      int
+	matchStart       int
 
 	// Misc pieces of state
 	program     *Program
@@ -998,6 +1000,8 @@ func (p *interp) getVar(scope VarScope, index int) value {
 			return str(p.outputRecordSep)
 		case V_RS:
 			return str(p.recordSep)
+		case V_RT:
+			return str(p.recordTerminator)
 		case V_SUBSEP:
 			return str(p.subscriptSep)
 		default:
@@ -1067,7 +1071,7 @@ func (p *interp) setVar(scope VarScope, index int, v value) error {
 			p.filename = v
 		case V_FS:
 			p.fieldSep = p.toString(v)
-			if utf8.RuneCountInString(p.fieldSep) > 1 {
+			if utf8.RuneCountInString(p.fieldSep) > 1 { // compare to interp.ensureFields
 				re, err := regexp.Compile(p.fieldSep)
 				if err != nil {
 					return newError("invalid regex %q: %s", p.fieldSep, err)
@@ -1081,11 +1085,23 @@ func (p *interp) setVar(scope VarScope, index int, v value) error {
 		case V_ORS:
 			p.outputRecordSep = p.toString(v)
 		case V_RS:
-			sep := p.toString(v)
-			if len(sep) > 1 {
-				return newError("RS must be at most 1 char")
+			p.recordSep = p.toString(v)
+			switch { // compare to interp.newScanner
+			case len(p.recordSep) <= 1:
+				// Simple cases use specialized splitters, not regex
+			case utf8.RuneCountInString(p.recordSep) == 1:
+				// Multi-byte unicode char falls back to regex splitter
+				sep := regexp.QuoteMeta(p.recordSep) // not strictly necessary as no multi-byte chars are regex meta chars
+				p.recordSepRegex = regexp.MustCompile(sep)
+			default:
+				re, err := regexp.Compile(p.recordSep)
+				if err != nil {
+					return newError("invalid regex %q: %s", p.recordSep, err)
+				}
+				p.recordSepRegex = re
 			}
-			p.recordSep = sep
+		case V_RT:
+			p.recordTerminator = p.toString(v)
 		case V_SUBSEP:
 			p.subscriptSep = p.toString(v)
 		default:
