@@ -910,8 +910,8 @@ func (p *interp) eval(expr Expr) (value, error) {
 				return num(-1), nil
 			}
 		}
-		if e.Var != nil {
-			err := p.setVar(e.Var.Scope, e.Var.Index, str(line))
+		if e.Target != nil {
+			err := p.assign(e.Target, numStr(line))
 			if err != nil {
 				return null(), err
 			}
