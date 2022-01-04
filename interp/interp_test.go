@@ -297,7 +297,7 @@ BEGIN {
 	{`BEGIN { RS = "" }  { print "got", $0 }`,
 		"\n\n\n\n", "", "", ""},
 	{`BEGIN { RS="\n" }  { print }`, "a\n\nb\nc", "a\n\nb\nc\n", "", ""},
-	{`BEGIN { RS="ö" }  { print }`, "1ötwoöthree", "1\ntwo\nthree\n", "", ""},
+	{`BEGIN { RS="ö" }  { print }  # !windows-gawk`, "1ötwoöthree", "1\ntwo\nthree\n", "", ""},
 	{`BEGIN { RS="\\.+" }  { print }`, "1.two..three...4.", "1\ntwo\nthree\n4\n", "", ""},
 	{`BEGIN { RS = "\n|( *[[:upper:]]+ *)" } { print "Record =", $0,"and RT = [" RT "]" }`, // from https://www.gnu.org/software/gawk/manual/html_node/gawk-split-records.html
 		"record 1 AAAA record 2 BBBB record 3\n",
