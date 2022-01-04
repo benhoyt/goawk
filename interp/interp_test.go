@@ -596,18 +596,36 @@ BEGIN { foo(5); bar(10) }
 		"", "", `parse error at 1:46: global var "foo" can't also be a function`, "function"},
 	{`function f(x) { print x, x(); }  BEGIN { f() }`, "", "", `parse error at 1:27: can't call local variable "x" as function`, "function"},
 
-	// Redirected I/O (we give explicit errors, awk and gawk don't)
-	{`BEGIN { print >"out"; getline <"out" }  # !awk !gawk`, "", "", "can't read from writer stream", ""},
-	{`BEGIN { print |"out"; getline <"out" }  # !awk !gawk`, "", "", "can't read from writer stream", ""},
-	{`BEGIN { print >"out"; close("out"); getline <"out"; print >"out" }  # !awk !gawk`, "", "", "can't write to reader stream", ""},
-	{`BEGIN { print >"out"; close("out"); getline <"out"; print |"out" }  # !awk !gawk`, "", "", "can't write to reader stream", ""},
-	// TODO: currently we support "getline var" but not "getline lvalue"
-	// {`BEGIN { getline a[1]; print a[1] }`, "foo", "foo\n", "", ""},
-	// {`BEGIN { getline $1; print $1 }`, "foo", "foo\n", "", ""},
+	// Redirected I/O
+	{`BEGIN { getline a[1]; print a[1] }`, "foo", "foo\n", "", ""},
+	{`BEGIN { getline $1; print $1 }`, "foo", "foo\n", "", ""},
+	{`BEGIN { "echo foo" | getline a[1]; print a[1] }`, "", "foo\n", "", ""},
+	{`BEGIN { "echo foo" | getline $1; print $1 }`, "", "foo\n", "", ""},
 	{`BEGIN { print "foo" |"sort"; print "bar" |"sort" }  # !fuzz`, "", "bar\nfoo\n", "", ""},
 	{`BEGIN { print "foo" |">&2 echo error" }  # !gawk !fuzz`, "", "error\n", "", ""},
 	{`BEGIN { "cat" | getline; print }  # !fuzz`, "bar", "bar\n", "", ""},
 	{`BEGIN { print getline x < "/no/such/file" }  # !fuzz`, "", "-1\n", "", ""},
+	{`BEGIN { print getline "z"; print $0 }`, "foo", "1z\nfoo\n", "", ""},
+	{`BEGIN { print getline x+1; print x }`, "foo", "2\nfoo\n", "", ""},
+	{`BEGIN { print getline (x+1); print $0 }`, "foo", "11\nfoo\n", "", ""},
+	{`BEGIN { print getline foo(); print $0 } function foo() { print "z" }`, "foo", "z\n1\nfoo\n", "", ""},
+	// TODO: these forms don't yet work under GoAWK
+	//{`BEGIN { print("echo foo" | getline x+1); print x }`, "", "2\nfoo\n", "", ""},
+	//{`BEGIN { print("echo foo" | getline $0+1); print }`, "", "2\nfoo\n", "", ""},
+	//{`BEGIN { print("echo foo" | getline ($0+1)); print }`, "", "11\nfoo\n", "", ""},
+	//{`BEGIN { print("echo foo" | getline foo()); print } function foo() { print "z" }`, "", "z\n1\nfoo\n", "", ""},
+
+	// Ensure data returned by getline (in various forms) is treated as numeric string
+	{`BEGIN { getline; print($0==0) }`, "0.0", "1\n", "", ""},
+	{`BEGIN { getline x; print(x==0) }`, "0.0", "1\n", "", ""},
+	{`BEGIN { "echo 0.0" | getline; print($0==0) }`, "", "1\n", "", ""},
+	{`BEGIN { "echo 0.0" | getline x; print(x==0) }`, "", "1\n", "", ""},
+
+	// Redirected I/O errors (we give explicit errors, awk and gawk don't)
+	{`BEGIN { print >"out"; getline <"out" }  # !awk !gawk`, "", "", "can't read from writer stream", ""},
+	{`BEGIN { print |"out"; getline <"out" }  # !awk !gawk`, "", "", "can't read from writer stream", ""},
+	{`BEGIN { print >"out"; close("out"); getline <"out"; print >"out" }  # !awk !gawk`, "", "", "can't write to reader stream", ""},
+	{`BEGIN { print >"out"; close("out"); getline <"out"; print |"out" }  # !awk !gawk`, "", "", "can't write to reader stream", ""},
 
 	// Redirecting to or from a filename of "-" means write to stdout or read from stdin
 	{`BEGIN { print getline x < "-"; print x }`, "a\nb\n", "1\na\n", "", ""},

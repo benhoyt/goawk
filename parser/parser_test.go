@@ -63,10 +63,18 @@ $0 {
     next
     "cmd" |getline
     "cmd" |getline x
+    "cmd" |getline a[1]
+    "cmd" |getline $1
     getline
     getline x
+    (getline x + 1)
+    getline $1
+    getline a[1]
     getline <"file"
     getline x <"file"
+    (getline x <"file" "x")
+    getline $1 <"file"
+    getline a[1] <"file"
     x = 0
     y = z = 0
     b += 1

@@ -453,3 +453,9 @@ func (l *Lexer) choice(ch byte, one, two Token) Token {
 	}
 	return one
 }
+
+// PeekByte returns the next unscanned byte; used when parsing
+// "getline lvalue" expressions. Returns 0 at end of input.
+func (l *Lexer) PeekByte() byte {
+	return l.ch
+}

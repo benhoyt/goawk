@@ -299,7 +299,7 @@ func (e *MultiExpr) String() string {
 // GetlineExpr is an expression read from file or pipe input.
 type GetlineExpr struct {
 	Command Expr
-	Var     *VarExpr
+	Target  Expr
 	File    Expr
 }
 
@@ -309,8 +309,8 @@ func (e *GetlineExpr) String() string {
 		s += e.Command.String() + " |"
 	}
 	s += "getline"
-	if e.Var != nil {
-		s += " " + e.Var.String()
+	if e.Target != nil {
+		s += " " + e.Target.String()
 	}
 	if e.File != nil {
 		s += " <" + e.File.String()
