@@ -175,10 +175,12 @@ func (p *interp) execBytecode(chunk code) error {
 		case opLess:
 			r := p.pop()
 			l := p.pop()
-			if l.isTrueStr() || r.isTrueStr() {
+			ln, lIsStr := l.isTrueStr()
+			rn, rIsStr := r.isTrueStr()
+			if lIsStr || rIsStr {
 				p.push(boolean(p.toString(l) < p.toString(r)))
 			} else {
-				p.push(boolean(l.n < r.n))
+				p.push(boolean(ln < rn))
 			}
 		case opJz:
 			offset := int(int8(opcodes[pc]))
@@ -191,12 +193,14 @@ func (p *interp) execBytecode(chunk code) error {
 			pc++
 			r := p.pop()
 			l := p.pop()
-			if l.isTrueStr() || r.isTrueStr() {
+			ln, lIsStr := l.isTrueStr()
+			rn, rIsStr := r.isTrueStr()
+			if lIsStr || rIsStr {
 				if p.toString(l) > p.toString(r) {
 					pc += offset
 				}
 			} else {
-				if l.n > r.n {
+				if ln > rn {
 					pc += offset
 				}
 			}
@@ -205,12 +209,14 @@ func (p *interp) execBytecode(chunk code) error {
 			pc++
 			r := p.pop()
 			l := p.pop()
-			if l.isTrueStr() || r.isTrueStr() {
+			ln, lIsStr := l.isTrueStr()
+			rn, rIsStr := r.isTrueStr()
+			if lIsStr || rIsStr {
 				if p.toString(l) >= p.toString(r) {
 					pc += offset
 				}
 			} else {
-				if l.n >= r.n {
+				if ln >= rn {
 					pc += offset
 				}
 			}
