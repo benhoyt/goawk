@@ -229,6 +229,9 @@ func TestGAWK(t *testing.T) {
 		"sigpipe1":     true, // probable race condition: sometimes fails, sometimes passes
 
 		"parse1": true, // incorrect parsing of $$a++++ (see TODOs in interp_test.go too)
+
+		"rscompat": true, // GoAWK allows multi-char RS by default
+		"rsstart2": true, // GoAWK ^ and $ anchors match beginning and end of line, not file (unlike Gawk)
 	}
 
 	dontRunOnWindows := map[string]bool{

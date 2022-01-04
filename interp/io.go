@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -184,14 +185,19 @@ func (p *interp) getInputScannerPipe(name string) (*bufio.Scanner, error) {
 // Create a new buffered Scanner for reading input records
 func (p *interp) newScanner(input io.Reader) *bufio.Scanner {
 	scanner := bufio.NewScanner(input)
-	switch p.recordSep {
-	case "\n":
+	switch {
+	case p.recordSep == "\n":
 		// Scanner default is to split on newlines
-	case "":
+	case p.recordSep == "":
 		// Empty string for RS means split on \n\n (blank lines)
-		scanner.Split(scanLinesBlank)
-	default:
+		splitter := blankLineSplitter{&p.recordTerminator}
+		scanner.Split(splitter.scan)
+	case len(p.recordSep) == 1:
 		splitter := byteSplitter{p.recordSep[0]}
+		scanner.Split(splitter.scan)
+	case utf8.RuneCountInString(p.recordSep) >= 1:
+		// Multi-byte and single char but multi-byte RS use regex
+		splitter := regexSplitter{p.recordSepRegex, &p.recordTerminator}
 		scanner.Split(splitter.scan)
 	}
 	buffer := make([]byte, inputBufSize)
@@ -215,7 +221,11 @@ func dropLF(data []byte) []byte {
 	return data
 }
 
-func scanLinesBlank(data []byte, atEOF bool) (advance int, token []byte, err error) {
+type blankLineSplitter struct {
+	terminator *string
+}
+
+func (s blankLineSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	if atEOF && len(data) == 0 {
 		return 0, nil, nil
 	}
@@ -242,6 +252,7 @@ func scanLinesBlank(data []byte, atEOF bool) (advance int, token []byte, err err
 			for i < len(data) && (data[i] == '\n' || data[i] == '\r') {
 				i++ // Skip newlines at end of record
 			}
+			*s.terminator = string(data[end:i])
 			return i, dropCR(data[start:end]), nil
 		}
 		if i+2 < len(data) && data[i+1] == '\r' && data[i+2] == '\n' {
@@ -249,20 +260,23 @@ func scanLinesBlank(data []byte, atEOF bool) (advance int, token []byte, err err
 			for i < len(data) && (data[i] == '\n' || data[i] == '\r') {
 				i++ // Skip newlines at end of record
 			}
+			*s.terminator = string(data[end:i])
 			return i, dropCR(data[start:end]), nil
 		}
 	}
 
 	// If we're at EOF, we have one final record; return it
 	if atEOF {
-		return len(data), dropCR(dropLF(data[start:])), nil
+		token = dropCR(dropLF(data[start:]))
+		*s.terminator = string(data[len(token):])
+		return len(data), token, nil
 	}
 
 	// Request more data
 	return 0, nil, nil
 }
 
-// Splitter function that splits records on the given separator byte
+// Splitter that splits records on the given separator byte
 type byteSplitter struct {
 	sep byte
 }
@@ -273,10 +287,36 @@ func (s byteSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, 
 	}
 	if i := bytes.IndexByte(data, s.sep); i >= 0 {
 		// We have a full sep-terminated record
-		return i + 1, data[0:i], nil
+		return i + 1, data[:i], nil
 	}
 	// If at EOF, we have a final, non-terminated record; return it
 	if atEOF {
+		return len(data), data, nil
+	}
+	// Request more data
+	return 0, nil, nil
+}
+
+// Splitter that splits records on the given regular expression
+type regexSplitter struct {
+	re         *regexp.Regexp
+	terminator *string
+}
+
+func (s regexSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	if atEOF && len(data) == 0 {
+		return 0, nil, nil
+	}
+	loc := s.re.FindIndex(data)
+	// Note: for a regex such as "()", loc[0]==loc[1]. Gawk behavior for this
+	// case is to match the entire input.
+	if loc != nil && loc[0] != loc[1] {
+		*s.terminator = string(data[loc[0]:loc[1]]) // set RT special variable
+		return loc[1], data[:loc[0]], nil
+	}
+	// If at EOF, we have a final, non-terminated record; return it
+	if atEOF {
+		*s.terminator = ""
 		return len(data), data, nil
 	}
 	// Request more data
@@ -305,15 +345,16 @@ func (p *interp) ensureFields() {
 	}
 	p.haveFields = true
 
-	if p.fieldSep == " " {
+	switch {
+	case p.fieldSep == " ":
 		// FS space (default) means split fields on any whitespace
 		p.fields = strings.Fields(p.line)
-	} else if p.line == "" {
+	case p.line == "":
 		p.fields = nil
-	} else if utf8.RuneCountInString(p.fieldSep) <= 1 {
+	case utf8.RuneCountInString(p.fieldSep) <= 1:
 		// 1-char FS is handled as plain split (not regex)
 		p.fields = strings.Split(p.line, p.fieldSep)
-	} else {
+	default:
 		// Split on FS as a regex
 		p.fields = p.fieldSepRegex.Split(p.line, -1)
 	}
@@ -399,11 +440,13 @@ func (p *interp) nextLine() (string, error) {
 			}
 			p.scanner = p.newScanner(p.input)
 		}
+		p.recordTerminator = p.recordSep // will be overridden if RS is "" or multiple chars
 		if p.scanner.Scan() {
 			// We scanned some input, break and return it
 			break
 		}
-		if err := p.scanner.Err(); err != nil {
+		err := p.scanner.Err()
+		if err != nil {
 			return "", fmt.Errorf("error reading from input: %s", err)
 		}
 		// Signal loop to move onto next file
