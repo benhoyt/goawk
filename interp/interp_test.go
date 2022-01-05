@@ -306,7 +306,7 @@ Record = record 2 and RT = [ BBBB ]
 Record = record 3 and RT = [
 ]
 `, "", ""},
-	{`BEGIN { RS = "\n|( *[[:upper:]]+ *)" } { print "Record =", $0,"and RT = [" RT "]" }`, // from https://www.gnu.org/software/gawk/manual/html_node/gawk-split-records.html
+	{`BEGIN { RS = "\n|( *[[:upper:]]+ *)" } { print "Record =", $0,"and RT = [" RT "]" }`,
 		"record 1 AAAA record 2 BBBB record 3",
 		`Record = record 1 and RT = [ AAAA ]
 Record = record 2 and RT = [ BBBB ]

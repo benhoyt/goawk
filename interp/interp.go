@@ -24,6 +24,7 @@ import (
 	"unicode/utf8"
 
 	. "github.com/benhoyt/goawk/internal/ast"
+	"github.com/benhoyt/goawk/internal/bytecode"
 	. "github.com/benhoyt/goawk/lexer"
 	. "github.com/benhoyt/goawk/parser"
 )
@@ -121,6 +122,9 @@ type interp struct {
 	regexCache  map[string]*regexp.Regexp
 	formatCache map[string]cachedFormat
 	bytes       bool
+
+	// TODO: for bytecode interpreter
+	st []value
 }
 
 // Various const configuration. Could make these part of Config if
@@ -315,6 +319,17 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	p.commands = make(map[string]*exec.Cmd)
 	p.scanners = make(map[string]*bufio.Scanner)
 	defer p.closeAll()
+
+	// TODO
+	bp := bytecode.Compile(program)
+	err = bp.Disassemble(os.Stdout)
+	if err != nil {
+		return 0, err
+	}
+	err = p.executeCode(bp, bp.Begin)
+	if err != nil {
+		return 0, err
+	}
 
 	// Execute the program! BEGIN, then pattern/actions, then END
 	err = p.execBeginEnd(program.Begin)
