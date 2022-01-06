@@ -9,6 +9,7 @@ const (
 	Num   // numIndex
 	Str   // strIndex
 	Regex // regexIndex
+	Dupe
 	Drop
 
 	// Fetch a field, variable, or array item
@@ -48,12 +49,12 @@ const (
 	PostDecrArrayLocal
 
 	// Augmented assignment (also used for pre-increment and pre-decrement)
-	AugAssignField       // op
-	AugAssignGlobal      // op, index
-	AugAssignLocal       // op, index
-	AugAssignSpecial     // op, index
-	AugAssignArrayGlobal // op, index
-	AugAssignArrayLocal  // op, index
+	AugAssignField       // operation
+	AugAssignGlobal      // operation, index
+	AugAssignLocal       // operation, index
+	AugAssignSpecial     // operation, index
+	AugAssignArrayGlobal // operation, index
+	AugAssignArrayLocal  // operation, index
 
 	// Binary operators
 	Add
@@ -78,9 +79,15 @@ const (
 	UnaryPlus
 
 	// Control flow
-	Jmp
-	Jz
-	Jnz
+	Jump
+	JumpFalse
+	JumpTrue
+	JumpNumEquals
+	JumpNumNotEquals
+	JumpNumLess
+	JumpNumGreater
+	JumpNumLessOrEqual
+	JumpNumGreaterOrEqual
 	ForIn
 	CallBuiltin // func, numArgs
 	CallUser    // index, numArgs
@@ -90,8 +97,10 @@ const (
 	Exit
 
 	// Other operations
-	Print  // numArgs
-	Printf // numArgs
+	Print          // numArgs
+	PrintRedirect  // numArgs, redirect
+	Printf         // numArgs
+	PrintfRedirect // numArgs, redirect
 	Getline
 	GetlineFile
 	GetlineCommand

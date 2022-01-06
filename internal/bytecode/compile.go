@@ -5,6 +5,7 @@ import (
 	"regexp"
 
 	"github.com/benhoyt/goawk/internal/ast"
+	"github.com/benhoyt/goawk/lexer"
 	"github.com/benhoyt/goawk/parser"
 )
 
@@ -77,17 +78,85 @@ func (c *compiler) stmt(stmt ast.Stmt) []Opcode {
 	var code []Opcode
 	switch s := stmt.(type) {
 	case *ast.ExprStmt:
+		// Optimize assignment expressions to avoid Dupe and Drop
+		switch expr := s.Expr.(type) {
+		case *ast.AssignExpr:
+			switch left := expr.Left.(type) {
+			case *ast.VarExpr:
+				if left.Scope == ast.ScopeGlobal {
+					if left.Index > 255 {
+						panic("TODO: ExprStmt assign index too big")
+					}
+					code = append(code, c.expr(expr.Right)...)
+					code = append(code, AssignGlobal, Opcode(left.Index))
+					return code
+				}
+			}
+		case *ast.IncrExpr:
+			if !expr.Pre {
+				switch target := expr.Expr.(type) {
+				case *ast.VarExpr:
+					if target.Scope == ast.ScopeGlobal {
+						if target.Index > 255 {
+							panic("TODO: ExprStmt incr index too big")
+						}
+						code = append(code, PostIncrGlobal, Opcode(target.Index))
+						return code
+					}
+				}
+			}
+		case *ast.AugAssignExpr:
+			switch left := expr.Left.(type) {
+			case *ast.VarExpr:
+				if left.Scope == ast.ScopeGlobal {
+					if left.Index > 255 {
+						panic("TODO: ExprStmt aug assign index too big")
+					}
+					code = append(code, c.expr(expr.Right)...)
+					code = append(code, AugAssignGlobal, Opcode(expr.Op), Opcode(left.Index))
+					return code
+				}
+			}
+		}
 		code = append(code, c.expr(s.Expr)...)
 		code = append(code, Drop)
 
-	//case *ast.PrintStmt:
-	//
+	case *ast.PrintStmt:
+		if len(s.Args) > 255 {
+			panic("TODO: too many args to print")
+		}
+		for _, a := range s.Args {
+			code = append(code, c.expr(a)...)
+		}
+		if s.Redirect == lexer.ILLEGAL {
+			code = append(code, Print, Opcode(len(s.Args)))
+		} else {
+			code = append(code, c.expr(s.Dest)...)
+			code = append(code, PrintRedirect, Opcode(len(s.Args)), Opcode(s.Redirect))
+		}
+
 	//case *ast.PrintfStmt:
 	//
 	//case *ast.IfStmt:
-	//
-	//case *ast.ForStmt:
-	//
+
+	case *ast.ForStmt:
+		if s.Pre != nil {
+			code = append(code, c.stmt(s.Pre)...)
+		}
+		// TODO: optimize like Python 3.10, by including cond at start and end of loop
+		//c.backwardMark()
+		if s.Cond != nil {
+			code = append(code, c.expr(s.Cond)...)
+			//code = c.forwardJump(code, Jz)
+			//			code = append(code, Jz, 0)
+		}
+		code = append(code, c.stmts(s.Body)...)
+		if s.Post != nil {
+			code = append(code, c.stmt(s.Post)...)
+		}
+		//code = c.backwardJump(code, Jmp)
+		//c.forwardResolve()
+
 	//case *ast.ForInStmt:
 	//
 	//case *ast.ReturnStmt:
@@ -116,14 +185,14 @@ func (c *compiler) expr(expr ast.Expr) []Opcode {
 	var code []Opcode
 	switch e := expr.(type) {
 	case *ast.NumExpr:
-		if len(c.nums) >= 256 {
+		if len(c.nums) > 255 {
 			panic("TODO: too many nums!")
 		}
 		code = append(code, Num, Opcode(len(c.nums)))
 		c.nums = append(c.nums, e.Value)
 
 	case *ast.StrExpr:
-		if len(c.strs) >= 256 {
+		if len(c.strs) > 255 {
 			panic("TODO: too many strs!")
 		}
 		code = append(code, Str, Opcode(len(c.strs)))
@@ -131,21 +200,87 @@ func (c *compiler) expr(expr ast.Expr) []Opcode {
 
 	//case *ast.FieldExpr:
 	//
-	//case *ast.VarExpr:
-	//
+
+	case *ast.VarExpr:
+		if e.Index > 255 {
+			panic("TODO: VarExpr index too big")
+		}
+		switch e.Scope {
+		case ast.ScopeGlobal:
+			code = append(code, Global, Opcode(e.Index))
+		case ast.ScopeLocal:
+		default: // ast.ScopeSpecial
+		}
+
 	//case *ast.RegExpr:
 	//
-	//case *ast.BinaryExpr:
-	//	switch e.Op {
-	//	case lexer.AND:
-	//	case lexer.OR:
-	//	default:
-	//	}
-	//
+
+	case *ast.BinaryExpr:
+		switch e.Op {
+		case lexer.AND:
+			panic("TODO: &&")
+		case lexer.OR:
+			panic("TODO: ||")
+		}
+		code = append(code, c.expr(e.Left)...)
+		code = append(code, c.expr(e.Right)...)
+		var opcode Opcode
+		switch e.Op {
+		case lexer.ADD:
+			opcode = Add
+		case lexer.SUB:
+			opcode = Sub
+		case lexer.EQUALS:
+			opcode = Equals
+		case lexer.LESS:
+			opcode = Less
+		case lexer.LTE:
+			opcode = LessOrEqual
+		case lexer.CONCAT:
+			opcode = Concat
+		case lexer.MUL:
+			opcode = Mul
+		case lexer.DIV:
+			opcode = Div
+		case lexer.GREATER:
+			opcode = Greater
+		case lexer.GTE:
+			opcode = GreaterOrEqual
+		case lexer.NOT_EQUALS:
+			opcode = NotEquals
+		case lexer.MATCH:
+			opcode = Match
+		case lexer.NOT_MATCH:
+			opcode = NotMatch
+		case lexer.POW:
+			opcode = Pow
+		case lexer.MOD:
+			opcode = Mod
+		default:
+			panic(fmt.Sprintf("unexpected binary operation: %s", e.Op))
+		}
+		code = append(code, opcode)
+
 	//case *ast.IncrExpr:
-	//
-	//case *ast.AssignExpr:
-	//
+
+	case *ast.AssignExpr:
+		code = append(code, c.expr(e.Right)...)
+		code = append(code, Dupe)
+		switch left := e.Left.(type) {
+		case *ast.VarExpr:
+			if left.Index > 255 {
+				panic("TODO: AssignExpr var index too big")
+			}
+			switch left.Scope {
+			case ast.ScopeGlobal:
+				code = append(code, AssignGlobal, Opcode(left.Index))
+			case ast.ScopeLocal:
+			default: // ast.ScopeSpecial
+			}
+		case *ast.IndexExpr:
+		default: // *ast.FieldExpr
+		}
+
 	//case *ast.AugAssignExpr:
 	//
 	//case *ast.CondExpr:

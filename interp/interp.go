@@ -322,6 +322,30 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 
 	// TODO
 	bp := bytecode.Compile(program)
+	//bp := &bytecode.Program{
+	//	Begin: []bytecode.Opcode{
+	//		// loop:
+	//		// s += i
+	//		bytecode.Global, 0,
+	//		bytecode.AugAssignGlobal, bytecode.Opcode(ADD), 1,
+	//
+	//		// i++
+	//		bytecode.PostIncrGlobal, 0,
+	//
+	//		// if i<5 jmp loop
+	//		bytecode.Global, 0,
+	//		bytecode.Num, 1,
+	//		bytecode.JumpNumLess, 256 - 13,
+	//		//bytecode.Less,
+	//		//bytecode.Jnz, 256 - 14,
+	//
+	//		// print s
+	//		bytecode.Global, 1,
+	//		bytecode.Print, 1,
+	//	},
+	//	ScalarNames: []string{"i", "s"},
+	//	Nums:        []float64{0, 100000000},
+	//}
 	err = bp.Disassemble(os.Stdout)
 	if err != nil {
 		return 0, err
@@ -330,6 +354,7 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	return p.exitStatus, nil
 
 	// Execute the program! BEGIN, then pattern/actions, then END
 	err = p.execBeginEnd(program.Begin)
