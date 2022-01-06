@@ -72,11 +72,11 @@ func (p *interp) executeCode(prog *bytecode.Program, code []bytecode.Opcode) err
 			p.push(v)
 
 		case bytecode.Jump:
-			offset := int8(code[i])
+			offset := int32(code[i])
 			i += 1 + int(offset)
 
 		case bytecode.JumpFalse:
-			offset := int8(code[i])
+			offset := int32(code[i])
 			v := p.pop()
 			if !v.boolean() {
 				i += 1 + int(offset)
@@ -85,7 +85,7 @@ func (p *interp) executeCode(prog *bytecode.Program, code []bytecode.Opcode) err
 			}
 
 		case bytecode.JumpTrue:
-			offset := int8(code[i])
+			offset := int32(code[i])
 			v := p.pop()
 			if v.boolean() {
 				i += 1 + int(offset)
@@ -94,7 +94,7 @@ func (p *interp) executeCode(prog *bytecode.Program, code []bytecode.Opcode) err
 			}
 
 		case bytecode.JumpNumLess:
-			offset := int8(code[i])
+			offset := int32(code[i])
 			r := p.pop()
 			l := p.pop()
 			if l.num() < r.num() {

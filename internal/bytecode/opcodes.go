@@ -1,6 +1,6 @@
 package bytecode
 
-type Opcode uint8
+type Opcode uint32
 
 const (
 	Nop Opcode = iota

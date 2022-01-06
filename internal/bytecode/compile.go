@@ -84,9 +84,6 @@ func (c *compiler) stmt(stmt ast.Stmt) []Opcode {
 			switch left := expr.Left.(type) {
 			case *ast.VarExpr:
 				if left.Scope == ast.ScopeGlobal {
-					if left.Index > 255 {
-						panic("TODO: ExprStmt assign index too big")
-					}
 					code = append(code, c.expr(expr.Right)...)
 					code = append(code, AssignGlobal, Opcode(left.Index))
 					return code
@@ -97,9 +94,6 @@ func (c *compiler) stmt(stmt ast.Stmt) []Opcode {
 				switch target := expr.Expr.(type) {
 				case *ast.VarExpr:
 					if target.Scope == ast.ScopeGlobal {
-						if target.Index > 255 {
-							panic("TODO: ExprStmt incr index too big")
-						}
 						code = append(code, PostIncrGlobal, Opcode(target.Index))
 						return code
 					}
@@ -109,9 +103,6 @@ func (c *compiler) stmt(stmt ast.Stmt) []Opcode {
 			switch left := expr.Left.(type) {
 			case *ast.VarExpr:
 				if left.Scope == ast.ScopeGlobal {
-					if left.Index > 255 {
-						panic("TODO: ExprStmt aug assign index too big")
-					}
 					code = append(code, c.expr(expr.Right)...)
 					code = append(code, AugAssignGlobal, Opcode(expr.Op), Opcode(left.Index))
 					return code
@@ -122,9 +113,6 @@ func (c *compiler) stmt(stmt ast.Stmt) []Opcode {
 		code = append(code, Drop)
 
 	case *ast.PrintStmt:
-		if len(s.Args) > 255 {
-			panic("TODO: too many args to print")
-		}
 		for _, a := range s.Args {
 			code = append(code, c.expr(a)...)
 		}
@@ -170,33 +158,21 @@ func (c *compiler) stmt(stmt ast.Stmt) []Opcode {
 						code = append(code, c.expr(cond.Left)...)
 						code = append(code, c.expr(cond.Right)...)
 						offset := loopStart - (len(code) + 2)
-						if offset > 255 {
-							panic("TODO: for jump offset too big")
-						}
-						code = append(code, JumpNumLess, Opcode(int8(offset)))
+						code = append(code, JumpNumLess, Opcode(int32(offset)))
 					}
 				}
 			}
 			if !done {
 				code = append(code, c.expr(s.Cond)...)
 				offset := loopStart - (len(code) + 2)
-				if offset > 255 {
-					panic("TODO: for jump offset too big")
-				}
-				code = append(code, JumpTrue, Opcode(int8(offset)))
+				code = append(code, JumpTrue, Opcode(int32(offset)))
 			}
 
 			offset := len(code) - (forwardMark + 2)
-			if offset > 255 {
-				panic("TODO: for jump offset too big")
-			}
-			code[forwardMark+1] = Opcode(int8(offset))
+			code[forwardMark+1] = Opcode(int32(offset))
 		} else {
 			offset := loopStart - (len(code) + 2)
-			if offset > 255 {
-				panic("TODO: for jump offset too big")
-			}
-			code = append(code, Jump, Opcode(int8(offset)))
+			code = append(code, Jump, Opcode(int32(offset)))
 		}
 
 	//case *ast.ForInStmt:
@@ -227,16 +203,10 @@ func (c *compiler) expr(expr ast.Expr) []Opcode {
 	var code []Opcode
 	switch e := expr.(type) {
 	case *ast.NumExpr:
-		if len(c.nums) > 255 {
-			panic("TODO: too many nums!")
-		}
 		code = append(code, Num, Opcode(len(c.nums)))
 		c.nums = append(c.nums, e.Value)
 
 	case *ast.StrExpr:
-		if len(c.strs) > 255 {
-			panic("TODO: too many strs!")
-		}
 		code = append(code, Str, Opcode(len(c.strs)))
 		c.strs = append(c.strs, e.Value)
 
@@ -244,9 +214,6 @@ func (c *compiler) expr(expr ast.Expr) []Opcode {
 	//
 
 	case *ast.VarExpr:
-		if e.Index > 255 {
-			panic("TODO: VarExpr index too big")
-		}
 		switch e.Scope {
 		case ast.ScopeGlobal:
 			code = append(code, Global, Opcode(e.Index))
@@ -310,9 +277,6 @@ func (c *compiler) expr(expr ast.Expr) []Opcode {
 		code = append(code, Dupe)
 		switch left := e.Left.(type) {
 		case *ast.VarExpr:
-			if left.Index > 255 {
-				panic("TODO: AssignExpr var index too big")
-			}
 			switch left.Scope {
 			case ast.ScopeGlobal:
 				code = append(code, AssignGlobal, Opcode(left.Index))

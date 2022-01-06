@@ -75,22 +75,22 @@ func (p *Program) disassembleCode(w io.Writer, code []Opcode) {
 			writeOpcodef(w, addr, "Less")
 
 		case Jump:
-			offset := int8(code[i])
+			offset := int32(code[i])
 			i++
 			writeOpcodef(w, addr, "Jump %04x", i+int(offset))
 
 		case JumpFalse:
-			offset := int8(code[i])
+			offset := int32(code[i])
 			i++
 			writeOpcodef(w, addr, "JumpFalse %04x", i+int(offset))
 
 		case JumpTrue:
-			offset := int8(code[i])
+			offset := int32(code[i])
 			i++
 			writeOpcodef(w, addr, "JumpTrue %04x", i+int(offset))
 
 		case JumpNumLess:
-			offset := int8(code[i])
+			offset := int32(code[i])
 			i++
 			writeOpcodef(w, addr, "JumpNumLess %04x", i+int(offset))
 
