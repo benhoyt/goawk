@@ -143,19 +143,61 @@ func (c *compiler) stmt(stmt ast.Stmt) []Opcode {
 		if s.Pre != nil {
 			code = append(code, c.stmt(s.Pre)...)
 		}
-		// TODO: optimize like Python 3.10, by including cond at start and end of loop
-		//c.backwardMark()
+		// Optimization: include condition once before loop and at the end
+		var forwardMark int
 		if s.Cond != nil {
 			code = append(code, c.expr(s.Cond)...)
-			//code = c.forwardJump(code, Jz)
-			//			code = append(code, Jz, 0)
+			forwardMark = len(code)
+			code = append(code, JumpFalse, 0)
 		}
+
+		loopStart := len(code)
 		code = append(code, c.stmts(s.Body)...)
 		if s.Post != nil {
 			code = append(code, c.stmt(s.Post)...)
 		}
-		//code = c.backwardJump(code, Jmp)
-		//c.forwardResolve()
+
+		if s.Cond != nil {
+			// TODO: if s.Cond is BinaryExpr num == != < > <= >= or str == != then use JumpLess and similar optimizations
+
+			done := false
+			switch cond := s.Cond.(type) {
+			case *ast.BinaryExpr:
+				switch cond.Op {
+				case lexer.LESS:
+					if _, ok := cond.Right.(*ast.NumExpr); ok {
+						done = true
+						code = append(code, c.expr(cond.Left)...)
+						code = append(code, c.expr(cond.Right)...)
+						offset := loopStart - (len(code) + 2)
+						if offset > 255 {
+							panic("TODO: for jump offset too big")
+						}
+						code = append(code, JumpNumLess, Opcode(int8(offset)))
+					}
+				}
+			}
+			if !done {
+				code = append(code, c.expr(s.Cond)...)
+				offset := loopStart - (len(code) + 2)
+				if offset > 255 {
+					panic("TODO: for jump offset too big")
+				}
+				code = append(code, JumpTrue, Opcode(int8(offset)))
+			}
+
+			offset := len(code) - (forwardMark + 2)
+			if offset > 255 {
+				panic("TODO: for jump offset too big")
+			}
+			code[forwardMark+1] = Opcode(int8(offset))
+		} else {
+			offset := loopStart - (len(code) + 2)
+			if offset > 255 {
+				panic("TODO: for jump offset too big")
+			}
+			code = append(code, Jump, Opcode(int8(offset)))
+		}
 
 	//case *ast.ForInStmt:
 	//
