@@ -178,6 +178,10 @@ func (d *disassembler) disassemble(prefix string) error {
 			offset := int32(d.fetch())
 			d.writeOpf("JumpNumLess 0x%04x", d.ip+int(offset))
 
+		case JumpNumGreater:
+			offset := int32(d.fetch())
+			d.writeOpf("JumpNumGreater 0x%04x", d.ip+int(offset))
+
 		case JumpNumLessOrEqual:
 			offset := int32(d.fetch())
 			d.writeOpf("JumpNumLessOrEqual 0x%04x", d.ip+int(offset))

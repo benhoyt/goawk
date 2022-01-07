@@ -190,6 +190,16 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				i++
 			}
 
+		case bytecode.JumpNumGreater:
+			offset := int32(code[i])
+			r := p.pop()
+			l := p.pop()
+			if l.num() > r.num() {
+				i += 1 + int(offset)
+			} else {
+				i++
+			}
+
 		case bytecode.JumpNumLessOrEqual:
 			offset := int32(code[i])
 			r := p.pop()

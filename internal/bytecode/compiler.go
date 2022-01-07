@@ -174,15 +174,14 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 	//case *ast.PrintfStmt:
 
 	case *ast.IfStmt:
-		// TODO: optimize with JumpNumLess etc
 		if len(s.Else) == 0 {
-			c.expr(s.Cond)
-			ifMark := c.jumpForward(JumpFalse)
+			jumpOp := c.cond(s.Cond, true)
+			ifMark := c.jumpForward(jumpOp)
 			c.stmts(s.Body)
 			c.patchForward(ifMark)
 		} else {
-			c.expr(s.Cond)
-			ifMark := c.jumpForward(JumpFalse)
+			jumpOp := c.cond(s.Cond, true)
+			ifMark := c.jumpForward(jumpOp)
 			c.stmts(s.Body)
 			elseMark := c.jumpForward(Jump)
 			c.patchForward(ifMark)
@@ -197,9 +196,8 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		// Optimization: include condition once before loop and at the end
 		var mark int
 		if s.Cond != nil {
-			// TODO: could do the BinaryExpr optimization below here as well
-			c.expr(s.Cond)
-			mark = c.jumpForward(JumpFalse)
+			jumpOp := c.cond(s.Cond, true)
+			mark = c.jumpForward(jumpOp)
 		}
 
 		loopStart := c.labelBackward()
@@ -210,31 +208,8 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 
 		if s.Cond != nil {
 			// TODO: if s.Cond is BinaryExpr num == != < > <= >= or str == != then use JumpLess and similar optimizations
-			done := false
-			switch cond := s.Cond.(type) {
-			case *ast.BinaryExpr:
-				switch cond.Op {
-				case lexer.LESS:
-					if _, ok := cond.Right.(*ast.NumExpr); ok {
-						done = true
-						c.expr(cond.Left)
-						c.expr(cond.Right)
-						c.jumpBackward(loopStart, JumpNumLess)
-					}
-				case lexer.LTE:
-					//if _, ok := cond.Right.(*ast.NumExpr); ok { // TODO: or number special variable like NF
-					done = true
-					c.expr(cond.Left)
-					c.expr(cond.Right)
-					c.jumpBackward(loopStart, JumpNumLessOrEqual)
-					//}
-				}
-			}
-			if !done {
-				c.expr(s.Cond)
-				c.jumpBackward(loopStart, JumpTrue)
-			}
-
+			jumpOp := c.cond(s.Cond, false)
+			c.jumpBackward(loopStart, jumpOp)
 			c.patchForward(mark)
 		} else {
 			c.jumpBackward(loopStart, Jump)
@@ -298,6 +273,44 @@ func (c *compiler) jumpBackward(label int, ops ...Op) {
 	}
 	c.add(ops...)
 	c.add(Op(int32(offset)))
+}
+
+func (c *compiler) cond(expr ast.Expr, invert bool) Op {
+	var jumpOp Op
+	switch cond := expr.(type) {
+	case *ast.BinaryExpr:
+		switch cond.Op {
+		case lexer.LESS:
+			if _, ok := cond.Right.(*ast.NumExpr); ok {
+				c.expr(cond.Left)
+				c.expr(cond.Right)
+				if invert {
+					jumpOp = JumpNumGreaterOrEqual
+				} else {
+					jumpOp = JumpNumLess
+				}
+			}
+		case lexer.LTE:
+			//if _, ok := cond.Right.(*ast.NumExpr); ok { // TODO: or number special variable like NF
+			c.expr(cond.Left)
+			c.expr(cond.Right)
+			if invert {
+				jumpOp = JumpNumGreater
+			} else {
+				jumpOp = JumpNumLessOrEqual
+			}
+			//}
+		}
+	}
+	if jumpOp == Nop {
+		c.expr(expr)
+		if invert {
+			jumpOp = JumpFalse
+		} else {
+			jumpOp = JumpTrue
+		}
+	}
+	return jumpOp
 }
 
 func (c *compiler) expr(expr ast.Expr) {
