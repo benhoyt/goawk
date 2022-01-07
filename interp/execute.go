@@ -2,14 +2,45 @@ package interp
 
 import (
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/internal/bytecode"
 	"github.com/benhoyt/goawk/lexer"
+	"github.com/benhoyt/goawk/parser"
 )
 
-func (p *interp) executeCode(prog *bytecode.Program, code []bytecode.Op) error {
+// ExecBytecode... TODO
+func ExecBytecode(program *parser.Program, config *Config, byteProg *bytecode.Program) (int, error) {
+	p, err := execInit(program, config)
+	if err != nil {
+		return 0, err
+	}
+	defer p.closeAll()
+
+	// Execute the program! BEGIN, then pattern/actions, then END
+	err = p.execBytecode(byteProg, byteProg.Begin)
+	if err != nil && err != errExit {
+		return 0, err
+	}
+	if program.Actions == nil && program.End == nil {
+		return p.exitStatus, nil
+	}
+	if err != errExit {
+		err = p.execBytecodeActions(byteProg, byteProg.Actions)
+		if err != nil && err != errExit {
+			return 0, err
+		}
+	}
+	err = p.execBytecode(byteProg, byteProg.End)
+	if err != nil && err != errExit {
+		return 0, err
+	}
+	return p.exitStatus, nil
+}
+
+func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) error {
 	for i := 0; i < len(code); {
 		op := code[i]
 		i++
@@ -20,12 +51,12 @@ func (p *interp) executeCode(prog *bytecode.Program, code []bytecode.Op) error {
 		case bytecode.Num:
 			index := code[i]
 			i++
-			p.push(num(prog.Nums[index]))
+			p.push(num(byteProg.Nums[index]))
 
 		case bytecode.Str:
 			index := code[i]
 			i++
-			p.push(str(prog.Strs[index]))
+			p.push(str(byteProg.Strs[index]))
 
 		case bytecode.Dupe:
 			p.push(p.st[len(p.st)-1])
@@ -166,7 +197,10 @@ func (p *interp) executeCode(prog *bytecode.Program, code []bytecode.Op) error {
 				// "print" with no args is equivalent to "print $0"
 				line = p.line
 			}
-			return p.printLine(p.output, line)
+			err := p.printLine(p.output, line)
+			if err != nil {
+				return err
+			}
 
 		case bytecode.CallBuiltin:
 			function := code[i]
@@ -194,4 +228,79 @@ func (p *interp) pop() value {
 	v := p.st[last]
 	p.st = p.st[:last]
 	return v
+}
+
+// Execute pattern-action blocks (may be multiple)
+func (p *interp) execBytecodeActions(byteProg *bytecode.Program, actions []bytecode.Action) error {
+	inRange := make([]bool, len(actions))
+lineLoop:
+	for {
+		// Read and setup next line of input
+		line, err := p.nextLine()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		p.setLine(line, false)
+
+		// Execute all the pattern-action blocks for each line
+		for i, action := range actions {
+			// First determine whether the pattern matches
+			matched := false
+			switch len(action.Pattern) {
+			case 0:
+				// No pattern is equivalent to pattern evaluating to true
+				matched = true
+			case 1:
+				// Single boolean pattern
+				err := p.execBytecode(byteProg, action.Pattern[0])
+				if err != nil {
+					return err
+				}
+				matched = p.pop().boolean()
+			case 2:
+				// Range pattern (matches between start and stop lines)
+				if !inRange[i] {
+					err := p.execBytecode(byteProg, action.Pattern[0])
+					if err != nil {
+						return err
+					}
+					inRange[i] = p.pop().boolean()
+				}
+				matched = inRange[i]
+				if inRange[i] {
+					err := p.execBytecode(byteProg, action.Pattern[1])
+					if err != nil {
+						return err
+					}
+					inRange[i] = !p.pop().boolean()
+				}
+			}
+			if !matched {
+				continue
+			}
+
+			// No action is equivalent to { print $0 }
+			if len(action.Body) > 0 {
+				err := p.printLine(p.output, p.line)
+				if err != nil {
+					return err
+				}
+				continue
+			}
+
+			// Execute the body statements
+			err := p.execBytecode(byteProg, action.Body)
+			if err == errNext {
+				// "next" statement skips straight to next line
+				continue lineLoop
+			}
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

@@ -21,18 +21,39 @@ func (p *Program) Disassemble(writer io.Writer) error {
 	}
 
 	for _, action := range p.Actions {
-		if action.Pattern != nil {
+		switch len(action.Pattern) {
+		case 0:
+		case 1:
 			d := &disassembler{
 				program: p,
 				writer:  writer,
-				code:    action.Pattern,
+				code:    action.Pattern[0],
 			}
-			err := d.disassemble("pattern")
+			err := d.disassemble("match pattern")
+			if err != nil {
+				return err
+			}
+		case 2:
+			d := &disassembler{
+				program: p,
+				writer:  writer,
+				code:    action.Pattern[0],
+			}
+			err := d.disassemble("start pattern")
+			if err != nil {
+				return err
+			}
+			d = &disassembler{
+				program: p,
+				writer:  writer,
+				code:    action.Pattern[1],
+			}
+			err = d.disassemble("stop pattern")
 			if err != nil {
 				return err
 			}
 		}
-		if action.Body != nil {
+		if len(action.Body) > 0 {
 			d := &disassembler{
 				program: p,
 				writer:  writer,

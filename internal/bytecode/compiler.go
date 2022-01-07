@@ -22,7 +22,7 @@ type Program struct {
 }
 
 type Action struct {
-	Pattern []Op
+	Pattern [][]Op
 	Body    []Op
 }
 
@@ -41,18 +41,25 @@ func Compile(prog *parser.Program) *Program {
 		c.stmts(stmts)
 		p.Begin = append(p.Begin, c.finish()...)
 	}
+
 	for _, action := range prog.Actions {
-		var pattern, body []Op
-		if len(action.Pattern) > 0 {
-			switch len(action.Pattern) {
-			case 1:
-				c := &compiler{program: p}
-				c.expr(action.Pattern[0])
-				pattern = c.finish()
-			default:
-				panic("TODO: range patterns not yet supported")
-			}
+		var pattern [][]Op
+		switch len(action.Pattern) {
+		case 0:
+			// TODO: can we somehow do more at compile time here?
+		case 1:
+			c := &compiler{program: p}
+			c.expr(action.Pattern[0])
+			pattern = [][]Op{c.finish()}
+		case 2:
+			c := &compiler{program: p}
+			c.expr(action.Pattern[0])
+			pattern = append(pattern, c.finish())
+			c = &compiler{program: p}
+			c.expr(action.Pattern[1])
+			pattern = append(pattern, c.finish())
 		}
+		var body []Op
 		if len(action.Stmts) > 0 {
 			c := &compiler{program: p}
 			c.stmts(action.Stmts)
@@ -63,11 +70,12 @@ func Compile(prog *parser.Program) *Program {
 			Body:    body,
 		})
 	}
-	//for _, stmts := range prog.End {
-	//	c := &compiler{program: p}
-	//	p.End = append(p.End, c.stmts(stmts)...)
-	//	p.update(c)
-	//}
+
+	for _, stmts := range prog.End {
+		c := &compiler{program: p}
+		c.stmts(stmts)
+		p.End = append(p.End, c.finish()...)
+	}
 
 	p.ScalarNames = make([]string, len(prog.Scalars))
 	for name, index := range prog.Scalars {
