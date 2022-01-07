@@ -346,10 +346,10 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	//	ScalarNames: []string{"i", "s"},
 	//	Nums:        []float64{0, 100000000},
 	//}
-	err = bp.Disassemble(os.Stdout)
-	if err != nil {
-		return 0, err
-	}
+	//err = bp.Disassemble(os.Stdout)
+	//if err != nil {
+	//	return 0, err
+	//}
 	err = p.executeCode(bp, bp.Begin)
 	if err != nil {
 		return 0, err
