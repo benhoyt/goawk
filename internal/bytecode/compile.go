@@ -40,11 +40,12 @@ func Compile(prog *parser.Program) *Program {
 	for _, stmts := range prog.Begin {
 		p.Begin = append(p.Begin, c.stmts(stmts)...)
 	}
-	//for _, action := range prog.Actions {
-	//}
-	for _, stmts := range prog.End {
-		p.End = append(p.End, c.stmts(stmts)...)
+	for _, action := range prog.Actions {
+		p.Actions = append(p.Actions, c.action(action))
 	}
+	//for _, stmts := range prog.End {
+	//	p.End = append(p.End, c.stmts(stmts)...)
+	//}
 
 	p.ScalarNames = make([]string, len(prog.Scalars))
 	for name, index := range prog.Scalars {
@@ -64,6 +65,13 @@ type compiler struct {
 	nums    []float64
 	strs    []string
 	regexes []*regexp.Regexp
+}
+
+func (c *compiler) action(action ast.Action) Action {
+	if len(action.Pattern) > 0 {
+		panic(fmt.Sprintf("TODO %s", action.Pattern))
+	}
+	return Action{Body: c.stmts(action.Stmts)}
 }
 
 func (c *compiler) stmts(stmts []ast.Stmt) []Opcode {
@@ -95,6 +103,15 @@ func (c *compiler) stmt(stmt ast.Stmt) []Opcode {
 				case *ast.VarExpr:
 					if target.Scope == ast.ScopeGlobal {
 						code = append(code, PostIncrGlobal, Opcode(target.Index))
+						return code
+					}
+				case *ast.IndexExpr:
+					if len(target.Index) > 1 {
+						panic("TODO multi indexes not yet supported")
+					}
+					if target.Array.Scope == ast.ScopeGlobal {
+						code = append(code, c.expr(target.Index[0])...)
+						code = append(code, PostIncrArrayGlobal, Opcode(target.Array.Index))
 						return code
 					}
 				}
@@ -134,6 +151,7 @@ func (c *compiler) stmt(stmt ast.Stmt) []Opcode {
 		// Optimization: include condition once before loop and at the end
 		var forwardMark int
 		if s.Cond != nil {
+			// TODO: could do the BinaryExpr optimization below here as well
 			code = append(code, c.expr(s.Cond)...)
 			forwardMark = len(code)
 			code = append(code, JumpFalse, 0)
@@ -160,6 +178,14 @@ func (c *compiler) stmt(stmt ast.Stmt) []Opcode {
 						offset := loopStart - (len(code) + 2)
 						code = append(code, JumpNumLess, Opcode(int32(offset)))
 					}
+				case lexer.LTE:
+					//if _, ok := cond.Right.(*ast.NumExpr); ok { // TODO: or number special variable like NF
+					done = true
+					code = append(code, c.expr(cond.Left)...)
+					code = append(code, c.expr(cond.Right)...)
+					offset := loopStart - (len(code) + 2)
+					code = append(code, JumpNumLessOrEqual, Opcode(int32(offset)))
+					//}
 				}
 			}
 			if !done {
@@ -210,15 +236,17 @@ func (c *compiler) expr(expr ast.Expr) []Opcode {
 		code = append(code, Str, Opcode(len(c.strs)))
 		c.strs = append(c.strs, e.Value)
 
-	//case *ast.FieldExpr:
-	//
+	case *ast.FieldExpr:
+		code = append(code, c.expr(e.Index)...)
+		code = append(code, Field)
 
 	case *ast.VarExpr:
 		switch e.Scope {
 		case ast.ScopeGlobal:
 			code = append(code, Global, Opcode(e.Index))
 		case ast.ScopeLocal:
-		default: // ast.ScopeSpecial
+		case ast.ScopeSpecial:
+			code = append(code, Special, Opcode(e.Index))
 		}
 
 	//case *ast.RegExpr:

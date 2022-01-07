@@ -14,6 +14,7 @@ const (
 
 	// Fetch a field, variable, or array item
 	Field
+	// TODO: add Field0, Field1, ... FieldN
 	Global      // index
 	Local       // index
 	Special     // index
@@ -36,17 +37,17 @@ const (
 
 	// Post-increment and post-decrement
 	PostIncrField
-	PostIncrGlobal
-	PostIncrLocal
-	PostIncrSpecial
-	PostIncrArrayGlobal
-	PostIncrArrayLocal
+	PostIncrGlobal      // index
+	PostIncrLocal       // index
+	PostIncrSpecial     // index
+	PostIncrArrayGlobal // index
+	PostIncrArrayLocal  // index
 	PostDecrField
-	PostDecrGlobal
-	PostDecrLocal
-	PostDecrSpecial
-	PostDecrArrayGlobal
-	PostDecrArrayLocal
+	PostDecrGlobal      // index
+	PostDecrLocal       // index
+	PostDecrSpecial     // index
+	PostDecrArrayGlobal // index
+	PostDecrArrayLocal  // index
 
 	// Augmented assignment (also used for pre-increment and pre-decrement)
 	AugAssignField       // operation

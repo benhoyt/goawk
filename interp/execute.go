@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/internal/bytecode"
 	"github.com/benhoyt/goawk/lexer"
 )
@@ -26,16 +27,29 @@ func (p *interp) executeCode(prog *bytecode.Program, code []bytecode.Opcode) err
 			i++
 			p.push(str(prog.Strs[index]))
 
+		case bytecode.Dupe:
+			p.push(p.st[len(p.st)-1])
+
 		case bytecode.Drop:
 			p.pop()
 
-		case bytecode.Dupe:
-			p.push(p.st[len(p.st)-1])
+		case bytecode.Field:
+			index := p.pop()
+			v, err := p.getField(int(index.num()))
+			if err != nil {
+				return err
+			}
+			p.push(v)
 
 		case bytecode.Global:
 			index := code[i]
 			i++
 			p.push(p.globals[index])
+
+		case bytecode.Special:
+			index := code[i]
+			i++
+			p.push(p.getVar(ast.ScopeSpecial, int(index)))
 
 		case bytecode.AssignGlobal:
 			index := code[i]
@@ -46,6 +60,13 @@ func (p *interp) executeCode(prog *bytecode.Program, code []bytecode.Opcode) err
 			index := code[i]
 			i++
 			p.globals[index] = num(p.globals[index].num() + 1)
+
+		case bytecode.PostIncrArrayGlobal:
+			arrayIndex := code[i]
+			i++
+			array := p.arrays[arrayIndex]
+			index := p.toString(p.pop())
+			array[index] = num(array[index].num() + 1)
 
 		case bytecode.AugAssignGlobal:
 			operation := lexer.Token(code[i])
@@ -68,6 +89,19 @@ func (p *interp) executeCode(prog *bytecode.Program, code []bytecode.Opcode) err
 				v = boolean(p.toString(l) < p.toString(r))
 			} else {
 				v = boolean(ln < rn)
+			}
+			p.push(v)
+
+		case bytecode.LessOrEqual:
+			r := p.pop()
+			l := p.pop()
+			ln, lIsStr := l.isTrueStr()
+			rn, rIsStr := r.isTrueStr()
+			var v value
+			if lIsStr || rIsStr {
+				v = boolean(p.toString(l) <= p.toString(r))
+			} else {
+				v = boolean(ln <= rn)
 			}
 			p.push(v)
 
@@ -98,6 +132,16 @@ func (p *interp) executeCode(prog *bytecode.Program, code []bytecode.Opcode) err
 			r := p.pop()
 			l := p.pop()
 			if l.num() < r.num() {
+				i += 1 + int(offset)
+			} else {
+				i++
+			}
+
+		case bytecode.JumpNumLessOrEqual:
+			offset := int32(code[i])
+			r := p.pop()
+			l := p.pop()
+			if l.num() <= r.num() {
 				i += 1 + int(offset)
 			} else {
 				i++

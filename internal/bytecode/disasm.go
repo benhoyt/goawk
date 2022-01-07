@@ -11,11 +11,21 @@ func (p *Program) Disassemble(w io.Writer) error {
 	if p.Begin != nil {
 		writef(w, "BEGIN:\n")
 		p.disassembleCode(w, p.Begin)
+		writef(w, "\n")
 	}
-	if p.End != nil {
-		writef(w, "END:\n")
-		p.disassembleCode(w, p.End)
+	for _, action := range p.Actions {
+		writef(w, "// pattern { body }\n")
+		if action.Pattern != nil {
+			panic("TODO")
+		}
+		p.disassembleCode(w, action.Body)
+		writef(w, "\n")
 	}
+	//if p.End != nil {
+	//	writef(w, "END:\n")
+	//	p.disassembleCode(w, p.End)
+	//	writef(w, "\n")
+	//}
 	return nil
 }
 
@@ -44,16 +54,24 @@ func (p *Program) disassembleCode(w io.Writer, code []Opcode) {
 			i++
 			writeOpcodef(w, addr, "Str %q", p.Strs[index])
 
+		case Dupe:
+			writeOpcodef(w, addr, "Dupe")
+
 		case Drop:
 			writeOpcodef(w, addr, "Drop")
 
-		case Dupe:
-			writeOpcodef(w, addr, "Dupe")
+		case Field:
+			writeOpcodef(w, addr, "Field")
 
 		case Global:
 			index := code[i]
 			i++
 			writeOpcodef(w, addr, "Global %s", p.ScalarNames[index])
+
+		case Special:
+			index := code[i]
+			i++
+			writeOpcodef(w, addr, "Special %d", index) // TODO: show name instead
 
 		case AssignGlobal:
 			index := code[i]
@@ -71,8 +89,16 @@ func (p *Program) disassembleCode(w io.Writer, code []Opcode) {
 			i += 2
 			writeOpcodef(w, addr, "AugAssignGlobal %s %s", operation, p.ScalarNames[index])
 
+		case PostIncrArrayGlobal:
+			arrayIndex := code[i]
+			i++
+			writeOpcodef(w, addr, "PostIncrArrayGlobal %s", p.ArrayNames[arrayIndex])
+
 		case Less:
 			writeOpcodef(w, addr, "Less")
+
+		case LessOrEqual:
+			writeOpcodef(w, addr, "LessOrEqual")
 
 		case Jump:
 			offset := int32(code[i])
@@ -93,6 +119,11 @@ func (p *Program) disassembleCode(w io.Writer, code []Opcode) {
 			offset := int32(code[i])
 			i++
 			writeOpcodef(w, addr, "JumpNumLess %04x", i+int(offset))
+
+		case JumpNumLessOrEqual:
+			offset := int32(code[i])
+			i++
+			writeOpcodef(w, addr, "JumpNumLessOrEqual %04x", i+int(offset))
 
 		case Print:
 			numArgs := code[i]

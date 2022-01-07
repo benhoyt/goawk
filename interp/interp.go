@@ -350,11 +350,11 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	//if err != nil {
 	//	return 0, err
 	//}
-	err = p.executeCode(bp, bp.Begin)
-	if err != nil {
-		return 0, err
-	}
-	return p.exitStatus, nil
+	//err = p.executeCode(bp, bp.Begin)
+	//if err != nil {
+	//	return 0, err
+	//}
+	//return p.exitStatus, nil
 
 	// Execute the program! BEGIN, then pattern/actions, then END
 	err = p.execBeginEnd(program.Begin)
@@ -365,7 +365,7 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 		return p.exitStatus, nil
 	}
 	if err != errExit {
-		err = p.execActions(program.Actions)
+		err = p.execActions(bp, program.Actions)
 		if err != nil && err != errExit {
 			return 0, err
 		}
@@ -408,7 +408,7 @@ func (p *interp) execBeginEnd(beginEnd []Stmts) error {
 }
 
 // Execute pattern-action blocks (may be multiple)
-func (p *interp) execActions(actions []Action) error {
+func (p *interp) execActions(bp *bytecode.Program, actions []Action) error {
 	inRange := make([]bool, len(actions))
 lineLoop:
 	for {
@@ -469,7 +469,8 @@ lineLoop:
 			}
 
 			// Execute the body statements
-			err := p.executes(action.Stmts)
+			err := p.executeCode(bp, bp.Actions[i].Body)
+			//err := p.executes(action.Stmts)
 			if err == errNext {
 				// "next" statement skips straight to next line
 				continue lineLoop
