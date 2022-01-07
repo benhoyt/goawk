@@ -321,8 +321,16 @@ func (c *compiler) expr(expr ast.Expr) []Opcode {
 	//
 	//case *ast.IndexExpr:
 	//
-	//case *ast.CallExpr:
-	//
+
+	case *ast.CallExpr:
+		switch e.Func {
+		case lexer.F_TOLOWER:
+			code = append(code, c.expr(e.Args[0])...)
+			code = append(code, CallBuiltin, Opcode(lexer.F_TOLOWER))
+		default:
+			panic(fmt.Sprintf("TODO: func %s not yet supported", e.Func))
+		}
+
 	//case *ast.UnaryExpr:
 	//
 	//case *ast.InExpr:

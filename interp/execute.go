@@ -168,6 +168,16 @@ func (p *interp) executeCode(prog *bytecode.Program, code []bytecode.Opcode) err
 			}
 			return p.printLine(p.output, line)
 
+		case bytecode.CallBuiltin:
+			function := code[i]
+			i++
+			switch lexer.Token(function) {
+			case lexer.F_TOLOWER:
+				v := p.pop()
+				v = str(strings.ToLower(p.toString(v)))
+				p.push(v)
+			}
+
 		default:
 			panic(fmt.Sprintf("unexpected opcode %d", op))
 		}

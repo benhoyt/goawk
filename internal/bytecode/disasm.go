@@ -125,6 +125,13 @@ func (p *Program) disassembleCode(w io.Writer, code []Opcode) {
 			i++
 			writeOpcodef(w, addr, "JumpNumLessOrEqual %04x", i+int(offset))
 
+		case CallBuiltin:
+			function := code[i]
+			i++
+			switch lexer.Token(function) {
+			case lexer.F_TOLOWER:
+				writeOpcodef(w, addr, "CallBuiltin tolower")
+			}
 		case Print:
 			numArgs := code[i]
 			i++

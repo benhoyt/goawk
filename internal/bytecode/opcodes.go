@@ -90,7 +90,8 @@ const (
 	JumpNumLessOrEqual
 	JumpNumGreaterOrEqual
 	ForIn
-	CallBuiltin // func, numArgs
+	// TODO: have separate opcodes for each builtin, like CallTolower, etc?
+	CallBuiltin // func[, numArgs]
 	CallUser    // index, numArgs
 	CallNative  // index, numArgs
 	Return
