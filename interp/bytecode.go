@@ -201,9 +201,9 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 
 		case bytecode.ForGlobalInGlobal:
-			offset := code[i]
-			varIndex := code[i+1]
-			arrayIndex := code[i+2]
+			varIndex := code[i]
+			arrayIndex := code[i+1]
+			offset := code[i+2]
 			i += 3
 			array := p.arrays[arrayIndex]
 			loopCode := code[i : i+int(offset)]

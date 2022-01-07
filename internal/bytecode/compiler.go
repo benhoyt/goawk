@@ -2,6 +2,7 @@ package bytecode
 
 import (
 	"fmt"
+	"math"
 	"regexp"
 
 	"github.com/benhoyt/goawk/internal/ast"
@@ -171,23 +172,37 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		}
 
 	//case *ast.PrintfStmt:
-	//
-	//case *ast.IfStmt:
+
+	case *ast.IfStmt:
+		// TODO: optimize with JumpNumLess etc
+		if len(s.Else) == 0 {
+			c.expr(s.Cond)
+			ifMark := c.jumpForward(JumpFalse)
+			c.stmts(s.Body)
+			c.patchForward(ifMark)
+		} else {
+			c.expr(s.Cond)
+			ifMark := c.jumpForward(JumpFalse)
+			c.stmts(s.Body)
+			elseMark := c.jumpForward(Jump)
+			c.patchForward(ifMark)
+			c.stmts(s.Else)
+			c.patchForward(elseMark)
+		}
 
 	case *ast.ForStmt:
 		if s.Pre != nil {
 			c.stmt(s.Pre)
 		}
 		// Optimization: include condition once before loop and at the end
-		var forwardMark int
+		var mark int
 		if s.Cond != nil {
 			// TODO: could do the BinaryExpr optimization below here as well
 			c.expr(s.Cond)
-			forwardMark = len(c.code)
-			c.add(JumpFalse, 0)
+			mark = c.jumpForward(JumpFalse)
 		}
 
-		loopStart := len(c.code)
+		loopStart := c.labelBackward()
 		c.stmts(s.Body)
 		if s.Post != nil {
 			c.stmt(s.Post)
@@ -195,7 +210,6 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 
 		if s.Cond != nil {
 			// TODO: if s.Cond is BinaryExpr num == != < > <= >= or str == != then use JumpLess and similar optimizations
-
 			done := false
 			switch cond := s.Cond.(type) {
 			case *ast.BinaryExpr:
@@ -205,30 +219,25 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 						done = true
 						c.expr(cond.Left)
 						c.expr(cond.Right)
-						offset := loopStart - (len(c.code) + 2)
-						c.add(JumpNumLess, Op(int32(offset)))
+						c.jumpBackward(loopStart, JumpNumLess)
 					}
 				case lexer.LTE:
 					//if _, ok := cond.Right.(*ast.NumExpr); ok { // TODO: or number special variable like NF
 					done = true
 					c.expr(cond.Left)
 					c.expr(cond.Right)
-					offset := loopStart - (len(c.code) + 2)
-					c.add(JumpNumLessOrEqual, Op(int32(offset)))
+					c.jumpBackward(loopStart, JumpNumLessOrEqual)
 					//}
 				}
 			}
 			if !done {
 				c.expr(s.Cond)
-				offset := loopStart - (len(c.code) + 2)
-				c.add(JumpTrue, Op(int32(offset)))
+				c.jumpBackward(loopStart, JumpTrue)
 			}
 
-			offset := len(c.code) - (forwardMark + 2)
-			c.code[forwardMark+1] = Op(int32(offset))
+			c.patchForward(mark)
 		} else {
-			offset := loopStart - (len(c.code) + 2)
-			c.add(Jump, Op(int32(offset)))
+			c.jumpBackward(loopStart, Jump)
 		}
 
 	case *ast.ForInStmt:
@@ -239,11 +248,9 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		default:
 			panic("TODO: for in with local/special not yet supported")
 		}
-		forwardMark := len(c.code)
-		c.add(op, 0, Op(s.Var.Index), Op(s.Array.Index))
+		mark := c.jumpForward(op, Op(s.Var.Index), Op(s.Array.Index))
 		c.stmts(s.Body)
-		offset := len(c.code) - (forwardMark + 4)
-		c.code[forwardMark+1] = Op(offset)
+		c.patchForward(mark)
 
 	//case *ast.ReturnStmt:
 	//
@@ -264,6 +271,33 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		// Should never happen
 		panic(fmt.Sprintf("unexpected stmt type: %T", stmt))
 	}
+}
+
+func (c *compiler) jumpForward(ops ...Op) int {
+	c.add(ops...)
+	c.add(0)
+	return len(c.code)
+}
+
+func (c *compiler) patchForward(mark int) {
+	offset := len(c.code) - mark
+	if offset > math.MaxInt32 || offset < math.MinInt32 {
+		panic("forward jump offset too large") // TODO: handle more gracefully?
+	}
+	c.code[mark-1] = Op(int32(offset))
+}
+
+func (c *compiler) labelBackward() int {
+	return len(c.code)
+}
+
+func (c *compiler) jumpBackward(label int, ops ...Op) {
+	offset := label - (len(c.code) + len(ops) + 1)
+	if offset > math.MaxInt32 || offset < math.MinInt32 {
+		panic("backward jump offset too large") // TODO: handle more gracefully?
+	}
+	c.add(ops...)
+	c.add(Op(int32(offset)))
 }
 
 func (c *compiler) expr(expr ast.Expr) {

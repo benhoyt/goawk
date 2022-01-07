@@ -183,10 +183,10 @@ func (d *disassembler) disassemble(prefix string) error {
 			d.writeOpf("JumpNumLessOrEqual 0x%04x", d.ip+int(offset))
 
 		case ForGlobalInGlobal:
-			offset := d.fetch()
 			varIndex := d.fetch()
 			arrayIndex := d.fetch()
-			d.writeOpf("ForGlobalInGlobal 0x%04x %s %s", d.ip+int(offset), d.program.ScalarNames[varIndex], d.program.ArrayNames[arrayIndex])
+			offset := d.fetch()
+			d.writeOpf("ForGlobalInGlobal %s %s 0x%04x", d.program.ScalarNames[varIndex], d.program.ArrayNames[arrayIndex], d.ip+int(offset))
 
 		case CallBuiltin:
 			function := lexer.Token(d.fetch())
