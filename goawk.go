@@ -223,9 +223,10 @@ func main() {
 	}
 
 	if debug {
-		fmt.Fprintln(os.Stderr, prog)
 		if useBytecode {
 			byteProg.Disassemble(os.Stderr)
+		} else {
+			fmt.Fprintln(os.Stderr, prog)
 		}
 	}
 

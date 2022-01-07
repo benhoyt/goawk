@@ -82,10 +82,32 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			i++
 			p.push(p.getVar(ast.ScopeSpecial, int(index)))
 
+		case bytecode.ArrayGlobal:
+			arrayIndex := code[i]
+			i++
+			array := p.arrays[arrayIndex]
+			index := p.toString(p.pop())
+			v, ok := array[index]
+			if !ok {
+				// Strangely, per the POSIX spec, "Any other reference to a
+				// nonexistent array element [apart from "in" expressions]
+				// shall automatically create it."
+				array[index] = v
+			}
+			p.push(v)
+
 		case bytecode.AssignGlobal:
 			index := code[i]
 			i++
 			p.globals[index] = p.pop()
+
+		case bytecode.AssignField:
+			index := p.pop()
+			right := p.pop()
+			err := p.setField(int(index.num()), p.toString(right))
+			if err != nil {
+				return err
+			}
 
 		case bytecode.PostIncrGlobal:
 			index := code[i]
@@ -177,6 +199,26 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			} else {
 				i++
 			}
+
+		case bytecode.ForGlobalInGlobal:
+			offset := code[i]
+			varIndex := code[i+1]
+			arrayIndex := code[i+2]
+			i += 3
+			array := p.arrays[arrayIndex]
+			loopCode := code[i : i+int(offset)]
+			for index := range array {
+				p.globals[varIndex] = str(index)
+				err := p.execBytecode(byteProg, loopCode)
+				if err == errBreak {
+					break
+				}
+				// TODO: handle continue with jump to end of loopCode block?
+				if err != nil {
+					return err
+				}
+			}
+			i += int(offset)
 
 		case bytecode.Print:
 			numArgs := code[i]
@@ -283,7 +325,7 @@ lineLoop:
 			}
 
 			// No action is equivalent to { print $0 }
-			if len(action.Body) > 0 {
+			if len(action.Body) == 0 {
 				err := p.printLine(p.output, p.line)
 				if err != nil {
 					return err

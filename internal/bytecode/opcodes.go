@@ -91,7 +91,12 @@ const (
 	JumpNumGreaterOrEqual
 	JumpStrEquals
 	JumpStrNotEquals
-	ForIn
+	ForGlobalInGlobal  // offset varIndex arrayIndex
+	ForGlobalInLocal   // offset varIndex arrayIndex
+	ForLocalInGlobal   // offset varIndex arrayIndex
+	ForLocalInLocal    // offset varIndex arrayIndex
+	ForSpecialInGlobal // offset varIndex arrayIndex
+	ForSpecialInLocal  // offset varIndex arrayIndex
 	// TODO: have separate opcodes for each builtin form, like CallTolower, etc?
 	CallBuiltin // func[, numArgs]
 	CallUser    // index, numArgs

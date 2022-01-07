@@ -121,6 +121,11 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 					c.add(AssignGlobal, Op(left.Index))
 					return
 				}
+			case *ast.FieldExpr:
+				c.expr(expr.Right)
+				c.expr(left.Index)
+				c.add(AssignField)
+				return
 			}
 		case *ast.IncrExpr:
 			if !expr.Pre {
@@ -226,8 +231,20 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 			c.add(Jump, Op(int32(offset)))
 		}
 
-	//case *ast.ForInStmt:
-	//
+	case *ast.ForInStmt:
+		var op Op
+		switch {
+		case s.Var.Scope == ast.ScopeGlobal && s.Array.Scope == ast.ScopeGlobal:
+			op = ForGlobalInGlobal
+		default:
+			panic("TODO: for in with local/special not yet supported")
+		}
+		forwardMark := len(c.code)
+		c.add(op, 0, Op(s.Var.Index), Op(s.Array.Index))
+		c.stmts(s.Body)
+		offset := len(c.code) - (forwardMark + 4)
+		c.code[forwardMark+1] = Op(offset)
+
 	//case *ast.ReturnStmt:
 	//
 	//case *ast.WhileStmt:
@@ -342,8 +359,17 @@ func (c *compiler) expr(expr ast.Expr) {
 	//
 	//case *ast.CondExpr:
 	//
-	//case *ast.IndexExpr:
-	//
+	case *ast.IndexExpr:
+		if len(e.Index) > 1 {
+			panic("TODO multi indexes not yet supported")
+		}
+		switch e.Array.Scope {
+		case ast.ScopeGlobal:
+			c.expr(e.Index[0])
+			c.add(ArrayGlobal, Op(e.Array.Index))
+		case ast.ScopeLocal:
+			panic("TODO IndexExpr local array not yet supported")
+		}
 
 	case *ast.CallExpr:
 		switch e.Func {

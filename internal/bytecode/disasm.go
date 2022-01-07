@@ -29,7 +29,7 @@ func (p *Program) Disassemble(writer io.Writer) error {
 				writer:  writer,
 				code:    action.Pattern[0],
 			}
-			err := d.disassemble("match pattern")
+			err := d.disassemble("pattern")
 			if err != nil {
 				return err
 			}
@@ -39,7 +39,7 @@ func (p *Program) Disassemble(writer io.Writer) error {
 				writer:  writer,
 				code:    action.Pattern[0],
 			}
-			err := d.disassemble("start pattern")
+			err := d.disassemble("start")
 			if err != nil {
 				return err
 			}
@@ -48,7 +48,7 @@ func (p *Program) Disassemble(writer io.Writer) error {
 				writer:  writer,
 				code:    action.Pattern[1],
 			}
-			err = d.disassemble("stop pattern")
+			err = d.disassemble("stop")
 			if err != nil {
 				return err
 			}
@@ -132,9 +132,16 @@ func (d *disassembler) disassemble(prefix string) error {
 			index := d.fetch()
 			d.writeOpf("Special %d", index) // TODO: show name instead
 
+		case ArrayGlobal:
+			arrayIndex := d.fetch()
+			d.writeOpf("ArrayGlobal %s", d.program.ArrayNames[arrayIndex])
+
 		case AssignGlobal:
 			index := d.fetch()
 			d.writeOpf("AssignGlobal %s", d.program.ScalarNames[index])
+
+		case AssignField:
+			d.writeOpf("AssignField")
 
 		case PostIncrGlobal:
 			index := d.fetch()
@@ -157,23 +164,29 @@ func (d *disassembler) disassemble(prefix string) error {
 
 		case Jump:
 			offset := int32(d.fetch())
-			d.writeOpf("Jump %04x", d.ip+int(offset))
+			d.writeOpf("Jump 0x%04x", d.ip+int(offset))
 
 		case JumpFalse:
 			offset := int32(d.fetch())
-			d.writeOpf("JumpFalse %04x", d.ip+int(offset))
+			d.writeOpf("JumpFalse 0x%04x", d.ip+int(offset))
 
 		case JumpTrue:
 			offset := int32(d.fetch())
-			d.writeOpf("JumpTrue %04x", d.ip+int(offset))
+			d.writeOpf("JumpTrue 0x%04x", d.ip+int(offset))
 
 		case JumpNumLess:
 			offset := int32(d.fetch())
-			d.writeOpf("JumpNumLess %04x", d.ip+int(offset))
+			d.writeOpf("JumpNumLess 0x%04x", d.ip+int(offset))
 
 		case JumpNumLessOrEqual:
 			offset := int32(d.fetch())
-			d.writeOpf("JumpNumLessOrEqual %04x", d.ip+int(offset))
+			d.writeOpf("JumpNumLessOrEqual 0x%04x", d.ip+int(offset))
+
+		case ForGlobalInGlobal:
+			offset := d.fetch()
+			varIndex := d.fetch()
+			arrayIndex := d.fetch()
+			d.writeOpf("ForGlobalInGlobal 0x%04x %s %s", d.ip+int(offset), d.program.ScalarNames[varIndex], d.program.ArrayNames[arrayIndex])
 
 		case CallBuiltin:
 			function := lexer.Token(d.fetch())
