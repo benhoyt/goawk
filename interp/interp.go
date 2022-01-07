@@ -24,7 +24,6 @@ import (
 	"unicode/utf8"
 
 	. "github.com/benhoyt/goawk/internal/ast"
-	"github.com/benhoyt/goawk/internal/bytecode"
 	. "github.com/benhoyt/goawk/lexer"
 	. "github.com/benhoyt/goawk/parser"
 )
@@ -215,16 +214,13 @@ type Config struct {
 	Bytes bool
 }
 
-// ExecProgram executes the parsed program using the given interpreter
-// config, returning the exit status code of the program. Error is nil
-// on successful execution of the program, even if the program returns
-// a non-zero status code.
-func ExecProgram(program *Program, config *Config) (int, error) {
+// Initialize program execution.
+func execInit(program *Program, config *Config) (*interp, error) {
 	if len(config.Vars)%2 != 0 {
-		return 0, newError("length of config.Vars must be a multiple of 2, not %d", len(config.Vars))
+		return nil, newError("length of config.Vars must be a multiple of 2, not %d", len(config.Vars))
 	}
 	if len(config.Environ)%2 != 0 {
-		return 0, newError("length of config.Environ must be a multiple of 2, not %d", len(config.Environ))
+		return nil, newError("length of config.Environ must be a multiple of 2, not %d", len(config.Environ))
 	}
 
 	p := &interp{program: program}
@@ -256,7 +252,7 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	p.bytes = config.Bytes
 	err := p.initNativeFuncs(config.Funcs)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	// Setup ARGV and other variables from config
@@ -271,7 +267,7 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	for i := 0; i < len(config.Vars); i += 2 {
 		err := p.setVarByName(config.Vars[i], config.Vars[i+1])
 		if err != nil {
-			return 0, err
+			return nil, err
 		}
 	}
 
@@ -318,43 +314,19 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	p.outputStreams = make(map[string]io.WriteCloser)
 	p.commands = make(map[string]*exec.Cmd)
 	p.scanners = make(map[string]*bufio.Scanner)
-	defer p.closeAll()
+	return p, nil
+}
 
-	// TODO
-	bp := bytecode.Compile(program)
-	//bp := &bytecode.Program{
-	//	Begin: []bytecode.Op{
-	//		// loop:
-	//		// s += i
-	//		bytecode.Global, 0,
-	//		bytecode.AugAssignGlobal, bytecode.Op(ADD), 1,
-	//
-	//		// i++
-	//		bytecode.PostIncrGlobal, 0,
-	//
-	//		// if i<5 jmp loop
-	//		bytecode.Global, 0,
-	//		bytecode.Num, 1,
-	//		bytecode.JumpNumLess, 256 - 13,
-	//		//bytecode.Less,
-	//		//bytecode.Jnz, 256 - 14,
-	//
-	//		// print s
-	//		bytecode.Global, 1,
-	//		bytecode.Print, 1,
-	//	},
-	//	ScalarNames: []string{"i", "s"},
-	//	Nums:        []float64{0, 100000000},
-	//}
-	err = bp.Disassemble(os.Stdout)
+// ExecProgram executes the parsed program using the given interpreter
+// config, returning the exit status code of the program. Error is nil
+// on successful execution of the program, even if the program returns
+// a non-zero status code.
+func ExecProgram(program *Program, config *Config) (int, error) {
+	p, err := execInit(program, config)
 	if err != nil {
 		return 0, err
 	}
-	//err = p.executeCode(bp, bp.Begin)
-	//if err != nil {
-	//	return 0, err
-	//}
-	//return p.exitStatus, nil
+	defer p.closeAll()
 
 	// Execute the program! BEGIN, then pattern/actions, then END
 	err = p.execBeginEnd(program.Begin)
@@ -365,7 +337,7 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 		return p.exitStatus, nil
 	}
 	if err != errExit {
-		err = p.execActions(bp, program.Actions)
+		err = p.execActions(program.Actions)
 		if err != nil && err != errExit {
 			return 0, err
 		}
@@ -408,7 +380,7 @@ func (p *interp) execBeginEnd(beginEnd []Stmts) error {
 }
 
 // Execute pattern-action blocks (may be multiple)
-func (p *interp) execActions(bp *bytecode.Program, actions []Action) error {
+func (p *interp) execActions(actions []Action) error {
 	inRange := make([]bool, len(actions))
 lineLoop:
 	for {
@@ -469,8 +441,7 @@ lineLoop:
 			}
 
 			// Execute the body statements
-			err := p.executeCode(bp, bp.Actions[i].Body)
-			//err := p.executes(action.Stmts)
+			err := p.executes(action.Stmts)
 			if err == errNext {
 				// "next" statement skips straight to next line
 				continue lineLoop
