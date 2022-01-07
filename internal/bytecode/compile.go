@@ -35,16 +35,38 @@ type Function struct {
 
 func Compile(prog *parser.Program) *Program {
 	p := &Program{}
-	c := &compiler{}
 
 	for _, stmts := range prog.Begin {
-		p.Begin = append(p.Begin, c.stmts(stmts)...)
+		c := &compiler{program: p}
+		c.stmts(stmts)
+		p.Begin = append(p.Begin, c.finish()...)
 	}
 	for _, action := range prog.Actions {
-		p.Actions = append(p.Actions, c.action(action))
+		var pattern, body []Op
+		if len(action.Pattern) > 0 {
+			switch len(action.Pattern) {
+			case 1:
+				c := &compiler{program: p}
+				c.expr(action.Pattern[0])
+				pattern = c.finish()
+			default:
+				panic("TODO: range patterns not yet supported")
+			}
+		}
+		if len(action.Stmts) > 0 {
+			c := &compiler{program: p}
+			c.stmts(action.Stmts)
+			body = c.finish()
+		}
+		p.Actions = append(p.Actions, Action{
+			Pattern: pattern,
+			Body:    body,
+		})
 	}
 	//for _, stmts := range prog.End {
+	//	c := &compiler{program: p}
 	//	p.End = append(p.End, c.stmts(stmts)...)
+	//	p.update(c)
 	//}
 
 	p.ScalarNames = make([]string, len(prog.Scalars))
@@ -55,47 +77,30 @@ func Compile(prog *parser.Program) *Program {
 	for name, index := range prog.Arrays {
 		p.ArrayNames[index] = name
 	}
-	p.Nums = c.nums
-	p.Strs = c.strs
-	p.Regexes = c.regexes
+
 	return p
 }
 
 type compiler struct {
-	nums    []float64
-	strs    []string
-	regexes []*regexp.Regexp
+	program *Program
+	code    []Op
 }
 
-func (c *compiler) action(action ast.Action) Action {
-	var pattern, body []Op
-	if len(action.Pattern) > 0 {
-		switch len(action.Pattern) {
-		case 1:
-			pattern = c.expr(action.Pattern[0])
-		default:
-			panic("TODO: range patterns not yet supported")
-		}
-	}
-	if len(action.Stmts) > 0 {
-		body = c.stmts(action.Stmts)
-	}
-	return Action{
-		Pattern: pattern,
-		Body:    body,
-	}
+func (c *compiler) add(ops ...Op) {
+	c.code = append(c.code, ops...)
 }
 
-func (c *compiler) stmts(stmts []ast.Stmt) []Op {
-	var code []Op
+func (c *compiler) finish() []Op {
+	return c.code
+}
+
+func (c *compiler) stmts(stmts []ast.Stmt) {
 	for _, stmt := range stmts {
-		code = append(code, c.stmt(stmt)...)
+		c.stmt(stmt)
 	}
-	return code
 }
 
-func (c *compiler) stmt(stmt ast.Stmt) []Op {
-	var code []Op
+func (c *compiler) stmt(stmt ast.Stmt) {
 	switch s := stmt.(type) {
 	case *ast.ExprStmt:
 		// Optimize assignment expressions to avoid Dupe and Drop
@@ -104,9 +109,9 @@ func (c *compiler) stmt(stmt ast.Stmt) []Op {
 			switch left := expr.Left.(type) {
 			case *ast.VarExpr:
 				if left.Scope == ast.ScopeGlobal {
-					code = append(code, c.expr(expr.Right)...)
-					code = append(code, AssignGlobal, Op(left.Index))
-					return code
+					c.expr(expr.Right)
+					c.add(AssignGlobal, Op(left.Index))
+					return
 				}
 			}
 		case *ast.IncrExpr:
@@ -114,17 +119,17 @@ func (c *compiler) stmt(stmt ast.Stmt) []Op {
 				switch target := expr.Expr.(type) {
 				case *ast.VarExpr:
 					if target.Scope == ast.ScopeGlobal {
-						code = append(code, PostIncrGlobal, Op(target.Index))
-						return code
+						c.add(PostIncrGlobal, Op(target.Index))
+						return
 					}
 				case *ast.IndexExpr:
 					if len(target.Index) > 1 {
 						panic("TODO multi indexes not yet supported")
 					}
 					if target.Array.Scope == ast.ScopeGlobal {
-						code = append(code, c.expr(target.Index[0])...)
-						code = append(code, PostIncrArrayGlobal, Op(target.Array.Index))
-						return code
+						c.expr(target.Index[0])
+						c.add(PostIncrArrayGlobal, Op(target.Array.Index))
+						return
 					}
 				}
 			}
@@ -132,24 +137,24 @@ func (c *compiler) stmt(stmt ast.Stmt) []Op {
 			switch left := expr.Left.(type) {
 			case *ast.VarExpr:
 				if left.Scope == ast.ScopeGlobal {
-					code = append(code, c.expr(expr.Right)...)
-					code = append(code, AugAssignGlobal, Op(expr.Op), Op(left.Index))
-					return code
+					c.expr(expr.Right)
+					c.add(AugAssignGlobal, Op(expr.Op), Op(left.Index))
+					return
 				}
 			}
 		}
-		code = append(code, c.expr(s.Expr)...)
-		code = append(code, Drop)
+		c.expr(s.Expr)
+		c.add(Drop)
 
 	case *ast.PrintStmt:
 		for _, a := range s.Args {
-			code = append(code, c.expr(a)...)
+			c.expr(a)
 		}
 		if s.Redirect == lexer.ILLEGAL {
-			code = append(code, Print, Op(len(s.Args)))
+			c.add(Print, Op(len(s.Args)))
 		} else {
-			code = append(code, c.expr(s.Dest)...)
-			code = append(code, PrintRedirect, Op(len(s.Args)), Op(s.Redirect))
+			c.expr(s.Dest)
+			c.add(PrintRedirect, Op(len(s.Args)), Op(s.Redirect))
 		}
 
 	//case *ast.PrintfStmt:
@@ -158,21 +163,21 @@ func (c *compiler) stmt(stmt ast.Stmt) []Op {
 
 	case *ast.ForStmt:
 		if s.Pre != nil {
-			code = append(code, c.stmt(s.Pre)...)
+			c.stmt(s.Pre)
 		}
 		// Optimization: include condition once before loop and at the end
 		var forwardMark int
 		if s.Cond != nil {
 			// TODO: could do the BinaryExpr optimization below here as well
-			code = append(code, c.expr(s.Cond)...)
-			forwardMark = len(code)
-			code = append(code, JumpFalse, 0)
+			c.expr(s.Cond)
+			forwardMark = len(c.code)
+			c.add(JumpFalse, 0)
 		}
 
-		loopStart := len(code)
-		code = append(code, c.stmts(s.Body)...)
+		loopStart := len(c.code)
+		c.stmts(s.Body)
 		if s.Post != nil {
-			code = append(code, c.stmt(s.Post)...)
+			c.stmt(s.Post)
 		}
 
 		if s.Cond != nil {
@@ -185,32 +190,32 @@ func (c *compiler) stmt(stmt ast.Stmt) []Op {
 				case lexer.LESS:
 					if _, ok := cond.Right.(*ast.NumExpr); ok {
 						done = true
-						code = append(code, c.expr(cond.Left)...)
-						code = append(code, c.expr(cond.Right)...)
-						offset := loopStart - (len(code) + 2)
-						code = append(code, JumpNumLess, Op(int32(offset)))
+						c.expr(cond.Left)
+						c.expr(cond.Right)
+						offset := loopStart - (len(c.code) + 2)
+						c.add(JumpNumLess, Op(int32(offset)))
 					}
 				case lexer.LTE:
 					//if _, ok := cond.Right.(*ast.NumExpr); ok { // TODO: or number special variable like NF
 					done = true
-					code = append(code, c.expr(cond.Left)...)
-					code = append(code, c.expr(cond.Right)...)
-					offset := loopStart - (len(code) + 2)
-					code = append(code, JumpNumLessOrEqual, Op(int32(offset)))
+					c.expr(cond.Left)
+					c.expr(cond.Right)
+					offset := loopStart - (len(c.code) + 2)
+					c.add(JumpNumLessOrEqual, Op(int32(offset)))
 					//}
 				}
 			}
 			if !done {
-				code = append(code, c.expr(s.Cond)...)
-				offset := loopStart - (len(code) + 2)
-				code = append(code, JumpTrue, Op(int32(offset)))
+				c.expr(s.Cond)
+				offset := loopStart - (len(c.code) + 2)
+				c.add(JumpTrue, Op(int32(offset)))
 			}
 
-			offset := len(code) - (forwardMark + 2)
-			code[forwardMark+1] = Op(int32(offset))
+			offset := len(c.code) - (forwardMark + 2)
+			c.code[forwardMark+1] = Op(int32(offset))
 		} else {
-			offset := loopStart - (len(code) + 2)
-			code = append(code, Jump, Op(int32(offset)))
+			offset := loopStart - (len(c.code) + 2)
+			c.add(Jump, Op(int32(offset)))
 		}
 
 	//case *ast.ForInStmt:
@@ -234,31 +239,29 @@ func (c *compiler) stmt(stmt ast.Stmt) []Op {
 		// Should never happen
 		panic(fmt.Sprintf("unexpected stmt type: %T", stmt))
 	}
-	return code
 }
 
-func (c *compiler) expr(expr ast.Expr) []Op {
-	var code []Op
+func (c *compiler) expr(expr ast.Expr) {
 	switch e := expr.(type) {
 	case *ast.NumExpr:
-		code = append(code, Num, Op(len(c.nums)))
-		c.nums = append(c.nums, e.Value)
+		c.add(Num, Op(len(c.program.Nums)))
+		c.program.Nums = append(c.program.Nums, e.Value)
 
 	case *ast.StrExpr:
-		code = append(code, Str, Op(len(c.strs)))
-		c.strs = append(c.strs, e.Value)
+		c.add(Str, Op(len(c.program.Strs)))
+		c.program.Strs = append(c.program.Strs, e.Value)
 
 	case *ast.FieldExpr:
-		code = append(code, c.expr(e.Index)...)
-		code = append(code, Field)
+		c.expr(e.Index)
+		c.add(Field)
 
 	case *ast.VarExpr:
 		switch e.Scope {
 		case ast.ScopeGlobal:
-			code = append(code, Global, Op(e.Index))
+			c.add(Global, Op(e.Index))
 		case ast.ScopeLocal:
 		case ast.ScopeSpecial:
-			code = append(code, Special, Op(e.Index))
+			c.add(Special, Op(e.Index))
 		}
 
 	//case *ast.RegExpr:
@@ -271,8 +274,8 @@ func (c *compiler) expr(expr ast.Expr) []Op {
 		case lexer.OR:
 			panic("TODO: ||")
 		}
-		code = append(code, c.expr(e.Left)...)
-		code = append(code, c.expr(e.Right)...)
+		c.expr(e.Left)
+		c.expr(e.Right)
 		var opcode Op
 		switch e.Op {
 		case lexer.ADD:
@@ -308,18 +311,18 @@ func (c *compiler) expr(expr ast.Expr) []Op {
 		default:
 			panic(fmt.Sprintf("unexpected binary operation: %s", e.Op))
 		}
-		code = append(code, opcode)
+		c.add(opcode)
 
 	//case *ast.IncrExpr:
 
 	case *ast.AssignExpr:
-		code = append(code, c.expr(e.Right)...)
-		code = append(code, Dupe)
+		c.expr(e.Right)
+		c.add(Dupe)
 		switch left := e.Left.(type) {
 		case *ast.VarExpr:
 			switch left.Scope {
 			case ast.ScopeGlobal:
-				code = append(code, AssignGlobal, Op(left.Index))
+				c.add(AssignGlobal, Op(left.Index))
 			case ast.ScopeLocal:
 			default: // ast.ScopeSpecial
 			}
@@ -337,8 +340,8 @@ func (c *compiler) expr(expr ast.Expr) []Op {
 	case *ast.CallExpr:
 		switch e.Func {
 		case lexer.F_TOLOWER:
-			code = append(code, c.expr(e.Args[0])...)
-			code = append(code, CallBuiltin, Op(lexer.F_TOLOWER))
+			c.expr(e.Args[0])
+			c.add(CallBuiltin, Op(lexer.F_TOLOWER))
 		default:
 			panic(fmt.Sprintf("TODO: func %s not yet supported", e.Func))
 		}
@@ -355,5 +358,4 @@ func (c *compiler) expr(expr ast.Expr) []Op {
 		// Should never happen
 		panic(fmt.Sprintf("unexpected expr type: %T", expr))
 	}
-	return code
 }
