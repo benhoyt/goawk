@@ -2,6 +2,8 @@
 
 package ast
 
+import "fmt"
+
 const (
 	V_ILLEGAL = iota
 	V_ARGC
@@ -45,4 +47,42 @@ var specialVars = map[string]int{
 // if it's not a special variable.
 func SpecialVarIndex(name string) int {
 	return specialVars[name]
+}
+
+// SpecialVarName returns the name of the special variable by index.
+func SpecialVarName(index int) string {
+	switch index {
+	case V_ARGC:
+		return "ARGC"
+	case V_CONVFMT:
+		return "CONVFMT"
+	case V_FILENAME:
+		return "FILENAME"
+	case V_FNR:
+		return "FNR"
+	case V_FS:
+		return "FS"
+	case V_NF:
+		return "NF"
+	case V_NR:
+		return "NR"
+	case V_OFMT:
+		return "OFMT"
+	case V_OFS:
+		return "OFS"
+	case V_ORS:
+		return "ORS"
+	case V_RLENGTH:
+		return "RLENGTH"
+	case V_RS:
+		return "RS"
+	case V_RSTART:
+		return "RSTART"
+	case V_RT:
+		return "RT"
+	case V_SUBSEP:
+		return "SUBSEP"
+	default:
+		return fmt.Sprintf("<unknown special var %d>", index)
+	}
 }

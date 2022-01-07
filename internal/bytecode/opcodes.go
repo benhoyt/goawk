@@ -91,19 +91,23 @@ const (
 	JumpNumGreaterOrEqual
 	JumpStrEquals
 	JumpStrNotEquals
+	Return
+	Next
+	Exit
+
+	// "for (k in a)" combinations
 	ForGlobalInGlobal  // varIndex arrayIndex offset
 	ForGlobalInLocal   // varIndex arrayIndex offset
 	ForLocalInGlobal   // varIndex arrayIndex offset
 	ForLocalInLocal    // varIndex arrayIndex offset
 	ForSpecialInGlobal // varIndex arrayIndex offset
 	ForSpecialInLocal  // varIndex arrayIndex offset
+
+	// Function calls
 	// TODO: have separate opcodes for each builtin form, like CallTolower, etc?
 	CallBuiltin // func[, numArgs]
 	CallUser    // index, numArgs
 	CallNative  // index, numArgs
-	Return
-	Next
-	Exit
 
 	// Other operations
 	Print          // numArgs

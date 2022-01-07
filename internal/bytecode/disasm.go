@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/lexer"
 )
 
@@ -130,7 +131,7 @@ func (d *disassembler) disassemble(prefix string) error {
 
 		case Special:
 			index := d.fetch()
-			d.writeOpf("Special %d", index) // TODO: show name instead
+			d.writeOpf("Special %s", ast.SpecialVarName(int(index)))
 
 		case ArrayGlobal:
 			arrayIndex := d.fetch()
