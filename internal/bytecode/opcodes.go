@@ -1,9 +1,9 @@
 package bytecode
 
-type Opcode uint32
+type Op uint32
 
 const (
-	Nop Opcode = iota
+	Nop Op = iota
 
 	// Stack operations
 	Num   // numIndex
@@ -13,23 +13,23 @@ const (
 	Drop
 
 	// Fetch a field, variable, or array item
-	Field
 	// TODO: add Field0, Field1, ... FieldN
+	Field
 	Global      // index
 	Local       // index
 	Special     // index
-	ArrayGlobal // index
-	ArrayLocal  // index
-	InGlobal    // index
-	InLocal     // index
+	ArrayGlobal // arrayIndex
+	ArrayLocal  // arrayIndex
+	InGlobal    // arrayIndex
+	InLocal     // arrayIndex
 
 	// Assign a field, variable, or array item
 	AssignField
 	AssignGlobal      // index
 	AssignLocal       // index
 	AssignSpecial     // index
-	AssignArrayGlobal // index
-	AssignArrayLocal  // index
+	AssignArrayGlobal // arrayIndex
+	AssignArrayLocal  // arrayIndex
 	DeleteGlobal      // arrayIndex
 	DeleteLocal       // arrayIndex
 	DeleteAllGlobal   // arrayIndex
@@ -40,30 +40,30 @@ const (
 	PostIncrGlobal      // index
 	PostIncrLocal       // index
 	PostIncrSpecial     // index
-	PostIncrArrayGlobal // index
-	PostIncrArrayLocal  // index
+	PostIncrArrayGlobal // arrayIndex
+	PostIncrArrayLocal  // arrayIndex
 	PostDecrField
 	PostDecrGlobal      // index
 	PostDecrLocal       // index
 	PostDecrSpecial     // index
-	PostDecrArrayGlobal // index
-	PostDecrArrayLocal  // index
+	PostDecrArrayGlobal // arrayIndex
+	PostDecrArrayLocal  // arrayIndex
 
 	// Augmented assignment (also used for pre-increment and pre-decrement)
 	AugAssignField       // operation
 	AugAssignGlobal      // operation, index
 	AugAssignLocal       // operation, index
 	AugAssignSpecial     // operation, index
-	AugAssignArrayGlobal // operation, index
-	AugAssignArrayLocal  // operation, index
+	AugAssignArrayGlobal // operation, arrayIndex
+	AugAssignArrayLocal  // operation, arrayIndex
 
 	// Binary operators
 	Add
-	Sub
-	Mul
-	Div
-	Pow
-	Mod
+	Subtract
+	Multiply
+	Divide
+	Power
+	Modulo
 	Equals
 	NotEquals
 	Less
@@ -89,8 +89,10 @@ const (
 	JumpNumGreater
 	JumpNumLessOrEqual
 	JumpNumGreaterOrEqual
+	JumpStrEquals
+	JumpStrNotEquals
 	ForIn
-	// TODO: have separate opcodes for each builtin, like CallTolower, etc?
+	// TODO: have separate opcodes for each builtin form, like CallTolower, etc?
 	CallBuiltin // func[, numArgs]
 	CallUser    // index, numArgs
 	CallNative  // index, numArgs

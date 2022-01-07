@@ -323,11 +323,11 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	// TODO
 	bp := bytecode.Compile(program)
 	//bp := &bytecode.Program{
-	//	Begin: []bytecode.Opcode{
+	//	Begin: []bytecode.Op{
 	//		// loop:
 	//		// s += i
 	//		bytecode.Global, 0,
-	//		bytecode.AugAssignGlobal, bytecode.Opcode(ADD), 1,
+	//		bytecode.AugAssignGlobal, bytecode.Op(ADD), 1,
 	//
 	//		// i++
 	//		bytecode.PostIncrGlobal, 0,
@@ -346,10 +346,10 @@ func ExecProgram(program *Program, config *Config) (int, error) {
 	//	ScalarNames: []string{"i", "s"},
 	//	Nums:        []float64{0, 100000000},
 	//}
-	//err = bp.Disassemble(os.Stdout)
-	//if err != nil {
-	//	return 0, err
-	//}
+	err = bp.Disassemble(os.Stdout)
+	if err != nil {
+		return 0, err
+	}
 	//err = p.executeCode(bp, bp.Begin)
 	//if err != nil {
 	//	return 0, err

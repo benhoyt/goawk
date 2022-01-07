@@ -9,7 +9,7 @@ import (
 	"github.com/benhoyt/goawk/lexer"
 )
 
-func (p *interp) executeCode(prog *bytecode.Program, code []bytecode.Opcode) error {
+func (p *interp) executeCode(prog *bytecode.Program, code []bytecode.Op) error {
 	for i := 0; i < len(code); {
 		op := code[i]
 		i++

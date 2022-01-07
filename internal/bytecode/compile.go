@@ -10,9 +10,9 @@ import (
 )
 
 type Program struct {
-	Begin       []Opcode
+	Begin       []Op
 	Actions     []Action
-	End         []Opcode
+	End         []Op
 	Functions   []Function
 	ScalarNames []string
 	ArrayNames  []string
@@ -22,15 +22,15 @@ type Program struct {
 }
 
 type Action struct {
-	Pattern []Opcode
-	Body    []Opcode
+	Pattern []Op
+	Body    []Op
 }
 
 type Function struct {
 	Name   string
 	Params []string
 	Arrays []bool
-	Body   []Opcode
+	Body   []Op
 }
 
 func Compile(prog *parser.Program) *Program {
@@ -68,22 +68,34 @@ type compiler struct {
 }
 
 func (c *compiler) action(action ast.Action) Action {
+	var pattern, body []Op
 	if len(action.Pattern) > 0 {
-		panic(fmt.Sprintf("TODO %s", action.Pattern))
+		switch len(action.Pattern) {
+		case 1:
+			pattern = c.expr(action.Pattern[0])
+		default:
+			panic("TODO: range patterns not yet supported")
+		}
 	}
-	return Action{Body: c.stmts(action.Stmts)}
+	if len(action.Stmts) > 0 {
+		body = c.stmts(action.Stmts)
+	}
+	return Action{
+		Pattern: pattern,
+		Body:    body,
+	}
 }
 
-func (c *compiler) stmts(stmts []ast.Stmt) []Opcode {
-	var code []Opcode
+func (c *compiler) stmts(stmts []ast.Stmt) []Op {
+	var code []Op
 	for _, stmt := range stmts {
 		code = append(code, c.stmt(stmt)...)
 	}
 	return code
 }
 
-func (c *compiler) stmt(stmt ast.Stmt) []Opcode {
-	var code []Opcode
+func (c *compiler) stmt(stmt ast.Stmt) []Op {
+	var code []Op
 	switch s := stmt.(type) {
 	case *ast.ExprStmt:
 		// Optimize assignment expressions to avoid Dupe and Drop
@@ -93,7 +105,7 @@ func (c *compiler) stmt(stmt ast.Stmt) []Opcode {
 			case *ast.VarExpr:
 				if left.Scope == ast.ScopeGlobal {
 					code = append(code, c.expr(expr.Right)...)
-					code = append(code, AssignGlobal, Opcode(left.Index))
+					code = append(code, AssignGlobal, Op(left.Index))
 					return code
 				}
 			}
@@ -102,7 +114,7 @@ func (c *compiler) stmt(stmt ast.Stmt) []Opcode {
 				switch target := expr.Expr.(type) {
 				case *ast.VarExpr:
 					if target.Scope == ast.ScopeGlobal {
-						code = append(code, PostIncrGlobal, Opcode(target.Index))
+						code = append(code, PostIncrGlobal, Op(target.Index))
 						return code
 					}
 				case *ast.IndexExpr:
@@ -111,7 +123,7 @@ func (c *compiler) stmt(stmt ast.Stmt) []Opcode {
 					}
 					if target.Array.Scope == ast.ScopeGlobal {
 						code = append(code, c.expr(target.Index[0])...)
-						code = append(code, PostIncrArrayGlobal, Opcode(target.Array.Index))
+						code = append(code, PostIncrArrayGlobal, Op(target.Array.Index))
 						return code
 					}
 				}
@@ -121,7 +133,7 @@ func (c *compiler) stmt(stmt ast.Stmt) []Opcode {
 			case *ast.VarExpr:
 				if left.Scope == ast.ScopeGlobal {
 					code = append(code, c.expr(expr.Right)...)
-					code = append(code, AugAssignGlobal, Opcode(expr.Op), Opcode(left.Index))
+					code = append(code, AugAssignGlobal, Op(expr.Op), Op(left.Index))
 					return code
 				}
 			}
@@ -134,10 +146,10 @@ func (c *compiler) stmt(stmt ast.Stmt) []Opcode {
 			code = append(code, c.expr(a)...)
 		}
 		if s.Redirect == lexer.ILLEGAL {
-			code = append(code, Print, Opcode(len(s.Args)))
+			code = append(code, Print, Op(len(s.Args)))
 		} else {
 			code = append(code, c.expr(s.Dest)...)
-			code = append(code, PrintRedirect, Opcode(len(s.Args)), Opcode(s.Redirect))
+			code = append(code, PrintRedirect, Op(len(s.Args)), Op(s.Redirect))
 		}
 
 	//case *ast.PrintfStmt:
@@ -176,7 +188,7 @@ func (c *compiler) stmt(stmt ast.Stmt) []Opcode {
 						code = append(code, c.expr(cond.Left)...)
 						code = append(code, c.expr(cond.Right)...)
 						offset := loopStart - (len(code) + 2)
-						code = append(code, JumpNumLess, Opcode(int32(offset)))
+						code = append(code, JumpNumLess, Op(int32(offset)))
 					}
 				case lexer.LTE:
 					//if _, ok := cond.Right.(*ast.NumExpr); ok { // TODO: or number special variable like NF
@@ -184,21 +196,21 @@ func (c *compiler) stmt(stmt ast.Stmt) []Opcode {
 					code = append(code, c.expr(cond.Left)...)
 					code = append(code, c.expr(cond.Right)...)
 					offset := loopStart - (len(code) + 2)
-					code = append(code, JumpNumLessOrEqual, Opcode(int32(offset)))
+					code = append(code, JumpNumLessOrEqual, Op(int32(offset)))
 					//}
 				}
 			}
 			if !done {
 				code = append(code, c.expr(s.Cond)...)
 				offset := loopStart - (len(code) + 2)
-				code = append(code, JumpTrue, Opcode(int32(offset)))
+				code = append(code, JumpTrue, Op(int32(offset)))
 			}
 
 			offset := len(code) - (forwardMark + 2)
-			code[forwardMark+1] = Opcode(int32(offset))
+			code[forwardMark+1] = Op(int32(offset))
 		} else {
 			offset := loopStart - (len(code) + 2)
-			code = append(code, Jump, Opcode(int32(offset)))
+			code = append(code, Jump, Op(int32(offset)))
 		}
 
 	//case *ast.ForInStmt:
@@ -225,15 +237,15 @@ func (c *compiler) stmt(stmt ast.Stmt) []Opcode {
 	return code
 }
 
-func (c *compiler) expr(expr ast.Expr) []Opcode {
-	var code []Opcode
+func (c *compiler) expr(expr ast.Expr) []Op {
+	var code []Op
 	switch e := expr.(type) {
 	case *ast.NumExpr:
-		code = append(code, Num, Opcode(len(c.nums)))
+		code = append(code, Num, Op(len(c.nums)))
 		c.nums = append(c.nums, e.Value)
 
 	case *ast.StrExpr:
-		code = append(code, Str, Opcode(len(c.strs)))
+		code = append(code, Str, Op(len(c.strs)))
 		c.strs = append(c.strs, e.Value)
 
 	case *ast.FieldExpr:
@@ -243,10 +255,10 @@ func (c *compiler) expr(expr ast.Expr) []Opcode {
 	case *ast.VarExpr:
 		switch e.Scope {
 		case ast.ScopeGlobal:
-			code = append(code, Global, Opcode(e.Index))
+			code = append(code, Global, Op(e.Index))
 		case ast.ScopeLocal:
 		case ast.ScopeSpecial:
-			code = append(code, Special, Opcode(e.Index))
+			code = append(code, Special, Op(e.Index))
 		}
 
 	//case *ast.RegExpr:
@@ -261,12 +273,12 @@ func (c *compiler) expr(expr ast.Expr) []Opcode {
 		}
 		code = append(code, c.expr(e.Left)...)
 		code = append(code, c.expr(e.Right)...)
-		var opcode Opcode
+		var opcode Op
 		switch e.Op {
 		case lexer.ADD:
 			opcode = Add
 		case lexer.SUB:
-			opcode = Sub
+			opcode = Subtract
 		case lexer.EQUALS:
 			opcode = Equals
 		case lexer.LESS:
@@ -276,9 +288,9 @@ func (c *compiler) expr(expr ast.Expr) []Opcode {
 		case lexer.CONCAT:
 			opcode = Concat
 		case lexer.MUL:
-			opcode = Mul
+			opcode = Multiply
 		case lexer.DIV:
-			opcode = Div
+			opcode = Divide
 		case lexer.GREATER:
 			opcode = Greater
 		case lexer.GTE:
@@ -290,9 +302,9 @@ func (c *compiler) expr(expr ast.Expr) []Opcode {
 		case lexer.NOT_MATCH:
 			opcode = NotMatch
 		case lexer.POW:
-			opcode = Pow
+			opcode = Power
 		case lexer.MOD:
-			opcode = Mod
+			opcode = Modulo
 		default:
 			panic(fmt.Sprintf("unexpected binary operation: %s", e.Op))
 		}
@@ -307,7 +319,7 @@ func (c *compiler) expr(expr ast.Expr) []Opcode {
 		case *ast.VarExpr:
 			switch left.Scope {
 			case ast.ScopeGlobal:
-				code = append(code, AssignGlobal, Opcode(left.Index))
+				code = append(code, AssignGlobal, Op(left.Index))
 			case ast.ScopeLocal:
 			default: // ast.ScopeSpecial
 			}
@@ -326,7 +338,7 @@ func (c *compiler) expr(expr ast.Expr) []Opcode {
 		switch e.Func {
 		case lexer.F_TOLOWER:
 			code = append(code, c.expr(e.Args[0])...)
-			code = append(code, CallBuiltin, Opcode(lexer.F_TOLOWER))
+			code = append(code, CallBuiltin, Op(lexer.F_TOLOWER))
 		default:
 			panic(fmt.Sprintf("TODO: func %s not yet supported", e.Func))
 		}

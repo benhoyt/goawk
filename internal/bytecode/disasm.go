@@ -7,147 +7,190 @@ import (
 	"github.com/benhoyt/goawk/lexer"
 )
 
-func (p *Program) Disassemble(w io.Writer) error {
+func (p *Program) Disassemble(writer io.Writer) error {
 	if p.Begin != nil {
-		writef(w, "BEGIN:\n")
-		p.disassembleCode(w, p.Begin)
-		writef(w, "\n")
-	}
-	for _, action := range p.Actions {
-		writef(w, "// pattern { body }\n")
-		if action.Pattern != nil {
-			panic("TODO")
+		d := &disassembler{
+			program: p,
+			writer:  writer,
+			code:    p.Begin,
 		}
-		p.disassembleCode(w, action.Body)
-		writef(w, "\n")
+		err := d.disassemble("BEGIN")
+		if err != nil {
+			return err
+		}
 	}
-	//if p.End != nil {
-	//	writef(w, "END:\n")
-	//	p.disassembleCode(w, p.End)
-	//	writef(w, "\n")
-	//}
+
+	for _, action := range p.Actions {
+		if action.Pattern != nil {
+			d := &disassembler{
+				program: p,
+				writer:  writer,
+				code:    action.Pattern,
+			}
+			err := d.disassemble("pattern")
+			if err != nil {
+				return err
+			}
+		}
+		if action.Body != nil {
+			d := &disassembler{
+				program: p,
+				writer:  writer,
+				code:    action.Body,
+			}
+			err := d.disassemble("{ body }")
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if p.End != nil {
+		d := &disassembler{
+			program: p,
+			writer:  writer,
+			code:    p.End,
+		}
+		err := d.disassemble("END")
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
-func (p *Program) disassembleCode(w io.Writer, code []Opcode) {
-	for i := 0; i < len(code); {
-		addr := i
-		op := code[i]
-		i++
+type disassembler struct {
+	program *Program
+	writer  io.Writer
+	code    []Op
+	ip      int
+	opAddr  int
+	err     error
+}
+
+func (d *disassembler) disassemble(prefix string) error {
+	if prefix != "" {
+		d.writef("        // %s\n", prefix)
+	}
+
+	for d.ip < len(d.code) && d.err == nil {
+		d.opAddr = d.ip
+		op := d.fetch()
 
 		switch op {
 		case Nop:
-			writeOpcodef(w, addr, "Nop")
+			d.writeOpf("Nop")
 
 		case Num:
-			index := code[i]
-			i++
-			num := p.Nums[index]
+			index := d.fetch()
+			num := d.program.Nums[index]
 			if num == float64(int(num)) {
-				writeOpcodef(w, addr, "Num %d", int(num))
+				d.writeOpf("Num %d", int(num))
 			} else {
-				writeOpcodef(w, addr, "Num %.6g", num)
+				d.writeOpf("Num %.6g", num)
 			}
 
 		case Str:
-			index := code[i]
-			i++
-			writeOpcodef(w, addr, "Str %q", p.Strs[index])
+			index := d.fetch()
+			d.writeOpf("Str %q", d.program.Strs[index])
 
 		case Dupe:
-			writeOpcodef(w, addr, "Dupe")
+			d.writeOpf("Dupe")
 
 		case Drop:
-			writeOpcodef(w, addr, "Drop")
+			d.writeOpf("Drop")
 
 		case Field:
-			writeOpcodef(w, addr, "Field")
+			d.writeOpf("Field")
 
 		case Global:
-			index := code[i]
-			i++
-			writeOpcodef(w, addr, "Global %s", p.ScalarNames[index])
+			index := d.fetch()
+			d.writeOpf("Global %s", d.program.ScalarNames[index])
 
 		case Special:
-			index := code[i]
-			i++
-			writeOpcodef(w, addr, "Special %d", index) // TODO: show name instead
+			index := d.fetch()
+			d.writeOpf("Special %d", index) // TODO: show name instead
 
 		case AssignGlobal:
-			index := code[i]
-			i++
-			writeOpcodef(w, addr, "AssignGlobal %s", p.ScalarNames[index])
+			index := d.fetch()
+			d.writeOpf("AssignGlobal %s", d.program.ScalarNames[index])
 
 		case PostIncrGlobal:
-			index := code[i]
-			i++
-			writeOpcodef(w, addr, "PostIncrGlobal %s", p.ScalarNames[index])
+			index := d.fetch()
+			d.writeOpf("PostIncrGlobal %s", d.program.ScalarNames[index])
 
 		case AugAssignGlobal:
-			operation := lexer.Token(code[i])
-			index := code[i+1]
-			i += 2
-			writeOpcodef(w, addr, "AugAssignGlobal %s %s", operation, p.ScalarNames[index])
+			operation := lexer.Token(d.fetch())
+			index := d.fetch()
+			d.writeOpf("AugAssignGlobal %s %s", operation, d.program.ScalarNames[index])
 
 		case PostIncrArrayGlobal:
-			arrayIndex := code[i]
-			i++
-			writeOpcodef(w, addr, "PostIncrArrayGlobal %s", p.ArrayNames[arrayIndex])
+			arrayIndex := d.fetch()
+			d.writeOpf("PostIncrArrayGlobal %s", d.program.ArrayNames[arrayIndex])
 
 		case Less:
-			writeOpcodef(w, addr, "Less")
+			d.writeOpf("Less")
 
 		case LessOrEqual:
-			writeOpcodef(w, addr, "LessOrEqual")
+			d.writeOpf("LessOrEqual")
 
 		case Jump:
-			offset := int32(code[i])
-			i++
-			writeOpcodef(w, addr, "Jump %04x", i+int(offset))
+			offset := int32(d.fetch())
+			d.writeOpf("Jump %04x", d.ip+int(offset))
 
 		case JumpFalse:
-			offset := int32(code[i])
-			i++
-			writeOpcodef(w, addr, "JumpFalse %04x", i+int(offset))
+			offset := int32(d.fetch())
+			d.writeOpf("JumpFalse %04x", d.ip+int(offset))
 
 		case JumpTrue:
-			offset := int32(code[i])
-			i++
-			writeOpcodef(w, addr, "JumpTrue %04x", i+int(offset))
+			offset := int32(d.fetch())
+			d.writeOpf("JumpTrue %04x", d.ip+int(offset))
 
 		case JumpNumLess:
-			offset := int32(code[i])
-			i++
-			writeOpcodef(w, addr, "JumpNumLess %04x", i+int(offset))
+			offset := int32(d.fetch())
+			d.writeOpf("JumpNumLess %04x", d.ip+int(offset))
 
 		case JumpNumLessOrEqual:
-			offset := int32(code[i])
-			i++
-			writeOpcodef(w, addr, "JumpNumLessOrEqual %04x", i+int(offset))
+			offset := int32(d.fetch())
+			d.writeOpf("JumpNumLessOrEqual %04x", d.ip+int(offset))
 
 		case CallBuiltin:
-			function := code[i]
-			i++
-			switch lexer.Token(function) {
+			function := lexer.Token(d.fetch())
+			switch function {
 			case lexer.F_TOLOWER:
-				writeOpcodef(w, addr, "CallBuiltin tolower")
+				d.writeOpf("CallBuiltin tolower")
 			}
+
 		case Print:
-			numArgs := code[i]
-			i++
-			writeOpcodef(w, addr, "Print %d", numArgs)
+			numArgs := d.fetch()
+			d.writeOpf("Print %d", numArgs)
 
 		default:
 			panic(fmt.Sprintf("unexpected opcode %d", op))
 		}
 	}
+
+	d.writef("\n")
+	return d.err
 }
 
-func writef(w io.Writer, format string, args ...interface{}) {
-	fmt.Fprintf(w, format, args...)
+func (d *disassembler) fetch() Op {
+	op := d.code[d.ip]
+	d.ip++
+	return op
 }
 
-func writeOpcodef(w io.Writer, addr int, format string, args ...interface{}) {
-	addrStr := fmt.Sprintf("%04x", addr)
-	fmt.Fprintf(w, addrStr+"    "+format+"\n", args...)
+func (d *disassembler) writef(format string, args ...interface{}) {
+	if d.err != nil {
+		return
+	}
+	_, d.err = fmt.Fprintf(d.writer, format, args...)
+}
+
+func (d *disassembler) writeOpf(format string, args ...interface{}) {
+	if d.err != nil {
+		return
+	}
+	addrStr := fmt.Sprintf("%04x", d.opAddr)
+	_, d.err = fmt.Fprintf(d.writer, addrStr+"    "+format+"\n", args...)
 }
