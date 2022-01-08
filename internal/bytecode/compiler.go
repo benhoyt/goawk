@@ -431,15 +431,102 @@ func (c *compiler) expr(expr ast.Expr) {
 
 	case *ast.CallExpr:
 		switch e.Func {
-		case lexer.F_TOLOWER:
+		case lexer.F_SPLIT:
 			c.expr(e.Args[0])
-			c.add(CallBuiltin, Op(lexer.F_TOLOWER))
+			arrayExpr := e.Args[1].(*ast.ArrayExpr)
+			switch {
+			case arrayExpr.Scope == ast.ScopeGlobal && len(e.Args) > 2:
+				c.expr(e.Args[2])
+				c.add(CallSplitSepGlobal, Op(arrayExpr.Index))
+			case arrayExpr.Scope == ast.ScopeGlobal:
+				c.add(CallSplitGlobal, Op(arrayExpr.Index))
+			case arrayExpr.Scope == ast.ScopeLocal && len(e.Args) > 2:
+				c.expr(e.Args[2])
+				c.add(CallSplitSepLocal, Op(arrayExpr.Index))
+			case arrayExpr.Scope == ast.ScopeLocal:
+				c.add(CallSplitLocal, Op(arrayExpr.Index))
+			default:
+				panic(fmt.Sprintf("unexpected array scope %s or num args %d", arrayExpr.Scope, len(e.Args)))
+			}
+			return
+			//case lexer.F_SUB, lexer.F_GSUB:
+		}
+
+		for _, arg := range e.Args {
+			c.expr(arg)
+		}
+		switch e.Func {
+		case lexer.F_ATAN2:
+			c.add(CallAtan2)
+		case lexer.F_CLOSE:
+			c.add(CallClose)
+		case lexer.F_COS:
+			c.add(CallCos)
+		case lexer.F_EXP:
+			c.add(CallExp)
+		case lexer.F_FFLUSH:
+			if len(e.Args) > 0 {
+				c.add(CallFflush)
+			} else {
+				c.add(CallFflushAll)
+			}
+		case lexer.F_INDEX:
+			c.add(CallIndex)
+		case lexer.F_INT:
+			c.add(CallInt)
+		case lexer.F_LENGTH:
+			if len(e.Args) > 0 {
+				c.add(CallLengthArg)
+			} else {
+				c.add(CallLength)
+			}
+		case lexer.F_LOG:
+			c.add(CallLog)
+		case lexer.F_MATCH:
+			c.add(CallMatch)
+		case lexer.F_RAND:
+			c.add(CallRand)
+		case lexer.F_SIN:
+			c.add(CallSin)
+		case lexer.F_SPRINTF:
+			c.add(Op(len(e.Args)))
+			c.add(CallSprintf)
+		case lexer.F_SQRT:
+			c.add(CallSqrt)
+		case lexer.F_SRAND:
+			if len(e.Args) > 0 {
+				c.add(CallSrandSeed)
+			} else {
+				c.add(CallSrand)
+			}
+		case lexer.F_SUBSTR:
+			if len(e.Args) > 2 {
+				c.add(CallSubstrLength)
+			} else {
+				c.add(CallSubstr)
+			}
+		case lexer.F_SYSTEM:
+			c.add(CallSystem)
+		case lexer.F_TOLOWER:
+			c.add(CallTolower)
+		case lexer.F_TOUPPER:
+			c.add(CallToupper)
 		default:
 			panic(fmt.Sprintf("TODO: func %s not yet supported", e.Func))
 		}
 
-	//case *ast.UnaryExpr:
-	//
+	case *ast.UnaryExpr:
+		switch e.Op {
+		case lexer.SUB:
+			c.add(UnaryMinus)
+		case lexer.NOT:
+			c.add(Not)
+		case lexer.ADD:
+			c.add(UnaryPlus)
+		default:
+			panic(fmt.Sprintf("unexpected unary operation: %s", e.Op))
+		}
+
 	//case *ast.InExpr:
 	//
 	//case *ast.UserCallExpr:

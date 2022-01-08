@@ -100,9 +100,6 @@ func (d *disassembler) disassemble(prefix string) error {
 		op := d.fetch()
 
 		switch op {
-		case Nop:
-			d.writeOpf("Nop")
-
 		case Num:
 			index := d.fetch()
 			num := d.program.Nums[index]
@@ -115,15 +112,6 @@ func (d *disassembler) disassemble(prefix string) error {
 		case Str:
 			index := d.fetch()
 			d.writeOpf("Str %q", d.program.Strs[index])
-
-		case Dupe:
-			d.writeOpf("Dupe")
-
-		case Drop:
-			d.writeOpf("Drop")
-
-		case Field:
-			d.writeOpf("Field")
 
 		case Global:
 			index := d.fetch()
@@ -141,9 +129,6 @@ func (d *disassembler) disassemble(prefix string) error {
 			index := d.fetch()
 			d.writeOpf("AssignGlobal %s", d.program.ScalarNames[index])
 
-		case AssignField:
-			d.writeOpf("AssignField")
-
 		case PostIncrGlobal:
 			index := d.fetch()
 			d.writeOpf("PostIncrGlobal %s", d.program.ScalarNames[index])
@@ -156,12 +141,6 @@ func (d *disassembler) disassemble(prefix string) error {
 		case PostIncrArrayGlobal:
 			arrayIndex := d.fetch()
 			d.writeOpf("PostIncrArrayGlobal %s", d.program.ArrayNames[arrayIndex])
-
-		case Less:
-			d.writeOpf("Less")
-
-		case LessOrEqual:
-			d.writeOpf("LessOrEqual")
 
 		case Jump:
 			offset := int32(d.fetch())
@@ -193,12 +172,55 @@ func (d *disassembler) disassemble(prefix string) error {
 			offset := d.fetch()
 			d.writeOpf("ForGlobalInGlobal %s %s 0x%04x", d.program.ScalarNames[varIndex], d.program.ArrayNames[arrayIndex], d.ip+int(offset))
 
-		case CallBuiltin:
-			function := lexer.Token(d.fetch())
-			switch function {
-			case lexer.F_TOLOWER:
-				d.writeOpf("CallBuiltin tolower")
-			}
+		//case CallGsub:
+		//	d.writeOpf("CallGsub")
+		//case CallGsubField:
+		//	d.writeOpf("CallGsubField")
+		//case CallGsubGlobal:
+		//	d.writeOpf("CallGsubGlobal")
+		//case CallGsubLocal:
+		//	d.writeOpf("CallGsubLocal")
+		//case CallGsubSpecial:
+		//	d.writeOpf("CallGsubSpecial")
+		//case CallGsubArrayGlobal:
+		//	d.writeOpf("CallGsubArrayGlobal")
+		//case CallGsubArrayLocal:
+		//	d.writeOpf("CallGsubArrayLocal")
+
+		case CallSplitGlobal:
+			arrayIndex := d.fetch()
+			d.writeOpf("CallSplitGlobal %s", d.program.ArrayNames[arrayIndex])
+
+		case CallSplitLocal:
+			arrayIndex := d.fetch()
+			d.writeOpf("CallSplitLocal %s", d.program.ArrayNames[arrayIndex])
+
+		case CallSplitSepGlobal:
+			arrayIndex := d.fetch()
+			d.writeOpf("CallSplitSepGlobal %s", d.program.ArrayNames[arrayIndex])
+
+		case CallSplitSepLocal:
+			arrayIndex := d.fetch()
+			d.writeOpf("CallSplitSepLocal %s", d.program.ArrayNames[arrayIndex])
+
+		case CallSprintf:
+			numArgs := d.fetch()
+			d.writeOpf("CallSprintf %d", numArgs)
+
+		//case CallSub:
+		//	d.writeOpf("CallSub")
+		//case CallSubField:
+		//	d.writeOpf("CallSubField")
+		//case CallSubGlobal:
+		//	d.writeOpf("CallSubGlobal")
+		//case CallSubLocal:
+		//	d.writeOpf("CallSubLocal")
+		//case CallSubSpecial:
+		//	d.writeOpf("CallSubSpecial")
+		//case CallSubArrayGlobal:
+		//	d.writeOpf("CallSubArrayGlobal")
+		//case CallSubArrayLocal:
+		//	d.writeOpf("CallSubArrayLocal")
 
 		case Print:
 			numArgs := d.fetch()
@@ -219,7 +241,7 @@ func (d *disassembler) disassemble(prefix string) error {
 			}
 
 		default:
-			panic(fmt.Sprintf("unexpected opcode %d", op))
+			d.writeOpf("%s", op)
 		}
 	}
 

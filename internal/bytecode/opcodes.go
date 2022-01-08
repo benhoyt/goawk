@@ -1,5 +1,6 @@
 package bytecode
 
+//go:generate go run golang.org/x/tools/cmd/stringer@master -type=Op
 type Op uint32
 
 const (
@@ -103,11 +104,52 @@ const (
 	ForSpecialInGlobal // varIndex arrayIndex offset
 	ForSpecialInLocal  // varIndex arrayIndex offset
 
-	// Function calls
-	// TODO: have separate opcodes for each builtin form, like CallTolower, etc?
-	CallBuiltin // func[, numArgs]
-	CallUser    // index, numArgs
-	CallNative  // index, numArgs
+	// Builtin functions
+	CallAtan2
+	CallClose
+	CallCos
+	CallExp
+	CallFflush
+	CallFflushAll
+	CallGsub
+	CallGsubField
+	CallGsubGlobal      // index
+	CallGsubLocal       // index
+	CallGsubSpecial     // index
+	CallGsubArrayGlobal // arrayIndex
+	CallGsubArrayLocal  // arrayIndex
+	CallIndex
+	CallInt
+	CallLength
+	CallLengthArg
+	CallLog
+	CallMatch
+	CallRand
+	CallSin
+	CallSplitGlobal    // arrayIndex
+	CallSplitLocal     // arrayIndex
+	CallSplitSepGlobal // arrayIndex
+	CallSplitSepLocal  // arrayIndex
+	CallSprintf        // numArgs
+	CallSqrt
+	CallSrand
+	CallSrandSeed
+	CallSub
+	CallSubField
+	CallSubGlobal      // index
+	CallSubLocal       // index
+	CallSubSpecial     // index
+	CallSubArrayGlobal // arrayIndex
+	CallSubArrayLocal  // arrayIndex
+	CallSubstr
+	CallSubstrLength
+	CallSystem
+	CallTolower
+	CallToupper
+
+	// User and native functions
+	CallUser   // index, numArgs
+	CallNative // index, numArgs
 
 	// Print and getline operations
 	Print  // numArgs, redirect
