@@ -1,20 +1,12 @@
 === RUN   TestInterp
 === RUN   TestInterp/BEGIN_{_print_"b"_}
-    interp_test.go:838: [bytecode] expected "b\n", got "b\nb\n"
 === RUN   TestInterp/BEGIN_{_print_"b"_}#01
-    interp_test.go:838: [bytecode] expected "b\n", got "b\nb\n"
 === RUN   TestInterp/END_{_print_"e"_}
-    interp_test.go:838: [bytecode] expected "e\n", got "e\ne\n"
 === RUN   TestInterp/END_{_print_"e"_}#01
-    interp_test.go:838: [bytecode] expected "e\n", got "e\ne\n"
 === RUN   TestInterp/BEGIN_{_print_"b"}_END_{_print_"e"_}
-    interp_test.go:838: [bytecode] expected "b\ne\n", got "b\ne\nb\ne\n"
 === RUN   TestInterp/BEGIN_{_print_"b"}_END_{_print_"e"_}#01
-    interp_test.go:838: [bytecode] expected "b\ne\n", got "b\ne\nb\ne\n"
 === RUN   TestInterp/BEGIN_{_print_"b"}_$0_{_print_NR_}_END_{_print_"e"_}
-    interp_test.go:838: [bytecode] expected "b\n1\ne\n", got "b\n1\ne\nb\ne\n"
 === RUN   TestInterp/BEGIN_{_printf_"x"_};_BEGIN_{_printf_"y"_}
-    interp_test.go:838: [bytecode] expected "xy", got "xyxy"
 === RUN   TestInterp/$0
 === RUN   TestInterp/{_print_$0_}
 === RUN   TestInterp/$1=="foo"
@@ -25,51 +17,33 @@
 === RUN   TestInterp/NR==2,_NR==4
 === RUN   TestInterp/_NR==2,_NR==4_{_print_$0_}_NR==3,_NR==5_{_print_NR_}_
 === RUN   TestInterp/BEGIN_{_print_"x",_"y"_}
-    interp_test.go:838: [bytecode] expected "x y\n", got "x y\nx y\n"
 === RUN   TestInterp/BEGIN_{_print_OFS;_OFS_=_",";_print_"x",_"y"_}
-    interp_test.go:838: [bytecode] expected " \nx,y\n", got " \nx,y\n \nx y\n"
+    interp_test.go:852: [bytecode] expected " \nx,y\n", got " \nx y\n"
 === RUN   TestInterp/BEGIN_{_print_ORS;_ORS_=_".";_print_"x",_"y"_}
-    interp_test.go:838: [bytecode] expected "\n\nx y.", got "\n\nx y.\n\nx y\n"
+    interp_test.go:852: [bytecode] expected "\n\nx y.", got "\n\nx y\n"
 === RUN   TestInterp/BEGIN_{_print_ORS;_ORS_=_"";_print_"x",_"y"_}
-    interp_test.go:838: [bytecode] expected "\n\nx y", got "\n\nx y\n\nx y\n"
+    interp_test.go:852: [bytecode] expected "\n\nx y", got "\n\nx y\n"
 === RUN   TestInterp/{_print;_print_}
 === RUN   TestInterp/BEGIN_{_print;_print_}
-    interp_test.go:838: [bytecode] expected "\n\n", got "\n\n\n\n"
 === RUN   TestInterp/BEGIN_{_printf_"%%_%d_%x_%c_%f_%s",_42,_42,_42,_42,_42_}
-    interp_test.go:838: [bytecode] expected "% 42 2a * 42.000000 42", got "% 42 2a * 42.000000 42% 42 2a * 42.000000 42"
 === RUN   TestInterp/BEGIN_{_printf_"%3d",_42_}
-    interp_test.go:838: [bytecode] expected " 42", got " 42 42"
 === RUN   TestInterp/BEGIN_{_printf_"%3s",_"x"_}
-    interp_test.go:838: [bytecode] expected "  x", got "  x  x"
 === RUN   TestInterp/BEGIN_{_printf_"%.1g",_42_}__#_!windows-gawk
-    interp_test.go:838: [bytecode] expected "4e+01", got "4e+014e+01"
 === RUN   TestInterp/BEGIN_{_printf_"%d",_12,_34_}
-    interp_test.go:838: [bytecode] expected "12", got "1212"
 === RUN   TestInterp/BEGIN_{_printf_"%d"_}
 === RUN   TestInterp/BEGIN_{_printf_"%c",_0_}
-    interp_test.go:838: [bytecode] expected "\x00", got "\x00\x00"
 === RUN   TestInterp/BEGIN_{_printf_"%c",_127_}
-    interp_test.go:838: [bytecode] expected "\u007f", got "\u007f\u007f"
 === RUN   TestInterp/BEGIN_{_printf_"%c",_128_}__#_!gawk
-    interp_test.go:838: [bytecode] expected "\x80", got "\x80\x80"
 === RUN   TestInterp/BEGIN_{_printf_"%c",_255_}__#_!gawk
-    interp_test.go:838: [bytecode] expected "\xff", got "\xff\xff"
 === RUN   TestInterp/BEGIN_{_printf_"%c",_256_}__#_!awk_!gawk
-    interp_test.go:838: [bytecode] expected "\x00", got "\x00\x00"
 === RUN   TestInterp/BEGIN_{_printf_"%c",_"xyz"_}
-    interp_test.go:838: [bytecode] expected "x", got "xx"
 === RUN   TestInterp/BEGIN_{_printf_"%c",_""_}__#_!awk
-    interp_test.go:838: [bytecode] expected "\x00", got "\x00\x00"
 === RUN   TestInterp/BEGIN_{_printf_}__#_!awk_-_doesn't_error_on_this
 === RUN   TestInterp/BEGIN_{_printf("%%%dd",_4)_}
-    interp_test.go:838: [bytecode] expected "%4d", got "%4d%4d"
 === RUN   TestInterp/BEGIN_{_if_(1)_print_"t";_}
-    interp_test.go:838: [bytecode] expected "t\n", got "t\nt\n"
 === RUN   TestInterp/BEGIN_{_if_(0)_print_"t";_}
 === RUN   TestInterp/BEGIN_{_if_(1)_print_"t";_else_print_"f"_}
-    interp_test.go:838: [bytecode] expected "t\n", got "t\nt\n"
 === RUN   TestInterp/BEGIN_{_if_(0)_print_"t";_else_print_"f"_}
-    interp_test.go:838: [bytecode] expected "f\n", got "f\nf\n"
 === RUN   TestInterp/BEGIN_{_for_(;;)_{_print_"x";_break_}_}
     interp_test.go:809: panic compiling bytecode: unexpected stmt type: *ast.BreakStmt
 === RUN   TestInterp/BEGIN_{_for_(;;)_{_printf_"%d_",_i;_i++;_if_(i>2)_break;_}_}
@@ -79,7 +53,7 @@
 === RUN   TestInterp/BEGIN_{_for_(i=5;_;_i++)_{_printf_"%d_",_i;_if_(i>8)_break;_}_}
     interp_test.go:809: panic compiling bytecode: unexpected stmt type: *ast.BreakStmt
 === RUN   TestInterp/BEGIN_{_for_(i=5;_i<8;_i++)_{_printf_"%d_",_i_}_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode JumpNumGreaterOrEqual
+    interp_test.go:832: panic executing bytecode: unexpected opcode JumpNumGreaterOrEqual
 === RUN   TestInterp/BEGIN_{_for_(i=0;_i<10;_i++)_{_if_(i_<_5)_continue;_printf_"%d_",_i_}_
     interp_test.go:809: panic compiling bytecode: unexpected stmt type: *ast.ContinueStmt
 === RUN   TestInterp/BEGIN_{_a[1]=1;_a[2]=1;_for_(k_in_a)_{_s++;_break_}_print_s_}
@@ -95,13 +69,13 @@
 === RUN   TestInterp/BEGIN_{_do_{_i++;_if_(i==2)_continue;_s++_}_while_(i<3);_print_s_}
     interp_test.go:809: panic compiling bytecode: unexpected stmt type: *ast.DoWhileStmt
 === RUN   TestInterp/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_for_(k_in_a)_x_+=_a[k];_print_x_}
-    interp_test.go:838: [bytecode] expected "7\n", got "7\n\n"
+    interp_test.go:852: [bytecode] expected "7\n", got "\n"
 === RUN   TestInterp/BEGIN_{_while_(i_<_5)_{_print_i;_i++_}_}
     interp_test.go:809: panic compiling bytecode: unexpected stmt type: *ast.WhileStmt
 === RUN   TestInterp/BEGIN_{_do_{_print_i;_i++_}_while_(i_<_5)_}
     interp_test.go:809: panic compiling bytecode: unexpected stmt type: *ast.DoWhileStmt
 === RUN   TestInterp/BEGIN_{_for_(i=0;_i<10;_i++);_printf_"x"_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode JumpNumGreaterOrEqual
+    interp_test.go:832: panic executing bytecode: unexpected opcode JumpNumGreaterOrEqual
 === RUN   TestInterp/_BEGIN_{__for_(i_=_0;_i_<_1;_i++)_{___for_(j_=_0;_j_<_1;_j++)_{____pri
     interp_test.go:809: panic compiling bytecode: unexpected stmt type: *ast.BreakStmt
 === RUN   TestInterp/_BEGIN_{__for_(i_=_0;_i_<_1;_i++)_{___for_(j_=_0;_j_<_1;_j++)_{____pri#01
@@ -125,105 +99,85 @@
 === RUN   TestInterp/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_delete_a;_for_(k_in_a)_print_k,_a[k]_}
     interp_test.go:809: panic compiling bytecode: unexpected stmt type: *ast.DeleteStmt
 === RUN   TestInterp/BEGIN_{_print_!42,_!1,_!0,_!!42,_!!1,_!!0_}
-    interp_test.go:819: panic executing bytecode: runtime error: index out of range [-1]
+    interp_test.go:832: panic executing bytecode: runtime error: index out of range [-1]
 === RUN   TestInterp/BEGIN_{_print_!42,_!1,_!0,_!!42,_!!1,_!!0_}#01
-    interp_test.go:819: panic executing bytecode: runtime error: index out of range [-1]
+    interp_test.go:832: panic executing bytecode: runtime error: index out of range [-1]
 === RUN   TestInterp/BEGIN_{_print_+4,_+"3",_+0,_+-3,_-3,_-_-4,_-"3"_}
-    interp_test.go:819: panic executing bytecode: runtime error: index out of range [-1]
+    interp_test.go:832: panic executing bytecode: runtime error: index out of range [-1]
 === RUN   TestInterp/BEGIN_{_$0="0";_print_!$0_}
-    interp_test.go:819: panic executing bytecode: runtime error: index out of range [-1]
+    interp_test.go:832: panic executing bytecode: runtime error: index out of range [-1]
 === RUN   TestInterp/BEGIN_{_$0="1";_print_!$0_}
-    interp_test.go:819: panic executing bytecode: runtime error: index out of range [-1]
+    interp_test.go:832: panic executing bytecode: runtime error: index out of range [-1]
 === RUN   TestInterp/{_print_!$0_}
+    interp_test.go:832: panic executing bytecode: runtime error: index out of range [-1]
 === RUN   TestInterp/{_print_!$0_}#01
+    interp_test.go:832: panic executing bytecode: runtime error: index out of range [-1]
 === RUN   TestInterp/!seen[$0]++
+    interp_test.go:832: panic executing bytecode: runtime error: index out of range [-1]
 === RUN   TestInterp/!seen[$0]--
+    interp_test.go:832: panic executing bytecode: runtime error: index out of range [-1]
 === RUN   TestInterp/BEGIN_{_print_(1==1,_1==0,_"1"==1,_"1"==1.0)_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode Equals
 === RUN   TestInterp/{_print_($0=="1",_$0==1)_}
 === RUN   TestInterp/{_print_($1=="1",_$1==1)_}
 === RUN   TestInterp/BEGIN_{_print_(1!=1,_1!=0,_"1"!=1,_"1"!=1.0)_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode NotEquals
 === RUN   TestInterp/{_print_($0!="1",_$0!=1)_}
 === RUN   TestInterp/{_print_($1!="1",_$1!=1)_}
 === RUN   TestInterp/BEGIN_{_print_(0<1,_1<1,_2<1,_"12"<"2")_}
-    interp_test.go:838: [bytecode] expected "1 0 0 1\n", got "1 0 0 1\n1 0 0 1\n"
 === RUN   TestInterp/{_print_($1<2)_}
 === RUN   TestInterp/BEGIN_{_print_(0<=1,_1<=1,_2<=1,_"12"<="2")_}
-    interp_test.go:838: [bytecode] expected "1 1 0 1\n", got "1 1 0 1\n1 1 0 1\n"
 === RUN   TestInterp/{_print_($1<=2)_}
 === RUN   TestInterp/BEGIN_{_print_(0>1,_1>1,_2>1,_"12">"2")_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode Greater
 === RUN   TestInterp/{_print_($1>2)_}
 === RUN   TestInterp/BEGIN_{_print_(0>=1,_1>=1,_2>=1,_"12">="2")_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode GreaterOrEqual
 === RUN   TestInterp/{_print_($1>=2)_}
 === RUN   TestInterp/{_print($0<2)_}
 === RUN   TestInterp/{_print($1<2)_}
 === RUN   TestInterp/{_print($1<2)_}#01
 === RUN   TestInterp/BEGIN_{_$0="10";_print($0<2)_}
-    interp_test.go:838: [bytecode] expected "1\n", got "1\n1\n"
 === RUN   TestInterp/BEGIN_{_$1="10";_print($1<2)_}
-    interp_test.go:838: [bytecode] expected "1\n", got "1\n1\n"
 === RUN   TestInterp/BEGIN_{_$1="10x";_print($1<2)_}
-    interp_test.go:838: [bytecode] expected "1\n", got "1\n1\n"
 === RUN   TestInterp/_function_t()_{_print_"t";_return_1_}_function_f()_{_print_"f";_return
     interp_test.go:809: panic compiling bytecode: TODO: &&
 === RUN   TestInterp/_function_t()_{_print_"t";_return_1_}_function_f()_{_print_"f";_return#01
     interp_test.go:809: panic compiling bytecode: TODO: ||
 === RUN   TestInterp/BEGIN_{_print_1+2,_1+2+3,_1+-2,_-1+2,_"1"+"2",_3+.14_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode Add
+    interp_test.go:832: panic executing bytecode: runtime error: slice bounds out of range [-2:]
 === RUN   TestInterp/BEGIN_{_print_1-2,_1-2-3,_1-+2,_-1-2,_"1"-"2",_3-.14_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode Subtract
+    interp_test.go:832: panic executing bytecode: runtime error: slice bounds out of range [-2:]
 === RUN   TestInterp/BEGIN_{_print_2*3,_2*3*4,_2*-3,_-2*3,_"2"*"3",_3*.14_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode Multiply
+    interp_test.go:832: panic executing bytecode: runtime error: slice bounds out of range [-2:]
 === RUN   TestInterp/BEGIN_{_print_2/3,_2/3/4,_2/-3,_-2/3,_"2"/"3",_3/.14_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode Divide
+    interp_test.go:832: panic executing bytecode: runtime error: slice bounds out of range [-2:]
 === RUN   TestInterp/BEGIN_{_print_2%3,_2%3%4,_2%-3,_-2%3,_"2"%"3",_3%.14_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode Modulo
+    interp_test.go:832: panic executing bytecode: runtime error: slice bounds out of range [-2:]
 === RUN   TestInterp/BEGIN_{_print_2^3,_2^3^3,_2^-3,_-2^3,_"2"^"3",_3^.14_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode Power
+    interp_test.go:832: panic executing bytecode: runtime error: slice bounds out of range [-2:]
 === RUN   TestInterp/BEGIN_{_print_1_2,_"x"_"yz",_1+2_3+4_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode Concat
 === RUN   TestInterp/BEGIN_{_print_"food"~/oo/,_"food"~/[oO]+d/,_"food"~"f",_"food"~"F",_"f
-    interp_test.go:819: panic executing bytecode: unexpected opcode Match
 === RUN   TestInterp/BEGIN_{_print_"food"!~/oo/,_"food"!~/[oO]+d/,_"food"!~"f",_"food"!~"F"
-    interp_test.go:819: panic executing bytecode: unexpected opcode NotMatch
 === RUN   TestInterp/BEGIN_{_print_1+2*3/4^5%6_7,_(1+2)*3/4^5%6_"7"_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode Multiply
 === RUN   TestInterp/BEGIN_{_print_1,_1.,_.1,_1e0,_-1,_1e_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode Concat
+    interp_test.go:832: panic executing bytecode: runtime error: slice bounds out of range [-1:]
 === RUN   TestInterp/BEGIN_{_print_'\"'_'\''_'xy'_"z"_"'"_'\"'_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode Concat
 === RUN   TestInterp/{_print_/foo/_}
     interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.RegExpr
 === RUN   TestInterp//[a-/
 === RUN   TestInterp/BEGIN_{_print_"-12"+0,_"+12"+0,_"_\t\r\n7foo"+0,_".5"+0,_"5."+0,_"+."+
-    interp_test.go:819: panic executing bytecode: unexpected opcode Add
 === RUN   TestInterp/BEGIN_{_print_"1e3"+0,_"1.2e-1"+0,_"1e+1"+0,_"1e"+0,_"1e+"+0_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode Add
 === RUN   TestInterp/BEGIN_{_print_-(11102200000000000000000000000000000000_1040000)_}__#_!
-    interp_test.go:819: panic executing bytecode: runtime error: index out of range [-1]
+    interp_test.go:832: panic executing bytecode: runtime error: index out of range [-1]
 === RUN   TestInterp/BEGIN_{_print_atan2(0,_8020020000000e20G-0)}
-    interp_test.go:819: panic executing bytecode: unexpected opcode Subtract
+    interp_test.go:852: [bytecode] expected "0\n", got "1.5708\n"
 === RUN   TestInterp/BEGIN_{_print_1e1000,_-1e1000_}__#_!gawk
-    interp_test.go:819: panic executing bytecode: runtime error: slice bounds out of range [-1:]
+    interp_test.go:832: panic executing bytecode: runtime error: slice bounds out of range [-1:]
 === RUN   TestInterp/BEGIN_{_printf_"\x0.\x00.\x0A\x10\xff\xFF\x41"_}__#_!awk
-    interp_test.go:838: [bytecode] expected "\x00.\x00.\n\x10\xff\xffA", got "\x00.\x00.\n\x10\xff\xffA\x00.\x00.\n\x10\xff\xffA"
 === RUN   TestInterp/BEGIN_{_printf_"\x1.\x01.\x0A\x10\xff\xFF\x41"_}
-    interp_test.go:838: [bytecode] expected "\x01.\x01.\n\x10\xff\xffA", got "\x01.\x01.\n\x10\xff\xffA\x01.\x01.\n\x10\xff\xffA"
 === RUN   TestInterp/BEGIN_{_printf_"\0\78\7\77\777\0_\141_"_}__#_!awk
-    interp_test.go:838: [bytecode] expected "\x00\a8\a?\xff\x00 a ", got "\x00\a8\a?\xff\x00 a \x00\a8\a?\xff\x00 a "
 === RUN   TestInterp/BEGIN_{_printf_"\1\78\7\77\777\1_\141_"_}
-    interp_test.go:838: [bytecode] expected "\x01\a8\a?\xff\x01 a ", got "\x01\a8\a?\xff\x01 a \x01\a8\a?\xff\x01 a "
 === RUN   TestInterp/BEGIN_{_e="x";_E="X";_print_1e,_1E_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode Concat
 === RUN   TestInterp/BEGIN_{_e="x";_E="X";_print_1e1e,_1E1E_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode Concat
 === RUN   TestInterp/BEGIN_{_a=2;_print_1e+a,_1E+a,_1e+1,_1E+1_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode Add
 === RUN   TestInterp/BEGIN_{_a=2;_print_1e-a,_1E-a,_1e-1,_1E-1_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode Subtract
 === RUN   TestInterp/BEGIN_{_print_1e+_}
 === RUN   TestInterp/BEGIN_{_print_1e-_}
 === RUN   TestInterp/{_print_/x/?"t":"f"_}
@@ -241,44 +195,55 @@
 === RUN   TestInterp/BEGIN_{_print_0?1:0,_1?1:0,_""?1:0,_"0"?1:0,_"1"?1:0,_x?1:0_}
     interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.CondExpr
 === RUN   TestInterp/_BEGIN_{__print_CONVFMT,_1.2345678_""__CONVFMT_=_"%.3g"__print_CONVFMT
-    interp_test.go:819: panic executing bytecode: unexpected opcode Concat
+    interp_test.go:852: [bytecode] expected "%.6g 1.23457\n%.3g 1.23\n", got "%.6g 1.23457\n%.6g 1.23457\n"
 === RUN   TestInterp/BEGIN_{_FILENAME_=_"foo";_print_FILENAME_}
-    interp_test.go:838: [bytecode] expected "foo\n", got "foo\n\n"
+    interp_test.go:852: [bytecode] expected "foo\n", got "\n"
 === RUN   TestInterp/BEGIN_{_FILENAME_=_"123.0";_print_(FILENAME==123)_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode Equals
 === RUN   TestInterp/BEGIN_{_FNR_=_123;_print_FNR_}
-    interp_test.go:838: [bytecode] expected "123\n", got "123\n0\n"
+    interp_test.go:852: [bytecode] expected "123\n", got "0\n"
 === RUN   TestInterp/{_print_FNR,_$0_}
 === RUN   TestInterp/BEGIN_{_print_"|"_FS_"|";_FS=","_}_{_print_$1,_$2_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode Concat
+    interp_test.go:852: [bytecode] expected "| |\na b \na b\nx \n", got "| |\na b\na,b \nx,,y \n"
 === RUN   TestInterp/BEGIN_{_print_"|"_FS_"|";_FS="\\."_}_{_print_$1,_$2_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode Concat
+    interp_test.go:852: [bytecode] expected "| |\na b \na b\nx \n", got "| |\na b\na.b \nx..y \n"
 === RUN   TestInterp/BEGIN_{_FS="\\"_}_{_print_$1,_$2_}
+    interp_test.go:852: [bytecode] expected "a b\n", got "a\\b \n"
 === RUN   TestInterp/{_print_NF_}
 === RUN   TestInterp/BEGIN_{_NR_=_123;_print_NR_}
-    interp_test.go:838: [bytecode] expected "123\n", got "123\n0\n"
+    interp_test.go:852: [bytecode] expected "123\n", got "0\n"
 === RUN   TestInterp/{_print_NR,_$0_}
 === RUN   TestInterp/_BEGIN_{__print_OFMT,_1.2345678__OFMT_=_"%.3g"__print_OFMT,_1.234567_}
-    interp_test.go:838: [bytecode] expected "%.6g 1.23457\n%.3g 1.23\n", got "%.6g 1.23457\n%.3g 1.23\n%.6g 1.23457\n%.6g 1.23457\n"
+    interp_test.go:852: [bytecode] expected "%.6g 1.23457\n%.3g 1.23\n", got "%.6g 1.23457\n%.6g 1.23457\n"
 === RUN   TestInterp/BEGIN_{_print_RSTART,_RLENGTH;_RSTART=5;_RLENGTH=42;_print_RSTART,_RLE
-    interp_test.go:838: [bytecode] expected "0 0\n5 42\n", got "0 0\n5 42\n0 0\n0 0\n"
+    interp_test.go:852: [bytecode] expected "0 0\n5 42\n", got "0 0\n0 0\n"
 === RUN   TestInterp/BEGIN_{_print_RS_}
-    interp_test.go:838: [bytecode] expected "\n\n", got "\n\n\n\n"
 === RUN   TestInterp/BEGIN_{_print_RS;_RS="|";_print_RS_}__{_print_}
-    interp_test.go:838: [bytecode] expected "\n\n|\na b\nc d\n", got "\n\n|\na b\nc d\n\n\n\n\n"
+    interp_test.go:852: [bytecode] expected "\n\n|\na b\nc d\n", got "\n\n\n\na b|c d|\n"
 === RUN   TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=
+    interp_test.go:852: [bytecode] expected "1 (1):\na\n2 (2):\nb\nc\n", got "1 (1):\na\n2 (0):\n3 (1):\nb\n4 (1):\nc\n"
 === RUN   TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#01
+    interp_test.go:852: [bytecode] expected "1 (2):\n1\n2\n2 (2):\na\nb\n", got "1 (1):\n1\n2 (1):\n2\n3 (0):\n4 (1):\na\n5 (1):\nb\n"
 === RUN   TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#02
+    interp_test.go:852: [bytecode] expected "1 (2):\na b\nc d\n2 (1):\ne f\n3 (1):\n  \n4 (1):\ng h\n", got "1 (2):\na\nb\n2 (2):\nc\nd\n3 (0):\n4 (2):\ne\nf\n5 (0):\n6 (0):\n7 (0):\n8 (0):\n9 (0):\n10 (2):\ng\nh\n11 (0):\n12 (0):\n"
 === RUN   TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#03
+    interp_test.go:852: [bytecode] expected "1 (1):\na b\n2 (1):\nc d\n", got "1 (0):\n2 (0):\n3 (2):\na\nb\n4 (0):\n5 (2):\nc\nd\n"
 === RUN   TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#04
+    interp_test.go:852: [bytecode] expected "1 (1):\na b\n2 (1):\nc d\n", got "1 (0):\n2 (0):\n3 (2):\na\nb\n4 (0):\n5 (2):\nc\nd\n"
 === RUN   TestInterp/BEGIN_{_RS="";_FS="X"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=N
+    interp_test.go:852: [bytecode] expected "1 (4):\na|b|c|d|2 (2):\ne|f|3 (1):\n  |4 (2):\ng|h|", got "1 (1):\naXb|2 (1):\ncXd|3 (0):\n4 (1):\neXf|5 (0):\n6 (0):\n7 (0):\n8 (0):\n9 (0):\n10 (1):\ngXh|11 (0):\n12 (0):\n"
 === RUN   TestInterp/BEGIN_{_RS_=_""_}__{_print_"got",_$0_}
+    interp_test.go:852: [bytecode] expected "", got "got \ngot \ngot \ngot \n"
 === RUN   TestInterp/BEGIN_{_RS="\n"_}__{_print_}
 === RUN   TestInterp/BEGIN_{_RS="ö"_}__{_print_}__#_!windows-gawk
+    interp_test.go:852: [bytecode] expected "1\ntwo\nthree\n", got "1ötwoöthree\n"
 === RUN   TestInterp/BEGIN_{_RS="\\.+"_}__{_print_}
+    interp_test.go:852: [bytecode] expected "1\ntwo\nthree\n4\n", got "1.two..three...4.\n"
 === RUN   TestInterp/BEGIN_{_RS_=_"\n|(_*[[:upper:]]+_*)"_}_{_print_"Record_=",_$0,"and_RT_
+    interp_test.go:852: [bytecode] expected "Record = record 1 and RT = [ AAAA ]\nRecord = record 2 and RT = [ BBBB ]\nRecord = record 3 and RT = [\n]\n", got "Record = record 1 AAAA record 2 BBBB record 3 and RT = [\n]\n"
 === RUN   TestInterp/BEGIN_{_RS_=_"\n|(_*[[:upper:]]+_*)"_}_{_print_"Record_=",_$0,"and_RT_#01
+    interp_test.go:852: [bytecode] expected "Record = record 1 and RT = [ AAAA ]\nRecord = record 2 and RT = [ BBBB ]\nRecord = record 3 and RT = []\n", got "Record = record 1 AAAA record 2 BBBB record 3 and RT = [\n]\n"
 === RUN   TestInterp/BEGIN_{_RS=".."_}_{_print_$0_RT_}
+    interp_test.go:852: [bytecode] expected "fo\no \nba\nr \nba\nzz\n", got "foo bar bazz\n\n"
 === RUN   TestInterp/_BEGIN_{__print_SUBSEP__a[1,_2]_=_"onetwo"__print_a[1,_2]__for_(k_in_a
     interp_test.go:809: panic compiling bytecode: TODO multi indexes not yet supported
 === RUN   TestInterp/{_print_NF;_NF=1;_$2="two";_print_$0,_NF_}
@@ -295,45 +260,56 @@
 === RUN   TestInterp/0_in_FS__#_!awk_-_doesn't_flag_this_as_an_error
 === RUN   TestInterp/{_NF=1;_$1="x";_print_$0;_print_NF_}
 === RUN   TestInterp/{_NF=1;_$1="x";_print_$0;_print_NF_}#01
+    interp_test.go:852: [bytecode] expected "x\n1\n", got "x b\n2\n"
 === RUN   TestInterp/{_NF=1;_$1="x";_print_$0;_print_NF_}#02
+    interp_test.go:852: [bytecode] expected "x\n1\n", got "x b c\n3\n"
 === RUN   TestInterp/{_NF=1;_$2="x";_print_$0;_print_NF_}
 === RUN   TestInterp/{_NF=1;_$2="x";_print_$0;_print_NF_}#01
 === RUN   TestInterp/{_NF=1;_$2="x";_print_$0;_print_NF_}#02
+    interp_test.go:852: [bytecode] expected "a x\n2\n", got "a x c\n3\n"
 === RUN   TestInterp/{_NF=1;_$3="x";_print_$0;_print_NF_}
 === RUN   TestInterp/{_NF=1;_$3="x";_print_$0;_print_NF_}__#_!awk_-_awk_differs_from_gawk_(
+    interp_test.go:852: [bytecode] expected "a  x\n3\n", got "a b x\n3\n"
 === RUN   TestInterp/{_NF=1;_$3="x";_print_$0;_print_NF_}__#_!awk_-_awk_differs_from_gawk_(#01
+    interp_test.go:852: [bytecode] expected "a  x\n3\n", got "a b x\n3\n"
 === RUN   TestInterp/{_NF=2;_$1="x";_print_$0;_print_NF_}
+    interp_test.go:852: [bytecode] expected "x \n2\n", got "x\n1\n"
 === RUN   TestInterp/{_NF=2;_$1="x";_print_$0;_print_NF_}#01
 === RUN   TestInterp/{_NF=2;_$1="x";_print_$0;_print_NF_}#02
+    interp_test.go:852: [bytecode] expected "x b\n2\n", got "x b c\n3\n"
 === RUN   TestInterp/{_NF=2;_$2="x";_print_$0;_print_NF_}
 === RUN   TestInterp/{_NF=2;_$2="x";_print_$0;_print_NF_}#01
 === RUN   TestInterp/{_NF=2;_$2="x";_print_$0;_print_NF_}#02
+    interp_test.go:852: [bytecode] expected "a x\n2\n", got "a x c\n3\n"
 === RUN   TestInterp/{_NF=2;_$3="x";_print_$0;_print_NF_}
 === RUN   TestInterp/{_NF=2;_$3="x";_print_$0;_print_NF_}#01
 === RUN   TestInterp/{_NF=2;_$3="x";_print_$0;_print_NF_}#02
 === RUN   TestInterp/{_NF=3;_$1="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault
+    interp_test.go:852: [bytecode] expected "x  \n3\n", got "x\n1\n"
 === RUN   TestInterp/{_NF=3;_$1="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault#01
+    interp_test.go:852: [bytecode] expected "x b \n3\n", got "x b\n2\n"
 === RUN   TestInterp/{_NF=3;_$1="x";_print_$0;_print_NF_}
 === RUN   TestInterp/{_NF=3;_$2="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault
+    interp_test.go:852: [bytecode] expected "a x \n3\n", got "a x\n2\n"
 === RUN   TestInterp/{_NF=3;_$2="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault#01
+    interp_test.go:852: [bytecode] expected "a x \n3\n", got "a x\n2\n"
 === RUN   TestInterp/{_NF=3;_$2="x";_print_$0;_print_NF_}
 === RUN   TestInterp/{_NF=3;_$3="x";_print_$0;_print_NF_}
 === RUN   TestInterp/{_NF=3;_$3="x";_print_$0;_print_NF_}#01
 === RUN   TestInterp/{_NF=3;_$3="x";_print_$0;_print_NF_}#02
 === RUN   TestInterp/BEGIN_{_print_x;_x_=_4;_print_x;_}
-    interp_test.go:838: [bytecode] expected "\n4\n", got "\n4\n\n4\n"
 === RUN   TestInterp/BEGIN_{_a["foo"]=1;_b[2]="x";_k="foo";_print_a[k],_b["2"]_}
-    interp_test.go:838: [bytecode] expected "1 x\n", got "1 x\n \n"
+    interp_test.go:852: [bytecode] expected "1 x\n", got " \n"
 === RUN   TestInterp/BEGIN_{_s+=5;_print_s;_s-=2;_print_s;_s-=s;_print_s_}
-    interp_test.go:819: panic executing bytecode: unexpected operation -
+    interp_test.go:832: panic executing bytecode: unexpected operation -
 === RUN   TestInterp/BEGIN_{_x=2;_x*=x;_print_x;_x*=3;_print_x_}
-    interp_test.go:819: panic executing bytecode: unexpected operation *
+    interp_test.go:832: panic executing bytecode: unexpected operation *
 === RUN   TestInterp/BEGIN_{_x=6;_x/=3;_print_x;_x/=x;_print_x;_x/=.6;_print_x_}
-    interp_test.go:819: panic executing bytecode: unexpected operation /
+    interp_test.go:832: panic executing bytecode: unexpected operation /
 === RUN   TestInterp/BEGIN_{_x=12;_x%=5;_print_x_}
-    interp_test.go:819: panic executing bytecode: unexpected operation %
+    interp_test.go:832: panic executing bytecode: unexpected operation %
 === RUN   TestInterp/BEGIN_{_x=2;_x^=5;_print_x;_x^=0.5;_print_x_}
-    interp_test.go:819: panic executing bytecode: unexpected operation ^
+    interp_test.go:832: panic executing bytecode: unexpected operation ^
 === RUN   TestInterp/{_$2+=10;_print;_$3/=2;_print_}
     interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.AugAssignExpr
 === RUN   TestInterp/BEGIN_{_a[2]_+=_1;_a["2"]_*=_3;_print_a[2]_}
@@ -345,7 +321,6 @@
 === RUN   TestInterp/BEGIN_{_print_x;_print_x--;_print_--x;_print_x_}
     interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.IncrExpr
 === RUN   TestInterp/BEGIN_{_s++;_s++;_print_s_}
-    interp_test.go:838: [bytecode] expected "2\n", got "2\n2\n"
 === RUN   TestInterp/BEGIN_{_y="_";_--x[y_=_y_y];_print_length(y)_}
     interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.IncrExpr
 === RUN   TestInterp/BEGIN_{_x[y++]++;_print_y_}
@@ -357,79 +332,59 @@
 === RUN   TestInterp/BEGIN_{_print_"s"_++n;_print_"s"_--n_}
     interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.IncrExpr
 === RUN   TestInterp/BEGIN_{_print_sin(0),_sin(0.5),_sin(1),_sin(-1)_}
-    interp_test.go:819: panic executing bytecode: runtime error: slice bounds out of range [-1:]
+    interp_test.go:832: panic executing bytecode: runtime error: slice bounds out of range [-1:]
 === RUN   TestInterp/BEGIN_{_print_cos(0),_cos(0.5),_cos(1),_cos(-1)_}
-    interp_test.go:819: panic executing bytecode: runtime error: slice bounds out of range [-1:]
+    interp_test.go:832: panic executing bytecode: runtime error: slice bounds out of range [-1:]
 === RUN   TestInterp/BEGIN_{_print_exp(0),_exp(0.5),_exp(1),_exp(-1)_}
-    interp_test.go:819: panic executing bytecode: runtime error: slice bounds out of range [-1:]
+    interp_test.go:832: panic executing bytecode: runtime error: slice bounds out of range [-1:]
 === RUN   TestInterp/BEGIN_{_print_log(0),_log(0.5),_log(1)_}
-    interp_test.go:838: [bytecode] expected "-inf -0.693147 0\n", got "-inf -0.693147 0\n-inf -0.693147 0\n"
 === RUN   TestInterp/BEGIN_{_print_log(-1)_}__#_!gawk_-_gawk_prints_warning_for_this_as_wel
-    interp_test.go:819: panic executing bytecode: runtime error: index out of range [-1]
+    interp_test.go:832: panic executing bytecode: runtime error: index out of range [-1]
 === RUN   TestInterp/BEGIN_{_print_sqrt(0),_sqrt(2),_sqrt(4)_}
-    interp_test.go:838: [bytecode] expected "0 1.41421 2\n", got "0 1.41421 2\n0 1.41421 2\n"
 === RUN   TestInterp/BEGIN_{_print_int(3.5),_int("1.9"),_int(4),_int(-3.6),_int("x"),_int("
-    interp_test.go:819: panic executing bytecode: runtime error: slice bounds out of range [-1:]
+    interp_test.go:832: panic executing bytecode: runtime error: slice bounds out of range [-1:]
 === RUN   TestInterp/BEGIN_{_print_match("food",_"foo"),_RSTART,_RLENGTH_}
-    interp_test.go:838: [bytecode] expected "1 1 3\n", got "1 1 3\n0 0 -1\n"
+    interp_test.go:852: [bytecode] expected "1 1 3\n", got "0 0 -1\n"
 === RUN   TestInterp/BEGIN_{_print_match("x_food_y",_"fo"),_RSTART,_RLENGTH_}
-    interp_test.go:838: [bytecode] expected "3 3 2\n", got "3 3 2\n0 0 -1\n"
+    interp_test.go:852: [bytecode] expected "3 3 2\n", got "0 0 -1\n"
 === RUN   TestInterp/BEGIN_{_print_match("x_food_y",_"fox"),_RSTART,_RLENGTH_}
-    interp_test.go:838: [bytecode] expected "0 0 -1\n", got "0 0 -1\n0 0 -1\n"
 === RUN   TestInterp/BEGIN_{_print_match("x_food_y",_/[fod]+/),_RSTART,_RLENGTH_}
-    interp_test.go:838: [bytecode] expected "3 3 4\n", got "3 3 4\n0 0 -1\n"
+    interp_test.go:852: [bytecode] expected "3 3 4\n", got "0 0 -1\n"
 === RUN   TestInterp/BEGIN_{_print_match("絵_fööd_y",_/[föd]+/),_RSTART,_RLENGTH_}
-    interp_test.go:838: [bytecode] expected "3 3 4\n", got "3 3 4\n0 0 -1\n"
+    interp_test.go:852: [bytecode] expected "3 3 4\n", got "0 0 -1\n"
 === RUN   TestInterp/{_print_length,_length(),_length("buzz"),_length("")_}
 === RUN   TestInterp/BEGIN_{_print_length("a"),_length("絵")_}__#_!awk
-    interp_test.go:838: [bytecode] expected "1 1\n", got "1 1\n1 1\n"
 === RUN   TestInterp/BEGIN_{_print_index("foo",_"f"),_index("foo0",_0),_index("foo",_"o"),_
-    interp_test.go:838: [bytecode] expected "1 4 2 0\n", got "1 4 2 0\n1 4 2 0\n"
 === RUN   TestInterp/BEGIN_{_print_index("föö",_"f"),_index("föö0",_0),_index("föö",_
-    interp_test.go:838: [bytecode] expected "1 4 2 0\n", got "1 4 2 0\n1 4 2 0\n"
 === RUN   TestInterp/BEGIN_{_print_atan2(1,_0.5),_atan2(-1,_0)_}
-    interp_test.go:819: panic executing bytecode: runtime error: slice bounds out of range [-1:]
+    interp_test.go:832: panic executing bytecode: runtime error: slice bounds out of range [-1:]
 === RUN   TestInterp/BEGIN_{_print_sprintf("%3d",_42)_}
-    interp_test.go:819: panic executing bytecode: runtime error: index out of range [105] with length 1
+    interp_test.go:832: panic executing bytecode: runtime error: index out of range [105] with length 1
 === RUN   TestInterp/BEGIN_{_print_sprintf("%d",_12,_34)_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode Regex
+    interp_test.go:832: panic executing bytecode: unexpected opcode Regex
 === RUN   TestInterp/BEGIN_{_print_sprintf("%d")_}
 === RUN   TestInterp/BEGIN_{_print_sprintf("%d",_12,_34)_}#01
-    interp_test.go:819: panic executing bytecode: unexpected opcode Regex
+    interp_test.go:832: panic executing bytecode: unexpected opcode Regex
 === RUN   TestInterp/BEGIN_{_print_sprintf("%_5d",_42)_}
-    interp_test.go:819: panic executing bytecode: runtime error: index out of range [105] with length 1
+    interp_test.go:832: panic executing bytecode: runtime error: index out of range [105] with length 1
 === RUN   TestInterp/BEGIN_{_print_substr("food",_1),_substr("fööd",_1)_}__#_!windows-gaw
-    interp_test.go:838: [bytecode] expected "food fööd\n", got "food fööd\nfood fööd\n"
 === RUN   TestInterp/BEGIN_{_print_substr("food",_1,_2),_substr("fööd",_1,_2)_}__#_!windo
-    interp_test.go:838: [bytecode] expected "fo fö\n", got "fo fö\nfo fö\n"
 === RUN   TestInterp/BEGIN_{_print_substr("food",_1,_4),_substr("fööd",_1,_4)_}__#_!windo
-    interp_test.go:838: [bytecode] expected "food fööd\n", got "food fööd\nfood fööd\n"
 === RUN   TestInterp/BEGIN_{_print_substr("food",_1,_8),_substr("fööd",_1,_8)_}__#_!windo
-    interp_test.go:838: [bytecode] expected "food fööd\n", got "food fööd\nfood fööd\n"
 === RUN   TestInterp/BEGIN_{_print_substr("food",_2),_substr("fööd",_2)_}__#_!windows-gaw
-    interp_test.go:838: [bytecode] expected "ood ööd\n", got "ood ööd\nood ööd\n"
 === RUN   TestInterp/BEGIN_{_print_substr("food",_2,_2),_substr("fööd",_2,_2)_}__#_!windo
-    interp_test.go:838: [bytecode] expected "oo öö\n", got "oo öö\noo öö\n"
 === RUN   TestInterp/BEGIN_{_print_substr("food",_2,_3),_substr("fööd",_2,_3)_}__#_!windo
-    interp_test.go:838: [bytecode] expected "ood ööd\n", got "ood ööd\nood ööd\n"
 === RUN   TestInterp/BEGIN_{_print_substr("food",_2,_8),_substr("fööd",_2,_8)_}__#_!windo
-    interp_test.go:838: [bytecode] expected "ood ööd\n", got "ood ööd\nood ööd\n"
 === RUN   TestInterp/BEGIN_{_print_substr("food",_0,_8),_substr("fööd",_0,_8)_}__#_!windo
-    interp_test.go:838: [bytecode] expected "food fööd\n", got "food fööd\nfood fööd\n"
 === RUN   TestInterp/BEGIN_{_print_substr("food",_-1,_8),_substr("fööd",_-1,_8)_}__#_!win
-    interp_test.go:819: panic executing bytecode: runtime error: index out of range [-1]
+    interp_test.go:832: panic executing bytecode: runtime error: index out of range [-1]
 === RUN   TestInterp/BEGIN_{_print_substr("food",_5,_8),_substr("fööd",_5,_8)_}
-    interp_test.go:838: [bytecode] expected " \n", got " \n \n"
 === RUN   TestInterp/BEGIN_{_print_substr("food",_2,_-3),_substr("fööd",_2,_-3)_}
-    interp_test.go:819: panic executing bytecode: runtime error: index out of range [-1]
+    interp_test.go:832: panic executing bytecode: runtime error: index out of range [-1]
 === RUN   TestInterp/BEGIN_{_n_=_split("ab_c_d_",_a);_for_(i=1;_i<=n;_i++)_print_a[i]_}
-    interp_test.go:838: [bytecode] expected "ab\nc\nd\n", got "ab\nc\nd\nab\nc\nd\n"
 === RUN   TestInterp/BEGIN_{_n_=_split("ab,c,d,",_a,_",");_for_(i=1;_i<=n;_i++)_print_a[i]_
-    interp_test.go:838: [bytecode] expected "ab\nc\nd\n\n", got "ab\nc\nd\n\nab\nc\nd\n\n"
 === RUN   TestInterp/BEGIN_{_n_=_split("ab,c.d,",_a,_/[,.]/);_for_(i=1;_i<=n;_i++)_print_a[
-    interp_test.go:838: [bytecode] expected "ab\nc\nd\n\n", got "ab\nc\nd\n\nab\nc\nd\n\n"
 === RUN   TestInterp/BEGIN_{_n_=_split("1_2",_a);_print_(n,_a[1],_a[2],_a[1]==1,_a[2]==2)_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode Equals
 === RUN   TestInterp/BEGIN_{_x_=_"1.2.3";_print_sub(/\./,_",",_x);_print_x_}
     interp_test.go:809: panic compiling bytecode: TODO: func sub not yet supported
 === RUN   TestInterp/{_print_sub(/\./,_",");_print_$0_}
@@ -450,17 +405,12 @@
     interp_test.go:809: panic compiling bytecode: TODO: func gsub not yet supported
 === RUN   TestInterp/sub("",_"\\e",_FS)__#_!awk_!gawk
 === RUN   TestInterp/BEGIN_{_print_tolower("Foo_BaR")_}
-    interp_test.go:838: [bytecode] expected "foo bar\n", got "foo bar\nfoo bar\n"
 === RUN   TestInterp/BEGIN_{_print_toupper("Foo_BaR")_}
-    interp_test.go:838: [bytecode] expected "FOO BAR\n", got "FOO BAR\nFOO BAR\n"
 === RUN   TestInterp/_BEGIN_{__srand(1)__a_=_rand();_b_=_rand();_c_=_rand()__srand(1)__x_=_
-    interp_test.go:819: panic executing bytecode: unexpected opcode Equals
 === RUN   TestInterp/_BEGIN_{__for_(i_=_0;_i_<_1000;_i++)_{___if_(rand()_<_0.5)_n++__}__pri
-    interp_test.go:819: panic executing bytecode: unexpected opcode JumpNumGreaterOrEqual
+    interp_test.go:832: panic executing bytecode: unexpected opcode JumpNumGreaterOrEqual
 === RUN   TestInterp/BEGIN_{_print_system("echo_foo");_print_system("echo_bar")_}__#_!fuzz
-    interp_test.go:838: [bytecode] expected "foo\n0\nbar\n0\n", got "foo\n0\nbar\n0\nfoo\n0\nbar\n0\n"
 === RUN   TestInterp/BEGIN_{_print_system(">&2_echo_error")_}__#_!fuzz
-    interp_test.go:838: [bytecode] expected "error\n0\n", got "error\n0\nerror\n0\n"
 === RUN   TestInterp/BEGIN_{_print_0?"t":"f"_}
     interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.CondExpr
 === RUN   TestInterp/BEGIN_{_print_1?"t":"f"_}
@@ -524,9 +474,7 @@
 === RUN   TestInterp/BEGIN_{_"echo_foo"_|_getline_$1;_print_$1_}
     interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.GetlineExpr
 === RUN   TestInterp/BEGIN_{_print_"foo"_|"sort";_print_"bar"_|"sort"_}__#_!fuzz
-    interp_test.go:838: [bytecode] expected "bar\nfoo\n", got "bar\nfoo\nbar\nfoo\n"
 === RUN   TestInterp/BEGIN_{_print_"foo"_|">&2_echo_error"_}__#_!gawk_!fuzz
-    interp_test.go:838: [bytecode] expected "error\n", got "error\nerror\n"
 === RUN   TestInterp/BEGIN_{_"cat"_|_getline;_print_}__#_!fuzz
     interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.GetlineExpr
 === RUN   TestInterp/BEGIN_{_print_getline_x_<_"/no/such/file"_}__#_!fuzz
@@ -556,25 +504,17 @@
 === RUN   TestInterp/{_print_$0;_print_getline_x_<"-";_print_x_}
     interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.GetlineExpr
 === RUN   TestInterp/BEGIN_{_print_"x"_>"-";_print_"y"_>"-"_}
-    interp_test.go:838: [bytecode] expected "x\ny\n", got "x\ny\nx\ny\n"
 === RUN   TestInterp/BEGIN_{_print_fflush();_print_fflush("")_}
-    interp_test.go:838: [bytecode] expected "0\n0\n", got "0\n0\n0\n0\n"
 === RUN   TestInterp/BEGIN_{_print_"x";_print_fflush();_print_"y";_print_fflush("")_}
-    interp_test.go:838: [bytecode] expected "x\n0\ny\n0\n", got "x\n0\ny\n0\nx\n0\ny\n0\n"
 === RUN   TestInterp/BEGIN_{_print_"x"_>"out";_print_fflush("out");_print_"y";_print_fflush
-    interp_test.go:838: [bytecode] expected "0\ny\n0\n", got "0\ny\n0\n0\ny\n0\n"
 === RUN   TestInterp/BEGIN_{_print_fflush("x")_}__#_!gawk
-    interp_test.go:838: [bytecode] expected "error flushing \"x\": not an output file or pipe\n-1\n", got "error flushing \"x\": not an output file or pipe\n-1\nerror flushing \"x\": not an output file or pipe\n-1\n"
 === RUN   TestInterp/BEGIN_{_"cat"_|_getline;_print_fflush("cat")_}__#_!gawk_!fuzz
     interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.GetlineExpr
 === RUN   TestInterp/BEGIN_{_print_"x"_>_"out"_}__#_!fuzz
 === RUN   TestInterp/BEGIN_{_printf_"x"_>_"out"_}__#_!fuzz
 === RUN   TestInterp/BEGIN_{_print("x"_>_"out")_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode Greater
 === RUN   TestInterp/BEGIN_{_printf("x"_>_"out")_}
-    interp_test.go:819: panic executing bytecode: unexpected opcode Greater
 === RUN   TestInterp/BEGIN_{_if_(1)_printf_"x";_else_printf_"y"_}
-    interp_test.go:838: [bytecode] expected "x", got "xx"
 === RUN   TestInterp/BEGIN_{_printf_"x";_{_printf_"y";_printf_"z"_}_}
     interp_test.go:809: panic compiling bytecode: unexpected stmt type: *ast.BlockStmt
 === RUN   TestInterp/{_$1_=_substr($1,_1,_3)_print_$1_}
@@ -583,15 +523,15 @@
 === RUN   TestInterp/BEGIN_{_print_(1,2),(3,4)_}
 === RUN   TestInterp/BEGIN_{_print_(1,2,(3,4),(5,6))_}
 === RUN   TestInterp/{_print_length()_}
---- FAIL: TestInterp (0.07s)
-    --- FAIL: TestInterp/BEGIN_{_print_"b"_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_"b"_}#01 (0.00s)
-    --- FAIL: TestInterp/END_{_print_"e"_} (0.00s)
-    --- FAIL: TestInterp/END_{_print_"e"_}#01 (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_"b"}_END_{_print_"e"_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_"b"}_END_{_print_"e"_}#01 (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_"b"}_$0_{_print_NR_}_END_{_print_"e"_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_printf_"x"_};_BEGIN_{_printf_"y"_} (0.00s)
+--- FAIL: TestInterp (0.06s)
+    --- PASS: TestInterp/BEGIN_{_print_"b"_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_"b"_}#01 (0.00s)
+    --- PASS: TestInterp/END_{_print_"e"_} (0.00s)
+    --- PASS: TestInterp/END_{_print_"e"_}#01 (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_"b"}_END_{_print_"e"_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_"b"}_END_{_print_"e"_}#01 (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_"b"}_$0_{_print_NR_}_END_{_print_"e"_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_printf_"x"_};_BEGIN_{_printf_"y"_} (0.00s)
     --- PASS: TestInterp/$0 (0.00s)
     --- PASS: TestInterp/{_print_$0_} (0.00s)
     --- PASS: TestInterp/$1=="foo" (0.00s)
@@ -600,31 +540,31 @@
     --- FAIL: TestInterp//foo/ (0.00s)
     --- PASS: TestInterp/NR==2,_NR==4 (0.00s)
     --- PASS: TestInterp/_NR==2,_NR==4_{_print_$0_}_NR==3,_NR==5_{_print_NR_}_ (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_"x",_"y"_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_"x",_"y"_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_OFS;_OFS_=_",";_print_"x",_"y"_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_ORS;_ORS_=_".";_print_"x",_"y"_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_ORS;_ORS_=_"";_print_"x",_"y"_} (0.00s)
     --- PASS: TestInterp/{_print;_print_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print;_print_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_printf_"%%_%d_%x_%c_%f_%s",_42,_42,_42,_42,_42_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_printf_"%3d",_42_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_printf_"%3s",_"x"_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_printf_"%.1g",_42_}__#_!windows-gawk (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_printf_"%d",_12,_34_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print;_print_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_printf_"%%_%d_%x_%c_%f_%s",_42,_42,_42,_42,_42_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_printf_"%3d",_42_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_printf_"%3s",_"x"_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_printf_"%.1g",_42_}__#_!windows-gawk (0.00s)
+    --- PASS: TestInterp/BEGIN_{_printf_"%d",_12,_34_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_printf_"%d"_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_printf_"%c",_0_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_printf_"%c",_127_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_printf_"%c",_128_}__#_!gawk (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_printf_"%c",_255_}__#_!gawk (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_printf_"%c",_256_}__#_!awk_!gawk (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_printf_"%c",_"xyz"_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_printf_"%c",_""_}__#_!awk (0.00s)
+    --- PASS: TestInterp/BEGIN_{_printf_"%c",_0_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_printf_"%c",_127_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_printf_"%c",_128_}__#_!gawk (0.00s)
+    --- PASS: TestInterp/BEGIN_{_printf_"%c",_255_}__#_!gawk (0.00s)
+    --- PASS: TestInterp/BEGIN_{_printf_"%c",_256_}__#_!awk_!gawk (0.00s)
+    --- PASS: TestInterp/BEGIN_{_printf_"%c",_"xyz"_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_printf_"%c",_""_}__#_!awk (0.00s)
     --- PASS: TestInterp/BEGIN_{_printf_}__#_!awk_-_doesn't_error_on_this (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_printf("%%%dd",_4)_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_if_(1)_print_"t";_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_printf("%%%dd",_4)_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_if_(1)_print_"t";_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_if_(0)_print_"t";_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_if_(1)_print_"t";_else_print_"f"_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_if_(0)_print_"t";_else_print_"f"_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_if_(1)_print_"t";_else_print_"f"_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_if_(0)_print_"t";_else_print_"f"_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_for_(;;)_{_print_"x";_break_}_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_for_(;;)_{_printf_"%d_",_i;_i++;_if_(i>2)_break;_}_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_for_(i=5;_;_)_{_printf_"%d_",_i;_i++;_if_(i>8)_break;_}_} (0.00s)
@@ -659,30 +599,30 @@
     --- FAIL: TestInterp/BEGIN_{_print_+4,_+"3",_+0,_+-3,_-3,_-_-4,_-"3"_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_$0="0";_print_!$0_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_$0="1";_print_!$0_} (0.00s)
-    --- PASS: TestInterp/{_print_!$0_} (0.00s)
-    --- PASS: TestInterp/{_print_!$0_}#01 (0.00s)
-    --- PASS: TestInterp/!seen[$0]++ (0.00s)
-    --- PASS: TestInterp/!seen[$0]-- (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_(1==1,_1==0,_"1"==1,_"1"==1.0)_} (0.00s)
+    --- FAIL: TestInterp/{_print_!$0_} (0.00s)
+    --- FAIL: TestInterp/{_print_!$0_}#01 (0.00s)
+    --- FAIL: TestInterp/!seen[$0]++ (0.00s)
+    --- FAIL: TestInterp/!seen[$0]-- (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_(1==1,_1==0,_"1"==1,_"1"==1.0)_} (0.00s)
     --- PASS: TestInterp/{_print_($0=="1",_$0==1)_} (0.00s)
     --- PASS: TestInterp/{_print_($1=="1",_$1==1)_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_(1!=1,_1!=0,_"1"!=1,_"1"!=1.0)_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_(1!=1,_1!=0,_"1"!=1,_"1"!=1.0)_} (0.00s)
     --- PASS: TestInterp/{_print_($0!="1",_$0!=1)_} (0.00s)
     --- PASS: TestInterp/{_print_($1!="1",_$1!=1)_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_(0<1,_1<1,_2<1,_"12"<"2")_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_(0<1,_1<1,_2<1,_"12"<"2")_} (0.00s)
     --- PASS: TestInterp/{_print_($1<2)_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_(0<=1,_1<=1,_2<=1,_"12"<="2")_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_(0<=1,_1<=1,_2<=1,_"12"<="2")_} (0.00s)
     --- PASS: TestInterp/{_print_($1<=2)_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_(0>1,_1>1,_2>1,_"12">"2")_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_(0>1,_1>1,_2>1,_"12">"2")_} (0.00s)
     --- PASS: TestInterp/{_print_($1>2)_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_(0>=1,_1>=1,_2>=1,_"12">="2")_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_(0>=1,_1>=1,_2>=1,_"12">="2")_} (0.00s)
     --- PASS: TestInterp/{_print_($1>=2)_} (0.00s)
     --- PASS: TestInterp/{_print($0<2)_} (0.00s)
     --- PASS: TestInterp/{_print($1<2)_} (0.00s)
     --- PASS: TestInterp/{_print($1<2)_}#01 (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_$0="10";_print($0<2)_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_$1="10";_print($1<2)_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_$1="10x";_print($1<2)_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_$0="10";_print($0<2)_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_$1="10";_print($1<2)_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_$1="10x";_print($1<2)_} (0.00s)
     --- FAIL: TestInterp/_function_t()_{_print_"t";_return_1_}_function_f()_{_print_"f";_return (0.00s)
     --- FAIL: TestInterp/_function_t()_{_print_"t";_return_1_}_function_f()_{_print_"f";_return#01 (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_1+2,_1+2+3,_1+-2,_-1+2,_"1"+"2",_3+.14_} (0.00s)
@@ -691,27 +631,27 @@
     --- FAIL: TestInterp/BEGIN_{_print_2/3,_2/3/4,_2/-3,_-2/3,_"2"/"3",_3/.14_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_2%3,_2%3%4,_2%-3,_-2%3,_"2"%"3",_3%.14_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_2^3,_2^3^3,_2^-3,_-2^3,_"2"^"3",_3^.14_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_1_2,_"x"_"yz",_1+2_3+4_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_"food"~/oo/,_"food"~/[oO]+d/,_"food"~"f",_"food"~"F",_"f (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_"food"!~/oo/,_"food"!~/[oO]+d/,_"food"!~"f",_"food"!~"F" (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_1+2*3/4^5%6_7,_(1+2)*3/4^5%6_"7"_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_1_2,_"x"_"yz",_1+2_3+4_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_"food"~/oo/,_"food"~/[oO]+d/,_"food"~"f",_"food"~"F",_"f (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_"food"!~/oo/,_"food"!~/[oO]+d/,_"food"!~"f",_"food"!~"F" (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_1+2*3/4^5%6_7,_(1+2)*3/4^5%6_"7"_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_1,_1.,_.1,_1e0,_-1,_1e_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_'\"'_'\''_'xy'_"z"_"'"_'\"'_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_'\"'_'\''_'xy'_"z"_"'"_'\"'_} (0.00s)
     --- FAIL: TestInterp/{_print_/foo/_} (0.00s)
     --- PASS: TestInterp//[a-/ (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_"-12"+0,_"+12"+0,_"_\t\r\n7foo"+0,_".5"+0,_"5."+0,_"+."+ (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_"1e3"+0,_"1.2e-1"+0,_"1e+1"+0,_"1e"+0,_"1e+"+0_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_"-12"+0,_"+12"+0,_"_\t\r\n7foo"+0,_".5"+0,_"5."+0,_"+."+ (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_"1e3"+0,_"1.2e-1"+0,_"1e+1"+0,_"1e"+0,_"1e+"+0_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_-(11102200000000000000000000000000000000_1040000)_}__#_! (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_atan2(0,_8020020000000e20G-0)} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_1e1000,_-1e1000_}__#_!gawk (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_printf_"\x0.\x00.\x0A\x10\xff\xFF\x41"_}__#_!awk (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_printf_"\x1.\x01.\x0A\x10\xff\xFF\x41"_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_printf_"\0\78\7\77\777\0_\141_"_}__#_!awk (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_printf_"\1\78\7\77\777\1_\141_"_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_e="x";_E="X";_print_1e,_1E_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_e="x";_E="X";_print_1e1e,_1E1E_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_a=2;_print_1e+a,_1E+a,_1e+1,_1E+1_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_a=2;_print_1e-a,_1E-a,_1e-1,_1E-1_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_printf_"\x0.\x00.\x0A\x10\xff\xFF\x41"_}__#_!awk (0.00s)
+    --- PASS: TestInterp/BEGIN_{_printf_"\x1.\x01.\x0A\x10\xff\xFF\x41"_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_printf_"\0\78\7\77\777\0_\141_"_}__#_!awk (0.00s)
+    --- PASS: TestInterp/BEGIN_{_printf_"\1\78\7\77\777\1_\141_"_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_e="x";_E="X";_print_1e,_1E_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_e="x";_E="X";_print_1e1e,_1E1E_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_a=2;_print_1e+a,_1E+a,_1e+1,_1E+1_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_a=2;_print_1e-a,_1E-a,_1e-1,_1E-1_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_1e+_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_1e-_} (0.00s)
     --- FAIL: TestInterp/{_print_/x/?"t":"f"_} (0.00s)
@@ -723,32 +663,32 @@
     --- FAIL: TestInterp/BEGIN_{_print_0?1:0,_1?1:0,_""?1:0,_"0"?1:0,_"1"?1:0,_x?1:0_} (0.00s)
     --- FAIL: TestInterp/_BEGIN_{__print_CONVFMT,_1.2345678_""__CONVFMT_=_"%.3g"__print_CONVFMT (0.00s)
     --- FAIL: TestInterp/BEGIN_{_FILENAME_=_"foo";_print_FILENAME_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_FILENAME_=_"123.0";_print_(FILENAME==123)_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_FILENAME_=_"123.0";_print_(FILENAME==123)_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_FNR_=_123;_print_FNR_} (0.00s)
     --- PASS: TestInterp/{_print_FNR,_$0_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_"|"_FS_"|";_FS=","_}_{_print_$1,_$2_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_"|"_FS_"|";_FS="\\."_}_{_print_$1,_$2_} (0.00s)
-    --- PASS: TestInterp/BEGIN_{_FS="\\"_}_{_print_$1,_$2_} (0.00s)
+    --- FAIL: TestInterp/BEGIN_{_FS="\\"_}_{_print_$1,_$2_} (0.00s)
     --- PASS: TestInterp/{_print_NF_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_NR_=_123;_print_NR_} (0.00s)
     --- PASS: TestInterp/{_print_NR,_$0_} (0.00s)
     --- FAIL: TestInterp/_BEGIN_{__print_OFMT,_1.2345678__OFMT_=_"%.3g"__print_OFMT,_1.234567_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_RSTART,_RLENGTH;_RSTART=5;_RLENGTH=42;_print_RSTART,_RLE (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_RS_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_RS_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_RS;_RS="|";_print_RS_}__{_print_} (0.00s)
-    --- PASS: TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<= (0.00s)
-    --- PASS: TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#01 (0.00s)
-    --- PASS: TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#02 (0.00s)
-    --- PASS: TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#03 (0.00s)
-    --- PASS: TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#04 (0.00s)
-    --- PASS: TestInterp/BEGIN_{_RS="";_FS="X"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=N (0.00s)
-    --- PASS: TestInterp/BEGIN_{_RS_=_""_}__{_print_"got",_$0_} (0.00s)
+    --- FAIL: TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<= (0.00s)
+    --- FAIL: TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#01 (0.00s)
+    --- FAIL: TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#02 (0.00s)
+    --- FAIL: TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#03 (0.00s)
+    --- FAIL: TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#04 (0.00s)
+    --- FAIL: TestInterp/BEGIN_{_RS="";_FS="X"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=N (0.00s)
+    --- FAIL: TestInterp/BEGIN_{_RS_=_""_}__{_print_"got",_$0_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_RS="\n"_}__{_print_} (0.00s)
-    --- PASS: TestInterp/BEGIN_{_RS="ö"_}__{_print_}__#_!windows-gawk (0.00s)
-    --- PASS: TestInterp/BEGIN_{_RS="\\.+"_}__{_print_} (0.00s)
-    --- PASS: TestInterp/BEGIN_{_RS_=_"\n|(_*[[:upper:]]+_*)"_}_{_print_"Record_=",_$0,"and_RT_ (0.00s)
-    --- PASS: TestInterp/BEGIN_{_RS_=_"\n|(_*[[:upper:]]+_*)"_}_{_print_"Record_=",_$0,"and_RT_#01 (0.00s)
-    --- PASS: TestInterp/BEGIN_{_RS=".."_}_{_print_$0_RT_} (0.00s)
+    --- FAIL: TestInterp/BEGIN_{_RS="ö"_}__{_print_}__#_!windows-gawk (0.00s)
+    --- FAIL: TestInterp/BEGIN_{_RS="\\.+"_}__{_print_} (0.00s)
+    --- FAIL: TestInterp/BEGIN_{_RS_=_"\n|(_*[[:upper:]]+_*)"_}_{_print_"Record_=",_$0,"and_RT_ (0.00s)
+    --- FAIL: TestInterp/BEGIN_{_RS_=_"\n|(_*[[:upper:]]+_*)"_}_{_print_"Record_=",_$0,"and_RT_#01 (0.00s)
+    --- FAIL: TestInterp/BEGIN_{_RS=".."_}_{_print_$0_RT_} (0.00s)
     --- FAIL: TestInterp/_BEGIN_{__print_SUBSEP__a[1,_2]_=_"onetwo"__print_a[1,_2]__for_(k_in_a (0.00s)
     --- PASS: TestInterp/{_print_NF;_NF=1;_$2="two";_print_$0,_NF_} (0.00s)
     --- PASS: TestInterp/{_print_NF;_NF=2;_$2="two";_print_$0,_NF} (0.00s)
@@ -763,33 +703,33 @@
     --- PASS: TestInterp/BEGIN_{_$1234567=1_} (0.00s)
     --- PASS: TestInterp/0_in_FS__#_!awk_-_doesn't_flag_this_as_an_error (0.00s)
     --- PASS: TestInterp/{_NF=1;_$1="x";_print_$0;_print_NF_} (0.00s)
-    --- PASS: TestInterp/{_NF=1;_$1="x";_print_$0;_print_NF_}#01 (0.00s)
-    --- PASS: TestInterp/{_NF=1;_$1="x";_print_$0;_print_NF_}#02 (0.00s)
+    --- FAIL: TestInterp/{_NF=1;_$1="x";_print_$0;_print_NF_}#01 (0.00s)
+    --- FAIL: TestInterp/{_NF=1;_$1="x";_print_$0;_print_NF_}#02 (0.00s)
     --- PASS: TestInterp/{_NF=1;_$2="x";_print_$0;_print_NF_} (0.00s)
     --- PASS: TestInterp/{_NF=1;_$2="x";_print_$0;_print_NF_}#01 (0.00s)
-    --- PASS: TestInterp/{_NF=1;_$2="x";_print_$0;_print_NF_}#02 (0.00s)
+    --- FAIL: TestInterp/{_NF=1;_$2="x";_print_$0;_print_NF_}#02 (0.00s)
     --- PASS: TestInterp/{_NF=1;_$3="x";_print_$0;_print_NF_} (0.00s)
-    --- PASS: TestInterp/{_NF=1;_$3="x";_print_$0;_print_NF_}__#_!awk_-_awk_differs_from_gawk_( (0.00s)
-    --- PASS: TestInterp/{_NF=1;_$3="x";_print_$0;_print_NF_}__#_!awk_-_awk_differs_from_gawk_(#01 (0.00s)
-    --- PASS: TestInterp/{_NF=2;_$1="x";_print_$0;_print_NF_} (0.00s)
+    --- FAIL: TestInterp/{_NF=1;_$3="x";_print_$0;_print_NF_}__#_!awk_-_awk_differs_from_gawk_( (0.00s)
+    --- FAIL: TestInterp/{_NF=1;_$3="x";_print_$0;_print_NF_}__#_!awk_-_awk_differs_from_gawk_(#01 (0.00s)
+    --- FAIL: TestInterp/{_NF=2;_$1="x";_print_$0;_print_NF_} (0.00s)
     --- PASS: TestInterp/{_NF=2;_$1="x";_print_$0;_print_NF_}#01 (0.00s)
-    --- PASS: TestInterp/{_NF=2;_$1="x";_print_$0;_print_NF_}#02 (0.00s)
+    --- FAIL: TestInterp/{_NF=2;_$1="x";_print_$0;_print_NF_}#02 (0.00s)
     --- PASS: TestInterp/{_NF=2;_$2="x";_print_$0;_print_NF_} (0.00s)
     --- PASS: TestInterp/{_NF=2;_$2="x";_print_$0;_print_NF_}#01 (0.00s)
-    --- PASS: TestInterp/{_NF=2;_$2="x";_print_$0;_print_NF_}#02 (0.00s)
+    --- FAIL: TestInterp/{_NF=2;_$2="x";_print_$0;_print_NF_}#02 (0.00s)
     --- PASS: TestInterp/{_NF=2;_$3="x";_print_$0;_print_NF_} (0.00s)
     --- PASS: TestInterp/{_NF=2;_$3="x";_print_$0;_print_NF_}#01 (0.00s)
     --- PASS: TestInterp/{_NF=2;_$3="x";_print_$0;_print_NF_}#02 (0.00s)
-    --- PASS: TestInterp/{_NF=3;_$1="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault (0.00s)
-    --- PASS: TestInterp/{_NF=3;_$1="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault#01 (0.00s)
+    --- FAIL: TestInterp/{_NF=3;_$1="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault (0.00s)
+    --- FAIL: TestInterp/{_NF=3;_$1="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault#01 (0.00s)
     --- PASS: TestInterp/{_NF=3;_$1="x";_print_$0;_print_NF_} (0.00s)
-    --- PASS: TestInterp/{_NF=3;_$2="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault (0.00s)
-    --- PASS: TestInterp/{_NF=3;_$2="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault#01 (0.00s)
+    --- FAIL: TestInterp/{_NF=3;_$2="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault (0.00s)
+    --- FAIL: TestInterp/{_NF=3;_$2="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault#01 (0.00s)
     --- PASS: TestInterp/{_NF=3;_$2="x";_print_$0;_print_NF_} (0.00s)
     --- PASS: TestInterp/{_NF=3;_$3="x";_print_$0;_print_NF_} (0.00s)
     --- PASS: TestInterp/{_NF=3;_$3="x";_print_$0;_print_NF_}#01 (0.00s)
     --- PASS: TestInterp/{_NF=3;_$3="x";_print_$0;_print_NF_}#02 (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_x;_x_=_4;_print_x;_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_x;_x_=_4;_print_x;_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_a["foo"]=1;_b[2]="x";_k="foo";_print_a[k],_b["2"]_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_s+=5;_print_s;_s-=2;_print_s;_s-=s;_print_s_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_x=2;_x*=x;_print_x;_x*=3;_print_x_} (0.00s)
@@ -801,7 +741,7 @@
     --- FAIL: TestInterp/BEGIN_{_print_x++;_print_x_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_x;_print_x++;_print_++x;_print_x_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_x;_print_x--;_print_--x;_print_x_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_s++;_s++;_print_s_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_s++;_s++;_print_s_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_y="_";_--x[y_=_y_y];_print_length(y)_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_x[y++]++;_print_y_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_x[y++]_+=_3;_print_y_} (0.00s)
@@ -810,41 +750,41 @@
     --- FAIL: TestInterp/BEGIN_{_print_sin(0),_sin(0.5),_sin(1),_sin(-1)_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_cos(0),_cos(0.5),_cos(1),_cos(-1)_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_exp(0),_exp(0.5),_exp(1),_exp(-1)_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_log(0),_log(0.5),_log(1)_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_log(0),_log(0.5),_log(1)_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_log(-1)_}__#_!gawk_-_gawk_prints_warning_for_this_as_wel (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_sqrt(0),_sqrt(2),_sqrt(4)_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_sqrt(0),_sqrt(2),_sqrt(4)_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_int(3.5),_int("1.9"),_int(4),_int(-3.6),_int("x"),_int(" (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_match("food",_"foo"),_RSTART,_RLENGTH_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_match("x_food_y",_"fo"),_RSTART,_RLENGTH_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_match("x_food_y",_"fox"),_RSTART,_RLENGTH_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_match("x_food_y",_"fox"),_RSTART,_RLENGTH_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_match("x_food_y",_/[fod]+/),_RSTART,_RLENGTH_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_match("絵_fööd_y",_/[föd]+/),_RSTART,_RLENGTH_} (0.00s)
     --- PASS: TestInterp/{_print_length,_length(),_length("buzz"),_length("")_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_length("a"),_length("絵")_}__#_!awk (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_index("foo",_"f"),_index("foo0",_0),_index("foo",_"o"),_ (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_index("föö",_"f"),_index("föö0",_0),_index("föö",_ (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_length("a"),_length("絵")_}__#_!awk (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_index("foo",_"f"),_index("foo0",_0),_index("foo",_"o"),_ (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_index("föö",_"f"),_index("föö0",_0),_index("föö",_ (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_atan2(1,_0.5),_atan2(-1,_0)_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_sprintf("%3d",_42)_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_sprintf("%d",_12,_34)_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_sprintf("%d")_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_sprintf("%d",_12,_34)_}#01 (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_sprintf("%_5d",_42)_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_substr("food",_1),_substr("fööd",_1)_}__#_!windows-gaw (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_substr("food",_1,_2),_substr("fööd",_1,_2)_}__#_!windo (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_substr("food",_1,_4),_substr("fööd",_1,_4)_}__#_!windo (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_substr("food",_1,_8),_substr("fööd",_1,_8)_}__#_!windo (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_substr("food",_2),_substr("fööd",_2)_}__#_!windows-gaw (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_substr("food",_2,_2),_substr("fööd",_2,_2)_}__#_!windo (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_substr("food",_2,_3),_substr("fööd",_2,_3)_}__#_!windo (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_substr("food",_2,_8),_substr("fööd",_2,_8)_}__#_!windo (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_substr("food",_0,_8),_substr("fööd",_0,_8)_}__#_!windo (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_substr("food",_1),_substr("fööd",_1)_}__#_!windows-gaw (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_substr("food",_1,_2),_substr("fööd",_1,_2)_}__#_!windo (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_substr("food",_1,_4),_substr("fööd",_1,_4)_}__#_!windo (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_substr("food",_1,_8),_substr("fööd",_1,_8)_}__#_!windo (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_substr("food",_2),_substr("fööd",_2)_}__#_!windows-gaw (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_substr("food",_2,_2),_substr("fööd",_2,_2)_}__#_!windo (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_substr("food",_2,_3),_substr("fööd",_2,_3)_}__#_!windo (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_substr("food",_2,_8),_substr("fööd",_2,_8)_}__#_!windo (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_substr("food",_0,_8),_substr("fööd",_0,_8)_}__#_!windo (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_substr("food",_-1,_8),_substr("fööd",_-1,_8)_}__#_!win (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_substr("food",_5,_8),_substr("fööd",_5,_8)_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_substr("food",_5,_8),_substr("fööd",_5,_8)_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_substr("food",_2,_-3),_substr("fööd",_2,_-3)_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_n_=_split("ab_c_d_",_a);_for_(i=1;_i<=n;_i++)_print_a[i]_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_n_=_split("ab,c,d,",_a,_",");_for_(i=1;_i<=n;_i++)_print_a[i]_ (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_n_=_split("ab,c.d,",_a,_/[,.]/);_for_(i=1;_i<=n;_i++)_print_a[ (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_n_=_split("1_2",_a);_print_(n,_a[1],_a[2],_a[1]==1,_a[2]==2)_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_n_=_split("ab_c_d_",_a);_for_(i=1;_i<=n;_i++)_print_a[i]_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_n_=_split("ab,c,d,",_a,_",");_for_(i=1;_i<=n;_i++)_print_a[i]_ (0.00s)
+    --- PASS: TestInterp/BEGIN_{_n_=_split("ab,c.d,",_a,_/[,.]/);_for_(i=1;_i<=n;_i++)_print_a[ (0.00s)
+    --- PASS: TestInterp/BEGIN_{_n_=_split("1_2",_a);_print_(n,_a[1],_a[2],_a[1]==1,_a[2]==2)_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_x_=_"1.2.3";_print_sub(/\./,_",",_x);_print_x_} (0.00s)
     --- FAIL: TestInterp/{_print_sub(/\./,_",");_print_$0_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_x_=_"1.2.3";_print_gsub(/\./,_",",_x);_print_x_} (0.00s)
@@ -855,12 +795,12 @@
     --- FAIL: TestInterp/{_print_gsub(/[0-9]/,_"\\z");_print_$0_} (0.00s)
     --- FAIL: TestInterp/{_print_gsub("0",_"x\\\\y");_print_$0_}__#_!awk_!gawk_--_our_behaviour (0.00s)
     --- PASS: TestInterp/sub("",_"\\e",_FS)__#_!awk_!gawk (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_tolower("Foo_BaR")_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_toupper("Foo_BaR")_} (0.00s)
-    --- FAIL: TestInterp/_BEGIN_{__srand(1)__a_=_rand();_b_=_rand();_c_=_rand()__srand(1)__x_=_ (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_tolower("Foo_BaR")_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_toupper("Foo_BaR")_} (0.00s)
+    --- PASS: TestInterp/_BEGIN_{__srand(1)__a_=_rand();_b_=_rand();_c_=_rand()__srand(1)__x_=_ (0.00s)
     --- FAIL: TestInterp/_BEGIN_{__for_(i_=_0;_i_<_1000;_i++)_{___if_(rand()_<_0.5)_n++__}__pri (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_system("echo_foo");_print_system("echo_bar")_}__#_!fuzz (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_system(">&2_echo_error")_}__#_!fuzz (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_system("echo_foo");_print_system("echo_bar")_}__#_!fuzz (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_system(">&2_echo_error")_}__#_!fuzz (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_0?"t":"f"_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_1?"t":"f"_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_(1+2)?"t":"f"_} (0.00s)
@@ -898,8 +838,8 @@
     --- FAIL: TestInterp/BEGIN_{_getline_$1;_print_$1_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_"echo_foo"_|_getline_a[1];_print_a[1]_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_"echo_foo"_|_getline_$1;_print_$1_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_"foo"_|"sort";_print_"bar"_|"sort"_}__#_!fuzz (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_"foo"_|">&2_echo_error"_}__#_!gawk_!fuzz (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_"foo"_|"sort";_print_"bar"_|"sort"_}__#_!fuzz (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_"foo"_|">&2_echo_error"_}__#_!gawk_!fuzz (0.00s)
     --- FAIL: TestInterp/BEGIN_{_"cat"_|_getline;_print_}__#_!fuzz (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_getline_x_<_"/no/such/file"_}__#_!fuzz (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_getline_"z";_print_$0_} (0.00s)
@@ -916,17 +856,17 @@
     --- PASS: TestInterp/BEGIN_{_print_>"out";_close("out");_getline_<"out";_print_|"out"_}__#_ (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_getline_x_<_"-";_print_x_} (0.00s)
     --- FAIL: TestInterp/{_print_$0;_print_getline_x_<"-";_print_x_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_"x"_>"-";_print_"y"_>"-"_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_fflush();_print_fflush("")_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_"x";_print_fflush();_print_"y";_print_fflush("")_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_"x"_>"out";_print_fflush("out");_print_"y";_print_fflush (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_fflush("x")_}__#_!gawk (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_"x"_>"-";_print_"y"_>"-"_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_fflush();_print_fflush("")_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_"x";_print_fflush();_print_"y";_print_fflush("")_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_"x"_>"out";_print_fflush("out");_print_"y";_print_fflush (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_fflush("x")_}__#_!gawk (0.00s)
     --- FAIL: TestInterp/BEGIN_{_"cat"_|_getline;_print_fflush("cat")_}__#_!gawk_!fuzz (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_"x"_>_"out"_}__#_!fuzz (0.00s)
     --- PASS: TestInterp/BEGIN_{_printf_"x"_>_"out"_}__#_!fuzz (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print("x"_>_"out")_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_printf("x"_>_"out")_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_if_(1)_printf_"x";_else_printf_"y"_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print("x"_>_"out")_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_printf("x"_>_"out")_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_if_(1)_printf_"x";_else_printf_"y"_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_printf_"x";_{_printf_"y";_printf_"z"_}_} (0.00s)
     --- PASS: TestInterp/{_$1_=_substr($1,_1,_3)_print_$1_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_f()_} (0.00s)
@@ -1036,82 +976,67 @@
     --- PASS: TestSafeMode/BEGIN_{_system("echo_foo")_} (0.00s)
 === RUN   TestBytesMode
 === RUN   TestBytesMode/BEGIN_{_print_match("food",_"foo"),_RSTART,_RLENGTH_}
-    interp_test.go:838: [bytecode] expected "1 1 3\n", got "1 1 3\n0 0 -1\n"
+    interp_test.go:852: [bytecode] expected "1 1 3\n", got "0 0 -1\n"
 === RUN   TestBytesMode/BEGIN_{_print_match("x_food_y",_"fo"),_RSTART,_RLENGTH_}
-    interp_test.go:838: [bytecode] expected "3 3 2\n", got "3 3 2\n0 0 -1\n"
+    interp_test.go:852: [bytecode] expected "3 3 2\n", got "0 0 -1\n"
 === RUN   TestBytesMode/BEGIN_{_print_match("x_food_y",_"fox"),_RSTART,_RLENGTH_}
-    interp_test.go:838: [bytecode] expected "0 0 -1\n", got "0 0 -1\n0 0 -1\n"
 === RUN   TestBytesMode/BEGIN_{_print_match("x_food_y",_/[fod]+/),_RSTART,_RLENGTH_}
-    interp_test.go:838: [bytecode] expected "3 3 4\n", got "3 3 4\n0 0 -1\n"
+    interp_test.go:852: [bytecode] expected "3 3 4\n", got "0 0 -1\n"
 === RUN   TestBytesMode/BEGIN_{_print_match("絵_fööd_y",_/[föd]+/),_RSTART,_RLENGTH_}
-    interp_test.go:838: [bytecode] expected "5 5 6\n", got "5 5 6\n0 0 -1\n"
+    interp_test.go:852: [bytecode] expected "5 5 6\n", got "0 0 -1\n"
 === RUN   TestBytesMode/{_print_length,_length(),_length("buzz"),_length("")_}
 === RUN   TestBytesMode/BEGIN_{_print_length("a"),_length("絵")_}__#_!awk
-    interp_test.go:838: [bytecode] expected "1 3\n", got "1 3\n1 3\n"
 === RUN   TestBytesMode/BEGIN_{_print_index("foo",_"f"),_index("foo0",_0),_index("foo",_"o"),_
-    interp_test.go:838: [bytecode] expected "1 4 2 0\n", got "1 4 2 0\n1 4 2 0\n"
 === RUN   TestBytesMode/BEGIN_{_print_index("föö",_"f"),_index("föö0",_0),_index("föö",_
-    interp_test.go:838: [bytecode] expected "1 6 2 0\n", got "1 6 2 0\n1 6 2 0\n"
 === RUN   TestBytesMode/BEGIN_{_print_substr("food",_1),_substr("fööd",_1)_}
-    interp_test.go:838: [bytecode] expected "food fööd\n", got "food fööd\nfood fööd\n"
 === RUN   TestBytesMode/BEGIN_{_print_substr("food",_1,_2),_substr("fööd",_1,_2)_}
-    interp_test.go:838: [bytecode] expected "fo f\xc3\n", got "fo f\xc3\nfo f\xc3\n"
 === RUN   TestBytesMode/BEGIN_{_print_substr("food",_1,_4),_substr("fööd",_1,_4)_}
-    interp_test.go:838: [bytecode] expected "food fö\xc3\n", got "food fö\xc3\nfood fö\xc3\n"
 === RUN   TestBytesMode/BEGIN_{_print_substr("food",_1,_8),_substr("fööd",_1,_8)_}
-    interp_test.go:838: [bytecode] expected "food fööd\n", got "food fööd\nfood fööd\n"
 === RUN   TestBytesMode/BEGIN_{_print_substr("food",_2),_substr("fööd",_2)_}
-    interp_test.go:838: [bytecode] expected "ood ööd\n", got "ood ööd\nood ööd\n"
 === RUN   TestBytesMode/BEGIN_{_print_substr("food",_2,_2),_substr("fööd",_2,_2)_}
-    interp_test.go:838: [bytecode] expected "oo ö\n", got "oo ö\noo ö\n"
 === RUN   TestBytesMode/BEGIN_{_print_substr("food",_2,_3),_substr("fööd",_2,_3)_}
-    interp_test.go:838: [bytecode] expected "ood ö\xc3\n", got "ood ö\xc3\nood ö\xc3\n"
 === RUN   TestBytesMode/BEGIN_{_print_substr("food",_2,_8),_substr("fööd",_2,_8)_}
-    interp_test.go:838: [bytecode] expected "ood ööd\n", got "ood ööd\nood ööd\n"
 === RUN   TestBytesMode/BEGIN_{_print_substr("food",_0,_8),_substr("fööd",_0,_8)_}
-    interp_test.go:838: [bytecode] expected "food fööd\n", got "food fööd\nfood fööd\n"
 === RUN   TestBytesMode/BEGIN_{_print_substr("food",_-1,_8),_substr("fööd",_-1,_8)_}
-    interp_test.go:819: panic executing bytecode: runtime error: index out of range [-1]
+    interp_test.go:832: panic executing bytecode: runtime error: index out of range [-1]
 === RUN   TestBytesMode/BEGIN_{_print_substr("food",_5,_8),_substr("fööd",_5,_8)_}
-    interp_test.go:838: [bytecode] expected " \xb6d\n", got " \xb6d\n \xb6d\n"
 === RUN   TestBytesMode/BEGIN_{_print_substr("food",_2,_-3),_substr("fööd",_2,_-3)_}
-    interp_test.go:819: panic executing bytecode: runtime error: index out of range [-1]
+    interp_test.go:832: panic executing bytecode: runtime error: index out of range [-1]
 --- FAIL: TestBytesMode (0.00s)
     --- FAIL: TestBytesMode/BEGIN_{_print_match("food",_"foo"),_RSTART,_RLENGTH_} (0.00s)
     --- FAIL: TestBytesMode/BEGIN_{_print_match("x_food_y",_"fo"),_RSTART,_RLENGTH_} (0.00s)
-    --- FAIL: TestBytesMode/BEGIN_{_print_match("x_food_y",_"fox"),_RSTART,_RLENGTH_} (0.00s)
+    --- PASS: TestBytesMode/BEGIN_{_print_match("x_food_y",_"fox"),_RSTART,_RLENGTH_} (0.00s)
     --- FAIL: TestBytesMode/BEGIN_{_print_match("x_food_y",_/[fod]+/),_RSTART,_RLENGTH_} (0.00s)
     --- FAIL: TestBytesMode/BEGIN_{_print_match("絵_fööd_y",_/[föd]+/),_RSTART,_RLENGTH_} (0.00s)
     --- PASS: TestBytesMode/{_print_length,_length(),_length("buzz"),_length("")_} (0.00s)
-    --- FAIL: TestBytesMode/BEGIN_{_print_length("a"),_length("絵")_}__#_!awk (0.00s)
-    --- FAIL: TestBytesMode/BEGIN_{_print_index("foo",_"f"),_index("foo0",_0),_index("foo",_"o"),_ (0.00s)
-    --- FAIL: TestBytesMode/BEGIN_{_print_index("föö",_"f"),_index("föö0",_0),_index("föö",_ (0.00s)
-    --- FAIL: TestBytesMode/BEGIN_{_print_substr("food",_1),_substr("fööd",_1)_} (0.00s)
-    --- FAIL: TestBytesMode/BEGIN_{_print_substr("food",_1,_2),_substr("fööd",_1,_2)_} (0.00s)
-    --- FAIL: TestBytesMode/BEGIN_{_print_substr("food",_1,_4),_substr("fööd",_1,_4)_} (0.00s)
-    --- FAIL: TestBytesMode/BEGIN_{_print_substr("food",_1,_8),_substr("fööd",_1,_8)_} (0.00s)
-    --- FAIL: TestBytesMode/BEGIN_{_print_substr("food",_2),_substr("fööd",_2)_} (0.00s)
-    --- FAIL: TestBytesMode/BEGIN_{_print_substr("food",_2,_2),_substr("fööd",_2,_2)_} (0.00s)
-    --- FAIL: TestBytesMode/BEGIN_{_print_substr("food",_2,_3),_substr("fööd",_2,_3)_} (0.00s)
-    --- FAIL: TestBytesMode/BEGIN_{_print_substr("food",_2,_8),_substr("fööd",_2,_8)_} (0.00s)
-    --- FAIL: TestBytesMode/BEGIN_{_print_substr("food",_0,_8),_substr("fööd",_0,_8)_} (0.00s)
+    --- PASS: TestBytesMode/BEGIN_{_print_length("a"),_length("絵")_}__#_!awk (0.00s)
+    --- PASS: TestBytesMode/BEGIN_{_print_index("foo",_"f"),_index("foo0",_0),_index("foo",_"o"),_ (0.00s)
+    --- PASS: TestBytesMode/BEGIN_{_print_index("föö",_"f"),_index("föö0",_0),_index("föö",_ (0.00s)
+    --- PASS: TestBytesMode/BEGIN_{_print_substr("food",_1),_substr("fööd",_1)_} (0.00s)
+    --- PASS: TestBytesMode/BEGIN_{_print_substr("food",_1,_2),_substr("fööd",_1,_2)_} (0.00s)
+    --- PASS: TestBytesMode/BEGIN_{_print_substr("food",_1,_4),_substr("fööd",_1,_4)_} (0.00s)
+    --- PASS: TestBytesMode/BEGIN_{_print_substr("food",_1,_8),_substr("fööd",_1,_8)_} (0.00s)
+    --- PASS: TestBytesMode/BEGIN_{_print_substr("food",_2),_substr("fööd",_2)_} (0.00s)
+    --- PASS: TestBytesMode/BEGIN_{_print_substr("food",_2,_2),_substr("fööd",_2,_2)_} (0.00s)
+    --- PASS: TestBytesMode/BEGIN_{_print_substr("food",_2,_3),_substr("fööd",_2,_3)_} (0.00s)
+    --- PASS: TestBytesMode/BEGIN_{_print_substr("food",_2,_8),_substr("fööd",_2,_8)_} (0.00s)
+    --- PASS: TestBytesMode/BEGIN_{_print_substr("food",_0,_8),_substr("fööd",_0,_8)_} (0.00s)
     --- FAIL: TestBytesMode/BEGIN_{_print_substr("food",_-1,_8),_substr("fööd",_-1,_8)_} (0.00s)
-    --- FAIL: TestBytesMode/BEGIN_{_print_substr("food",_5,_8),_substr("fööd",_5,_8)_} (0.00s)
+    --- PASS: TestBytesMode/BEGIN_{_print_substr("food",_5,_8),_substr("fööd",_5,_8)_} (0.00s)
     --- FAIL: TestBytesMode/BEGIN_{_print_substr("food",_2,_-3),_substr("fööd",_2,_-3)_} (0.00s)
 === RUN   TestConfigVarsCorrect
 --- PASS: TestConfigVarsCorrect (0.00s)
 === RUN   TestShellCommand
-    interp_test.go:838: [bytecode] expected "hello world\n", got "hello world\nhello world\n"
+    interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.GetlineExpr
 --- FAIL: TestShellCommand (0.00s)
 === RUN   TestFlushes
-    interp_test.go:1225: expected flushes ["" "0\nx\ny\n" "0\nx\ny\n0\nz\n" "0\nx\ny\n0\nz\n0\n"], got ["" "0\nx\ny\n" "0\nx\ny\n0\nz\n" "0\nx\ny\n0\nz\n0\n" "0\nx\ny\n0\nz\n0\n" "0\nx\ny\n0\nz\n0\n0\nx\ny\n" "0\nx\ny\n0\nz\n0\n0\nx\ny\n0\nz\n" "0\nx\ny\n0\nz\n0\n0\nx\ny\n0\nz\n0\n"]
+    interp_test.go:1239: expected flushes ["" "0\nx\ny\n" "0\nx\ny\n0\nz\n" "0\nx\ny\n0\nz\n0\n"], got ["" "0\nx\ny\n" "0\nx\ny\n0\nz\n" "0\nx\ny\n0\nz\n0\n" "0\nx\ny\n0\nz\n0\n" "0\nx\ny\n0\nz\n0\n0\nx\ny\n" "0\nx\ny\n0\nz\n0\n0\nx\ny\n0\nz\n" "0\nx\ny\n0\nz\n0\n0\nx\ny\n0\nz\n0\n"]
 --- FAIL: TestFlushes (0.00s)
 === RUN   TestFlushError
-    interp_test.go:1277: expected "error flushing \"stdout\": that's not good, hackers\n", got "error flushing \"stdout\": that's not good, hackers\nerror flushing \"stdout\": that's not good, hackers\n"
+    interp_test.go:1291: expected "error flushing \"stdout\": that's not good, hackers\n", got "error flushing \"stdout\": that's not good, hackers\nerror flushing \"stdout\": that's not good, hackers\n"
 --- FAIL: TestFlushError (0.00s)
 === RUN   TestEnviron
-    interp_test.go:838: [bytecode] expected "61 ben 0\n", got "61 ben 0\n61 ben 0\n"
---- FAIL: TestEnviron (0.00s)
+--- PASS: TestEnviron (0.00s)
 === RUN   Example
 --- PASS: Example (0.00s)
 === RUN   Example_fieldsep
@@ -1121,5 +1046,5 @@
 === RUN   Example_funcs
 --- PASS: Example_funcs (0.00s)
 FAIL
-FAIL	github.com/benhoyt/goawk/interp	0.079s
+FAIL	github.com/benhoyt/goawk/interp	0.071s
 FAIL

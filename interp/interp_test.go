@@ -812,6 +812,19 @@ func testGoAWK(
 			byteProg = bytecode.Compile(prog)
 
 		}()
+
+		outBuf = &concurrentBuffer{}
+		config = &interp.Config{
+			Stdin:  strings.NewReader(in),
+			Output: outBuf,
+			Error:  outBuf,
+			Vars:   []string{"_var", "42"},
+			Funcs:  funcs,
+		}
+		if configure != nil {
+			configure(config)
+		}
+
 		func() {
 			defer func() {
 				r := recover()
@@ -821,6 +834,7 @@ func testGoAWK(
 			}()
 			_, err = interp.ExecBytecode(prog, config, byteProg)
 		}()
+
 		if err != nil {
 			if errStr != "" {
 				if err.Error() == errStr {

@@ -359,42 +359,42 @@ func (c *compiler) expr(expr ast.Expr) {
 		}
 		c.expr(e.Left)
 		c.expr(e.Right)
-		var opcode Op
+		var op Op
 		switch e.Op {
 		case lexer.ADD:
-			opcode = Add
+			op = Add
 		case lexer.SUB:
-			opcode = Subtract
+			op = Subtract
 		case lexer.EQUALS:
-			opcode = Equals
+			op = Equals
 		case lexer.LESS:
-			opcode = Less
+			op = Less
 		case lexer.LTE:
-			opcode = LessOrEqual
+			op = LessOrEqual
 		case lexer.CONCAT:
-			opcode = Concat
+			op = Concat
 		case lexer.MUL:
-			opcode = Multiply
+			op = Multiply
 		case lexer.DIV:
-			opcode = Divide
+			op = Divide
 		case lexer.GREATER:
-			opcode = Greater
+			op = Greater
 		case lexer.GTE:
-			opcode = GreaterOrEqual
+			op = GreaterOrEqual
 		case lexer.NOT_EQUALS:
-			opcode = NotEquals
+			op = NotEquals
 		case lexer.MATCH:
-			opcode = Match
+			op = Match
 		case lexer.NOT_MATCH:
-			opcode = NotMatch
+			op = NotMatch
 		case lexer.POW:
-			opcode = Power
+			op = Power
 		case lexer.MOD:
-			opcode = Modulo
+			op = Modulo
 		default:
 			panic(fmt.Sprintf("unexpected binary operation: %s", e.Op))
 		}
-		c.add(opcode)
+		c.add(op)
 
 	//case *ast.IncrExpr:
 

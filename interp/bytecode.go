@@ -136,6 +136,66 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				panic(fmt.Sprintf("unexpected operation %s", operation))
 			}
 
+		case bytecode.Add:
+			r := p.pop()
+			l := p.pop()
+			p.push(num(l.num() + r.num()))
+
+		case bytecode.Subtract:
+			r := p.pop()
+			l := p.pop()
+			p.push(num(l.num() - r.num()))
+
+		case bytecode.Multiply:
+			r := p.pop()
+			l := p.pop()
+			p.push(num(l.num() * r.num()))
+
+		case bytecode.Divide:
+			r := p.pop()
+			l := p.pop()
+			rf := r.num()
+			if rf == 0.0 {
+				return newError("division by zero")
+			}
+			p.push(num(l.num() / rf))
+
+		case bytecode.Power:
+			r := p.pop()
+			l := p.pop()
+			p.push(num(math.Pow(l.num(), r.num())))
+
+		case bytecode.Modulo:
+			r := p.pop()
+			l := p.pop()
+			rf := r.num()
+			if rf == 0.0 {
+				return newError("division by zero in mod")
+			}
+			p.push(num(math.Mod(l.num(), rf)))
+
+		case bytecode.Equals:
+			r := p.pop()
+			l := p.pop()
+			ln, lIsStr := l.isTrueStr()
+			rn, rIsStr := r.isTrueStr()
+			if lIsStr || rIsStr {
+				p.push(boolean(p.toString(l) == p.toString(r)))
+			} else {
+				p.push(boolean(ln == rn))
+			}
+
+		case bytecode.NotEquals:
+			r := p.pop()
+			l := p.pop()
+			ln, lIsStr := l.isTrueStr()
+			rn, rIsStr := r.isTrueStr()
+			if lIsStr || rIsStr {
+				p.push(boolean(p.toString(l) != p.toString(r)))
+			} else {
+				p.push(boolean(ln != rn))
+			}
+
 		case bytecode.Less:
 			r := p.pop()
 			l := p.pop()
@@ -146,6 +206,19 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				v = boolean(p.toString(l) < p.toString(r))
 			} else {
 				v = boolean(ln < rn)
+			}
+			p.push(v)
+
+		case bytecode.Greater:
+			r := p.pop()
+			l := p.pop()
+			ln, lIsStr := l.isTrueStr()
+			rn, rIsStr := r.isTrueStr()
+			var v value
+			if lIsStr || rIsStr {
+				v = boolean(p.toString(l) > p.toString(r))
+			} else {
+				v = boolean(ln > rn)
 			}
 			p.push(v)
 
@@ -161,6 +234,44 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				v = boolean(ln <= rn)
 			}
 			p.push(v)
+
+		case bytecode.GreaterOrEqual:
+			r := p.pop()
+			l := p.pop()
+			ln, lIsStr := l.isTrueStr()
+			rn, rIsStr := r.isTrueStr()
+			var v value
+			if lIsStr || rIsStr {
+				v = boolean(p.toString(l) >= p.toString(r))
+			} else {
+				v = boolean(ln >= rn)
+			}
+			p.push(v)
+
+		case bytecode.Concat:
+			r := p.pop()
+			l := p.pop()
+			p.push(str(p.toString(l) + p.toString(r)))
+
+		case bytecode.Match:
+			r := p.pop()
+			l := p.pop()
+			re, err := p.compileRegex(p.toString(r))
+			if err != nil {
+				return err
+			}
+			matched := re.MatchString(p.toString(l))
+			p.push(boolean(matched))
+
+		case bytecode.NotMatch:
+			r := p.pop()
+			l := p.pop()
+			re, err := p.compileRegex(p.toString(r))
+			if err != nil {
+				return err
+			}
+			matched := re.MatchString(p.toString(l))
+			p.push(boolean(!matched))
 
 		case bytecode.Not:
 			p.push(boolean(!p.pop().boolean()))
