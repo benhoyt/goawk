@@ -15,16 +15,19 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/benhoyt/goawk/internal/bytecode"
 	"github.com/benhoyt/goawk/interp"
 	"github.com/benhoyt/goawk/parser"
 )
 
 var (
-	awkExe string
+	awkExe      string
+	runBytecode bool
 )
 
 func TestMain(m *testing.M) {
 	flag.StringVar(&awkExe, "awk", "gawk", "awk executable name")
+	flag.BoolVar(&runBytecode, "bytecode", false, "run bytecode tests")
 	flag.Parse()
 	os.Exit(m.Run())
 }
@@ -689,36 +692,38 @@ func TestInterp(t *testing.T) {
 		}
 
 		// Run it through external awk program first
-		t.Run("awk_"+testName, func(t *testing.T) {
-			if awkExe != "" && strings.Contains(test.src, "!"+awkExe) {
-				t.Skipf("skipping under %s", awkExe)
-			}
-			if strings.Contains(test.src, "!"+runtime.GOOS+"-"+awkExe) {
-				t.Skipf("skipping on %s under %s", runtime.GOOS, awkExe)
-			}
-			cmd := exec.Command(awkExe, test.src, "-")
-			if test.in != "" {
-				cmd.Stdin = strings.NewReader(test.in)
-			}
-			out, err := cmd.CombinedOutput()
-			if err != nil {
-				if test.awkErr != "" {
-					if strings.Contains(string(out), test.awkErr) {
-						return
-					}
-					t.Fatalf("expected error %q, got:\n%s", test.awkErr, out)
-				} else {
-					t.Fatalf("error running %s: %v:\n%s", awkExe, err, out)
+		if awkExe != "" {
+			t.Run("awk_"+testName, func(t *testing.T) {
+				if strings.Contains(test.src, "!"+awkExe) {
+					t.Skipf("skipping under %s", awkExe)
 				}
-			}
-			if test.awkErr != "" {
-				t.Fatalf(`expected error %q, got ""`, test.awkErr)
-			}
-			normalized := normalizeNewlines(string(out))
-			if normalized != test.out {
-				t.Fatalf("expected %q, got %q", test.out, normalized)
-			}
-		})
+				if strings.Contains(test.src, "!"+runtime.GOOS+"-"+awkExe) {
+					t.Skipf("skipping on %s under %s", runtime.GOOS, awkExe)
+				}
+				cmd := exec.Command(awkExe, test.src, "-")
+				if test.in != "" {
+					cmd.Stdin = strings.NewReader(test.in)
+				}
+				out, err := cmd.CombinedOutput()
+				if err != nil {
+					if test.awkErr != "" {
+						if strings.Contains(string(out), test.awkErr) {
+							return
+						}
+						t.Fatalf("expected error %q, got:\n%s", test.awkErr, out)
+					} else {
+						t.Fatalf("error running %s: %v:\n%s", awkExe, err, out)
+					}
+				}
+				if test.awkErr != "" {
+					t.Fatalf(`expected error %q, got ""`, test.awkErr)
+				}
+				normalized := normalizeNewlines(string(out))
+				if normalized != test.out {
+					t.Fatalf("expected %q, got %q", test.out, normalized)
+				}
+			})
+		}
 
 		// Then test it in GoAWK
 		t.Run(testName, func(t *testing.T) {
@@ -776,6 +781,7 @@ func testGoAWK(
 	if configure != nil {
 		configure(config)
 	}
+
 	_, err = interp.ExecProgram(prog, config)
 	if err != nil {
 		if errStr != "" {
@@ -792,6 +798,45 @@ func testGoAWK(
 	normalized := normalizeNewlines(outBuf.String())
 	if normalized != out {
 		t.Fatalf("expected %q, got %q", out, normalized)
+	}
+
+	if runBytecode {
+		var byteProg *bytecode.Program
+		func() {
+			defer func() {
+				r := recover()
+				if r != nil {
+					t.Fatalf("panic compiling bytecode: %v", r)
+				}
+			}()
+			byteProg = bytecode.Compile(prog)
+
+		}()
+		func() {
+			defer func() {
+				r := recover()
+				if r != nil {
+					t.Fatalf("panic executing bytecode: %v", r)
+				}
+			}()
+			_, err = interp.ExecBytecode(prog, config, byteProg)
+		}()
+		if err != nil {
+			if errStr != "" {
+				if err.Error() == errStr {
+					return
+				}
+				t.Fatalf("[bytecode] expected error %q, got %q", errStr, err.Error())
+			}
+			t.Fatal(err)
+		}
+		if errStr != "" {
+			t.Fatalf(`[bytecode] expected error %q, got ""`, errStr)
+		}
+		normalized = normalizeNewlines(outBuf.String())
+		if normalized != out {
+			t.Fatalf("[bytecode] expected %q, got %q", out, normalized)
+		}
 	}
 }
 
