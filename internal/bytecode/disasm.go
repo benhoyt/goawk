@@ -129,6 +129,14 @@ func (d *disassembler) disassemble(prefix string) error {
 			index := d.fetch()
 			d.writeOpf("AssignGlobal %s", d.program.ScalarNames[index])
 
+		case AssignLocal:
+			index := d.fetch()
+			d.writeOpf("AssignLocal %d", index) // TODO: local name
+
+		case AssignSpecial:
+			index := d.fetch()
+			d.writeOpf("AssignSpecial %s", ast.SpecialVarName(int(index)))
+
 		case PostIncrGlobal:
 			index := d.fetch()
 			d.writeOpf("PostIncrGlobal %s", d.program.ScalarNames[index])

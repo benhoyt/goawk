@@ -117,9 +117,16 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		case *ast.AssignExpr:
 			switch left := expr.Left.(type) {
 			case *ast.VarExpr:
-				if left.Scope == ast.ScopeGlobal {
+				switch left.Scope {
+				case ast.ScopeGlobal:
 					c.expr(expr.Right)
 					c.add(AssignGlobal, Op(left.Index))
+					return
+				case ast.ScopeLocal:
+					panic("TODO assign scope local")
+				case ast.ScopeSpecial:
+					c.expr(expr.Right)
+					c.add(AssignSpecial, Op(left.Index))
 					return
 				}
 			case *ast.FieldExpr:

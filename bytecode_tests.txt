@@ -17,11 +17,8 @@
 === RUN   TestInterp/_NR==2,_NR==4_{_print_$0_}_NR==3,_NR==5_{_print_NR_}_
 === RUN   TestInterp/BEGIN_{_print_"x",_"y"_}
 === RUN   TestInterp/BEGIN_{_print_OFS;_OFS_=_",";_print_"x",_"y"_}
-    interp_test.go:852: [bytecode] expected " \nx,y\n", got " \nx y\n"
 === RUN   TestInterp/BEGIN_{_print_ORS;_ORS_=_".";_print_"x",_"y"_}
-    interp_test.go:852: [bytecode] expected "\n\nx y.", got "\n\nx y\n"
 === RUN   TestInterp/BEGIN_{_print_ORS;_ORS_=_"";_print_"x",_"y"_}
-    interp_test.go:852: [bytecode] expected "\n\nx y", got "\n\nx y\n"
 === RUN   TestInterp/{_print;_print_}
 === RUN   TestInterp/BEGIN_{_print;_print_}
 === RUN   TestInterp/BEGIN_{_printf_"%%_%d_%x_%c_%f_%s",_42,_42,_42,_42,_42_}
@@ -191,55 +188,33 @@
 === RUN   TestInterp/BEGIN_{_print_0?1:0,_1?1:0,_""?1:0,_"0"?1:0,_"1"?1:0,_x?1:0_}
     interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.CondExpr
 === RUN   TestInterp/_BEGIN_{__print_CONVFMT,_1.2345678_""__CONVFMT_=_"%.3g"__print_CONVFMT
-    interp_test.go:852: [bytecode] expected "%.6g 1.23457\n%.3g 1.23\n", got "%.6g 1.23457\n%.6g 1.23457\n"
 === RUN   TestInterp/BEGIN_{_FILENAME_=_"foo";_print_FILENAME_}
-    interp_test.go:852: [bytecode] expected "foo\n", got "\n"
 === RUN   TestInterp/BEGIN_{_FILENAME_=_"123.0";_print_(FILENAME==123)_}
 === RUN   TestInterp/BEGIN_{_FNR_=_123;_print_FNR_}
-    interp_test.go:852: [bytecode] expected "123\n", got "0\n"
 === RUN   TestInterp/{_print_FNR,_$0_}
 === RUN   TestInterp/BEGIN_{_print_"|"_FS_"|";_FS=","_}_{_print_$1,_$2_}
-    interp_test.go:852: [bytecode] expected "| |\na b \na b\nx \n", got "| |\na b\na,b \nx,,y \n"
 === RUN   TestInterp/BEGIN_{_print_"|"_FS_"|";_FS="\\."_}_{_print_$1,_$2_}
-    interp_test.go:852: [bytecode] expected "| |\na b \na b\nx \n", got "| |\na b\na.b \nx..y \n"
 === RUN   TestInterp/BEGIN_{_FS="\\"_}_{_print_$1,_$2_}
-    interp_test.go:852: [bytecode] expected "a b\n", got "a\\b \n"
 === RUN   TestInterp/{_print_NF_}
 === RUN   TestInterp/BEGIN_{_NR_=_123;_print_NR_}
-    interp_test.go:852: [bytecode] expected "123\n", got "0\n"
 === RUN   TestInterp/{_print_NR,_$0_}
 === RUN   TestInterp/_BEGIN_{__print_OFMT,_1.2345678__OFMT_=_"%.3g"__print_OFMT,_1.234567_}
-    interp_test.go:852: [bytecode] expected "%.6g 1.23457\n%.3g 1.23\n", got "%.6g 1.23457\n%.6g 1.23457\n"
 === RUN   TestInterp/BEGIN_{_print_RSTART,_RLENGTH;_RSTART=5;_RLENGTH=42;_print_RSTART,_RLE
-    interp_test.go:852: [bytecode] expected "0 0\n5 42\n", got "0 0\n0 0\n"
 === RUN   TestInterp/BEGIN_{_print_RS_}
 === RUN   TestInterp/BEGIN_{_print_RS;_RS="|";_print_RS_}__{_print_}
-    interp_test.go:852: [bytecode] expected "\n\n|\na b\nc d\n", got "\n\n\n\na b|c d|\n"
 === RUN   TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=
-    interp_test.go:852: [bytecode] expected "1 (1):\na\n2 (2):\nb\nc\n", got "1 (1):\na\n2 (0):\n3 (1):\nb\n4 (1):\nc\n"
 === RUN   TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#01
-    interp_test.go:852: [bytecode] expected "1 (2):\n1\n2\n2 (2):\na\nb\n", got "1 (1):\n1\n2 (1):\n2\n3 (0):\n4 (1):\na\n5 (1):\nb\n"
 === RUN   TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#02
-    interp_test.go:852: [bytecode] expected "1 (2):\na b\nc d\n2 (1):\ne f\n3 (1):\n  \n4 (1):\ng h\n", got "1 (2):\na\nb\n2 (2):\nc\nd\n3 (0):\n4 (2):\ne\nf\n5 (0):\n6 (0):\n7 (0):\n8 (0):\n9 (0):\n10 (2):\ng\nh\n11 (0):\n12 (0):\n"
 === RUN   TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#03
-    interp_test.go:852: [bytecode] expected "1 (1):\na b\n2 (1):\nc d\n", got "1 (0):\n2 (0):\n3 (2):\na\nb\n4 (0):\n5 (2):\nc\nd\n"
 === RUN   TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#04
-    interp_test.go:852: [bytecode] expected "1 (1):\na b\n2 (1):\nc d\n", got "1 (0):\n2 (0):\n3 (2):\na\nb\n4 (0):\n5 (2):\nc\nd\n"
 === RUN   TestInterp/BEGIN_{_RS="";_FS="X"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=N
-    interp_test.go:852: [bytecode] expected "1 (4):\na|b|c|d|2 (2):\ne|f|3 (1):\n  |4 (2):\ng|h|", got "1 (1):\naXb|2 (1):\ncXd|3 (0):\n4 (1):\neXf|5 (0):\n6 (0):\n7 (0):\n8 (0):\n9 (0):\n10 (1):\ngXh|11 (0):\n12 (0):\n"
 === RUN   TestInterp/BEGIN_{_RS_=_""_}__{_print_"got",_$0_}
-    interp_test.go:852: [bytecode] expected "", got "got \ngot \ngot \ngot \n"
 === RUN   TestInterp/BEGIN_{_RS="\n"_}__{_print_}
 === RUN   TestInterp/BEGIN_{_RS="ö"_}__{_print_}__#_!windows-gawk
-    interp_test.go:852: [bytecode] expected "1\ntwo\nthree\n", got "1ötwoöthree\n"
 === RUN   TestInterp/BEGIN_{_RS="\\.+"_}__{_print_}
-    interp_test.go:852: [bytecode] expected "1\ntwo\nthree\n4\n", got "1.two..three...4.\n"
 === RUN   TestInterp/BEGIN_{_RS_=_"\n|(_*[[:upper:]]+_*)"_}_{_print_"Record_=",_$0,"and_RT_
-    interp_test.go:852: [bytecode] expected "Record = record 1 and RT = [ AAAA ]\nRecord = record 2 and RT = [ BBBB ]\nRecord = record 3 and RT = [\n]\n", got "Record = record 1 AAAA record 2 BBBB record 3 and RT = [\n]\n"
 === RUN   TestInterp/BEGIN_{_RS_=_"\n|(_*[[:upper:]]+_*)"_}_{_print_"Record_=",_$0,"and_RT_#01
-    interp_test.go:852: [bytecode] expected "Record = record 1 and RT = [ AAAA ]\nRecord = record 2 and RT = [ BBBB ]\nRecord = record 3 and RT = []\n", got "Record = record 1 AAAA record 2 BBBB record 3 and RT = [\n]\n"
 === RUN   TestInterp/BEGIN_{_RS=".."_}_{_print_$0_RT_}
-    interp_test.go:852: [bytecode] expected "fo\no \nba\nr \nba\nzz\n", got "foo bar bazz\n\n"
 === RUN   TestInterp/_BEGIN_{__print_SUBSEP__a[1,_2]_=_"onetwo"__print_a[1,_2]__for_(k_in_a
     interp_test.go:809: panic compiling bytecode: TODO multi indexes not yet supported
 === RUN   TestInterp/{_print_NF;_NF=1;_$2="two";_print_$0,_NF_}
@@ -256,39 +231,27 @@
 === RUN   TestInterp/0_in_FS__#_!awk_-_doesn't_flag_this_as_an_error
 === RUN   TestInterp/{_NF=1;_$1="x";_print_$0;_print_NF_}
 === RUN   TestInterp/{_NF=1;_$1="x";_print_$0;_print_NF_}#01
-    interp_test.go:852: [bytecode] expected "x\n1\n", got "x b\n2\n"
 === RUN   TestInterp/{_NF=1;_$1="x";_print_$0;_print_NF_}#02
-    interp_test.go:852: [bytecode] expected "x\n1\n", got "x b c\n3\n"
 === RUN   TestInterp/{_NF=1;_$2="x";_print_$0;_print_NF_}
 === RUN   TestInterp/{_NF=1;_$2="x";_print_$0;_print_NF_}#01
 === RUN   TestInterp/{_NF=1;_$2="x";_print_$0;_print_NF_}#02
-    interp_test.go:852: [bytecode] expected "a x\n2\n", got "a x c\n3\n"
 === RUN   TestInterp/{_NF=1;_$3="x";_print_$0;_print_NF_}
 === RUN   TestInterp/{_NF=1;_$3="x";_print_$0;_print_NF_}__#_!awk_-_awk_differs_from_gawk_(
-    interp_test.go:852: [bytecode] expected "a  x\n3\n", got "a b x\n3\n"
 === RUN   TestInterp/{_NF=1;_$3="x";_print_$0;_print_NF_}__#_!awk_-_awk_differs_from_gawk_(#01
-    interp_test.go:852: [bytecode] expected "a  x\n3\n", got "a b x\n3\n"
 === RUN   TestInterp/{_NF=2;_$1="x";_print_$0;_print_NF_}
-    interp_test.go:852: [bytecode] expected "x \n2\n", got "x\n1\n"
 === RUN   TestInterp/{_NF=2;_$1="x";_print_$0;_print_NF_}#01
 === RUN   TestInterp/{_NF=2;_$1="x";_print_$0;_print_NF_}#02
-    interp_test.go:852: [bytecode] expected "x b\n2\n", got "x b c\n3\n"
 === RUN   TestInterp/{_NF=2;_$2="x";_print_$0;_print_NF_}
 === RUN   TestInterp/{_NF=2;_$2="x";_print_$0;_print_NF_}#01
 === RUN   TestInterp/{_NF=2;_$2="x";_print_$0;_print_NF_}#02
-    interp_test.go:852: [bytecode] expected "a x\n2\n", got "a x c\n3\n"
 === RUN   TestInterp/{_NF=2;_$3="x";_print_$0;_print_NF_}
 === RUN   TestInterp/{_NF=2;_$3="x";_print_$0;_print_NF_}#01
 === RUN   TestInterp/{_NF=2;_$3="x";_print_$0;_print_NF_}#02
 === RUN   TestInterp/{_NF=3;_$1="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault
-    interp_test.go:852: [bytecode] expected "x  \n3\n", got "x\n1\n"
 === RUN   TestInterp/{_NF=3;_$1="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault#01
-    interp_test.go:852: [bytecode] expected "x b \n3\n", got "x b\n2\n"
 === RUN   TestInterp/{_NF=3;_$1="x";_print_$0;_print_NF_}
 === RUN   TestInterp/{_NF=3;_$2="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault
-    interp_test.go:852: [bytecode] expected "a x \n3\n", got "a x\n2\n"
 === RUN   TestInterp/{_NF=3;_$2="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault#01
-    interp_test.go:852: [bytecode] expected "a x \n3\n", got "a x\n2\n"
 === RUN   TestInterp/{_NF=3;_$2="x";_print_$0;_print_NF_}
 === RUN   TestInterp/{_NF=3;_$3="x";_print_$0;_print_NF_}
 === RUN   TestInterp/{_NF=3;_$3="x";_print_$0;_print_NF_}#01
@@ -536,9 +499,9 @@
     --- PASS: TestInterp/NR==2,_NR==4 (0.00s)
     --- PASS: TestInterp/_NR==2,_NR==4_{_print_$0_}_NR==3,_NR==5_{_print_NR_}_ (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_"x",_"y"_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_OFS;_OFS_=_",";_print_"x",_"y"_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_ORS;_ORS_=_".";_print_"x",_"y"_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_ORS;_ORS_=_"";_print_"x",_"y"_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_OFS;_OFS_=_",";_print_"x",_"y"_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_ORS;_ORS_=_".";_print_"x",_"y"_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_ORS;_ORS_=_"";_print_"x",_"y"_} (0.00s)
     --- PASS: TestInterp/{_print;_print_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print;_print_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_printf_"%%_%d_%x_%c_%f_%s",_42,_42,_42,_42,_42_} (0.00s)
@@ -656,34 +619,34 @@
     --- FAIL: TestInterp/{_print_$0?1:0_}#01 (0.00s)
     --- FAIL: TestInterp/BEGIN_{_$0="1";_print_($0?1:0)_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_0?1:0,_1?1:0,_""?1:0,_"0"?1:0,_"1"?1:0,_x?1:0_} (0.00s)
-    --- FAIL: TestInterp/_BEGIN_{__print_CONVFMT,_1.2345678_""__CONVFMT_=_"%.3g"__print_CONVFMT (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_FILENAME_=_"foo";_print_FILENAME_} (0.00s)
+    --- PASS: TestInterp/_BEGIN_{__print_CONVFMT,_1.2345678_""__CONVFMT_=_"%.3g"__print_CONVFMT (0.00s)
+    --- PASS: TestInterp/BEGIN_{_FILENAME_=_"foo";_print_FILENAME_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_FILENAME_=_"123.0";_print_(FILENAME==123)_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_FNR_=_123;_print_FNR_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_FNR_=_123;_print_FNR_} (0.00s)
     --- PASS: TestInterp/{_print_FNR,_$0_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_"|"_FS_"|";_FS=","_}_{_print_$1,_$2_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_"|"_FS_"|";_FS="\\."_}_{_print_$1,_$2_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_FS="\\"_}_{_print_$1,_$2_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_"|"_FS_"|";_FS=","_}_{_print_$1,_$2_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_"|"_FS_"|";_FS="\\."_}_{_print_$1,_$2_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_FS="\\"_}_{_print_$1,_$2_} (0.00s)
     --- PASS: TestInterp/{_print_NF_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_NR_=_123;_print_NR_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_NR_=_123;_print_NR_} (0.00s)
     --- PASS: TestInterp/{_print_NR,_$0_} (0.00s)
-    --- FAIL: TestInterp/_BEGIN_{__print_OFMT,_1.2345678__OFMT_=_"%.3g"__print_OFMT,_1.234567_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_RSTART,_RLENGTH;_RSTART=5;_RLENGTH=42;_print_RSTART,_RLE (0.00s)
+    --- PASS: TestInterp/_BEGIN_{__print_OFMT,_1.2345678__OFMT_=_"%.3g"__print_OFMT,_1.234567_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_RSTART,_RLENGTH;_RSTART=5;_RLENGTH=42;_print_RSTART,_RLE (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_RS_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_RS;_RS="|";_print_RS_}__{_print_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<= (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#01 (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#02 (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#03 (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#04 (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_RS="";_FS="X"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=N (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_RS_=_""_}__{_print_"got",_$0_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_RS;_RS="|";_print_RS_}__{_print_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<= (0.00s)
+    --- PASS: TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#01 (0.00s)
+    --- PASS: TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#02 (0.00s)
+    --- PASS: TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#03 (0.00s)
+    --- PASS: TestInterp/BEGIN_{_RS="";_FS="\n"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=#04 (0.00s)
+    --- PASS: TestInterp/BEGIN_{_RS="";_FS="X"_}__{_printf_"%d_(%d):\n",_NR,_NF;_for_(i=1;_i<=N (0.00s)
+    --- PASS: TestInterp/BEGIN_{_RS_=_""_}__{_print_"got",_$0_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_RS="\n"_}__{_print_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_RS="ö"_}__{_print_}__#_!windows-gawk (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_RS="\\.+"_}__{_print_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_RS_=_"\n|(_*[[:upper:]]+_*)"_}_{_print_"Record_=",_$0,"and_RT_ (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_RS_=_"\n|(_*[[:upper:]]+_*)"_}_{_print_"Record_=",_$0,"and_RT_#01 (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_RS=".."_}_{_print_$0_RT_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_RS="ö"_}__{_print_}__#_!windows-gawk (0.00s)
+    --- PASS: TestInterp/BEGIN_{_RS="\\.+"_}__{_print_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_RS_=_"\n|(_*[[:upper:]]+_*)"_}_{_print_"Record_=",_$0,"and_RT_ (0.00s)
+    --- PASS: TestInterp/BEGIN_{_RS_=_"\n|(_*[[:upper:]]+_*)"_}_{_print_"Record_=",_$0,"and_RT_#01 (0.00s)
+    --- PASS: TestInterp/BEGIN_{_RS=".."_}_{_print_$0_RT_} (0.00s)
     --- FAIL: TestInterp/_BEGIN_{__print_SUBSEP__a[1,_2]_=_"onetwo"__print_a[1,_2]__for_(k_in_a (0.00s)
     --- PASS: TestInterp/{_print_NF;_NF=1;_$2="two";_print_$0,_NF_} (0.00s)
     --- PASS: TestInterp/{_print_NF;_NF=2;_$2="two";_print_$0,_NF} (0.00s)
@@ -698,28 +661,28 @@
     --- PASS: TestInterp/BEGIN_{_$1234567=1_} (0.00s)
     --- PASS: TestInterp/0_in_FS__#_!awk_-_doesn't_flag_this_as_an_error (0.00s)
     --- PASS: TestInterp/{_NF=1;_$1="x";_print_$0;_print_NF_} (0.00s)
-    --- FAIL: TestInterp/{_NF=1;_$1="x";_print_$0;_print_NF_}#01 (0.00s)
-    --- FAIL: TestInterp/{_NF=1;_$1="x";_print_$0;_print_NF_}#02 (0.00s)
+    --- PASS: TestInterp/{_NF=1;_$1="x";_print_$0;_print_NF_}#01 (0.00s)
+    --- PASS: TestInterp/{_NF=1;_$1="x";_print_$0;_print_NF_}#02 (0.00s)
     --- PASS: TestInterp/{_NF=1;_$2="x";_print_$0;_print_NF_} (0.00s)
     --- PASS: TestInterp/{_NF=1;_$2="x";_print_$0;_print_NF_}#01 (0.00s)
-    --- FAIL: TestInterp/{_NF=1;_$2="x";_print_$0;_print_NF_}#02 (0.00s)
+    --- PASS: TestInterp/{_NF=1;_$2="x";_print_$0;_print_NF_}#02 (0.00s)
     --- PASS: TestInterp/{_NF=1;_$3="x";_print_$0;_print_NF_} (0.00s)
-    --- FAIL: TestInterp/{_NF=1;_$3="x";_print_$0;_print_NF_}__#_!awk_-_awk_differs_from_gawk_( (0.00s)
-    --- FAIL: TestInterp/{_NF=1;_$3="x";_print_$0;_print_NF_}__#_!awk_-_awk_differs_from_gawk_(#01 (0.00s)
-    --- FAIL: TestInterp/{_NF=2;_$1="x";_print_$0;_print_NF_} (0.00s)
+    --- PASS: TestInterp/{_NF=1;_$3="x";_print_$0;_print_NF_}__#_!awk_-_awk_differs_from_gawk_( (0.00s)
+    --- PASS: TestInterp/{_NF=1;_$3="x";_print_$0;_print_NF_}__#_!awk_-_awk_differs_from_gawk_(#01 (0.00s)
+    --- PASS: TestInterp/{_NF=2;_$1="x";_print_$0;_print_NF_} (0.00s)
     --- PASS: TestInterp/{_NF=2;_$1="x";_print_$0;_print_NF_}#01 (0.00s)
-    --- FAIL: TestInterp/{_NF=2;_$1="x";_print_$0;_print_NF_}#02 (0.00s)
+    --- PASS: TestInterp/{_NF=2;_$1="x";_print_$0;_print_NF_}#02 (0.00s)
     --- PASS: TestInterp/{_NF=2;_$2="x";_print_$0;_print_NF_} (0.00s)
     --- PASS: TestInterp/{_NF=2;_$2="x";_print_$0;_print_NF_}#01 (0.00s)
-    --- FAIL: TestInterp/{_NF=2;_$2="x";_print_$0;_print_NF_}#02 (0.00s)
+    --- PASS: TestInterp/{_NF=2;_$2="x";_print_$0;_print_NF_}#02 (0.00s)
     --- PASS: TestInterp/{_NF=2;_$3="x";_print_$0;_print_NF_} (0.00s)
     --- PASS: TestInterp/{_NF=2;_$3="x";_print_$0;_print_NF_}#01 (0.00s)
     --- PASS: TestInterp/{_NF=2;_$3="x";_print_$0;_print_NF_}#02 (0.00s)
-    --- FAIL: TestInterp/{_NF=3;_$1="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault (0.00s)
-    --- FAIL: TestInterp/{_NF=3;_$1="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault#01 (0.00s)
+    --- PASS: TestInterp/{_NF=3;_$1="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault (0.00s)
+    --- PASS: TestInterp/{_NF=3;_$1="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault#01 (0.00s)
     --- PASS: TestInterp/{_NF=3;_$1="x";_print_$0;_print_NF_} (0.00s)
-    --- FAIL: TestInterp/{_NF=3;_$2="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault (0.00s)
-    --- FAIL: TestInterp/{_NF=3;_$2="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault#01 (0.00s)
+    --- PASS: TestInterp/{_NF=3;_$2="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault (0.00s)
+    --- PASS: TestInterp/{_NF=3;_$2="x";_print_$0;_print_NF_}__#_!awk_-_segmentation_fault#01 (0.00s)
     --- PASS: TestInterp/{_NF=3;_$2="x";_print_$0;_print_NF_} (0.00s)
     --- PASS: TestInterp/{_NF=3;_$3="x";_print_$0;_print_NF_} (0.00s)
     --- PASS: TestInterp/{_NF=3;_$3="x";_print_$0;_print_NF_}#01 (0.00s)
@@ -1041,5 +1004,5 @@
 === RUN   Example_funcs
 --- PASS: Example_funcs (0.00s)
 FAIL
-FAIL	github.com/benhoyt/goawk/interp	0.076s
+FAIL	github.com/benhoyt/goawk/interp	0.074s
 FAIL

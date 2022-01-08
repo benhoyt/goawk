@@ -84,7 +84,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 		case bytecode.Special:
 			index := code[i]
 			i++
-			p.push(p.getVar(ast.ScopeSpecial, int(index)))
+			p.push(p.getVar(ast.ScopeSpecial, int(index))) // TODO: extract getVar to getSpecial function
 
 		case bytecode.ArrayGlobal:
 			arrayIndex := code[i]
@@ -100,15 +100,28 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 			p.push(v)
 
+		case bytecode.AssignField:
+			index := p.pop()
+			right := p.pop()
+			err := p.setField(int(index.num()), p.toString(right))
+			if err != nil {
+				return err
+			}
+
 		case bytecode.AssignGlobal:
 			index := code[i]
 			i++
 			p.globals[index] = p.pop()
 
-		case bytecode.AssignField:
-			index := p.pop()
-			right := p.pop()
-			err := p.setField(int(index.num()), p.toString(right))
+		case bytecode.AssignLocal:
+			index := code[i]
+			i++
+			p.frame[index] = p.pop()
+
+		case bytecode.AssignSpecial:
+			index := code[i]
+			i++
+			err := p.setVar(ast.ScopeSpecial, int(index), p.pop()) // TODO: extract setVar to setSpecial function
 			if err != nil {
 				return err
 			}
