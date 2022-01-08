@@ -7,9 +7,8 @@ const (
 	Nop Op = iota
 
 	// Stack operations
-	Num   // numIndex
-	Str   // strIndex
-	Regex // regexIndex
+	Num // numIndex
+	Str // strIndex
 	Dupe
 	Drop
 
@@ -57,6 +56,9 @@ const (
 	AugAssignSpecial     // operation, index
 	AugAssignArrayGlobal // operation, arrayIndex
 	AugAssignArrayLocal  // operation, arrayIndex
+
+	// Stand-alone regex expression /foo/
+	Regex // regexIndex
 
 	// Binary operators
 	Add

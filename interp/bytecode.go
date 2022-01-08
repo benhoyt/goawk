@@ -136,6 +136,13 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				panic(fmt.Sprintf("unexpected operation %s", operation))
 			}
 
+		case bytecode.Regex:
+			// Stand-alone /regex/ is equivalent to: $0 ~ /regex/
+			index := code[i]
+			i++
+			re := byteProg.Regexes[index]
+			p.push(boolean(re.MatchString(p.line)))
+
 		case bytecode.Add:
 			r := p.pop()
 			l := p.pop()
@@ -329,6 +336,16 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			r := p.pop()
 			l := p.pop()
 			if l.num() <= r.num() {
+				i += 1 + int(offset)
+			} else {
+				i++
+			}
+
+		case bytecode.JumpNumGreaterOrEqual:
+			offset := int32(code[i])
+			r := p.pop()
+			l := p.pop()
+			if l.num() >= r.num() {
 				i += 1 + int(offset)
 			} else {
 				i++

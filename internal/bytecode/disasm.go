@@ -142,6 +142,10 @@ func (d *disassembler) disassemble(prefix string) error {
 			arrayIndex := d.fetch()
 			d.writeOpf("PostIncrArrayGlobal %s", d.program.ArrayNames[arrayIndex])
 
+		case Regex:
+			regexIndex := d.fetch()
+			d.writeOpf("Regex %q", d.program.Regexes[regexIndex])
+
 		case Jump:
 			offset := int32(d.fetch())
 			d.writeOpf("Jump 0x%04x", d.ip+int(offset))

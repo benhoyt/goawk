@@ -347,8 +347,9 @@ func (c *compiler) expr(expr ast.Expr) {
 			c.add(Special, Op(e.Index))
 		}
 
-	//case *ast.RegExpr:
-	//
+	case *ast.RegExpr:
+		c.add(Regex, Op(len(c.program.Regexes)))
+		c.program.Regexes = append(c.program.Regexes, regexp.MustCompile(e.Regex))
 
 	case *ast.BinaryExpr:
 		switch e.Op {
