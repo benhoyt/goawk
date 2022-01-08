@@ -109,11 +109,9 @@ const (
 	CallUser    // index, numArgs
 	CallNative  // index, numArgs
 
-	// Other operations
-	Print          // numArgs
-	PrintRedirect  // numArgs, redirect
-	Printf         // numArgs
-	PrintfRedirect // numArgs, redirect
+	// Print and getline operations
+	Print  // numArgs, redirect
+	Printf // numArgs, redirect
 	Getline
 	GetlineFile
 	GetlineCommand

@@ -127,6 +127,7 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 				c.expr(left.Index)
 				c.add(AssignField)
 				return
+				// TODO: case *ast.ArrayExpr:
 			}
 		case *ast.IncrExpr:
 			if !expr.Pre {
@@ -145,6 +146,7 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 						c.add(PostIncrArrayGlobal, Op(target.Array.Index))
 						return
 					}
+					// TODO: case *ast.ArrayExpr:
 				}
 			}
 		case *ast.AugAssignExpr:
@@ -155,23 +157,32 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 					c.add(AugAssignGlobal, Op(expr.Op), Op(left.Index))
 					return
 				}
+				// TODO: case *ast.IndexExpr
+				// TODO: case *ast.ArrayExpr
 			}
 		}
+
+		// Non-optimized expression: push it and then drop
 		c.expr(s.Expr)
 		c.add(Drop)
 
 	case *ast.PrintStmt:
+		if s.Redirect != lexer.ILLEGAL {
+			c.expr(s.Dest) // redirect destination
+		}
 		for _, a := range s.Args {
 			c.expr(a)
 		}
-		if s.Redirect == lexer.ILLEGAL {
-			c.add(Print, Op(len(s.Args)))
-		} else {
-			c.expr(s.Dest)
-			c.add(PrintRedirect, Op(len(s.Args)), Op(s.Redirect))
-		}
+		c.add(Print, Op(len(s.Args)), Op(s.Redirect))
 
-	//case *ast.PrintfStmt:
+	case *ast.PrintfStmt:
+		if s.Redirect != lexer.ILLEGAL {
+			c.expr(s.Dest) // redirect destination
+		}
+		for _, a := range s.Args {
+			c.expr(a)
+		}
+		c.add(Printf, Op(len(s.Args)), Op(s.Redirect))
 
 	case *ast.IfStmt:
 		if len(s.Else) == 0 {

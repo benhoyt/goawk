@@ -490,7 +490,11 @@ func (p *interp) execute(stmt Stmt) error {
 			// "print" with no args is equivalent to "print $0"
 			line = p.line
 		}
-		output, err := p.getOutputStream(s.Redirect, s.Dest)
+		dest, err := p.eval(s.Dest)
+		if err != nil {
+			return err
+		}
+		output, err := p.getOutputStream(s.Redirect, dest)
 		if err != nil {
 			return err
 		}
@@ -511,7 +515,11 @@ func (p *interp) execute(stmt Stmt) error {
 				return err
 			}
 		}
-		output, err := p.getOutputStream(s.Redirect, s.Dest)
+		dest, err := p.eval(s.Dest)
+		if err != nil {
+			return err
+		}
+		output, err := p.getOutputStream(s.Redirect, dest)
 		if err != nil {
 			return err
 		}

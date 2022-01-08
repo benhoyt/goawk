@@ -232,7 +232,8 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 
 		case bytecode.Print:
 			numArgs := code[i]
-			i++
+			redirect := lexer.Token(code[i+1])
+			i += 2
 
 			// Print OFS-separated args followed by ORS (usually newline)
 			var line string
@@ -249,7 +250,44 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				// "print" with no args is equivalent to "print $0"
 				line = p.line
 			}
-			err := p.printLine(p.output, line)
+
+			output := p.output
+			if redirect != lexer.ILLEGAL {
+				var err error
+				dest := p.pop()
+				output, err = p.getOutputStream(redirect, dest)
+				if err != nil {
+					return err
+				}
+			}
+			err := p.printLine(output, line)
+			if err != nil {
+				return err
+			}
+
+		case bytecode.Printf:
+			numArgs := code[i]
+			redirect := lexer.Token(code[i+1])
+			i += 2
+
+			sp := len(p.st) - int(numArgs)
+			format := p.toString(p.st[sp])
+			args := p.st[sp+1:]
+			s, err := p.sprintf(format, args)
+			if err != nil {
+				return err
+			}
+			p.st = p.st[:sp]
+
+			output := p.output
+			if redirect != lexer.ILLEGAL {
+				dest := p.pop()
+				output, err = p.getOutputStream(redirect, dest)
+				if err != nil {
+					return err
+				}
+			}
+			err = writeOutput(output, s)
 			if err != nil {
 				return err
 			}

@@ -202,7 +202,21 @@ func (d *disassembler) disassemble(prefix string) error {
 
 		case Print:
 			numArgs := d.fetch()
-			d.writeOpf("Print %d", numArgs)
+			redirect := lexer.Token(d.fetch())
+			if redirect == lexer.ILLEGAL {
+				d.writeOpf("Print %d", numArgs)
+			} else {
+				d.writeOpf("Print %d %s", numArgs, redirect)
+			}
+
+		case Printf:
+			numArgs := d.fetch()
+			redirect := lexer.Token(d.fetch())
+			if redirect == lexer.ILLEGAL {
+				d.writeOpf("Printf %d", numArgs)
+			} else {
+				d.writeOpf("Printf %d %s", numArgs, redirect)
+			}
 
 		default:
 			panic(fmt.Sprintf("unexpected opcode %d", op))

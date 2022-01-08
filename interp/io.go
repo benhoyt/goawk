@@ -49,16 +49,12 @@ func (wc *bufferedWriteCloser) Close() error {
 
 // Determine the output stream for given redirect token and
 // destination (file or pipe name)
-func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
+func (p *interp) getOutputStream(redirect Token, destValue value) (io.Writer, error) {
 	if redirect == ILLEGAL {
 		// Token "ILLEGAL" means send to standard output
 		return p.output, nil
 	}
 
-	destValue, err := p.eval(dest)
-	if err != nil {
-		return nil, err
-	}
 	name := p.toString(destValue)
 	if _, ok := p.inputStreams[name]; ok {
 		return nil, newError("can't write to reader stream")
