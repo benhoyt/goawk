@@ -190,6 +190,10 @@ func (d *disassembler) disassemble(prefix string) error {
 			offset := int32(d.fetch())
 			d.writeOpf("JumpNumLessOrEqual 0x%04x", d.ip+int(offset))
 
+		case JumpNumGreaterOrEqual:
+			offset := int32(d.fetch())
+			d.writeOpf("JumpNumGreaterOrEqual 0x%04x", d.ip+int(offset))
+
 		case ForGlobalInGlobal:
 			varIndex := d.fetch()
 			arrayIndex := d.fetch()

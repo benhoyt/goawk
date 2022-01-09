@@ -91,9 +91,10 @@ func Compile(prog *parser.Program) *Program {
 }
 
 type compiler struct {
-	program *Program
-	code    []Op
-	breaks  [][]int
+	program   *Program
+	code      []Op
+	breaks    [][]int
+	continues [][]int
 }
 
 func (c *compiler) add(ops ...Op) {
@@ -231,11 +232,12 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		}
 
 	case *ast.ForStmt:
-		c.startLoop()
-
 		if s.Pre != nil {
 			c.stmt(s.Pre)
 		}
+		c.breaks = append(c.breaks, []int{})
+		c.continues = append(c.continues, []int{})
+
 		// Optimization: include condition once before loop and at the end
 		var mark int
 		if s.Cond != nil {
@@ -245,6 +247,7 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 
 		loopStart := c.labelBackward()
 		c.stmts(s.Body)
+		c.patchContinues()
 		if s.Post != nil {
 			c.stmt(s.Post)
 		}
@@ -258,11 +261,9 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 			c.jumpBackward(loopStart, Jump)
 		}
 
-		c.endLoop()
+		c.patchBreaks()
 
 	case *ast.ForInStmt:
-		c.breaks = append(c.breaks, nil) // nil tells BreakStmt it's a for..in loop
-
 		var op Op
 		switch {
 		case s.Var.Scope == ast.ScopeGlobal && s.Array.Scope == ast.ScopeGlobal:
@@ -271,9 +272,14 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 			panic("TODO: for in with local/special not yet supported")
 		}
 		mark := c.jumpForward(op, Op(s.Var.Index), Op(s.Array.Index))
-		c.stmts(s.Body)
-		c.patchForward(mark)
 
+		c.breaks = append(c.breaks, nil) // nil tells BreakStmt it's a for..in loop
+		c.continues = append(c.continues, []int{})
+
+		c.stmts(s.Body)
+
+		c.patchForward(mark)
+		c.patchContinues()
 		c.breaks = c.breaks[:len(c.breaks)-1]
 
 	//case *ast.ReturnStmt:
@@ -293,7 +299,11 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 			c.breaks[i] = append(c.breaks[i], mark)
 		}
 
-	//case *ast.ContinueStmt:
+	case *ast.ContinueStmt:
+		i := len(c.continues) - 1
+		mark := c.jumpForward(Jump)
+		c.continues[i] = append(c.continues[i], mark)
+
 	//case *ast.NextStmt:
 	//case *ast.ExitStmt:
 	//
@@ -307,11 +317,7 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 	}
 }
 
-func (c *compiler) startLoop() {
-	c.breaks = append(c.breaks, []int{})
-}
-
-func (c *compiler) endLoop() {
+func (c *compiler) patchBreaks() {
 	breaks := c.breaks[len(c.breaks)-1]
 	for _, mark := range breaks {
 		c.patchForward(mark)
@@ -319,9 +325,17 @@ func (c *compiler) endLoop() {
 	c.breaks = c.breaks[:len(c.breaks)-1]
 }
 
-func (c *compiler) jumpForward(jumpOp Op, ops ...Op) int {
+func (c *compiler) patchContinues() {
+	continues := c.continues[len(c.continues)-1]
+	for _, mark := range continues {
+		c.patchForward(mark)
+	}
+	c.continues = c.continues[:len(c.continues)-1]
+}
+
+func (c *compiler) jumpForward(jumpOp Op, args ...Op) int {
 	c.add(jumpOp)
-	c.add(ops...)
+	c.add(args...)
 	c.add(0)
 	return len(c.code)
 }
@@ -338,12 +352,13 @@ func (c *compiler) labelBackward() int {
 	return len(c.code)
 }
 
-func (c *compiler) jumpBackward(label int, ops ...Op) {
-	offset := label - (len(c.code) + len(ops) + 1)
+func (c *compiler) jumpBackward(label int, jumpOp Op, args ...Op) {
+	offset := label - (len(c.code) + len(args) + 2)
 	if offset > math.MaxInt32 || offset < math.MinInt32 {
 		panic("backward jump offset too large") // TODO: handle more gracefully?
 	}
-	c.add(ops...)
+	c.add(jumpOp)
+	c.add(args...)
 	c.add(Op(int32(offset)))
 }
 
