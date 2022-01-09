@@ -155,6 +155,22 @@ func (d *disassembler) disassemble(prefix string) error {
 			arrayIndex := d.fetch()
 			d.writeOpf("AssignArrayLocal %d", arrayIndex) // TODO: local name
 
+		case DeleteGlobal:
+			arrayIndex := d.fetch()
+			d.writeOpf("DeleteGlobal %s", d.program.ArrayNames[arrayIndex])
+
+		case DeleteLocal:
+			arrayIndex := d.fetch()
+			d.writeOpf("DeleteLocal %d", arrayIndex) // TODO: local name
+
+		case DeleteAllGlobal:
+			arrayIndex := d.fetch()
+			d.writeOpf("DeleteAllGlobal %s", d.program.ArrayNames[arrayIndex])
+
+		case DeleteAllLocal:
+			arrayIndex := d.fetch()
+			d.writeOpf("DeleteAllLocal %d", arrayIndex) // TODO: local name
+
 		case PostIncrGlobal:
 			index := d.fetch()
 			d.writeOpf("PostIncrGlobal %s", d.program.ScalarNames[index])

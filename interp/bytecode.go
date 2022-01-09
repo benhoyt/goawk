@@ -158,6 +158,36 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			index := p.toString(p.pop())
 			array[index] = p.pop()
 
+		case bytecode.DeleteGlobal:
+			arrayIndex := code[i]
+			i++
+			array := p.arrays[arrayIndex]
+			index := p.toString(p.pop())
+			delete(array, index)
+
+		case bytecode.DeleteLocal:
+			arrayIndex := code[i]
+			i++
+			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
+			index := p.toString(p.pop())
+			delete(array, index)
+
+		case bytecode.DeleteAllGlobal:
+			arrayIndex := code[i]
+			i++
+			array := p.arrays[arrayIndex]
+			for k := range array {
+				delete(array, k)
+			}
+
+		case bytecode.DeleteAllLocal:
+			arrayIndex := code[i]
+			i++
+			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
+			for k := range array {
+				delete(array, k)
+			}
+
 		case bytecode.PostIncrGlobal:
 			index := code[i]
 			i++

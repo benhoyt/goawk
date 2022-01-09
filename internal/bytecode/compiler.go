@@ -336,8 +336,27 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 
 	//case *ast.ExitStmt:
 	//
-	//case *ast.DeleteStmt:
-	//
+
+	case *ast.DeleteStmt:
+		if len(s.Index) > 0 {
+			if len(s.Index) > 1 {
+				panic("TODO multi indexes not yet supported")
+			}
+			c.expr(s.Index[0])
+			switch s.Array.Scope {
+			case ast.ScopeGlobal:
+				c.add(DeleteGlobal, Op(s.Array.Index))
+			case ast.ScopeLocal:
+				c.add(DeleteLocal, Op(s.Array.Index))
+			}
+		} else {
+			switch s.Array.Scope {
+			case ast.ScopeGlobal:
+				c.add(DeleteAllGlobal, Op(s.Array.Index))
+			case ast.ScopeLocal:
+				c.add(DeleteAllLocal, Op(s.Array.Index))
+			}
+		}
 
 	case *ast.BlockStmt:
 		c.stmts(s.Body)

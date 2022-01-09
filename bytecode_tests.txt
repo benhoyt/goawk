@@ -65,14 +65,11 @@
 === RUN   TestInterp/END_{_next_}
 === RUN   TestInterp/BEGIN_{_a["x"]_=_3;_print_"x"_in_a,_"y"_in_a_}
 === RUN   TestInterp/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_delete_a["x"];_for_(k_in_a)_print_k,_a
-    interp_test.go:809: panic compiling bytecode: unexpected stmt type: *ast.DeleteStmt
-=== RUN   TestInterp/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_for_(k_in_a)_delete_a[k];_for_(k_in_a)
-    interp_test.go:809: panic compiling bytecode: unexpected stmt type: *ast.DeleteStmt
+=== RUN   TestInterp/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_for_(k_in_a)_delete    _a[k];_for_(k_in_a)
 === RUN   TestInterp/BEGIN_{_a["x"];_"y"_in_a;_for_(k_in_a)_print_k,_a[k]_}
 === RUN   TestInterp/BEGIN_{_a[]_}
 === RUN   TestInterp/BEGIN_{_delete_a[]_}
 === RUN   TestInterp/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_delete_a;_for_(k_in_a)_print_k,_a[k]_}
-    interp_test.go:809: panic compiling bytecode: unexpected stmt type: *ast.DeleteStmt
 === RUN   TestInterp/BEGIN_{_print_!42,_!1,_!0,_!!42,_!!1,_!!0_}
 === RUN   TestInterp/BEGIN_{_print_!42,_!1,_!0,_!!42,_!!1,_!!0_}#01
 === RUN   TestInterp/BEGIN_{_print_+4,_+"3",_+0,_+-3,_-3,_-_-4,_-"3"_}
@@ -488,12 +485,12 @@
     --- PASS: TestInterp/BEGIN_{_next_} (0.00s)
     --- PASS: TestInterp/END_{_next_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_a["x"]_=_3;_print_"x"_in_a,_"y"_in_a_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_delete_a["x"];_for_(k_in_a)_print_k,_a (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_for_(k_in_a)_delete_a[k];_for_(k_in_a) (0.00s)
+    --- PASS: TestInterp/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_delete_a["x"];_for_(k_in_a)_print_k,_a (0.00s)
+    --- PASS: TestInterp/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_for_(k_in_a)_delete_a[k];_for_(k_in_a) (0.00s)
     --- PASS: TestInterp/BEGIN_{_a["x"];_"y"_in_a;_for_(k_in_a)_print_k,_a[k]_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_a[]_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_delete_a[]_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_delete_a;_for_(k_in_a)_print_k,_a[k]_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_a["x"]_=_3;_a["y"]_=_4;_delete_a;_for_(k_in_a)_print_k,_a[k]_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_!42,_!1,_!0,_!!42,_!!1,_!!0_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_!42,_!1,_!0,_!!42,_!!1,_!!0_}#01 (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_+4,_+"3",_+0,_+-3,_-3,_-_-4,_-"3"_} (0.00s)
