@@ -10,6 +10,21 @@ import (
 	"github.com/benhoyt/goawk/parser"
 )
 
+/*
+TODO:
+- user-defined functions
+- native functions
+- assignment expressions (not standalone)
+- multi indexes
+- sub() and gsub()
+- getline
+- other TODOs
+- fix/refactor TestFlushes
+- look at code coverage and get closer to 100%
+- optimize!
+- fuzz testing
+*/
+
 type Program struct {
 	Begin       []Op
 	Actions     []Action
