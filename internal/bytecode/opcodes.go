@@ -105,6 +105,7 @@ const (
 	ForLocalInLocal    // varIndex arrayIndex offset
 	ForSpecialInGlobal // varIndex arrayIndex offset
 	ForSpecialInLocal  // varIndex arrayIndex offset
+	BreakForIn
 
 	// Builtin functions
 	CallAtan2

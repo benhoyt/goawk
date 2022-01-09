@@ -41,18 +41,14 @@
 === RUN   TestInterp/BEGIN_{_if_(1)_print_"t";_else_print_"f"_}
 === RUN   TestInterp/BEGIN_{_if_(0)_print_"t";_else_print_"f"_}
 === RUN   TestInterp/BEGIN_{_for_(;;)_{_print_"x";_break_}_}
-    interp_test.go:809: panic compiling bytecode: unexpected stmt type: *ast.BreakStmt
 === RUN   TestInterp/BEGIN_{_for_(;;)_{_printf_"%d_",_i;_i++;_if_(i>2)_break;_}_}
-    interp_test.go:809: panic compiling bytecode: unexpected stmt type: *ast.BreakStmt
 === RUN   TestInterp/BEGIN_{_for_(i=5;_;_)_{_printf_"%d_",_i;_i++;_if_(i>8)_break;_}_}
-    interp_test.go:809: panic compiling bytecode: unexpected stmt type: *ast.BreakStmt
 === RUN   TestInterp/BEGIN_{_for_(i=5;_;_i++)_{_printf_"%d_",_i;_if_(i>8)_break;_}_}
-    interp_test.go:809: panic compiling bytecode: unexpected stmt type: *ast.BreakStmt
 === RUN   TestInterp/BEGIN_{_for_(i=5;_i<8;_i++)_{_printf_"%d_",_i_}_}
 === RUN   TestInterp/BEGIN_{_for_(i=0;_i<10;_i++)_{_if_(i_<_5)_continue;_printf_"%d_",_i_}_
     interp_test.go:809: panic compiling bytecode: unexpected stmt type: *ast.ContinueStmt
 === RUN   TestInterp/BEGIN_{_a[1]=1;_a[2]=1;_for_(k_in_a)_{_s++;_break_}_print_s_}
-    interp_test.go:809: panic compiling bytecode: unexpected stmt type: *ast.BreakStmt
+    interp_test.go:852: [bytecode] expected "1\n", got "\n"
 === RUN   TestInterp/BEGIN_{_a[1]=1;_a[2]=1;_a[3]=1;_for_(k_in_a)_{_if_(k==2)_continue;_s++
     interp_test.go:809: panic compiling bytecode: unexpected stmt type: *ast.ContinueStmt
 === RUN   TestInterp/BEGIN_{_while_(i<3)_{_i++;_s++;_break_}_print_s_}
@@ -71,7 +67,6 @@
     interp_test.go:809: panic compiling bytecode: unexpected stmt type: *ast.DoWhileStmt
 === RUN   TestInterp/BEGIN_{_for_(i=0;_i<10;_i++);_printf_"x"_}
 === RUN   TestInterp/_BEGIN_{__for_(i_=_0;_i_<_1;_i++)_{___for_(j_=_0;_j_<_1;_j++)_{____pri
-    interp_test.go:809: panic compiling bytecode: unexpected stmt type: *ast.BreakStmt
 === RUN   TestInterp/_BEGIN_{__for_(i_=_0;_i_<_1;_i++)_{___for_(j_=_0;_j_<_1;_j++)_{____pri#01
     interp_test.go:809: panic compiling bytecode: unexpected stmt type: *ast.ContinueStmt
 === RUN   TestInterp/{_if_(NR==2)_next;_print_}
@@ -318,14 +313,14 @@
 === RUN   TestInterp/BEGIN_{_print_atan2(1,_0.5),_atan2(-1,_0)_}
     interp_test.go:832: panic executing bytecode: runtime error: slice bounds out of range [-1:]
 === RUN   TestInterp/BEGIN_{_print_sprintf("%3d",_42)_}
-    interp_test.go:832: panic executing bytecode: runtime error: index out of range [105] with length 1
+    interp_test.go:832: panic executing bytecode: runtime error: index out of range [106] with length 1
 === RUN   TestInterp/BEGIN_{_print_sprintf("%d",_12,_34)_}
-    interp_test.go:832: panic executing bytecode: runtime error: index out of range [-119]
+    interp_test.go:832: panic executing bytecode: runtime error: index out of range [-120]
 === RUN   TestInterp/BEGIN_{_print_sprintf("%d")_}
 === RUN   TestInterp/BEGIN_{_print_sprintf("%d",_12,_34)_}#01
-    interp_test.go:832: panic executing bytecode: runtime error: index out of range [-119]
+    interp_test.go:832: panic executing bytecode: runtime error: index out of range [-120]
 === RUN   TestInterp/BEGIN_{_print_sprintf("%_5d",_42)_}
-    interp_test.go:832: panic executing bytecode: runtime error: index out of range [105] with length 1
+    interp_test.go:832: panic executing bytecode: runtime error: index out of range [106] with length 1
 === RUN   TestInterp/BEGIN_{_print_substr("food",_1),_substr("fööd",_1)_}__#_!windows-gaw
 === RUN   TestInterp/BEGIN_{_print_substr("food",_1,_2),_substr("fööd",_1,_2)_}__#_!windo
 === RUN   TestInterp/BEGIN_{_print_substr("food",_1,_4),_substr("fööd",_1,_4)_}__#_!windo
@@ -523,10 +518,10 @@
     --- PASS: TestInterp/BEGIN_{_if_(0)_print_"t";_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_if_(1)_print_"t";_else_print_"f"_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_if_(0)_print_"t";_else_print_"f"_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_for_(;;)_{_print_"x";_break_}_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_for_(;;)_{_printf_"%d_",_i;_i++;_if_(i>2)_break;_}_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_for_(i=5;_;_)_{_printf_"%d_",_i;_i++;_if_(i>8)_break;_}_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_for_(i=5;_;_i++)_{_printf_"%d_",_i;_if_(i>8)_break;_}_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_for_(;;)_{_print_"x";_break_}_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_for_(;;)_{_printf_"%d_",_i;_i++;_if_(i>2)_break;_}_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_for_(i=5;_;_)_{_printf_"%d_",_i;_i++;_if_(i>8)_break;_}_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_for_(i=5;_;_i++)_{_printf_"%d_",_i;_if_(i>8)_break;_}_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_for_(i=5;_i<8;_i++)_{_printf_"%d_",_i_}_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_for_(i=0;_i<10;_i++)_{_if_(i_<_5)_continue;_printf_"%d_",_i_}_ (0.00s)
     --- FAIL: TestInterp/BEGIN_{_a[1]=1;_a[2]=1;_for_(k_in_a)_{_s++;_break_}_print_s_} (0.00s)
@@ -539,7 +534,7 @@
     --- FAIL: TestInterp/BEGIN_{_while_(i_<_5)_{_print_i;_i++_}_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_do_{_print_i;_i++_}_while_(i_<_5)_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_for_(i=0;_i<10;_i++);_printf_"x"_} (0.00s)
-    --- FAIL: TestInterp/_BEGIN_{__for_(i_=_0;_i_<_1;_i++)_{___for_(j_=_0;_j_<_1;_j++)_{____pri (0.00s)
+    --- PASS: TestInterp/_BEGIN_{__for_(i_=_0;_i_<_1;_i++)_{___for_(j_=_0;_j_<_1;_j++)_{____pri (0.00s)
     --- FAIL: TestInterp/_BEGIN_{__for_(i_=_0;_i_<_1;_i++)_{___for_(j_=_0;_j_<_1;_j++)_{____pri#01 (0.00s)
     --- FAIL: TestInterp/{_if_(NR==2)_next;_print_} (0.00s)
     --- FAIL: TestInterp/{_if_(NR==2)_f();_print_}__function_f()_{_next_} (0.00s)
@@ -1004,5 +999,5 @@
 === RUN   Example_funcs
 --- PASS: Example_funcs (0.00s)
 FAIL
-FAIL	github.com/benhoyt/goawk/interp	0.074s
+FAIL	github.com/benhoyt/goawk/interp	0.075s
 FAIL

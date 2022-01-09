@@ -93,6 +93,7 @@ func Compile(prog *parser.Program) *Program {
 type compiler struct {
 	program *Program
 	code    []Op
+	breaks  [][]int
 }
 
 func (c *compiler) add(ops ...Op) {
@@ -208,6 +209,8 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		}
 
 	case *ast.ForStmt:
+		c.startLoop()
+
 		if s.Pre != nil {
 			c.stmt(s.Pre)
 		}
@@ -233,7 +236,11 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 			c.jumpBackward(loopStart, Jump)
 		}
 
+		c.endLoop()
+
 	case *ast.ForInStmt:
+		c.breaks = append(c.breaks, nil) // nil tells BreakStmt it's a for..in loop
+
 		var op Op
 		switch {
 		case s.Var.Scope == ast.ScopeGlobal && s.Array.Scope == ast.ScopeGlobal:
@@ -245,13 +252,25 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		c.stmts(s.Body)
 		c.patchForward(mark)
 
+		c.breaks = c.breaks[:len(c.breaks)-1]
+
 	//case *ast.ReturnStmt:
 	//
 	//case *ast.WhileStmt:
 	//
 	//case *ast.DoWhileStmt:
 	//
-	//case *ast.BreakStmt:
+
+	case *ast.BreakStmt:
+		i := len(c.breaks) - 1
+		if c.breaks[i] == nil {
+			// break in for..in loop is executed differently, use errBreak to exit
+			c.add(BreakForIn)
+		} else {
+			mark := c.jumpForward(Jump)
+			c.breaks[i] = append(c.breaks[i], mark)
+		}
+
 	//case *ast.ContinueStmt:
 	//case *ast.NextStmt:
 	//case *ast.ExitStmt:
@@ -266,7 +285,20 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 	}
 }
 
-func (c *compiler) jumpForward(ops ...Op) int {
+func (c *compiler) startLoop() {
+	c.breaks = append(c.breaks, []int{})
+}
+
+func (c *compiler) endLoop() {
+	breaks := c.breaks[len(c.breaks)-1]
+	for _, mark := range breaks {
+		c.patchForward(mark)
+	}
+	c.breaks = c.breaks[:len(c.breaks)-1]
+}
+
+func (c *compiler) jumpForward(jumpOp Op, ops ...Op) int {
+	c.add(jumpOp)
 	c.add(ops...)
 	c.add(0)
 	return len(c.code)

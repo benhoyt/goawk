@@ -15,6 +15,8 @@ import (
 	"github.com/benhoyt/goawk/parser"
 )
 
+// TODO: rename "bytecode" to "wordcode" or some such
+
 // ExecBytecode... TODO
 func ExecBytecode(program *parser.Program, config *Config, byteProg *bytecode.Program) (int, error) {
 	p, err := execInit(program, config)
@@ -383,6 +385,9 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				}
 			}
 			i += int(offset)
+
+		case bytecode.BreakForIn:
+			return errBreak
 
 		case bytecode.Print:
 			numArgs := code[i]
