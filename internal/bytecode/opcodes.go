@@ -85,6 +85,7 @@ const (
 	Not
 	UnaryMinus
 	UnaryPlus
+	Boolean
 
 	// Control flow
 	Jump

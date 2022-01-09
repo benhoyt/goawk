@@ -478,12 +478,28 @@ func (c *compiler) expr(expr ast.Expr) {
 		c.program.Regexes = append(c.program.Regexes, regexp.MustCompile(e.Regex))
 
 	case *ast.BinaryExpr:
+		// && and || are special cases as they're short-circuit operators.
 		switch e.Op {
 		case lexer.AND:
-			panic("TODO: &&")
+			c.expr(e.Left)
+			c.add(Dupe)
+			mark := c.jumpForward(JumpFalse)
+			c.add(Drop)
+			c.expr(e.Right)
+			c.patchForward(mark)
+			c.add(Boolean)
+			return
 		case lexer.OR:
-			panic("TODO: ||")
+			c.expr(e.Left)
+			c.add(Dupe)
+			mark := c.jumpForward(JumpTrue)
+			c.add(Drop)
+			c.expr(e.Right)
+			c.patchForward(mark)
+			c.add(Boolean)
+			return
 		}
+
 		c.expr(e.Left)
 		c.expr(e.Right)
 		var op Op

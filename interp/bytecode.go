@@ -371,6 +371,9 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 		case bytecode.UnaryPlus:
 			p.push(num(p.pop().num()))
 
+		case bytecode.Boolean:
+			p.push(boolean(p.pop().boolean()))
+
 		case bytecode.Jump:
 			offset := int32(code[i])
 			i += 1 + int(offset)

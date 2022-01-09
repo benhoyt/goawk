@@ -183,7 +183,7 @@ BEGIN {
 
 	// Short-circuit && and || operators
 	{`
-function t() { print "t"; return 1 }
+function t() { print "t"; return 2 }
 function f() { print "f"; return 0 }
 BEGIN {
 	print f() && f()
@@ -193,7 +193,7 @@ BEGIN {
 }
 `, "", "f\n0\nf\n0\nt\nf\n0\nt\nt\n1\n", "", ""},
 	{`
-function t() { print "t"; return 1 }
+function t() { print "t"; return 2 }
 function f() { print "f"; return 0 }
 BEGIN {
 	print f() || f()
@@ -202,6 +202,8 @@ BEGIN {
 	print t() || t()
 }
 `, "", "f\nf\n0\nf\nt\n1\nt\n1\nt\n1\n", "", ""},
+	{`BEGIN { print 0&&0, 0&&2, 2&&0, 2&&2 }`, "", "0 0 0 1\n", "", ""},
+	{`BEGIN { print 0||0, 0||2, 2||0, 2||2 }`, "", "0 1 1 1\n", "", ""},
 
 	// Other binary expressions: + - * ^ / % CONCAT ~ !~
 	{`BEGIN { print 1+2, 1+2+3, 1+-2, -1+2, "1"+"2", 3+.14 }`, "", "3 6 -1 1 3 3.14\n", "", ""},
