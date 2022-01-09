@@ -521,8 +521,16 @@ func (c *compiler) expr(expr ast.Expr) {
 
 	//case *ast.AugAssignExpr:
 	//
-	//case *ast.CondExpr:
-	//
+
+	case *ast.CondExpr:
+		jumpOp := c.cond(e.Cond, true)
+		ifMark := c.jumpForward(jumpOp)
+		c.expr(e.True)
+		elseMark := c.jumpForward(Jump)
+		c.patchForward(ifMark)
+		c.expr(e.False)
+		c.patchForward(elseMark)
+
 	case *ast.IndexExpr:
 		if len(e.Index) > 1 {
 			panic("TODO multi indexes not yet supported")

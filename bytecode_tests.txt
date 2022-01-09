@@ -139,19 +139,12 @@
 === RUN   TestInterp/BEGIN_{_print_1e+_}
 === RUN   TestInterp/BEGIN_{_print_1e-_}
 === RUN   TestInterp/{_print_/x/?"t":"f"_}
-    interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.CondExpr
 === RUN   TestInterp/BEGIN_{_print_1?2?3:4:5,_1?0?3:4:5,_0?2?3:4:5_}
-    interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.CondExpr
 === RUN   TestInterp/BEGIN_{_$0="0";_print_($0?1:0)_}
-    interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.CondExpr
 === RUN   TestInterp/{_print_$0?1:0_}
-    interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.CondExpr
 === RUN   TestInterp/{_print_$0?1:0_}#01
-    interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.CondExpr
 === RUN   TestInterp/BEGIN_{_$0="1";_print_($0?1:0)_}
-    interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.CondExpr
 === RUN   TestInterp/BEGIN_{_print_0?1:0,_1?1:0,_""?1:0,_"0"?1:0,_"1"?1:0,_x?1:0_}
-    interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.CondExpr
 === RUN   TestInterp/_BEGIN_{__print_CONVFMT,_1.2345678_""__CONVFMT_=_"%.3g"__print_CONVFMT
 === RUN   TestInterp/BEGIN_{_FILENAME_=_"foo";_print_FILENAME_}
 === RUN   TestInterp/BEGIN_{_FILENAME_=_"123.0";_print_(FILENAME==123)_}
@@ -327,15 +320,10 @@
 === RUN   TestInterp/BEGIN_{_print_system("echo_foo");_print_system("echo_bar")_}__#_!fuzz
 === RUN   TestInterp/BEGIN_{_print_system(">&2_echo_error")_}__#_!fuzz
 === RUN   TestInterp/BEGIN_{_print_0?"t":"f"_}
-    interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.CondExpr
 === RUN   TestInterp/BEGIN_{_print_1?"t":"f"_}
-    interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.CondExpr
 === RUN   TestInterp/BEGIN_{_print_(1+2)?"t":"f"_}
-    interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.CondExpr
 === RUN   TestInterp/BEGIN_{_print_(1+2?"t":"f")_}
-    interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.CondExpr
 === RUN   TestInterp/BEGIN_{_print(1_?_x="t"_:_"f");_print_x;_}
-    interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.CondExpr
 === RUN   TestInterp/_function_f(loc)_{__glob_+=_1__loc_+=_1__print_glob,_loc_}_BEGIN_{__gl
     interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/_function_set(a,_x,_v)_{__a[x]_=_v_}_function_get(a,_x)_{__return_a[x]
@@ -569,13 +557,13 @@
     --- PASS: TestInterp/BEGIN_{_a=2;_print_1e-a,_1E-a,_1e-1,_1E-1_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_1e+_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_1e-_} (0.00s)
-    --- FAIL: TestInterp/{_print_/x/?"t":"f"_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_1?2?3:4:5,_1?0?3:4:5,_0?2?3:4:5_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_$0="0";_print_($0?1:0)_} (0.00s)
-    --- FAIL: TestInterp/{_print_$0?1:0_} (0.00s)
-    --- FAIL: TestInterp/{_print_$0?1:0_}#01 (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_$0="1";_print_($0?1:0)_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_0?1:0,_1?1:0,_""?1:0,_"0"?1:0,_"1"?1:0,_x?1:0_} (0.00s)
+    --- PASS: TestInterp/{_print_/x/?"t":"f"_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_1?2?3:4:5,_1?0?3:4:5,_0?2?3:4:5_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_$0="0";_print_($0?1:0)_} (0.00s)
+    --- PASS: TestInterp/{_print_$0?1:0_} (0.00s)
+    --- PASS: TestInterp/{_print_$0?1:0_}#01 (0.00s)
+    --- PASS: TestInterp/BEGIN_{_$0="1";_print_($0?1:0)_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_0?1:0,_1?1:0,_""?1:0,_"0"?1:0,_"1"?1:0,_x?1:0_} (0.00s)
     --- PASS: TestInterp/_BEGIN_{__print_CONVFMT,_1.2345678_""__CONVFMT_=_"%.3g"__print_CONVFMT (0.00s)
     --- PASS: TestInterp/BEGIN_{_FILENAME_=_"foo";_print_FILENAME_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_FILENAME_=_"123.0";_print_(FILENAME==123)_} (0.00s)
@@ -716,11 +704,11 @@
     --- PASS: TestInterp/_BEGIN_{__for_(i_=_0;_i_<_1000;_i++)_{___if_(rand()_<_0.5)_n++__}__pri (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_system("echo_foo");_print_system("echo_bar")_}__#_!fuzz (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_system(">&2_echo_error")_}__#_!fuzz (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_0?"t":"f"_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_1?"t":"f"_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_(1+2)?"t":"f"_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_(1+2?"t":"f")_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print(1_?_x="t"_:_"f");_print_x;_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_0?"t":"f"_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_1?"t":"f"_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_(1+2)?"t":"f"_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_(1+2?"t":"f")_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print(1_?_x="t"_:_"f");_print_x;_} (0.00s)
     --- FAIL: TestInterp/_function_f(loc)_{__glob_+=_1__loc_+=_1__print_glob,_loc_}_BEGIN_{__gl (0.00s)
     --- FAIL: TestInterp/_function_set(a,_x,_v)_{__a[x]_=_v_}_function_get(a,_x)_{__return_a[x] (0.00s)
     --- FAIL: TestInterp/_function_fib(n)_{__return_n_<_3_?_1_:_fib(n-2)_+_fib(n-1)_}_BEGIN_{__ (0.00s)
@@ -959,5 +947,5 @@
 === RUN   Example_funcs
 --- PASS: Example_funcs (0.00s)
 FAIL
-FAIL	github.com/benhoyt/goawk/interp	0.077s
+FAIL	github.com/benhoyt/goawk/interp	0.072s
 FAIL
