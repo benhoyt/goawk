@@ -634,8 +634,19 @@ func (c *compiler) expr(expr ast.Expr) {
 			panic(fmt.Sprintf("unexpected unary operation: %s", e.Op))
 		}
 
-	//case *ast.InExpr:
-	//
+	case *ast.InExpr:
+		if len(e.Index) > 1 {
+			panic("TODO multi indexes not yet supported")
+		}
+		switch e.Array.Scope {
+		case ast.ScopeGlobal:
+			c.expr(e.Index[0])
+			c.add(InGlobal, Op(e.Array.Index))
+		case ast.ScopeLocal:
+			c.expr(e.Index[0])
+			c.add(InLocal, Op(e.Array.Index))
+		}
+
 	//case *ast.UserCallExpr:
 	//
 	//case *ast.GetlineExpr:

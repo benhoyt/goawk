@@ -8,6 +8,8 @@ import (
 	"github.com/benhoyt/goawk/lexer"
 )
 
+// TODO: test this, or at least run it through interp tests to ensure it doesn't panic/error
+
 func (p *Program) Disassemble(writer io.Writer) error {
 	if p.Begin != nil {
 		d := &disassembler{
@@ -124,6 +126,14 @@ func (d *disassembler) disassemble(prefix string) error {
 		case ArrayGlobal:
 			arrayIndex := d.fetch()
 			d.writeOpf("ArrayGlobal %s", d.program.ArrayNames[arrayIndex])
+
+		case InGlobal:
+			arrayIndex := d.fetch()
+			d.writeOpf("InGlobal %s", d.program.ArrayNames[arrayIndex])
+
+		case InLocal:
+			arrayIndex := d.fetch()
+			d.writeOpf("InLocal %d", arrayIndex)
 
 		case AssignGlobal:
 			index := d.fetch()

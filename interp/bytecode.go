@@ -102,6 +102,22 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 			p.push(v)
 
+		case bytecode.InGlobal:
+			arrayIndex := code[i]
+			i++
+			array := p.arrays[arrayIndex]
+			index := p.toString(p.pop())
+			_, ok := array[index]
+			p.push(boolean(ok))
+
+		case bytecode.InLocal:
+			arrayIndex := code[i]
+			i++
+			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
+			index := p.toString(p.pop())
+			_, ok := array[index]
+			p.push(boolean(ok))
+
 		case bytecode.AssignField:
 			index := p.pop()
 			right := p.pop()
