@@ -211,12 +211,11 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			operation := lexer.Token(code[i])
 			index := code[i+1]
 			i += 2
-			switch operation {
-			case lexer.ADD:
-				p.globals[index] = num(p.globals[index].num() + p.pop().num())
-			default:
-				panic(fmt.Sprintf("unexpected operation %s", operation))
+			v, err := p.evalBinary(operation, p.globals[index], p.pop())
+			if err != nil {
+				return err
 			}
+			p.globals[index] = v
 
 		case bytecode.Regex:
 			// Stand-alone /regex/ is equivalent to: $0 ~ /regex/
