@@ -338,7 +338,9 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 	//
 	//case *ast.DeleteStmt:
 	//
-	//case *ast.BlockStmt:
+
+	case *ast.BlockStmt:
+		c.stmts(s.Body)
 
 	default:
 		// Should never happen

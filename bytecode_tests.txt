@@ -417,14 +417,13 @@
 === RUN   TestInterp/BEGIN_{_printf("x"_>_"out")_}
 === RUN   TestInterp/BEGIN_{_if_(1)_printf_"x";_else_printf_"y"_}
 === RUN   TestInterp/BEGIN_{_printf_"x";_{_printf_"y";_printf_"z"_}_}
-    interp_test.go:809: panic compiling bytecode: unexpected stmt type: *ast.BlockStmt
 === RUN   TestInterp/{_$1_=_substr($1,_1,_3)_print_$1_}
 === RUN   TestInterp/BEGIN_{_f()_}
 === RUN   TestInterp/function_f()_{}_function_f()_{}_BEGIN_{_}
 === RUN   TestInterp/BEGIN_{_print_(1,2),(3,4)_}
 === RUN   TestInterp/BEGIN_{_print_(1,2,(3,4),(5,6))_}
 === RUN   TestInterp/{_print_length()_}
---- FAIL: TestInterp (0.07s)
+--- FAIL: TestInterp (0.06s)
     --- PASS: TestInterp/BEGIN_{_print_"b"_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_"b"_}#01 (0.00s)
     --- PASS: TestInterp/END_{_print_"e"_} (0.00s)
@@ -768,7 +767,7 @@
     --- PASS: TestInterp/BEGIN_{_print("x"_>_"out")_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_printf("x"_>_"out")_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_if_(1)_printf_"x";_else_printf_"y"_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_printf_"x";_{_printf_"y";_printf_"z"_}_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_printf_"x";_{_printf_"y";_printf_"z"_}_} (0.00s)
     --- PASS: TestInterp/{_$1_=_substr($1,_1,_3)_print_$1_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_f()_} (0.00s)
     --- PASS: TestInterp/function_f()_{}_function_f()_{}_BEGIN_{_} (0.00s)
@@ -945,5 +944,5 @@
 === RUN   Example_funcs
 --- PASS: Example_funcs (0.00s)
 FAIL
-FAIL	github.com/benhoyt/goawk/interp	0.085s
+FAIL	github.com/benhoyt/goawk/interp	0.075s
 FAIL
