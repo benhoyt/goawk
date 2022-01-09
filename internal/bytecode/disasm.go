@@ -171,22 +171,54 @@ func (d *disassembler) disassemble(prefix string) error {
 			arrayIndex := d.fetch()
 			d.writeOpf("DeleteAllLocal %d", arrayIndex) // TODO: local name
 
-		case PostIncrGlobal:
+		case IncrGlobal:
 			index := d.fetch()
-			d.writeOpf("PostIncrGlobal %s", d.program.ScalarNames[index])
+			d.writeOpf("IncrGlobal %s", d.program.ScalarNames[index])
+
+		case IncrLocal:
+			index := d.fetch()
+			d.writeOpf("IncrLocal %s", index) // TODO: local name
+
+		case IncrSpecial:
+			index := d.fetch()
+			d.writeOpf("IncrSpecial %s", ast.SpecialVarName(int(index)))
+
+		case IncrArrayGlobal:
+			arrayIndex := d.fetch()
+			d.writeOpf("IncrArrayGlobal %s", d.program.ArrayNames[arrayIndex])
+
+		case IncrArrayLocal:
+			arrayIndex := d.fetch()
+			d.writeOpf("IncrArrayLocal %d", arrayIndex) // TODO: local name
+
+		case AugAssignField:
+			operation := lexer.Token(d.fetch())
+			d.writeOpf("AugAssignField %s", operation)
 
 		case AugAssignGlobal:
 			operation := lexer.Token(d.fetch())
 			index := d.fetch()
 			d.writeOpf("AugAssignGlobal %s %s", operation, d.program.ScalarNames[index])
 
-		case PostIncrArrayGlobal:
-			arrayIndex := d.fetch()
-			d.writeOpf("PostIncrArrayGlobal %s", d.program.ArrayNames[arrayIndex])
+		case AugAssignLocal:
+			operation := lexer.Token(d.fetch())
+			index := d.fetch()
+			d.writeOpf("AugAssignLocal %s %d", operation, index) // TODO: local name
 
-		case PostIncrArrayLocal:
+		case AugAssignSpecial:
+			operation := lexer.Token(d.fetch())
+			index := d.fetch()
+			d.writeOpf("AugAssignSpecial %s %d", operation, ast.SpecialVarName(int(index)))
+
+		case AugAssignArrayGlobal:
+			operation := lexer.Token(d.fetch())
 			arrayIndex := d.fetch()
-			d.writeOpf("PostIncrArrayLocal %d", arrayIndex) // TODO: local name
+			d.writeOpf("AugAssignArrayGlobal %s %s", operation, d.program.ArrayNames[arrayIndex])
+
+		case AugAssignArrayLocal:
+			operation := lexer.Token(d.fetch())
+			arrayIndex := d.fetch()
+			d.writeOpf("AugAssignArrayLocal %s %d", operation, arrayIndex) // TODO: local name
 
 		case Regex:
 			regexIndex := d.fetch()

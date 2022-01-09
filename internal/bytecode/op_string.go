@@ -31,18 +31,18 @@ func _() {
 	_ = x[DeleteLocal-20]
 	_ = x[DeleteAllGlobal-21]
 	_ = x[DeleteAllLocal-22]
-	_ = x[PostIncrField-23]
-	_ = x[PostIncrGlobal-24]
-	_ = x[PostIncrLocal-25]
-	_ = x[PostIncrSpecial-26]
-	_ = x[PostIncrArrayGlobal-27]
-	_ = x[PostIncrArrayLocal-28]
-	_ = x[PostDecrField-29]
-	_ = x[PostDecrGlobal-30]
-	_ = x[PostDecrLocal-31]
-	_ = x[PostDecrSpecial-32]
-	_ = x[PostDecrArrayGlobal-33]
-	_ = x[PostDecrArrayLocal-34]
+	_ = x[IncrField-23]
+	_ = x[IncrGlobal-24]
+	_ = x[IncrLocal-25]
+	_ = x[IncrSpecial-26]
+	_ = x[IncrArrayGlobal-27]
+	_ = x[IncrArrayLocal-28]
+	_ = x[DecrField-29]
+	_ = x[DecrGlobal-30]
+	_ = x[DecrLocal-31]
+	_ = x[DecrSpecial-32]
+	_ = x[DecrArrayGlobal-33]
+	_ = x[DecrArrayLocal-34]
 	_ = x[AugAssignField-35]
 	_ = x[AugAssignGlobal-36]
 	_ = x[AugAssignLocal-37]
@@ -140,9 +140,9 @@ func _() {
 	_ = x[GetlineCommand-129]
 }
 
-const _Op_name = "NopNumStrDupeDropFieldGlobalLocalSpecialArrayGlobalArrayLocalInGlobalInLocalAssignFieldAssignGlobalAssignLocalAssignSpecialAssignArrayGlobalAssignArrayLocalDeleteGlobalDeleteLocalDeleteAllGlobalDeleteAllLocalPostIncrFieldPostIncrGlobalPostIncrLocalPostIncrSpecialPostIncrArrayGlobalPostIncrArrayLocalPostDecrFieldPostDecrGlobalPostDecrLocalPostDecrSpecialPostDecrArrayGlobalPostDecrArrayLocalAugAssignFieldAugAssignGlobalAugAssignLocalAugAssignSpecialAugAssignArrayGlobalAugAssignArrayLocalRegexAddSubtractMultiplyDividePowerModuloEqualsNotEqualsLessGreaterLessOrEqualGreaterOrEqualConcatMatchNotMatchNotUnaryMinusUnaryPlusBooleanJumpJumpFalseJumpTrueJumpNumEqualsJumpNumNotEqualsJumpNumLessJumpNumGreaterJumpNumLessOrEqualJumpNumGreaterOrEqualJumpStrEqualsJumpStrNotEqualsReturnNextExitForGlobalInGlobalForGlobalInLocalForLocalInGlobalForLocalInLocalForSpecialInGlobalForSpecialInLocalBreakForInCallAtan2CallCloseCallCosCallExpCallFflushCallFflushAllCallGsubCallGsubFieldCallGsubGlobalCallGsubLocalCallGsubSpecialCallGsubArrayGlobalCallGsubArrayLocalCallIndexCallIntCallLengthCallLengthArgCallLogCallMatchCallRandCallSinCallSplitGlobalCallSplitLocalCallSplitSepGlobalCallSplitSepLocalCallSprintfCallSqrtCallSrandCallSrandSeedCallSubCallSubFieldCallSubGlobalCallSubLocalCallSubSpecialCallSubArrayGlobalCallSubArrayLocalCallSubstrCallSubstrLengthCallSystemCallTolowerCallToupperCallUserCallNativePrintPrintfGetlineGetlineFileGetlineCommand"
+const _Op_name = "NopNumStrDupeDropFieldGlobalLocalSpecialArrayGlobalArrayLocalInGlobalInLocalAssignFieldAssignGlobalAssignLocalAssignSpecialAssignArrayGlobalAssignArrayLocalDeleteGlobalDeleteLocalDeleteAllGlobalDeleteAllLocalIncrFieldIncrGlobalIncrLocalIncrSpecialIncrArrayGlobalIncrArrayLocalDecrFieldDecrGlobalDecrLocalDecrSpecialDecrArrayGlobalDecrArrayLocalAugAssignFieldAugAssignGlobalAugAssignLocalAugAssignSpecialAugAssignArrayGlobalAugAssignArrayLocalRegexAddSubtractMultiplyDividePowerModuloEqualsNotEqualsLessGreaterLessOrEqualGreaterOrEqualConcatMatchNotMatchNotUnaryMinusUnaryPlusBooleanJumpJumpFalseJumpTrueJumpNumEqualsJumpNumNotEqualsJumpNumLessJumpNumGreaterJumpNumLessOrEqualJumpNumGreaterOrEqualJumpStrEqualsJumpStrNotEqualsReturnNextExitForGlobalInGlobalForGlobalInLocalForLocalInGlobalForLocalInLocalForSpecialInGlobalForSpecialInLocalBreakForInCallAtan2CallCloseCallCosCallExpCallFflushCallFflushAllCallGsubCallGsubFieldCallGsubGlobalCallGsubLocalCallGsubSpecialCallGsubArrayGlobalCallGsubArrayLocalCallIndexCallIntCallLengthCallLengthArgCallLogCallMatchCallRandCallSinCallSplitGlobalCallSplitLocalCallSplitSepGlobalCallSplitSepLocalCallSprintfCallSqrtCallSrandCallSrandSeedCallSubCallSubFieldCallSubGlobalCallSubLocalCallSubSpecialCallSubArrayGlobalCallSubArrayLocalCallSubstrCallSubstrLengthCallSystemCallTolowerCallToupperCallUserCallNativePrintPrintfGetlineGetlineFileGetlineCommand"
 
-var _Op_index = [...]uint16{0, 3, 6, 9, 13, 17, 22, 28, 33, 40, 51, 61, 69, 76, 87, 99, 110, 123, 140, 156, 168, 179, 194, 208, 221, 235, 248, 263, 282, 300, 313, 327, 340, 355, 374, 392, 406, 421, 435, 451, 471, 490, 495, 498, 506, 514, 520, 525, 531, 537, 546, 550, 557, 568, 582, 588, 593, 601, 604, 614, 623, 630, 634, 643, 651, 664, 680, 691, 705, 723, 744, 757, 773, 779, 783, 787, 804, 820, 836, 851, 869, 886, 896, 905, 914, 921, 928, 938, 951, 959, 972, 986, 999, 1014, 1033, 1051, 1060, 1067, 1077, 1090, 1097, 1106, 1114, 1121, 1136, 1150, 1168, 1185, 1196, 1204, 1213, 1226, 1233, 1245, 1258, 1270, 1284, 1302, 1319, 1329, 1345, 1355, 1366, 1377, 1385, 1395, 1400, 1406, 1413, 1424, 1438}
+var _Op_index = [...]uint16{0, 3, 6, 9, 13, 17, 22, 28, 33, 40, 51, 61, 69, 76, 87, 99, 110, 123, 140, 156, 168, 179, 194, 208, 217, 227, 236, 247, 262, 276, 285, 295, 304, 315, 330, 344, 358, 373, 387, 403, 423, 442, 447, 450, 458, 466, 472, 477, 483, 489, 498, 502, 509, 520, 534, 540, 545, 553, 556, 566, 575, 582, 586, 595, 603, 616, 632, 643, 657, 675, 696, 709, 725, 731, 735, 739, 756, 772, 788, 803, 821, 838, 848, 857, 866, 873, 880, 890, 903, 911, 924, 938, 951, 966, 985, 1003, 1012, 1019, 1029, 1042, 1049, 1058, 1066, 1073, 1088, 1102, 1120, 1137, 1148, 1156, 1165, 1178, 1185, 1197, 1210, 1222, 1236, 1254, 1271, 1281, 1297, 1307, 1318, 1329, 1337, 1347, 1352, 1358, 1365, 1376, 1390}
 
 func (i Op) String() string {
 	if i >= Op(len(_Op_index)-1) {

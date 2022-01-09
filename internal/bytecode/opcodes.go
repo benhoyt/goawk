@@ -40,18 +40,18 @@ const (
 	DeleteAllLocal    // arrayIndex
 
 	// Post-increment and post-decrement
-	PostIncrField
-	PostIncrGlobal      // index
-	PostIncrLocal       // index
-	PostIncrSpecial     // index
-	PostIncrArrayGlobal // arrayIndex
-	PostIncrArrayLocal  // arrayIndex
-	PostDecrField
-	PostDecrGlobal      // index
-	PostDecrLocal       // index
-	PostDecrSpecial     // index
-	PostDecrArrayGlobal // arrayIndex
-	PostDecrArrayLocal  // arrayIndex
+	IncrField
+	IncrGlobal      // index
+	IncrLocal       // index
+	IncrSpecial     // index
+	IncrArrayGlobal // arrayIndex
+	IncrArrayLocal  // arrayIndex
+	DecrField
+	DecrGlobal      // index
+	DecrLocal       // index
+	DecrSpecial     // index
+	DecrArrayGlobal // arrayIndex
+	DecrArrayLocal  // arrayIndex
 
 	// Augmented assignment (also used for pre-increment and pre-decrement)
 	AugAssignField       // operation

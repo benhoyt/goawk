@@ -49,6 +49,7 @@ func ExecBytecode(program *parser.Program, config *Config, byteProg *bytecode.Pr
 func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) error {
 	for i := 0; i < len(code); {
 		op := code[i]
+		//fmt.Printf("TODO %04x %s %v\n", i, op, p.st)
 		i++
 
 		switch op {
@@ -188,24 +189,66 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				delete(array, k)
 			}
 
-		case bytecode.PostIncrGlobal:
+		case bytecode.IncrField:
+			index := int(p.pop().num())
+			v, err := p.getField(index)
+			if err != nil {
+				return err
+			}
+			err = p.setField(index, p.toString(num(v.num()+1)))
+			if err != nil {
+				return err
+			}
+
+		case bytecode.IncrGlobal:
 			index := code[i]
 			i++
 			p.globals[index] = num(p.globals[index].num() + 1)
 
-		case bytecode.PostIncrArrayGlobal:
+		case bytecode.IncrLocal:
+			index := code[i]
+			i++
+			p.frame[index] = num(p.frame[index].num() + 1)
+
+		case bytecode.IncrSpecial:
+			index := int(code[i])
+			i++
+			v := p.getVar(ast.ScopeSpecial, index)
+			err := p.setVar(ast.ScopeSpecial, index, num(v.num()+1))
+			if err != nil {
+				return err
+			}
+
+		case bytecode.IncrArrayGlobal:
 			arrayIndex := code[i]
 			i++
 			array := p.arrays[arrayIndex]
 			index := p.toString(p.pop())
 			array[index] = num(array[index].num() + 1)
 
-		case bytecode.PostIncrArrayLocal:
+		case bytecode.IncrArrayLocal:
 			arrayIndex := code[i]
 			i++
 			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
 			index := p.toString(p.pop())
 			array[index] = num(array[index].num() + 1)
+
+		case bytecode.AugAssignField:
+			operation := lexer.Token(code[i])
+			i++
+			index := int(p.pop().num())
+			field, err := p.getField(index)
+			if err != nil {
+				return err
+			}
+			v, err := p.evalBinary(operation, field, p.pop())
+			if err != nil {
+				return err
+			}
+			err = p.setField(index, p.toString(v))
+			if err != nil {
+				return err
+			}
 
 		case bytecode.AugAssignGlobal:
 			operation := lexer.Token(code[i])
@@ -216,6 +259,53 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				return err
 			}
 			p.globals[index] = v
+
+		case bytecode.AugAssignLocal:
+			operation := lexer.Token(code[i])
+			index := code[i+1]
+			i += 2
+			v, err := p.evalBinary(operation, p.frame[index], p.pop())
+			if err != nil {
+				return err
+			}
+			p.frame[index] = v
+
+		case bytecode.AugAssignSpecial:
+			operation := lexer.Token(code[i])
+			index := int(code[i+1])
+			i += 2
+			v, err := p.evalBinary(operation, p.getVar(ast.ScopeSpecial, index), p.pop())
+			if err != nil {
+				return err
+			}
+			err = p.setVar(ast.ScopeSpecial, index, v)
+			if err != nil {
+				return err
+			}
+
+		case bytecode.AugAssignArrayGlobal:
+			operation := lexer.Token(code[i])
+			arrayIndex := code[i+1]
+			i += 2
+			array := p.arrays[arrayIndex]
+			index := p.toString(p.pop())
+			v, err := p.evalBinary(operation, array[index], p.pop())
+			if err != nil {
+				return err
+			}
+			array[index] = v
+
+		case bytecode.AugAssignArrayLocal:
+			operation := lexer.Token(code[i])
+			arrayIndex := code[i+1]
+			i += 2
+			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
+			index := p.toString(p.pop())
+			v, err := p.evalBinary(operation, array[index], p.pop())
+			if err != nil {
+				return err
+			}
+			array[index] = v
 
 		case bytecode.Regex:
 			// Stand-alone /regex/ is equivalent to: $0 ~ /regex/

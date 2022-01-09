@@ -119,15 +119,15 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		case *ast.AssignExpr:
 			switch target := expr.Left.(type) {
 			case *ast.VarExpr:
+				c.expr(expr.Right)
 				switch target.Scope {
 				case ast.ScopeGlobal:
-					c.expr(expr.Right)
 					c.add(AssignGlobal, Op(target.Index))
 					return
 				case ast.ScopeLocal:
-					panic("TODO assign scope local")
+					c.add(AssignLocal, Op(target.Index))
+					return
 				case ast.ScopeSpecial:
-					c.expr(expr.Right)
 					c.add(AssignSpecial, Op(target.Index))
 					return
 				}
@@ -137,44 +137,49 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 				c.add(AssignField)
 				return
 			case *ast.IndexExpr:
-				if len(target.Index) > 1 {
-					panic("TODO multi indexes not yet supported")
-				}
-				switch target.Array.Scope {
-				case ast.ScopeGlobal:
+				if len(target.Index) == 1 { // multi-index will fall through to c.expr()
 					c.expr(expr.Right)
 					c.expr(target.Index[0])
-					c.add(AssignArrayGlobal, Op(target.Array.Index))
-					return
-				case ast.ScopeLocal:
-					c.expr(expr.Right)
-					c.expr(target.Index[0])
-					c.add(AssignArrayLocal, Op(target.Array.Index))
-					return
+					switch target.Array.Scope {
+					case ast.ScopeGlobal:
+						c.add(AssignArrayGlobal, Op(target.Array.Index))
+						return
+					case ast.ScopeLocal:
+						c.add(AssignArrayLocal, Op(target.Array.Index))
+						return
+					}
 				}
 			}
 
 		case *ast.IncrExpr:
-			if !expr.Pre {
-				switch target := expr.Expr.(type) {
-				case *ast.VarExpr:
-					if target.Scope == ast.ScopeGlobal {
-						c.add(PostIncrGlobal, Op(target.Index))
-						return
-					}
-				// TODO: case *ast.FieldExpr:
-				case *ast.IndexExpr:
-					if len(target.Index) > 1 {
-						panic("TODO multi indexes not yet supported")
-					}
+			// TODO: Decr
+			// Pre or post doesn't matter for an assignment expression
+			switch target := expr.Expr.(type) {
+			case *ast.VarExpr:
+				switch target.Scope {
+				case ast.ScopeGlobal:
+					c.add(IncrGlobal, Op(target.Index))
+					return
+				case ast.ScopeLocal:
+					c.add(IncrLocal, Op(target.Index))
+					return
+				case ast.ScopeSpecial:
+					c.add(IncrSpecial, Op(target.Index))
+					return
+				}
+			case *ast.FieldExpr:
+				c.expr(target.Index)
+				c.add(IncrField)
+				return
+			case *ast.IndexExpr:
+				if len(target.Index) == 1 { // multi-index will fall through to c.expr()
+					c.expr(target.Index[0])
 					switch target.Array.Scope {
 					case ast.ScopeGlobal:
-						c.expr(target.Index[0])
-						c.add(PostIncrArrayGlobal, Op(target.Array.Index))
+						c.add(IncrArrayGlobal, Op(target.Array.Index))
 						return
 					case ast.ScopeLocal:
-						c.expr(target.Index[0])
-						c.add(PostIncrArrayLocal, Op(target.Array.Index))
+						c.add(IncrArrayLocal, Op(target.Array.Index))
 						return
 					}
 				}
@@ -183,13 +188,36 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		case *ast.AugAssignExpr:
 			switch target := expr.Left.(type) {
 			case *ast.VarExpr:
-				if target.Scope == ast.ScopeGlobal {
-					c.expr(expr.Right)
+				c.expr(expr.Right)
+				switch target.Scope {
+				case ast.ScopeGlobal:
 					c.add(AugAssignGlobal, Op(expr.Op), Op(target.Index))
 					return
+				case ast.ScopeLocal:
+					c.add(AugAssignLocal, Op(expr.Op), Op(target.Index))
+					return
+				case ast.ScopeSpecial:
+					c.add(AugAssignSpecial, Op(expr.Op), Op(target.Index))
+					return
 				}
-				// TODO: case *ast.IndexExpr
-				// TODO: case *ast.ArrayExpr
+			case *ast.FieldExpr:
+				c.expr(expr.Right)
+				c.expr(target.Index)
+				c.add(AugAssignField, Op(expr.Op))
+				return
+			case *ast.IndexExpr:
+				if len(target.Index) == 1 { // multi-index will fall through to c.expr()
+					c.expr(expr.Right)
+					c.expr(target.Index[0])
+					switch target.Array.Scope {
+					case ast.ScopeGlobal:
+						c.add(AugAssignArrayGlobal, Op(expr.Op), Op(target.Array.Index))
+						return
+					case ast.ScopeLocal:
+						c.add(AugAssignArrayLocal, Op(expr.Op), Op(target.Array.Index))
+						return
+					}
+				}
 			}
 		}
 

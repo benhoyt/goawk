@@ -220,9 +220,7 @@
 === RUN   TestInterp/BEGIN_{_x=12;_x%=5;_print_x_}
 === RUN   TestInterp/BEGIN_{_x=2;_x^=5;_print_x;_x^=0.5;_print_x_}
 === RUN   TestInterp/{_$2+=10;_print;_$3/=2;_print_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.AugAssignExpr
 === RUN   TestInterp/BEGIN_{_a[2]_+=_1;_a["2"]_*=_3;_print_a[2]_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.AugAssignExpr
 === RUN   TestInterp/BEGIN_{_print_x++;_print_x_}
     interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.IncrExpr
 === RUN   TestInterp/BEGIN_{_print_x;_print_x++;_print_++x;_print_x_}
@@ -231,11 +229,10 @@
     interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.IncrExpr
 === RUN   TestInterp/BEGIN_{_s++;_s++;_print_s_}
 === RUN   TestInterp/BEGIN_{_y="_";_--x[y_=_y_y];_print_length(y)_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.IncrExpr
 === RUN   TestInterp/BEGIN_{_x[y++]++;_print_y_}
     interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.IncrExpr
 === RUN   TestInterp/BEGIN_{_x[y++]_+=_3;_print_y_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.AugAssignExpr
+    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.IncrExpr
 === RUN   TestInterp/BEGIN_{_$(y++)++;_print_y_}
     interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.IncrExpr
 === RUN   TestInterp/BEGIN_{_print_"s"_++n;_print_"s"_--n_}
@@ -417,7 +414,7 @@
 === RUN   TestInterp/BEGIN_{_print_(1,2),(3,4)_}
 === RUN   TestInterp/BEGIN_{_print_(1,2,(3,4),(5,6))_}
 === RUN   TestInterp/{_print_length()_}
---- FAIL: TestInterp (0.06s)
+--- FAIL: TestInterp (0.07s)
     --- PASS: TestInterp/BEGIN_{_print_"b"_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_"b"_}#01 (0.00s)
     --- PASS: TestInterp/END_{_print_"e"_} (0.00s)
@@ -632,13 +629,13 @@
     --- PASS: TestInterp/BEGIN_{_x=6;_x/=3;_print_x;_x/=x;_print_x;_x/=.6;_print_x_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_x=12;_x%=5;_print_x_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_x=2;_x^=5;_print_x;_x^=0.5;_print_x_} (0.00s)
-    --- FAIL: TestInterp/{_$2+=10;_print;_$3/=2;_print_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_a[2]_+=_1;_a["2"]_*=_3;_print_a[2]_} (0.00s)
+    --- PASS: TestInterp/{_$2+=10;_print;_$3/=2;_print_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_a[2]_+=_1;_a["2"]_*=_3;_print_a[2]_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_x++;_print_x_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_x;_print_x++;_print_++x;_print_x_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_x;_print_x--;_print_--x;_print_x_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_s++;_s++;_print_s_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_y="_";_--x[y_=_y_y];_print_length(y)_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_y="_";_--x[y_=_y_y];_print_length(y)_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_x[y++]++;_print_y_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_x[y++]_+=_3;_print_y_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_$(y++)++;_print_y_} (0.00s)
@@ -940,5 +937,5 @@
 === RUN   Example_funcs
 --- PASS: Example_funcs (0.00s)
 FAIL
-FAIL	github.com/benhoyt/goawk/interp	0.076s
+FAIL	github.com/benhoyt/goawk/interp	0.080s
 FAIL
