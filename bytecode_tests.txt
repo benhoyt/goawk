@@ -59,7 +59,6 @@
 === RUN   TestInterp/_BEGIN_{__for_(i_=_0;_i_<_1;_i++)_{___for_(j_=_0;_j_<_1;_j++)_{____pri
 === RUN   TestInterp/_BEGIN_{__for_(i_=_0;_i_<_1;_i++)_{___for_(j_=_0;_j_<_1;_j++)_{____pri#01
 === RUN   TestInterp/{_if_(NR==2)_next;_print_}
-    interp_test.go:809: panic compiling bytecode: unexpected stmt type: *ast.NextStmt
 === RUN   TestInterp/{_if_(NR==2)_f();_print_}__function_f()_{_next_}
     interp_test.go:809: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/BEGIN_{_next_}
@@ -441,7 +440,7 @@
 === RUN   TestInterp/BEGIN_{_print_(1,2),(3,4)_}
 === RUN   TestInterp/BEGIN_{_print_(1,2,(3,4),(5,6))_}
 === RUN   TestInterp/{_print_length()_}
---- FAIL: TestInterp (0.07s)
+--- FAIL: TestInterp (0.06s)
     --- PASS: TestInterp/BEGIN_{_print_"b"_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_"b"_}#01 (0.00s)
     --- PASS: TestInterp/END_{_print_"e"_} (0.00s)
@@ -501,7 +500,7 @@
     --- PASS: TestInterp/BEGIN_{_for_(i=0;_i<10;_i++);_printf_"x"_} (0.00s)
     --- PASS: TestInterp/_BEGIN_{__for_(i_=_0;_i_<_1;_i++)_{___for_(j_=_0;_j_<_1;_j++)_{____pri (0.00s)
     --- PASS: TestInterp/_BEGIN_{__for_(i_=_0;_i_<_1;_i++)_{___for_(j_=_0;_j_<_1;_j++)_{____pri#01 (0.00s)
-    --- FAIL: TestInterp/{_if_(NR==2)_next;_print_} (0.00s)
+    --- PASS: TestInterp/{_if_(NR==2)_next;_print_} (0.00s)
     --- FAIL: TestInterp/{_if_(NR==2)_f();_print_}__function_f()_{_next_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_next_} (0.00s)
     --- PASS: TestInterp/END_{_next_} (0.00s)
@@ -962,5 +961,5 @@
 === RUN   Example_funcs
 --- PASS: Example_funcs (0.00s)
 FAIL
-FAIL	github.com/benhoyt/goawk/interp	0.082s
+FAIL	github.com/benhoyt/goawk/interp	0.070s
 FAIL

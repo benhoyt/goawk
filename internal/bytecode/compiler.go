@@ -331,7 +331,9 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		mark := c.jumpForward(Jump)
 		c.continues[i] = append(c.continues[i], mark)
 
-	//case *ast.NextStmt:
+	case *ast.NextStmt:
+		c.add(Next)
+
 	//case *ast.ExitStmt:
 	//
 	//case *ast.DeleteStmt:

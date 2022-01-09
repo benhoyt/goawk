@@ -387,6 +387,9 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				i++
 			}
 
+		case bytecode.Next:
+			return errNext
+
 		case bytecode.ForGlobalInGlobal:
 			varIndex := code[i]
 			arrayIndex := code[i+1]
