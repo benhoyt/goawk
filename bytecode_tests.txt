@@ -126,7 +126,6 @@
 === RUN   TestInterp/BEGIN_{_print_"1e3"+0,_"1.2e-1"+0,_"1e+1"+0,_"1e"+0,_"1e+"+0_}
 === RUN   TestInterp/BEGIN_{_print_-(11102200000000000000000000000000000000_1040000)_}__#_!
 === RUN   TestInterp/BEGIN_{_print_atan2(0,_8020020000000e20G-0)}
-    interp_test.go:852: [bytecode] expected "0\n", got "1.5708\n"
 === RUN   TestInterp/BEGIN_{_print_1e1000,_-1e1000_}__#_!gawk
 === RUN   TestInterp/BEGIN_{_printf_"\x0.\x00.\x0A\x10\xff\xFF\x41"_}__#_!awk
 === RUN   TestInterp/BEGIN_{_printf_"\x1.\x01.\x0A\x10\xff\xFF\x41"_}
@@ -268,7 +267,6 @@
 === RUN   TestInterp/BEGIN_{_print_index("foo",_"f"),_index("foo0",_0),_index("foo",_"o"),_
 === RUN   TestInterp/BEGIN_{_print_index("föö",_"f"),_index("föö0",_0),_index("föö",_
 === RUN   TestInterp/BEGIN_{_print_atan2(1,_0.5),_atan2(-1,_0)_}
-    interp_test.go:852: [bytecode] expected "1.10715 -1.5708\n", got "0.463648 3.14159\n"
 === RUN   TestInterp/BEGIN_{_print_sprintf("%3d",_42)_}
     interp_test.go:832: panic executing bytecode: runtime error: index out of range [106] with length 1
 === RUN   TestInterp/BEGIN_{_print_sprintf("%d",_12,_34)_}
@@ -426,7 +424,7 @@
 === RUN   TestInterp/BEGIN_{_print_(1,2),(3,4)_}
 === RUN   TestInterp/BEGIN_{_print_(1,2,(3,4),(5,6))_}
 === RUN   TestInterp/{_print_length()_}
---- FAIL: TestInterp (0.06s)
+--- FAIL: TestInterp (0.07s)
     --- PASS: TestInterp/BEGIN_{_print_"b"_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_"b"_}#01 (0.00s)
     --- PASS: TestInterp/END_{_print_"e"_} (0.00s)
@@ -545,7 +543,7 @@
     --- PASS: TestInterp/BEGIN_{_print_"-12"+0,_"+12"+0,_"_\t\r\n7foo"+0,_".5"+0,_"5."+0,_"+."+ (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_"1e3"+0,_"1.2e-1"+0,_"1e+1"+0,_"1e"+0,_"1e+"+0_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_-(11102200000000000000000000000000000000_1040000)_}__#_! (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_atan2(0,_8020020000000e20G-0)} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_atan2(0,_8020020000000e20G-0)} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_1e1000,_-1e1000_}__#_!gawk (0.00s)
     --- PASS: TestInterp/BEGIN_{_printf_"\x0.\x00.\x0A\x10\xff\xFF\x41"_}__#_!awk (0.00s)
     --- PASS: TestInterp/BEGIN_{_printf_"\x1.\x01.\x0A\x10\xff\xFF\x41"_} (0.00s)
@@ -666,7 +664,7 @@
     --- PASS: TestInterp/BEGIN_{_print_length("a"),_length("絵")_}__#_!awk (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_index("foo",_"f"),_index("foo0",_0),_index("foo",_"o"),_ (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_index("föö",_"f"),_index("föö0",_0),_index("föö",_ (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_atan2(1,_0.5),_atan2(-1,_0)_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_atan2(1,_0.5),_atan2(-1,_0)_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_sprintf("%3d",_42)_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_sprintf("%d",_12,_34)_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_sprintf("%d")_} (0.00s)
@@ -947,5 +945,5 @@
 === RUN   Example_funcs
 --- PASS: Example_funcs (0.00s)
 FAIL
-FAIL	github.com/benhoyt/goawk/interp	0.072s
+FAIL	github.com/benhoyt/goawk/interp	0.085s
 FAIL

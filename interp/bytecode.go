@@ -490,9 +490,9 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 
 		case bytecode.CallAtan2:
-			// TODO: optimize stack operations for all of these if it improves performance
-			y := p.pop()
+			// TODO: optimize stack operations for all of these (and binary ops) if it improves performance
 			x := p.pop()
+			y := p.pop()
 			p.push(num(math.Atan2(y.num(), x.num())))
 
 		case bytecode.CallClose:
