@@ -128,6 +128,20 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				return err
 			}
 
+		case bytecode.AssignArrayGlobal:
+			arrayIndex := code[i]
+			i++
+			array := p.arrays[arrayIndex]
+			index := p.toString(p.pop())
+			array[index] = p.pop()
+
+		case bytecode.AssignArrayLocal:
+			arrayIndex := code[i]
+			i++
+			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
+			index := p.toString(p.pop())
+			array[index] = p.pop()
+
 		case bytecode.PostIncrGlobal:
 			index := code[i]
 			i++
@@ -137,6 +151,13 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			arrayIndex := code[i]
 			i++
 			array := p.arrays[arrayIndex]
+			index := p.toString(p.pop())
+			array[index] = num(array[index].num() + 1)
+
+		case bytecode.PostIncrArrayLocal:
+			arrayIndex := code[i]
+			i++
+			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
 			index := p.toString(p.pop())
 			array[index] = num(array[index].num() + 1)
 

@@ -116,27 +116,43 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		// Optimize assignment expressions to avoid Dupe and Drop
 		switch expr := s.Expr.(type) {
 		case *ast.AssignExpr:
-			switch left := expr.Left.(type) {
+			switch target := expr.Left.(type) {
 			case *ast.VarExpr:
-				switch left.Scope {
+				switch target.Scope {
 				case ast.ScopeGlobal:
 					c.expr(expr.Right)
-					c.add(AssignGlobal, Op(left.Index))
+					c.add(AssignGlobal, Op(target.Index))
 					return
 				case ast.ScopeLocal:
 					panic("TODO assign scope local")
 				case ast.ScopeSpecial:
 					c.expr(expr.Right)
-					c.add(AssignSpecial, Op(left.Index))
+					c.add(AssignSpecial, Op(target.Index))
 					return
 				}
 			case *ast.FieldExpr:
 				c.expr(expr.Right)
-				c.expr(left.Index)
+				c.expr(target.Index)
 				c.add(AssignField)
 				return
-				// TODO: case *ast.ArrayExpr:
+			case *ast.IndexExpr:
+				if len(target.Index) > 1 {
+					panic("TODO multi indexes not yet supported")
+				}
+				switch target.Array.Scope {
+				case ast.ScopeGlobal:
+					c.expr(expr.Right)
+					c.expr(target.Index[0])
+					c.add(AssignArrayGlobal, Op(target.Array.Index))
+					return
+				case ast.ScopeLocal:
+					c.expr(expr.Right)
+					c.expr(target.Index[0])
+					c.add(AssignArrayLocal, Op(target.Array.Index))
+					return
+				}
 			}
+
 		case *ast.IncrExpr:
 			if !expr.Pre {
 				switch target := expr.Expr.(type) {
@@ -145,24 +161,30 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 						c.add(PostIncrGlobal, Op(target.Index))
 						return
 					}
+				// TODO: case *ast.FieldExpr:
 				case *ast.IndexExpr:
 					if len(target.Index) > 1 {
 						panic("TODO multi indexes not yet supported")
 					}
-					if target.Array.Scope == ast.ScopeGlobal {
+					switch target.Array.Scope {
+					case ast.ScopeGlobal:
 						c.expr(target.Index[0])
 						c.add(PostIncrArrayGlobal, Op(target.Array.Index))
 						return
+					case ast.ScopeLocal:
+						c.expr(target.Index[0])
+						c.add(PostIncrArrayLocal, Op(target.Array.Index))
+						return
 					}
-					// TODO: case *ast.ArrayExpr:
 				}
 			}
+
 		case *ast.AugAssignExpr:
-			switch left := expr.Left.(type) {
+			switch target := expr.Left.(type) {
 			case *ast.VarExpr:
-				if left.Scope == ast.ScopeGlobal {
+				if target.Scope == ast.ScopeGlobal {
 					c.expr(expr.Right)
-					c.add(AugAssignGlobal, Op(expr.Op), Op(left.Index))
+					c.add(AugAssignGlobal, Op(expr.Op), Op(target.Index))
 					return
 				}
 				// TODO: case *ast.IndexExpr

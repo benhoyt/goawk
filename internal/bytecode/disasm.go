@@ -137,6 +137,14 @@ func (d *disassembler) disassemble(prefix string) error {
 			index := d.fetch()
 			d.writeOpf("AssignSpecial %s", ast.SpecialVarName(int(index)))
 
+		case AssignArrayGlobal:
+			arrayIndex := d.fetch()
+			d.writeOpf("AssignArrayGlobal %s", d.program.ArrayNames[arrayIndex])
+
+		case AssignArrayLocal:
+			arrayIndex := d.fetch()
+			d.writeOpf("AssignArrayLocal %d", arrayIndex) // TODO: local name
+
 		case PostIncrGlobal:
 			index := d.fetch()
 			d.writeOpf("PostIncrGlobal %s", d.program.ScalarNames[index])
@@ -149,6 +157,10 @@ func (d *disassembler) disassemble(prefix string) error {
 		case PostIncrArrayGlobal:
 			arrayIndex := d.fetch()
 			d.writeOpf("PostIncrArrayGlobal %s", d.program.ArrayNames[arrayIndex])
+
+		case PostIncrArrayLocal:
+			arrayIndex := d.fetch()
+			d.writeOpf("PostIncrArrayLocal %d", arrayIndex) // TODO: local name
 
 		case Regex:
 			regexIndex := d.fetch()
