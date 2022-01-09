@@ -303,8 +303,18 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 
 		c.patchBreaks()
 
-	//case *ast.DoWhileStmt:
-	//
+	case *ast.DoWhileStmt:
+		c.breaks = append(c.breaks, []int{})
+		c.continues = append(c.continues, []int{})
+
+		loopStart := c.labelBackward()
+		c.stmts(s.Body)
+		c.patchContinues()
+
+		jumpOp := c.cond(s.Cond, false)
+		c.jumpBackward(loopStart, jumpOp)
+
+		c.patchBreaks()
 
 	case *ast.BreakStmt:
 		i := len(c.breaks) - 1
