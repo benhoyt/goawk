@@ -284,8 +284,25 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 
 	//case *ast.ReturnStmt:
 	//
-	//case *ast.WhileStmt:
-	//
+
+	case *ast.WhileStmt:
+		c.breaks = append(c.breaks, []int{})
+		c.continues = append(c.continues, []int{})
+
+		jumpOp := c.cond(s.Cond, true)
+		mark := c.jumpForward(jumpOp)
+
+		loopStart := c.labelBackward()
+		c.stmts(s.Body)
+		c.patchContinues()
+
+		// TODO: if s.Cond is BinaryExpr num == != < > <= >= or str == != then use JumpLess and similar optimizations
+		jumpOp = c.cond(s.Cond, false)
+		c.jumpBackward(loopStart, jumpOp)
+		c.patchForward(mark)
+
+		c.patchBreaks()
+
 	//case *ast.DoWhileStmt:
 	//
 
