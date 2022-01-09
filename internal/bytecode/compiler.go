@@ -668,8 +668,7 @@ func (c *compiler) expr(expr ast.Expr) {
 		case lexer.F_SIN:
 			c.add(CallSin)
 		case lexer.F_SPRINTF:
-			c.add(Op(len(e.Args)))
-			c.add(CallSprintf)
+			c.add(CallSprintf, Op(len(e.Args)))
 		case lexer.F_SQRT:
 			c.add(CallSqrt)
 		case lexer.F_SRAND:

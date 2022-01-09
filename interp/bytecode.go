@@ -800,7 +800,6 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 		case bytecode.CallSprintf:
 			numArgs := code[i]
 			i++
-
 			sp := len(p.st) - int(numArgs)
 			s, err := p.sprintf(p.toString(p.st[sp]), p.st[sp+1:])
 			p.st = p.st[:sp]

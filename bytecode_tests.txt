@@ -255,14 +255,10 @@
 === RUN   TestInterp/BEGIN_{_print_index("föö",_"f"),_index("föö0",_0),_index("föö",_
 === RUN   TestInterp/BEGIN_{_print_atan2(1,_0.5),_atan2(-1,_0)_}
 === RUN   TestInterp/BEGIN_{_print_sprintf("%3d",_42)_}
-    interp_test.go:834: panic executing bytecode: runtime error: index out of range [107] with length 1
 === RUN   TestInterp/BEGIN_{_print_sprintf("%d",_12,_34)_}
-    interp_test.go:834: panic executing bytecode: runtime error: index out of range [-121]
 === RUN   TestInterp/BEGIN_{_print_sprintf("%d")_}
 === RUN   TestInterp/BEGIN_{_print_sprintf("%d",_12,_34)_}#01
-    interp_test.go:834: panic executing bytecode: runtime error: index out of range [-121]
 === RUN   TestInterp/BEGIN_{_print_sprintf("%_5d",_42)_}
-    interp_test.go:834: panic executing bytecode: runtime error: index out of range [107] with length 1
 === RUN   TestInterp/BEGIN_{_print_substr("food",_1),_substr("fööd",_1)_}__#_!windows-gaw
 === RUN   TestInterp/BEGIN_{_print_substr("food",_1,_2),_substr("fööd",_1,_2)_}__#_!windo
 === RUN   TestInterp/BEGIN_{_print_substr("food",_1,_4),_substr("fööd",_1,_4)_}__#_!windo
@@ -653,11 +649,11 @@
     --- PASS: TestInterp/BEGIN_{_print_index("foo",_"f"),_index("foo0",_0),_index("foo",_"o"),_ (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_index("föö",_"f"),_index("föö0",_0),_index("föö",_ (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_atan2(1,_0.5),_atan2(-1,_0)_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_sprintf("%3d",_42)_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_sprintf("%d",_12,_34)_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_sprintf("%3d",_42)_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_sprintf("%d",_12,_34)_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_sprintf("%d")_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_sprintf("%d",_12,_34)_}#01 (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_sprintf("%_5d",_42)_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_sprintf("%d",_12,_34)_}#01 (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_sprintf("%_5d",_42)_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_substr("food",_1),_substr("fööd",_1)_}__#_!windows-gaw (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_substr("food",_1,_2),_substr("fööd",_1,_2)_}__#_!windo (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_substr("food",_1,_4),_substr("fööd",_1,_4)_}__#_!windo (0.00s)
@@ -929,5 +925,5 @@
 === RUN   Example_funcs
 --- PASS: Example_funcs (0.00s)
 FAIL
-FAIL	github.com/benhoyt/goawk/interp	0.078s
+FAIL	github.com/benhoyt/goawk/interp	0.076s
 FAIL
