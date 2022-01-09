@@ -245,14 +245,10 @@
 === RUN   TestInterp/BEGIN_{_print_sqrt(0),_sqrt(2),_sqrt(4)_}
 === RUN   TestInterp/BEGIN_{_print_int(3.5),_int("1.9"),_int(4),_int(-3.6),_int("x"),_int("
 === RUN   TestInterp/BEGIN_{_print_match("food",_"foo"),_RSTART,_RLENGTH_}
-    interp_test.go:854: [bytecode] expected "1 1 3\n", got "0 0 -1\n"
 === RUN   TestInterp/BEGIN_{_print_match("x_food_y",_"fo"),_RSTART,_RLENGTH_}
-    interp_test.go:854: [bytecode] expected "3 3 2\n", got "0 0 -1\n"
 === RUN   TestInterp/BEGIN_{_print_match("x_food_y",_"fox"),_RSTART,_RLENGTH_}
 === RUN   TestInterp/BEGIN_{_print_match("x_food_y",_/[fod]+/),_RSTART,_RLENGTH_}
-    interp_test.go:854: [bytecode] expected "3 3 4\n", got "0 0 -1\n"
 === RUN   TestInterp/BEGIN_{_print_match("絵_fööd_y",_/[föd]+/),_RSTART,_RLENGTH_}
-    interp_test.go:854: [bytecode] expected "3 3 4\n", got "0 0 -1\n"
 === RUN   TestInterp/{_print_length,_length(),_length("buzz"),_length("")_}
 === RUN   TestInterp/BEGIN_{_print_length("a"),_length("絵")_}__#_!awk
 === RUN   TestInterp/BEGIN_{_print_index("foo",_"f"),_index("foo0",_0),_index("foo",_"o"),_
@@ -414,7 +410,7 @@
 === RUN   TestInterp/BEGIN_{_print_(1,2),(3,4)_}
 === RUN   TestInterp/BEGIN_{_print_(1,2,(3,4),(5,6))_}
 === RUN   TestInterp/{_print_length()_}
---- FAIL: TestInterp (0.07s)
+--- FAIL: TestInterp (0.06s)
     --- PASS: TestInterp/BEGIN_{_print_"b"_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_"b"_}#01 (0.00s)
     --- PASS: TestInterp/END_{_print_"e"_} (0.00s)
@@ -647,11 +643,11 @@
     --- PASS: TestInterp/BEGIN_{_print_log(-1)_}__#_!gawk_-_gawk_prints_warning_for_this_as_wel (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_sqrt(0),_sqrt(2),_sqrt(4)_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_int(3.5),_int("1.9"),_int(4),_int(-3.6),_int("x"),_int(" (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_match("food",_"foo"),_RSTART,_RLENGTH_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_match("x_food_y",_"fo"),_RSTART,_RLENGTH_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_match("food",_"foo"),_RSTART,_RLENGTH_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_match("x_food_y",_"fo"),_RSTART,_RLENGTH_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_match("x_food_y",_"fox"),_RSTART,_RLENGTH_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_match("x_food_y",_/[fod]+/),_RSTART,_RLENGTH_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_print_match("絵_fööd_y",_/[föd]+/),_RSTART,_RLENGTH_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_match("x_food_y",_/[fod]+/),_RSTART,_RLENGTH_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_match("絵_fööd_y",_/[föd]+/),_RSTART,_RLENGTH_} (0.00s)
     --- PASS: TestInterp/{_print_length,_length(),_length("buzz"),_length("")_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_length("a"),_length("絵")_}__#_!awk (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_index("foo",_"f"),_index("foo0",_0),_index("foo",_"o"),_ (0.00s)
@@ -869,14 +865,10 @@
     --- PASS: TestSafeMode/BEGIN_{_system("echo_foo")_} (0.00s)
 === RUN   TestBytesMode
 === RUN   TestBytesMode/BEGIN_{_print_match("food",_"foo"),_RSTART,_RLENGTH_}
-    interp_test.go:854: [bytecode] expected "1 1 3\n", got "0 0 -1\n"
 === RUN   TestBytesMode/BEGIN_{_print_match("x_food_y",_"fo"),_RSTART,_RLENGTH_}
-    interp_test.go:854: [bytecode] expected "3 3 2\n", got "0 0 -1\n"
 === RUN   TestBytesMode/BEGIN_{_print_match("x_food_y",_"fox"),_RSTART,_RLENGTH_}
 === RUN   TestBytesMode/BEGIN_{_print_match("x_food_y",_/[fod]+/),_RSTART,_RLENGTH_}
-    interp_test.go:854: [bytecode] expected "3 3 4\n", got "0 0 -1\n"
 === RUN   TestBytesMode/BEGIN_{_print_match("絵_fööd_y",_/[föd]+/),_RSTART,_RLENGTH_}
-    interp_test.go:854: [bytecode] expected "5 5 6\n", got "0 0 -1\n"
 === RUN   TestBytesMode/{_print_length,_length(),_length("buzz"),_length("")_}
 === RUN   TestBytesMode/BEGIN_{_print_length("a"),_length("絵")_}__#_!awk
 === RUN   TestBytesMode/BEGIN_{_print_index("foo",_"f"),_index("foo0",_0),_index("foo",_"o"),_
@@ -893,12 +885,12 @@
 === RUN   TestBytesMode/BEGIN_{_print_substr("food",_-1,_8),_substr("fööd",_-1,_8)_}
 === RUN   TestBytesMode/BEGIN_{_print_substr("food",_5,_8),_substr("fööd",_5,_8)_}
 === RUN   TestBytesMode/BEGIN_{_print_substr("food",_2,_-3),_substr("fööd",_2,_-3)_}
---- FAIL: TestBytesMode (0.00s)
-    --- FAIL: TestBytesMode/BEGIN_{_print_match("food",_"foo"),_RSTART,_RLENGTH_} (0.00s)
-    --- FAIL: TestBytesMode/BEGIN_{_print_match("x_food_y",_"fo"),_RSTART,_RLENGTH_} (0.00s)
+--- PASS: TestBytesMode (0.00s)
+    --- PASS: TestBytesMode/BEGIN_{_print_match("food",_"foo"),_RSTART,_RLENGTH_} (0.00s)
+    --- PASS: TestBytesMode/BEGIN_{_print_match("x_food_y",_"fo"),_RSTART,_RLENGTH_} (0.00s)
     --- PASS: TestBytesMode/BEGIN_{_print_match("x_food_y",_"fox"),_RSTART,_RLENGTH_} (0.00s)
-    --- FAIL: TestBytesMode/BEGIN_{_print_match("x_food_y",_/[fod]+/),_RSTART,_RLENGTH_} (0.00s)
-    --- FAIL: TestBytesMode/BEGIN_{_print_match("絵_fööd_y",_/[föd]+/),_RSTART,_RLENGTH_} (0.00s)
+    --- PASS: TestBytesMode/BEGIN_{_print_match("x_food_y",_/[fod]+/),_RSTART,_RLENGTH_} (0.00s)
+    --- PASS: TestBytesMode/BEGIN_{_print_match("絵_fööd_y",_/[föd]+/),_RSTART,_RLENGTH_} (0.00s)
     --- PASS: TestBytesMode/{_print_length,_length(),_length("buzz"),_length("")_} (0.00s)
     --- PASS: TestBytesMode/BEGIN_{_print_length("a"),_length("絵")_}__#_!awk (0.00s)
     --- PASS: TestBytesMode/BEGIN_{_print_index("foo",_"f"),_index("foo0",_0),_index("foo",_"o"),_ (0.00s)
@@ -937,5 +929,5 @@
 === RUN   Example_funcs
 --- PASS: Example_funcs (0.00s)
 FAIL
-FAIL	github.com/benhoyt/goawk/interp	0.080s
+FAIL	github.com/benhoyt/goawk/interp	0.078s
 FAIL

@@ -726,8 +726,8 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			p.push(num(math.Log(p.pop().num())))
 
 		case bytecode.CallMatch:
-			s := p.toString(p.pop())
 			regex := p.toString(p.pop())
+			s := p.toString(p.pop())
 			// TODO: could optimize literal regexes to avoid map lookup? but probably not worth it
 			re, err := p.compileRegex(regex)
 			if err != nil {
