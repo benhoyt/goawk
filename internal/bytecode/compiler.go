@@ -173,28 +173,52 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 			case *ast.VarExpr:
 				switch target.Scope {
 				case ast.ScopeGlobal:
-					c.add(IncrGlobal, Op(target.Index))
+					if expr.Op == lexer.INCR {
+						c.add(IncrGlobal, Op(target.Index))
+					} else {
+						c.add(DecrGlobal, Op(target.Index))
+					}
 					return
 				case ast.ScopeLocal:
-					c.add(IncrLocal, Op(target.Index))
+					if expr.Op == lexer.INCR {
+						c.add(IncrLocal, Op(target.Index))
+					} else {
+						c.add(DecrLocal, Op(target.Index))
+					}
 					return
 				case ast.ScopeSpecial:
-					c.add(IncrSpecial, Op(target.Index))
+					if expr.Op == lexer.INCR {
+						c.add(IncrSpecial, Op(target.Index))
+					} else {
+						c.add(DecrSpecial, Op(target.Index))
+					}
 					return
 				}
 			case *ast.FieldExpr:
 				c.expr(target.Index)
-				c.add(IncrField)
+				if expr.Op == lexer.INCR {
+					c.add(IncrField)
+				} else {
+					c.add(DecrField)
+				}
 				return
 			case *ast.IndexExpr:
 				if len(target.Index) == 1 { // multi-index will fall through to c.expr()
 					c.expr(target.Index[0])
 					switch target.Array.Scope {
 					case ast.ScopeGlobal:
-						c.add(IncrArrayGlobal, Op(target.Array.Index))
+						if expr.Op == lexer.INCR {
+							c.add(IncrArrayGlobal, Op(target.Array.Index))
+						} else {
+							c.add(DecrArrayGlobal, Op(target.Array.Index))
+						}
 						return
 					case ast.ScopeLocal:
-						c.add(IncrArrayLocal, Op(target.Array.Index))
+						if expr.Op == lexer.INCR {
+							c.add(IncrArrayLocal, Op(target.Array.Index))
+						} else {
+							c.add(DecrArrayLocal, Op(target.Array.Index))
+						}
 						return
 					}
 				}

@@ -233,6 +233,50 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			index := p.toString(p.pop())
 			array[index] = num(array[index].num() + 1)
 
+		case bytecode.DecrField:
+			index := int(p.pop().num())
+			v, err := p.getField(index)
+			if err != nil {
+				return err
+			}
+			err = p.setField(index, p.toString(num(v.num()-1)))
+			if err != nil {
+				return err
+			}
+
+		case bytecode.DecrGlobal:
+			index := code[i]
+			i++
+			p.globals[index] = num(p.globals[index].num() - 1)
+
+		case bytecode.DecrLocal:
+			index := code[i]
+			i++
+			p.frame[index] = num(p.frame[index].num() - 1)
+
+		case bytecode.DecrSpecial:
+			index := int(code[i])
+			i++
+			v := p.getVar(ast.ScopeSpecial, index)
+			err := p.setVar(ast.ScopeSpecial, index, num(v.num()-1))
+			if err != nil {
+				return err
+			}
+
+		case bytecode.DecrArrayGlobal:
+			arrayIndex := code[i]
+			i++
+			array := p.arrays[arrayIndex]
+			index := p.toString(p.pop())
+			array[index] = num(array[index].num() - 1)
+
+		case bytecode.DecrArrayLocal:
+			arrayIndex := code[i]
+			i++
+			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
+			index := p.toString(p.pop())
+			array[index] = num(array[index].num() - 1)
+
 		case bytecode.AugAssignField:
 			operation := lexer.Token(code[i])
 			i++

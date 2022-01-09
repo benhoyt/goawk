@@ -191,6 +191,26 @@ func (d *disassembler) disassemble(prefix string) error {
 			arrayIndex := d.fetch()
 			d.writeOpf("IncrArrayLocal %d", arrayIndex) // TODO: local name
 
+		case DecrGlobal:
+			index := d.fetch()
+			d.writeOpf("DecrGlobal %s", d.program.ScalarNames[index])
+
+		case DecrLocal:
+			index := d.fetch()
+			d.writeOpf("DecrLocal %s", index) // TODO: local name
+
+		case DecrSpecial:
+			index := d.fetch()
+			d.writeOpf("DecrSpecial %s", ast.SpecialVarName(int(index)))
+
+		case DecrArrayGlobal:
+			arrayIndex := d.fetch()
+			d.writeOpf("DecrArrayGlobal %s", d.program.ArrayNames[arrayIndex])
+
+		case DecrArrayLocal:
+			arrayIndex := d.fetch()
+			d.writeOpf("DecrArrayLocal %d", arrayIndex) // TODO: local name
+
 		case AugAssignField:
 			operation := lexer.Token(d.fetch())
 			d.writeOpf("AugAssignField %s", operation)
