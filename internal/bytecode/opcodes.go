@@ -3,6 +3,10 @@ package bytecode
 //go:generate go run golang.org/x/tools/cmd/stringer@master -type=Op
 type Op uint32
 
+// TODO: do we need to optimize the order of the opcodes, given that Go switch is a binary tree?
+// TODO: does reducing the number of opcodes actually speed things up, for example all the opcodes required for assignment?
+// TODO: consider rolling PostIncr and PostDecr into one PostIncr opcode with "n" opcode argument (+1 or -1)
+
 const (
 	Nop Op = iota
 
@@ -108,6 +112,9 @@ const (
 	BreakForIn
 
 	// Builtin functions
+	// TODO: hmmm, commenting out all the CallXYZ cases in the bytecode execute loop significantly speeds up
+	// code that doesn't call builtins. Does this mean we should move to one CallBuiltin opcode instead?
+	// Or is it just because of the size of the inlined code and the cache lines?
 	CallAtan2
 	CallClose
 	CallCos

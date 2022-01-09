@@ -578,6 +578,7 @@ func (c *compiler) expr(expr ast.Expr) {
 		}
 
 	case *ast.UnaryExpr:
+		c.expr(e.Value)
 		switch e.Op {
 		case lexer.SUB:
 			c.add(UnaryMinus)
