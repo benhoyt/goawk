@@ -909,10 +909,10 @@
     interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.GetlineExpr
 --- FAIL: TestShellCommand (0.00s)
 === RUN   TestFlushes
-    interp_test.go:1241: expected flushes ["" "0\nx\ny\n" "0\nx\ny\n0\nz\n" "0\nx\ny\n0\nz\n0\n"], got ["" "0\nx\ny\n" "0\nx\ny\n0\nz\n" "0\nx\ny\n0\nz\n0\n" "0\nx\ny\n0\nz\n0\n" "0\nx\ny\n0\nz\n0\n0\nx\ny\n" "0\nx\ny\n0\nz\n0\n0\nx\ny\n0\nz\n" "0\nx\ny\n0\nz\n0\n0\nx\ny\n0\nz\n0\n"]
+    interp_test.go:1242: expected flushes ["" "0\nx\ny\n" "0\nx\ny\n0\nz\n" "0\nx\ny\n0\nz\n0\n"], got ["" "0\nx\ny\n" "0\nx\ny\n0\nz\n" "0\nx\ny\n0\nz\n0\n" "0\nx\ny\n0\nz\n0\n" "0\nx\ny\n0\nz\n0\n0\nx\ny\n" "0\nx\ny\n0\nz\n0\n0\nx\ny\n0\nz\n" "0\nx\ny\n0\nz\n0\n0\nx\ny\n0\nz\n0\n"]
 --- FAIL: TestFlushes (0.00s)
 === RUN   TestFlushError
-    interp_test.go:1293: expected "error flushing \"stdout\": that's not good, hackers\n", got "error flushing \"stdout\": that's not good, hackers\nerror flushing \"stdout\": that's not good, hackers\n"
+    interp_test.go:1294: expected "error flushing \"stdout\": that's not good, hackers\n", got "error flushing \"stdout\": that's not good, hackers\nerror flushing \"stdout\": that's not good, hackers\n"
 --- FAIL: TestFlushError (0.00s)
 === RUN   TestEnviron
 --- PASS: TestEnviron (0.00s)
@@ -925,5 +925,5 @@
 === RUN   Example_funcs
 --- PASS: Example_funcs (0.00s)
 FAIL
-FAIL	github.com/benhoyt/goawk/interp	0.076s
+FAIL	github.com/benhoyt/goawk/interp	0.078s
 FAIL

@@ -21,6 +21,7 @@ TODO:
 - other TODOs
 - fix/refactor TestFlushes
 - look at code coverage and get closer to 100%
+  + add decrement tests under "Incr/decr expressions", for example
 - optimize!
 - fuzz testing
 */
@@ -667,7 +668,7 @@ func (c *compiler) expr(expr ast.Expr) {
 				panic(fmt.Sprintf("unexpected array scope %s or num args %d", arrayExpr.Scope, len(e.Args)))
 			}
 			return
-			//case lexer.F_SUB, lexer.F_GSUB:
+			// TODO: case lexer.F_SUB, lexer.F_GSUB:
 		}
 
 		for _, arg := range e.Args {

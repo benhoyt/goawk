@@ -113,9 +113,6 @@ const (
 	BreakForIn
 
 	// Builtin functions
-	// TODO: hmmm, commenting out all the CallXYZ cases in the bytecode execute loop significantly speeds up
-	// code that doesn't call builtins. Does this mean we should move to one CallBuiltin opcode instead?
-	// Or is it just because of the size of the inlined code and the cache lines?
 	CallAtan2
 	CallClose
 	CallCos
