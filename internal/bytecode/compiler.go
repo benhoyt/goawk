@@ -175,32 +175,32 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 				switch target.Scope {
 				case ast.ScopeGlobal:
 					if expr.Op == lexer.INCR {
-						c.add(IncrGlobal, Op(target.Index))
+						c.add(IncrGlobal, 1, Op(target.Index))
 					} else {
-						c.add(DecrGlobal, Op(target.Index))
+						c.add(IncrGlobal, math.MaxUint32, Op(target.Index))
 					}
 					return
 				case ast.ScopeLocal:
 					if expr.Op == lexer.INCR {
-						c.add(IncrLocal, Op(target.Index))
+						c.add(IncrLocal, 1, Op(target.Index))
 					} else {
-						c.add(DecrLocal, Op(target.Index))
+						c.add(IncrLocal, math.MaxUint32, Op(target.Index))
 					}
 					return
 				case ast.ScopeSpecial:
 					if expr.Op == lexer.INCR {
-						c.add(IncrSpecial, Op(target.Index))
+						c.add(IncrSpecial, 1, Op(target.Index))
 					} else {
-						c.add(DecrSpecial, Op(target.Index))
+						c.add(IncrSpecial, math.MaxUint32, Op(target.Index))
 					}
 					return
 				}
 			case *ast.FieldExpr:
 				c.expr(target.Index)
 				if expr.Op == lexer.INCR {
-					c.add(IncrField)
+					c.add(IncrField, 1)
 				} else {
-					c.add(DecrField)
+					c.add(IncrField, math.MaxUint32)
 				}
 				return
 			case *ast.IndexExpr:
@@ -209,16 +209,16 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 					switch target.Array.Scope {
 					case ast.ScopeGlobal:
 						if expr.Op == lexer.INCR {
-							c.add(IncrArrayGlobal, Op(target.Array.Index))
+							c.add(IncrArrayGlobal, 1, Op(target.Array.Index))
 						} else {
-							c.add(DecrArrayGlobal, Op(target.Array.Index))
+							c.add(IncrArrayGlobal, math.MaxUint32, Op(target.Array.Index))
 						}
 						return
 					case ast.ScopeLocal:
 						if expr.Op == lexer.INCR {
-							c.add(IncrArrayLocal, Op(target.Array.Index))
+							c.add(IncrArrayLocal, 1, Op(target.Array.Index))
 						} else {
-							c.add(DecrArrayLocal, Op(target.Array.Index))
+							c.add(IncrArrayLocal, math.MaxUint32, Op(target.Array.Index))
 						}
 						return
 					}

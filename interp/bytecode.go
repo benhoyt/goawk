@@ -1,7 +1,6 @@
 package interp
 
 import (
-	"fmt"
 	"io"
 	"math"
 	"os/exec"
@@ -53,8 +52,6 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 		i++
 
 		switch op {
-		case bytecode.Nop:
-
 		case bytecode.Num:
 			index := code[i]
 			i++
@@ -190,92 +187,55 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 
 		case bytecode.IncrField:
+			amount := int32(code[i])
+			i++
 			index := int(p.pop().num())
 			v, err := p.getField(index)
 			if err != nil {
 				return err
 			}
-			err = p.setField(index, p.toString(num(v.num()+1)))
+			err = p.setField(index, p.toString(num(v.num()+float64(amount))))
 			if err != nil {
 				return err
 			}
 
 		case bytecode.IncrGlobal:
-			index := code[i]
-			i++
-			p.globals[index] = num(p.globals[index].num() + 1)
+			amount := int32(code[i])
+			index := code[i+1]
+			i += 2
+			p.globals[index] = num(p.globals[index].num() + float64(amount))
 
 		case bytecode.IncrLocal:
-			index := code[i]
-			i++
-			p.frame[index] = num(p.frame[index].num() + 1)
+			amount := int32(code[i])
+			index := code[i+1]
+			i += 2
+			p.frame[index] = num(p.frame[index].num() + float64(amount))
 
 		case bytecode.IncrSpecial:
-			index := int(code[i])
-			i++
+			amount := int32(code[i])
+			index := int(code[i+1])
+			i += 2
 			v := p.getVar(ast.ScopeSpecial, index)
-			err := p.setVar(ast.ScopeSpecial, index, num(v.num()+1))
+			err := p.setVar(ast.ScopeSpecial, index, num(v.num()+float64(amount)))
 			if err != nil {
 				return err
 			}
 
 		case bytecode.IncrArrayGlobal:
-			arrayIndex := code[i]
-			i++
+			amount := int32(code[i])
+			arrayIndex := code[i+1]
+			i += 2
 			array := p.arrays[arrayIndex]
 			index := p.toString(p.pop())
-			array[index] = num(array[index].num() + 1)
+			array[index] = num(array[index].num() + float64(amount))
 
 		case bytecode.IncrArrayLocal:
-			arrayIndex := code[i]
-			i++
+			amount := int32(code[i])
+			arrayIndex := code[i+1]
+			i += 2
 			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
 			index := p.toString(p.pop())
-			array[index] = num(array[index].num() + 1)
-
-		case bytecode.DecrField:
-			index := int(p.pop().num())
-			v, err := p.getField(index)
-			if err != nil {
-				return err
-			}
-			err = p.setField(index, p.toString(num(v.num()-1)))
-			if err != nil {
-				return err
-			}
-
-		case bytecode.DecrGlobal:
-			index := code[i]
-			i++
-			p.globals[index] = num(p.globals[index].num() - 1)
-
-		case bytecode.DecrLocal:
-			index := code[i]
-			i++
-			p.frame[index] = num(p.frame[index].num() - 1)
-
-		case bytecode.DecrSpecial:
-			index := int(code[i])
-			i++
-			v := p.getVar(ast.ScopeSpecial, index)
-			err := p.setVar(ast.ScopeSpecial, index, num(v.num()-1))
-			if err != nil {
-				return err
-			}
-
-		case bytecode.DecrArrayGlobal:
-			arrayIndex := code[i]
-			i++
-			array := p.arrays[arrayIndex]
-			index := p.toString(p.pop())
-			array[index] = num(array[index].num() - 1)
-
-		case bytecode.DecrArrayLocal:
-			arrayIndex := code[i]
-			i++
-			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
-			index := p.toString(p.pop())
-			array[index] = num(array[index].num() - 1)
+			array[index] = num(array[index].num() + float64(amount))
 
 		case bytecode.AugAssignField:
 			operation := lexer.Token(code[i])
@@ -991,9 +951,6 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 
 		case bytecode.CallToupper:
 			p.push(str(strings.ToUpper(p.toString(p.pop()))))
-
-		default:
-			panic(fmt.Sprintf("unexpected opcode %s", op))
 		}
 	}
 	return nil

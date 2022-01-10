@@ -1,11 +1,10 @@
 package bytecode
 
-//go:generate go run golang.org/x/tools/cmd/stringer@master -type=Op
+//go:generate go run golang.org/x/tools/cmd/stringer@v0.1.8 -type=Op
 type Op uint32
 
-// TODO: do we need to optimize the order of the opcodes, given that Go switch is a binary tree?
+// TODO: do we need to optimize the order of the opcodes, if a Go switch is a binary tree?
 // TODO: does reducing the number of opcodes actually speed things up, for example all the opcodes required for assignment?
-// TODO: consider rolling PostIncr and PostDecr into one PostIncr opcode with "n" opcode argument (+1 or -1)
 
 const (
 	Nop Op = iota
@@ -17,7 +16,7 @@ const (
 	Drop
 
 	// Fetch a field, variable, or array item
-	// TODO: add Field0, Field1, ... FieldN
+	// TODO: add Field0, ... FieldN as optimization for "Num N; Field"? Same for GlobalN and LocalN?
 	Field
 	Global      // index
 	Local       // index
@@ -40,18 +39,12 @@ const (
 	DeleteAllLocal    // arrayIndex
 
 	// Post-increment and post-decrement
-	IncrField
-	IncrGlobal      // index
-	IncrLocal       // index
-	IncrSpecial     // index
-	IncrArrayGlobal // arrayIndex
-	IncrArrayLocal  // arrayIndex
-	DecrField
-	DecrGlobal      // index
-	DecrLocal       // index
-	DecrSpecial     // index
-	DecrArrayGlobal // arrayIndex
-	DecrArrayLocal  // arrayIndex
+	IncrField       // amount
+	IncrGlobal      // amount index
+	IncrLocal       // amount index
+	IncrSpecial     // amount index
+	IncrArrayGlobal // amount arrayIndex
+	IncrArrayLocal  // amount arrayIndex
 
 	// Augmented assignment (also used for pre-increment and pre-decrement)
 	AugAssignField       // operation

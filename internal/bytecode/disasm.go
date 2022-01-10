@@ -171,45 +171,34 @@ func (d *disassembler) disassemble(prefix string) error {
 			arrayIndex := d.fetch()
 			d.writeOpf("DeleteAllLocal %d", arrayIndex) // TODO: local name
 
+		case IncrField:
+			amount := int32(d.fetch())
+			d.writeOpf("IncrField %d", amount)
+
 		case IncrGlobal:
+			amount := int32(d.fetch())
 			index := d.fetch()
-			d.writeOpf("IncrGlobal %s", d.program.ScalarNames[index])
+			d.writeOpf("IncrGlobal %d %s", amount, d.program.ScalarNames[index])
 
 		case IncrLocal:
+			amount := int32(d.fetch())
 			index := d.fetch()
-			d.writeOpf("IncrLocal %s", index) // TODO: local name
+			d.writeOpf("IncrLocal %d %s", amount, index) // TODO: local name
 
 		case IncrSpecial:
+			amount := int32(d.fetch())
 			index := d.fetch()
-			d.writeOpf("IncrSpecial %s", ast.SpecialVarName(int(index)))
+			d.writeOpf("IncrSpecial %d %s", amount, ast.SpecialVarName(int(index)))
 
 		case IncrArrayGlobal:
+			amount := int32(d.fetch())
 			arrayIndex := d.fetch()
-			d.writeOpf("IncrArrayGlobal %s", d.program.ArrayNames[arrayIndex])
+			d.writeOpf("IncrArrayGlobal %d %s", amount, d.program.ArrayNames[arrayIndex])
 
 		case IncrArrayLocal:
+			amount := int32(d.fetch())
 			arrayIndex := d.fetch()
-			d.writeOpf("IncrArrayLocal %d", arrayIndex) // TODO: local name
-
-		case DecrGlobal:
-			index := d.fetch()
-			d.writeOpf("DecrGlobal %s", d.program.ScalarNames[index])
-
-		case DecrLocal:
-			index := d.fetch()
-			d.writeOpf("DecrLocal %s", index) // TODO: local name
-
-		case DecrSpecial:
-			index := d.fetch()
-			d.writeOpf("DecrSpecial %s", ast.SpecialVarName(int(index)))
-
-		case DecrArrayGlobal:
-			arrayIndex := d.fetch()
-			d.writeOpf("DecrArrayGlobal %s", d.program.ArrayNames[arrayIndex])
-
-		case DecrArrayLocal:
-			arrayIndex := d.fetch()
-			d.writeOpf("DecrArrayLocal %d", arrayIndex) // TODO: local name
+			d.writeOpf("IncrArrayLocal %d %d", amount, arrayIndex) // TODO: local name
 
 		case AugAssignField:
 			operation := lexer.Token(d.fetch())
