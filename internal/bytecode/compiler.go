@@ -529,6 +529,13 @@ func (c *compiler) expr(expr ast.Expr) {
 		c.program.Strs = append(c.program.Strs, e.Value)
 
 	case *ast.FieldExpr:
+		switch index := e.Index.(type) {
+		case *ast.NumExpr:
+			if index.Value == float64(uint32(index.Value)) {
+				c.add(FieldNum, Op(index.Value))
+				return
+			}
+		}
 		c.expr(e.Index)
 		c.add(Field)
 

@@ -76,6 +76,15 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 			p.push(v)
 
+		case bytecode.FieldNum:
+			index := code[i]
+			i++
+			v, err := p.getField(int(index))
+			if err != nil {
+				return err
+			}
+			p.push(v)
+
 		case bytecode.Global:
 			index := code[i]
 			i++

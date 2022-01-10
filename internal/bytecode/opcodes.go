@@ -16,8 +16,8 @@ const (
 	Drop
 
 	// Fetch a field, variable, or array item
-	// TODO: add Field0, ... FieldN as optimization for "Num N; Field"? Same for GlobalN and LocalN?
 	Field
+	FieldNum    // index
 	Global      // index
 	Local       // index
 	Special     // index

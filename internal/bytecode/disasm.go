@@ -115,6 +115,10 @@ func (d *disassembler) disassemble(prefix string) error {
 			index := d.fetch()
 			d.writeOpf("Str %q", d.program.Strs[index])
 
+		case FieldNum:
+			index := d.fetch()
+			d.writeOpf("FieldNum %d", index)
+
 		case Global:
 			index := d.fetch()
 			d.writeOpf("Global %s", d.program.ScalarNames[index])
