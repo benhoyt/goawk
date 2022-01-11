@@ -14,7 +14,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	. "github.com/benhoyt/goawk/internal/ast"
+	"github.com/benhoyt/goawk/internal/ast"
 	. "github.com/benhoyt/goawk/lexer"
 )
 
@@ -394,7 +394,7 @@ func (p *interp) nextLine() (string, error) {
 				// not present
 				index := strconv.Itoa(p.filenameIndex)
 				argvIndex := p.program.Arrays["ARGV"]
-				argvArray := p.arrays[p.getArrayIndex(ScopeGlobal, argvIndex)]
+				argvArray := p.arrays[p.getArrayIndex(ast.ScopeGlobal, argvIndex)]
 				filename := p.toString(argvArray[index])
 				p.filenameIndex++
 

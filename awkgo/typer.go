@@ -3,9 +3,8 @@
 package main
 
 import (
-	. "github.com/benhoyt/goawk/internal/ast"
+	"github.com/benhoyt/goawk/internal/ast"
 	. "github.com/benhoyt/goawk/lexer"
-	. "github.com/benhoyt/goawk/parser"
 )
 
 // typer walks the parse tree and builds a mappings of variables and
@@ -14,7 +13,7 @@ type typer struct {
 	globals      map[string]valueType
 	scalarRefs   map[string]bool
 	arrayRefs    map[string]bool
-	exprs        map[Expr]valueType
+	exprs        map[ast.Expr]valueType
 	funcName     string // function name if inside a func, else ""
 	nextUsed     bool
 	oFSRSChanged bool
@@ -25,7 +24,7 @@ func newTyper() *typer {
 		globals:    make(map[string]valueType),
 		scalarRefs: make(map[string]bool),
 		arrayRefs:  make(map[string]bool),
-		exprs:      make(map[Expr]valueType),
+		exprs:      make(map[ast.Expr]valueType),
 	}
 	t.globals["FS"] = typeStr
 	t.globals["OFS"] = typeStr
@@ -38,7 +37,7 @@ func newTyper() *typer {
 	return t
 }
 
-func (t *typer) program(prog *Program) {
+func (t *typer) program(prog *ast.Program) {
 	for _, stmts := range prog.Begin {
 		t.stmts(stmts)
 	}
@@ -62,13 +61,13 @@ func (t *typer) program(prog *Program) {
 	}
 }
 
-func (t *typer) stmts(stmts Stmts) {
+func (t *typer) stmts(stmts ast.Stmts) {
 	for _, stmt := range stmts {
 		t.stmt(stmt)
 	}
 }
 
-func (t *typer) actions(actions []Action) {
+func (t *typer) actions(actions []ast.Action) {
 	for _, action := range actions {
 		for _, e := range action.Pattern {
 			t.expr(e)
@@ -77,9 +76,9 @@ func (t *typer) actions(actions []Action) {
 	}
 }
 
-func (t *typer) stmt(stmt Stmt) {
+func (t *typer) stmt(stmt ast.Stmt) {
 	switch s := stmt.(type) {
-	case *PrintStmt:
+	case *ast.PrintStmt:
 		for _, arg := range s.Args {
 			t.expr(arg)
 		}
@@ -87,7 +86,7 @@ func (t *typer) stmt(stmt Stmt) {
 			t.expr(s.Dest)
 		}
 
-	case *PrintfStmt:
+	case *ast.PrintfStmt:
 		for _, arg := range s.Args {
 			t.expr(arg)
 		}
@@ -95,15 +94,15 @@ func (t *typer) stmt(stmt Stmt) {
 			t.expr(s.Dest)
 		}
 
-	case *ExprStmt:
+	case *ast.ExprStmt:
 		t.expr(s.Expr)
 
-	case *IfStmt:
+	case *ast.IfStmt:
 		t.expr(s.Cond)
 		t.stmts(s.Body)
 		t.stmts(s.Else)
 
-	case *ForStmt:
+	case *ast.ForStmt:
 		if s.Pre != nil {
 			t.stmt(s.Pre)
 		}
@@ -115,44 +114,44 @@ func (t *typer) stmt(stmt Stmt) {
 		}
 		t.stmts(s.Body)
 
-	case *ForInStmt:
+	case *ast.ForInStmt:
 		t.setType(s.Var.Name, typeStr)
 		t.stmts(s.Body)
 
-	case *WhileStmt:
+	case *ast.WhileStmt:
 		t.expr(s.Cond)
 		t.stmts(s.Body)
 
-	case *DoWhileStmt:
+	case *ast.DoWhileStmt:
 		t.stmts(s.Body)
 		t.expr(s.Cond)
 
-	case *BreakStmt, *ContinueStmt:
+	case *ast.BreakStmt, *ast.ContinueStmt:
 		return
 
-	case *NextStmt:
+	case *ast.NextStmt:
 		if t.funcName != "" {
 			panic(errorf(`"next" inside a function not yet supported`))
 		}
 		t.nextUsed = true
 		return
 
-	case *ExitStmt:
+	case *ast.ExitStmt:
 		if s.Status != nil {
 			t.expr(s.Status)
 		}
 
-	case *DeleteStmt:
+	case *ast.DeleteStmt:
 		for _, index := range s.Index {
 			t.expr(index)
 		}
 
-	case *ReturnStmt:
+	case *ast.ReturnStmt:
 		if s.Value != nil {
 			t.expr(s.Value)
 		}
 
-	case *BlockStmt:
+	case *ast.BlockStmt:
 		t.stmts(s.Body)
 
 	default:
@@ -173,7 +172,7 @@ func (t *typer) setType(name string, typ valueType) {
 	}
 }
 
-func (t *typer) expr(expr Expr) (typ valueType) {
+func (t *typer) expr(expr ast.Expr) (typ valueType) {
 	defer func() {
 		if typ != typeUnknown {
 			t.exprs[expr] = typ
@@ -181,15 +180,15 @@ func (t *typer) expr(expr Expr) (typ valueType) {
 	}()
 
 	switch e := expr.(type) {
-	case *FieldExpr:
+	case *ast.FieldExpr:
 		t.expr(e.Index)
 		return typeStr
 
-	case *UnaryExpr:
+	case *ast.UnaryExpr:
 		t.expr(e.Value)
 		return typeNum
 
-	case *BinaryExpr:
+	case *ast.BinaryExpr:
 		t.expr(e.Left)
 		t.expr(e.Right)
 		if e.Op == CONCAT {
@@ -197,17 +196,17 @@ func (t *typer) expr(expr Expr) (typ valueType) {
 		}
 		return typeNum
 
-	case *ArrayExpr:
+	case *ast.ArrayExpr:
 		return typeUnknown
 
-	case *InExpr:
+	case *ast.InExpr:
 		for _, index := range e.Index {
 			t.expr(index)
 		}
 		t.expr(e.Array)
 		return typeNum
 
-	case *CondExpr:
+	case *ast.CondExpr:
 		t.expr(e.Cond)
 		trueType := t.expr(e.True)
 		falseType := t.expr(e.False)
@@ -217,27 +216,27 @@ func (t *typer) expr(expr Expr) (typ valueType) {
 		}
 		return trueType
 
-	case *NumExpr:
+	case *ast.NumExpr:
 		return typeNum
 
-	case *StrExpr:
+	case *ast.StrExpr:
 		return typeStr
 
-	case *RegExpr:
+	case *ast.RegExpr:
 		return typeNum
 
-	case *VarExpr:
+	case *ast.VarExpr:
 		switch e.Scope {
-		case ScopeSpecial:
+		case ast.ScopeSpecial:
 			return t.specialType(e.Name, e.Index)
-		case ScopeGlobal:
+		case ast.ScopeGlobal:
 			t.scalarRefs[e.Name] = true
 			return t.globals[e.Name]
 		default:
 			panic(errorf("unexpected scope %v", e.Scope))
 		}
 
-	case *IndexExpr:
+	case *ast.IndexExpr:
 		t.arrayRefs[e.Array.Name] = true
 		t.expr(e.Array)
 		for _, index := range e.Index {
@@ -251,16 +250,16 @@ func (t *typer) expr(expr Expr) (typ valueType) {
 		}
 		return typeUnknown
 
-	case *AssignExpr:
+	case *ast.AssignExpr:
 		rightType := t.expr(e.Right)
 		switch left := e.Left.(type) {
-		case *VarExpr:
+		case *ast.VarExpr:
 			// x = right
 			t.setType(left.Name, rightType)
 			if left.Name == "OFS" || left.Name == "ORS" {
 				t.oFSRSChanged = true
 			}
-		case *IndexExpr:
+		case *ast.IndexExpr:
 			// m[k] = right
 			switch rightType {
 			case typeStr:
@@ -268,53 +267,53 @@ func (t *typer) expr(expr Expr) (typ valueType) {
 			case typeNum:
 				t.setType(left.Array.Name, typeArrayNum)
 			}
-		case *FieldExpr:
+		case *ast.FieldExpr:
 			// $1 = right
 		}
 		t.expr(e.Left)
 		return rightType
 
-	case *AugAssignExpr:
+	case *ast.AugAssignExpr:
 		t.expr(e.Right)
 		switch left := e.Left.(type) {
-		case *VarExpr:
+		case *ast.VarExpr:
 			// x += right
 			t.setType(left.Name, typeNum)
 			if left.Name == "OFS" || left.Name == "ORS" {
 				t.oFSRSChanged = true
 			}
-		case *IndexExpr:
+		case *ast.IndexExpr:
 			// m[k] += right
 			t.setType(left.Array.Name, typeArrayNum)
-		case *FieldExpr:
+		case *ast.FieldExpr:
 			// $1 += right
 		}
 		t.expr(e.Left)
 		return typeNum
 
-	case *IncrExpr:
+	case *ast.IncrExpr:
 		switch left := e.Expr.(type) {
-		case *VarExpr:
+		case *ast.VarExpr:
 			// x++
 			t.setType(left.Name, typeNum)
 			if left.Name == "OFS" || left.Name == "ORS" {
 				t.oFSRSChanged = true
 			}
-		case *IndexExpr:
+		case *ast.IndexExpr:
 			// m[k]++
 			t.setType(left.Array.Name, typeArrayNum)
-		case *FieldExpr:
+		case *ast.FieldExpr:
 			// $1++
 		}
 		t.expr(e.Expr)
 		return typeNum
 
-	case *CallExpr:
+	case *ast.CallExpr:
 		switch e.Func {
 		case F_SPLIT:
 			// split's second arg is an array arg
 			t.expr(e.Args[0])
-			arrayExpr := e.Args[1].(*ArrayExpr)
+			arrayExpr := e.Args[1].(*ast.ArrayExpr)
 			if t.globals[arrayExpr.Name] != typeUnknown && t.globals[arrayExpr.Name] != typeArrayStr {
 				panic(errorf("%q already set to %s, can't use as %s in split()",
 					arrayExpr.Name, t.globals[arrayExpr.Name], typeArrayStr))
@@ -330,9 +329,9 @@ func (t *typer) expr(expr Expr) (typ valueType) {
 			if len(e.Args) == 3 {
 				// sub and gsub's third arg is actually an lvalue
 				switch left := e.Args[2].(type) {
-				case *VarExpr:
+				case *ast.VarExpr:
 					t.setType(left.Name, typeStr)
-				case *IndexExpr:
+				case *ast.IndexExpr:
 					t.setType(left.Array.Name, typeArrayStr)
 				}
 			}
@@ -351,10 +350,10 @@ func (t *typer) expr(expr Expr) (typ valueType) {
 			panic(errorf("unexpected function %s", e.Func))
 		}
 
-	case *UserCallExpr:
+	case *ast.UserCallExpr:
 		panic(errorf("functions not yet supported"))
 
-	case *GetlineExpr:
+	case *ast.GetlineExpr:
 		return typeNum
 
 	default:
@@ -364,9 +363,9 @@ func (t *typer) expr(expr Expr) (typ valueType) {
 
 func (t *typer) specialType(name string, index int) valueType {
 	switch index {
-	case V_NF, V_NR, V_RLENGTH, V_RSTART, V_FNR, V_ARGC:
+	case ast.V_NF, ast.V_NR, ast.V_RLENGTH, ast.V_RSTART, ast.V_FNR, ast.V_ARGC:
 		return typeNum
-	case V_CONVFMT, V_FILENAME, V_FS, V_OFMT, V_OFS, V_ORS, V_RS, V_SUBSEP:
+	case ast.V_CONVFMT, ast.V_FILENAME, ast.V_FS, ast.V_OFMT, ast.V_OFS, ast.V_ORS, ast.V_RS, ast.V_SUBSEP:
 		return typeStr
 	default:
 		panic(errorf("unexpected special variable %s", name))
