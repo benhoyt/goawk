@@ -22,12 +22,12 @@ import (
 
 var (
 	awkExe      string
-	runBytecode bool
+	runCompiled bool
 )
 
 func TestMain(m *testing.M) {
 	flag.StringVar(&awkExe, "awk", "gawk", "awk executable name")
-	flag.BoolVar(&runBytecode, "bytecode", false, "run bytecode tests")
+	flag.BoolVar(&runCompiled, "compiled", false, "run tests on compiler / virtual machine as well")
 	flag.Parse()
 	os.Exit(m.Run())
 }
@@ -802,16 +802,16 @@ func testGoAWK(
 		t.Fatalf("expected %q, got %q", out, normalized)
 	}
 
-	if runBytecode {
-		var byteProg *compiler.Program
+	if runCompiled {
+		var compiledProg *compiler.Program
 		func() {
 			defer func() {
 				r := recover()
 				if r != nil {
-					t.Fatalf("panic compiling bytecode: %v", r)
+					t.Fatalf("panic compiling: %v", r)
 				}
 			}()
-			byteProg = compiler.Compile(prog)
+			compiledProg = compiler.Compile(prog)
 		}()
 
 		// TODO: also test disassembly doesn't panic
@@ -832,10 +832,10 @@ func testGoAWK(
 			defer func() {
 				r := recover()
 				if r != nil {
-					t.Fatalf("panic executing bytecode: %v", r)
+					t.Fatalf("panic executing: %v", r)
 				}
 			}()
-			_, err = interp.ExecBytecode(prog, config, byteProg)
+			_, err = interp.ExecCompiled(prog, config, compiledProg)
 		}()
 
 		if err != nil {
@@ -843,16 +843,16 @@ func testGoAWK(
 				if err.Error() == errStr {
 					return
 				}
-				t.Fatalf("[bytecode] expected error %q, got %q", errStr, err.Error())
+				t.Fatalf("[compiled] expected error %q, got %q", errStr, err.Error())
 			}
 			t.Fatal(err)
 		}
 		if errStr != "" {
-			t.Fatalf(`[bytecode] expected error %q, got ""`, errStr)
+			t.Fatalf(`[compiled] expected error %q, got ""`, errStr)
 		}
 		normalized = normalizeNewlines(outBuf.String())
 		if normalized != out {
-			t.Fatalf("[bytecode] expected %q, got %q", out, normalized)
+			t.Fatalf("[compiled] expected %q, got %q", out, normalized)
 		}
 	}
 }
@@ -1341,9 +1341,9 @@ func benchmarkProgram(b *testing.B, funcs map[string]interface{},
 		Error:  ioutil.Discard,
 		Funcs:  funcs,
 	}
-	byteProg := compiler.Compile(prog)
+	compiledProg := compiler.Compile(prog)
 	b.StartTimer()
-	_, err = interp.ExecBytecode(prog, config, byteProg)
+	_, err = interp.ExecCompiled(prog, config, compiledProg)
 	b.StopTimer()
 	if err != nil {
 		b.Fatalf("error interpreting %s: %v", b.Name(), err)

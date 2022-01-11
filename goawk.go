@@ -257,7 +257,7 @@ func main() {
 	// Run the program!
 	var status int
 	if useCompiler {
-		status, err = interp.ExecBytecode(prog, config, compiledProg)
+		status, err = interp.ExecCompiled(prog, config, compiledProg)
 	} else {
 		status, err = interp.ExecProgram(prog, config)
 	}

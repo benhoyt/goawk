@@ -1,2 +1,2 @@
 #!/bin/sh
-go test ./interp -v -awk="" -bytecode >bytecode_tests.txt
+go test ./interp -v -awk="" -compiled >bytecode_tests.txt

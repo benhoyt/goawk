@@ -22,8 +22,8 @@ TODO:
 - fix/refactor TestFlushes
 - look at code coverage and get closer to 100%
   + add decrement tests under "Incr/decr expressions", for example
-  + use the following to see how much of the internal/bytecode package is covered:
-    $ go test -coverpkg=./... ./interp -v -awk="" -bytecode -coverprofile=cover.out
+  + use the following to see how much of the internal/compiler package is covered:
+    $ go test -coverpkg=./... ./interp -v -awk="" -compiled -coverprofile=cover.out
     $ go tool cover -html cover.out
 - optimize!
 - fuzz testing

@@ -14,10 +14,8 @@ import (
 	"github.com/benhoyt/goawk/parser"
 )
 
-// TODO: rename "bytecode" to "wordcode" or some such
-
-// ExecBytecode... TODO
-func ExecBytecode(program *parser.Program, config *Config, byteProg *compiler.Program) (int, error) {
+// ExecCompiled... TODO
+func ExecCompiled(program *parser.Program, config *Config, compiledProg *compiler.Program) (int, error) {
 	p, err := execInit(program, config)
 	if err != nil {
 		return 0, err
@@ -25,7 +23,7 @@ func ExecBytecode(program *parser.Program, config *Config, byteProg *compiler.Pr
 	defer p.closeAll()
 
 	// Execute the program! BEGIN, then pattern/actions, then END
-	err = p.execBytecode(byteProg, byteProg.Begin)
+	err = p.execCompiled(compiledProg, compiledProg.Begin)
 	if err != nil && err != errExit {
 		return 0, err
 	}
@@ -33,19 +31,19 @@ func ExecBytecode(program *parser.Program, config *Config, byteProg *compiler.Pr
 		return p.exitStatus, nil
 	}
 	if err != errExit {
-		err = p.execBytecodeActions(byteProg, byteProg.Actions)
+		err = p.execCompiledActions(compiledProg, compiledProg.Actions)
 		if err != nil && err != errExit {
 			return 0, err
 		}
 	}
-	err = p.execBytecode(byteProg, byteProg.End)
+	err = p.execCompiled(compiledProg, compiledProg.End)
 	if err != nil && err != errExit {
 		return 0, err
 	}
 	return p.exitStatus, nil
 }
 
-func (p *interp) execBytecode(byteProg *compiler.Program, code []compiler.Op) error {
+func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op) error {
 	for i := 0; i < len(code); {
 		op := code[i]
 		//fmt.Printf("TODO %04x %s %v\n", i, op, p.st)
@@ -55,12 +53,12 @@ func (p *interp) execBytecode(byteProg *compiler.Program, code []compiler.Op) er
 		case compiler.Num:
 			index := code[i]
 			i++
-			p.push(num(byteProg.Nums[index]))
+			p.push(num(compiledProg.Nums[index]))
 
 		case compiler.Str:
 			index := code[i]
 			i++
-			p.push(str(byteProg.Strs[index]))
+			p.push(str(compiledProg.Strs[index]))
 
 		case compiler.Dupe:
 			p.push(p.st[len(p.st)-1])
@@ -324,7 +322,7 @@ func (p *interp) execBytecode(byteProg *compiler.Program, code []compiler.Op) er
 			// Stand-alone /regex/ is equivalent to: $0 ~ /regex/
 			index := code[i]
 			i++
-			re := byteProg.Regexes[index]
+			re := compiledProg.Regexes[index]
 			p.push(boolean(re.MatchString(p.line)))
 
 		case compiler.Add:
@@ -550,7 +548,7 @@ func (p *interp) execBytecode(byteProg *compiler.Program, code []compiler.Op) er
 			loopCode := code[i : i+int(offset)]
 			for index := range array {
 				p.globals[varIndex] = str(index)
-				err := p.execBytecode(byteProg, loopCode)
+				err := p.execCompiled(compiledProg, loopCode)
 				if err == errBreak {
 					break
 				}
@@ -689,13 +687,13 @@ func (p *interp) execBytecode(byteProg *compiler.Program, code []compiler.Op) er
 				p.push(num(0))
 			}
 
-		//case bytecode.CallGsub:
-		//case bytecode.CallGsubField:
-		//case bytecode.CallGsubGlobal:
-		//case bytecode.CallGsubLocal:
-		//case bytecode.CallGsubSpecial:
-		//case bytecode.CallGsubArrayGlobal:
-		//case bytecode.CallGsubArrayLocal:
+		//case compiler.CallGsub:
+		//case compiler.CallGsubField:
+		//case compiler.CallGsubGlobal:
+		//case compiler.CallGsubLocal:
+		//case compiler.CallGsubSpecial:
+		//case compiler.CallGsubArrayGlobal:
+		//case compiler.CallGsubArrayLocal:
 
 		case compiler.CallIndex:
 			substr := p.toString(p.pop())
@@ -835,13 +833,13 @@ func (p *interp) execBytecode(byteProg *compiler.Program, code []compiler.Op) er
 			p.random.Seed(int64(math.Float64bits(p.randSeed)))
 			p.push(num(prevSeed))
 
-		//case bytecode.CallSub:
-		//case bytecode.CallSubField:
-		//case bytecode.CallSubGlobal:
-		//case bytecode.CallSubLocal:
-		//case bytecode.CallSubSpecial:
-		//case bytecode.CallSubArrayGlobal:
-		//case bytecode.CallSubArrayLocal:
+		//case compiler.CallSub:
+		//case compiler.CallSubField:
+		//case compiler.CallSubGlobal:
+		//case compiler.CallSubLocal:
+		//case compiler.CallSubSpecial:
+		//case compiler.CallSubArrayGlobal:
+		//case compiler.CallSubArrayLocal:
 
 		case compiler.CallSubstr:
 			// TODO: avoid duplication in function.go if we're keeping that
@@ -977,7 +975,7 @@ func (p *interp) pop() value {
 }
 
 // Execute pattern-action blocks (may be multiple)
-func (p *interp) execBytecodeActions(byteProg *compiler.Program, actions []compiler.Action) error {
+func (p *interp) execCompiledActions(compiledProg *compiler.Program, actions []compiler.Action) error {
 	inRange := make([]bool, len(actions))
 lineLoop:
 	for {
@@ -1001,7 +999,7 @@ lineLoop:
 				matched = true
 			case 1:
 				// Single boolean pattern
-				err := p.execBytecode(byteProg, action.Pattern[0])
+				err := p.execCompiled(compiledProg, action.Pattern[0])
 				if err != nil {
 					return err
 				}
@@ -1009,7 +1007,7 @@ lineLoop:
 			case 2:
 				// Range pattern (matches between start and stop lines)
 				if !inRange[i] {
-					err := p.execBytecode(byteProg, action.Pattern[0])
+					err := p.execCompiled(compiledProg, action.Pattern[0])
 					if err != nil {
 						return err
 					}
@@ -1017,7 +1015,7 @@ lineLoop:
 				}
 				matched = inRange[i]
 				if inRange[i] {
-					err := p.execBytecode(byteProg, action.Pattern[1])
+					err := p.execCompiled(compiledProg, action.Pattern[1])
 					if err != nil {
 						return err
 					}
@@ -1038,7 +1036,7 @@ lineLoop:
 			}
 
 			// Execute the body statements
-			err := p.execBytecode(byteProg, action.Body)
+			err := p.execCompiled(compiledProg, action.Body)
 			if err == errNext {
 				// "next" statement skips straight to next line
 				continue lineLoop

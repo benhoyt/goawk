@@ -60,7 +60,7 @@
 === RUN   TestInterp/_BEGIN_{__for_(i_=_0;_i_<_1;_i++)_{___for_(j_=_0;_j_<_1;_j++)_{____pri#01
 === RUN   TestInterp/{_if_(NR==2)_next;_print_}
 === RUN   TestInterp/{_if_(NR==2)_f();_print_}__function_f()_{_next_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/BEGIN_{_next_}
 === RUN   TestInterp/END_{_next_}
 === RUN   TestInterp/BEGIN_{_a["x"]_=_3;_print_"x"_in_a,_"y"_in_a_}
@@ -78,9 +78,9 @@
 === RUN   TestInterp/{_print_!$0_}
 === RUN   TestInterp/{_print_!$0_}#01
 === RUN   TestInterp/!seen[$0]++
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.IncrExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.IncrExpr
 === RUN   TestInterp/!seen[$0]--
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.IncrExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.IncrExpr
 === RUN   TestInterp/BEGIN_{_print_(1==1,_1==0,_"1"==1,_"1"==1.0)_}
 === RUN   TestInterp/{_print_($0=="1",_$0==1)_}
 === RUN   TestInterp/{_print_($1=="1",_$1==1)_}
@@ -102,9 +102,9 @@
 === RUN   TestInterp/BEGIN_{_$1="10";_print($1<2)_}
 === RUN   TestInterp/BEGIN_{_$1="10x";_print($1<2)_}
 === RUN   TestInterp/_function_t()_{_print_"t";_return_2_}_function_f()_{_print_"f";_return
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/_function_t()_{_print_"t";_return_2_}_function_f()_{_print_"f";_return#01
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/BEGIN_{_print_0&&0,_0&&2,_2&&0,_2&&2_}
 === RUN   TestInterp/BEGIN_{_print_0||0,_0||2,_2||0,_2||2_}
 === RUN   TestInterp/BEGIN_{_print_1+2,_1+2+3,_1+-2,_-1+2,_"1"+"2",_3+.14_}
@@ -172,7 +172,7 @@
 === RUN   TestInterp/BEGIN_{_RS_=_"\n|(_*[[:upper:]]+_*)"_}_{_print_"Record_=",_$0,"and_RT_#01
 === RUN   TestInterp/BEGIN_{_RS=".."_}_{_print_$0_RT_}
 === RUN   TestInterp/_BEGIN_{__print_SUBSEP__a[1,_2]_=_"onetwo"__print_a[1,_2]__for_(k_in_a
-    interp_test.go:811: panic compiling bytecode: TODO multi indexes not yet supported
+    interp_test.go:811: panic compiling: TODO multi indexes not yet supported
 === RUN   TestInterp/{_print_NF;_NF=1;_$2="two";_print_$0,_NF_}
 === RUN   TestInterp/{_print_NF;_NF=2;_$2="two";_print_$0,_NF}
 === RUN   TestInterp/{_print_NF;_NF=3;_$2="two";_print_$0,_NF}
@@ -222,21 +222,21 @@
 === RUN   TestInterp/{_$2+=10;_print;_$3/=2;_print_}
 === RUN   TestInterp/BEGIN_{_a[2]_+=_1;_a["2"]_*=_3;_print_a[2]_}
 === RUN   TestInterp/BEGIN_{_print_x++;_print_x_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.IncrExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.IncrExpr
 === RUN   TestInterp/BEGIN_{_print_x;_print_x++;_print_++x;_print_x_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.IncrExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.IncrExpr
 === RUN   TestInterp/BEGIN_{_print_x;_print_x--;_print_--x;_print_x_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.IncrExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.IncrExpr
 === RUN   TestInterp/BEGIN_{_s++;_s++;_print_s_}
 === RUN   TestInterp/BEGIN_{_y="_";_--x[y_=_y_y];_print_length(y)_}
 === RUN   TestInterp/BEGIN_{_x[y++]++;_print_y_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.IncrExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.IncrExpr
 === RUN   TestInterp/BEGIN_{_x[y++]_+=_3;_print_y_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.IncrExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.IncrExpr
 === RUN   TestInterp/BEGIN_{_$(y++)++;_print_y_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.IncrExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.IncrExpr
 === RUN   TestInterp/BEGIN_{_print_"s"_++n;_print_"s"_--n_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.IncrExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.IncrExpr
 === RUN   TestInterp/BEGIN_{_print_sin(0),_sin(0.5),_sin(1),_sin(-1)_}
 === RUN   TestInterp/BEGIN_{_print_cos(0),_cos(0.5),_cos(1),_cos(-1)_}
 === RUN   TestInterp/BEGIN_{_print_exp(0),_exp(0.5),_exp(1),_exp(-1)_}
@@ -276,23 +276,23 @@
 === RUN   TestInterp/BEGIN_{_n_=_split("ab,c.d,",_a,_/[,.]/);_for_(i=1;_i<=n;_i++)_print_a[
 === RUN   TestInterp/BEGIN_{_n_=_split("1_2",_a);_print_(n,_a[1],_a[2],_a[1]==1,_a[2]==2)_}
 === RUN   TestInterp/BEGIN_{_x_=_"1.2.3";_print_sub(/\./,_",",_x);_print_x_}
-    interp_test.go:811: panic compiling bytecode: TODO: func sub not yet supported
+    interp_test.go:811: panic compiling: TODO: func sub not yet supported
 === RUN   TestInterp/{_print_sub(/\./,_",");_print_$0_}
-    interp_test.go:811: panic compiling bytecode: TODO: func sub not yet supported
+    interp_test.go:811: panic compiling: TODO: func sub not yet supported
 === RUN   TestInterp/BEGIN_{_x_=_"1.2.3";_print_gsub(/\./,_",",_x);_print_x_}
-    interp_test.go:811: panic compiling bytecode: TODO: func gsub not yet supported
+    interp_test.go:811: panic compiling: TODO: func gsub not yet supported
 === RUN   TestInterp/{_print_gsub(/\./,_",");_print_$0_}
-    interp_test.go:811: panic compiling bytecode: TODO: func gsub not yet supported
+    interp_test.go:811: panic compiling: TODO: func gsub not yet supported
 === RUN   TestInterp/{_print_gsub(/[0-9]/,_"(&)");_print_$0_}
-    interp_test.go:811: panic compiling bytecode: TODO: func gsub not yet supported
+    interp_test.go:811: panic compiling: TODO: func gsub not yet supported
 === RUN   TestInterp/{_print_gsub(/[0-9]+/,_"(&)");_print_$0_}
-    interp_test.go:811: panic compiling bytecode: TODO: func gsub not yet supported
+    interp_test.go:811: panic compiling: TODO: func gsub not yet supported
 === RUN   TestInterp/{_print_gsub(/[0-9]/,_"\\&");_print_$0_}
-    interp_test.go:811: panic compiling bytecode: TODO: func gsub not yet supported
+    interp_test.go:811: panic compiling: TODO: func gsub not yet supported
 === RUN   TestInterp/{_print_gsub(/[0-9]/,_"\\z");_print_$0_}
-    interp_test.go:811: panic compiling bytecode: TODO: func gsub not yet supported
+    interp_test.go:811: panic compiling: TODO: func gsub not yet supported
 === RUN   TestInterp/{_print_gsub("0",_"x\\\\y");_print_$0_}__#_!awk_!gawk_--_our_behaviour
-    interp_test.go:811: panic compiling bytecode: TODO: func gsub not yet supported
+    interp_test.go:811: panic compiling: TODO: func gsub not yet supported
 === RUN   TestInterp/sub("",_"\\e",_FS)__#_!awk_!gawk
 === RUN   TestInterp/BEGIN_{_print_tolower("Foo_BaR")_}
 === RUN   TestInterp/BEGIN_{_print_toupper("Foo_BaR")_}
@@ -306,94 +306,94 @@
 === RUN   TestInterp/BEGIN_{_print_(1+2?"t":"f")_}
 === RUN   TestInterp/BEGIN_{_print(1_?_x="t"_:_"f");_print_x;_}
 === RUN   TestInterp/_function_f(loc)_{__glob_+=_1__loc_+=_1__print_glob,_loc_}_BEGIN_{__gl
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/_function_set(a,_x,_v)_{__a[x]_=_v_}_function_get(a,_x)_{__return_a[x]
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/_function_fib(n)_{__return_n_<_3_?_1_:_fib(n-2)_+_fib(n-1)_}_BEGIN_{__
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/_function_f(a,_x)_{_return_a[x]_}_function_g(b,_y)_{_f(b,_y)_}_BEGIN_{
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/_function_g(b,_y)_{_return_f(b,_y)_}_function_f(a,_x)_{_return_a[x]_}_
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/_function_h(b,_y)_{_g(b,_y)_}_function_g(b,_y)_{_f(b,_y)_}_function_f(
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/_function_h(b,_y)_{_return_g(b,_y)_}_function_g(b,_y)_{_return_f(b,_y)
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/_function_get(a,_x)_{_return_a[x]_}_BEGIN_{_a[1]=2;_print_get(a,_x);_p
 === RUN   TestInterp/_function_early()_{__print_"x"__return__print_"y"_}_BEGIN_{_early()_}_
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/BEGIN_{_return_}
 === RUN   TestInterp/function_f()_{_printf_"x"_};_BEGIN_{_f()_}_
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/BEGIN_{_arr[0];_f(arr)_}_function_f(a)_{_printf_"x"_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/function_f(x)_{_0_in__;_f(_)_}__BEGIN_{_f()_}__#_!awk_!gawk
 === RUN   TestInterp/BEGIN_{_for_(i=0;_i<1001;_i++)_f();_print_x_}__function_f()_{_x++_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/_function_bar(y)_{_return_y[1]_}_function_foo()_{_return_bar(x)_}_BEGI
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/_function_f1(x)_{_}_function_f2(x,_y)_{_return_x[y]_}_BEGIN_{_a[1]=2;_
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/BEGIN_{_arr[0];_f(arr)_}_function_f(a)_{_print_"x"_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/BEGIN_{_a[x];_a=42_}
 === RUN   TestInterp/BEGIN_{_s=42;_s[x]_}
 === RUN   TestInterp/function_get(a,_k)_{_return_a[k]_}__BEGIN_{_a_=_42;_print_get(a,_1);_}
 === RUN   TestInterp/function_get(a,_k)_{_return_a+k_}_BEGIN_{_a[42];_print_get(a,_1);_}
 === RUN   TestInterp/{_f(z)_}__function_f(x)_{_print_NR_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/function_f()_{_f()_}__BEGIN_{_f()_}__#_!awk_!gawk
 === RUN   TestInterp/function_f(x)_{_0_in_x_}__BEGIN_{_f(FS)_}__#_!awk
 === RUN   TestInterp/_function_foo(x)_{_print_"foo",_x_}_function_bar(foo)_{_print_"bar",_f
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/_function_foo(foo)_{_print_"foo",_foo_}_function_bar(foo)_{_print_"bar
 === RUN   TestInterp/function_foo()_{_print_foo_}__BEGIN_{_foo()_}
 === RUN   TestInterp/function_f(x)_{_print_x,_x();_}__BEGIN_{_f()_}
 === RUN   TestInterp/BEGIN_{_getline_a[1];_print_a[1]_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.GetlineExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.GetlineExpr
 === RUN   TestInterp/BEGIN_{_getline_$1;_print_$1_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.GetlineExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.GetlineExpr
 === RUN   TestInterp/BEGIN_{_"echo_foo"_|_getline_a[1];_print_a[1]_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.GetlineExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.GetlineExpr
 === RUN   TestInterp/BEGIN_{_"echo_foo"_|_getline_$1;_print_$1_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.GetlineExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.GetlineExpr
 === RUN   TestInterp/BEGIN_{_print_"foo"_|"sort";_print_"bar"_|"sort"_}__#_!fuzz
 === RUN   TestInterp/BEGIN_{_print_"foo"_|">&2_echo_error"_}__#_!gawk_!fuzz
 === RUN   TestInterp/BEGIN_{_"cat"_|_getline;_print_}__#_!fuzz
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.GetlineExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.GetlineExpr
 === RUN   TestInterp/BEGIN_{_print_getline_x_<_"/no/such/file"_}__#_!fuzz
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.GetlineExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.GetlineExpr
 === RUN   TestInterp/BEGIN_{_print_getline_"z";_print_$0_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.GetlineExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.GetlineExpr
 === RUN   TestInterp/BEGIN_{_print_getline_x+1;_print_x_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.GetlineExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.GetlineExpr
 === RUN   TestInterp/BEGIN_{_print_getline_(x+1);_print_$0_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.GetlineExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.GetlineExpr
 === RUN   TestInterp/BEGIN_{_print_getline_foo();_print_$0_}_function_foo()_{_print_"z"_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.GetlineExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.GetlineExpr
 === RUN   TestInterp/BEGIN_{_getline;_print($0==0)_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.GetlineExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.GetlineExpr
 === RUN   TestInterp/BEGIN_{_getline_x;_print(x==0)_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.GetlineExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.GetlineExpr
 === RUN   TestInterp/BEGIN_{_"echo_0.0"_|_getline;_print($0==0)_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.GetlineExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.GetlineExpr
 === RUN   TestInterp/BEGIN_{_"echo_0.0"_|_getline_x;_print(x==0)_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.GetlineExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.GetlineExpr
 === RUN   TestInterp/BEGIN_{_print_>"out";_getline_<"out"_}__#_!awk_!gawk
 === RUN   TestInterp/BEGIN_{_print_|"out";_getline_<"out"_}__#_!awk_!gawk
 === RUN   TestInterp/BEGIN_{_print_>"out";_close("out");_getline_<"out";_print_>"out"_}__#_
 === RUN   TestInterp/BEGIN_{_print_>"out";_close("out");_getline_<"out";_print_|"out"_}__#_
 === RUN   TestInterp/BEGIN_{_print_getline_x_<_"-";_print_x_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.GetlineExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.GetlineExpr
 === RUN   TestInterp/{_print_$0;_print_getline_x_<"-";_print_x_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.GetlineExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.GetlineExpr
 === RUN   TestInterp/BEGIN_{_print_"x"_>"-";_print_"y"_>"-"_}
 === RUN   TestInterp/BEGIN_{_print_fflush();_print_fflush("")_}
 === RUN   TestInterp/BEGIN_{_print_"x";_print_fflush();_print_"y";_print_fflush("")_}
 === RUN   TestInterp/BEGIN_{_print_"x"_>"out";_print_fflush("out");_print_"y";_print_fflush
 === RUN   TestInterp/BEGIN_{_print_fflush("x")_}__#_!gawk
 === RUN   TestInterp/BEGIN_{_"cat"_|_getline;_print_fflush("cat")_}__#_!gawk_!fuzz
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.GetlineExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.GetlineExpr
 === RUN   TestInterp/BEGIN_{_print_"x"_>_"out"_}__#_!fuzz
 === RUN   TestInterp/BEGIN_{_printf_"x"_>_"out"_}__#_!fuzz
 === RUN   TestInterp/BEGIN_{_print("x"_>_"out")_}
@@ -406,7 +406,7 @@
 === RUN   TestInterp/BEGIN_{_print_(1,2),(3,4)_}
 === RUN   TestInterp/BEGIN_{_print_(1,2,(3,4),(5,6))_}
 === RUN   TestInterp/{_print_length()_}
---- FAIL: TestInterp (0.06s)
+--- FAIL: TestInterp (0.07s)
     --- PASS: TestInterp/BEGIN_{_print_"b"_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_"b"_}#01 (0.00s)
     --- PASS: TestInterp/END_{_print_"e"_} (0.00s)
@@ -762,22 +762,22 @@
 === RUN   TestNative
 === RUN   TestNative/BEGIN_{_print_foo()_}
 === RUN   TestNative/BEGIN_{_print_foo()_}#01
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestNative/BEGIN_{_print_foo()_}#02
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestNative/BEGIN_{_print_foo()_}#03
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestNative/BEGIN_{_print_repeat("xy",_5)_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestNative/BEGIN_{_print_repeat("xy",_5)_}#01
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestNative/_BEGIN_{__print_r0()__print_r1(),_r1(5)__print_r2(),_r2(5)_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestNative/_BEGIN_{__print_r2()_}
 === RUN   TestNative/_BEGIN_{__print__print_bool(),_bool(0),_bool(1),_bool(""),_bool("0"),_
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestNative/_BEGIN_{__print__print_sum(),_sum(1),_sum(2,_3),_sum(4,_5,_6,_7,_8)__p
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestNative/BEGIN_{_0_}
 === RUN   TestNative/BEGIN_{_1_}
 === RUN   TestNative/BEGIN_{_2_}
@@ -790,24 +790,24 @@
 === RUN   TestNative/BEGIN_{_print_f(),_f(1,_2)_}
 === RUN   TestNative/BEGIN_{_print_split("x_y",_a)_}
 === RUN   TestNative/_function_foo(n)_{_return_n_*_2_}_BEGIN_{_print_foo(42)_}_
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestNative/BEGIN_{_x=3;_print_foo(x)_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestNative/_function_bar(n)_{_return_foo(n)_}_BEGIN_{_x=4;_y=5;_print_foo(x),_bar
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestNative/BEGIN_{_a["x"]=1;_print_foo(a)_}
 === RUN   TestNative/BEGIN_{_x["x"]=1;_print_f(x)_}__function_f(a)_{_return_foo(a)_}
 === RUN   TestNative/function_f(a)_{_return_foo(a)_}__BEGIN_{_x["x"]=1;_print_f(x)_}
 === RUN   TestNative/BEGIN_{_x["x"]=1;_print_f(x["x"])_}__function_f(a)_{_return_foo(a)_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestNative/BEGIN_{_print_add(1,_add(2,_3))_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestNative/BEGIN_{_print_foo(x)_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestNative/BEGIN_{_print_foo(_var)_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestNative/function_foo(y)_{_return_y/2_}__BEGIN_{_print_foo(_var)_}
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.UserCallExpr
 --- FAIL: TestNative (0.00s)
     --- PASS: TestNative/BEGIN_{_print_foo()_} (0.00s)
     --- FAIL: TestNative/BEGIN_{_print_foo()_}#01 (0.00s)
@@ -906,7 +906,7 @@
 === RUN   TestConfigVarsCorrect
 --- PASS: TestConfigVarsCorrect (0.00s)
 === RUN   TestShellCommand
-    interp_test.go:811: panic compiling bytecode: unexpected expr type: *ast.GetlineExpr
+    interp_test.go:811: panic compiling: unexpected expr type: *ast.GetlineExpr
 --- FAIL: TestShellCommand (0.00s)
 === RUN   TestFlushes
     interp_test.go:1242: expected flushes ["" "0\nx\ny\n" "0\nx\ny\n0\nz\n" "0\nx\ny\n0\nz\n0\n"], got ["" "0\nx\ny\n" "0\nx\ny\n0\nz\n" "0\nx\ny\n0\nz\n0\n" "0\nx\ny\n0\nz\n0\n" "0\nx\ny\n0\nz\n0\n0\nx\ny\n" "0\nx\ny\n0\nz\n0\n0\nx\ny\n0\nz\n" "0\nx\ny\n0\nz\n0\n0\nx\ny\n0\nz\n0\n"]
@@ -925,5 +925,5 @@
 === RUN   Example_funcs
 --- PASS: Example_funcs (0.00s)
 FAIL
-FAIL	github.com/benhoyt/goawk/interp	0.078s
+FAIL	github.com/benhoyt/goawk/interp	0.081s
 FAIL

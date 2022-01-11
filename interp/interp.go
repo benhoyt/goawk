@@ -122,7 +122,7 @@ type interp struct {
 	formatCache map[string]cachedFormat
 	bytes       bool
 
-	// TODO: for bytecode interpreter
+	// TODO: for compiled virtual machine
 	// TODO: consider changing to pre-allocated array/slice with separate stack pointer - slightly faster in my tests
 	st []value
 }
