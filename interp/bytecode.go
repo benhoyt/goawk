@@ -43,7 +43,7 @@ func ExecCompiled(program *parser.Program, config *Config, compiledProg *compile
 	return p.exitStatus, nil
 }
 
-func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op) error {
+func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Opcode) error {
 	for i := 0; i < len(code); {
 		op := code[i]
 		//fmt.Printf("TODO %04x %s %v\n", i, op, p.st)

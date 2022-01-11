@@ -86,7 +86,7 @@ func (p *Program) Disassemble(writer io.Writer) error {
 type disassembler struct {
 	program *Program
 	writer  io.Writer
-	code    []Op
+	code    []Opcode
 	ip      int
 	opAddr  int
 	err     error
@@ -348,7 +348,7 @@ func (d *disassembler) disassemble(prefix string) error {
 	return d.err
 }
 
-func (d *disassembler) fetch() Op {
+func (d *disassembler) fetch() Opcode {
 	op := d.code[d.ip]
 	d.ip++
 	return op
