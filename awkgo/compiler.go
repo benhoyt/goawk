@@ -13,10 +13,11 @@ import (
 
 	"github.com/benhoyt/goawk/internal/ast"
 	. "github.com/benhoyt/goawk/lexer"
+	"github.com/benhoyt/goawk/parser"
 )
 
 // compile compiles the parsed AWK program to Go and outputs to writer.
-func compile(prog *ast.Program, writer io.Writer) (err error) {
+func compile(prog *parser.Program, writer io.Writer) (err error) {
 	// Both typer and compiler signal errors internally with
 	// panic(&errorExit{...}), so recover and return an error.
 	defer func() {
@@ -75,7 +76,7 @@ func (c *compiler) outputf(format string, args ...interface{}) {
 	fmt.Fprintf(c.writer, format, args...)
 }
 
-func (c *compiler) program(prog *ast.Program) {
+func (c *compiler) program(prog *parser.Program) {
 	c.output(`package main
 
 import (

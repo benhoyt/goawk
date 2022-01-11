@@ -5,6 +5,7 @@ package main
 import (
 	"github.com/benhoyt/goawk/internal/ast"
 	. "github.com/benhoyt/goawk/lexer"
+	"github.com/benhoyt/goawk/parser"
 )
 
 // typer walks the parse tree and builds a mappings of variables and
@@ -37,7 +38,7 @@ func newTyper() *typer {
 	return t
 }
 
-func (t *typer) program(prog *ast.Program) {
+func (t *typer) program(prog *parser.Program) {
 	for _, stmts := range prog.Begin {
 		t.stmts(stmts)
 	}

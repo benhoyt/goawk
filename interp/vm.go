@@ -15,7 +15,7 @@ import (
 )
 
 // ExecCompiled... TODO
-func ExecCompiled(program *parser.Program, config *Config, compiledProg *compiler.Program) (int, error) {
+func ExecCompiled(program *parser.Program, config *Config) (int, error) {
 	p, err := execInit(program, config)
 	if err != nil {
 		return 0, err
@@ -23,7 +23,7 @@ func ExecCompiled(program *parser.Program, config *Config, compiledProg *compile
 	defer p.closeAll()
 
 	// Execute the program! BEGIN, then pattern/actions, then END
-	err = p.execCompiled(compiledProg, compiledProg.Begin)
+	err = p.execCompiled(program.Compiled, program.Compiled.Begin)
 	if err != nil && err != errExit {
 		return 0, err
 	}
@@ -31,12 +31,12 @@ func ExecCompiled(program *parser.Program, config *Config, compiledProg *compile
 		return p.exitStatus, nil
 	}
 	if err != errExit {
-		err = p.execCompiledActions(compiledProg, compiledProg.Actions)
+		err = p.execCompiledActions(program.Compiled, program.Compiled.Actions)
 		if err != nil && err != errExit {
 			return 0, err
 		}
 	}
-	err = p.execCompiled(compiledProg, compiledProg.End)
+	err = p.execCompiled(program.Compiled, program.Compiled.End)
 	if err != nil && err != errExit {
 		return 0, err
 	}

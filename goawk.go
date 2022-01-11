@@ -217,14 +217,16 @@ func main() {
 		errorExitf("%s", err)
 	}
 
-	var compiledProg *compiler.Program
 	if useCompiler {
-		compiledProg = compiler.Compile(prog)
+		prog.Compiled = compiler.Compile(prog.ToAST())
 	}
 
 	if debug {
 		if useCompiler {
-			compiledProg.Disassemble(os.Stderr)
+			err := prog.Compiled.Disassemble(os.Stderr)
+			if err != nil {
+				errorExitf("could not disassemble program: %v", err)
+			}
 		} else {
 			fmt.Fprintln(os.Stderr, prog)
 		}
@@ -257,7 +259,7 @@ func main() {
 	// Run the program!
 	var status int
 	if useCompiler {
-		status, err = interp.ExecCompiled(prog, config, compiledProg)
+		status, err = interp.ExecCompiled(prog, config)
 	} else {
 		status, err = interp.ExecProgram(prog, config)
 	}

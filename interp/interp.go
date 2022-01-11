@@ -114,7 +114,7 @@ type interp struct {
 	matchStart       int
 
 	// Misc pieces of state
-	program     *ast.Program
+	program     *parser.Program
 	random      *rand.Rand
 	randSeed    float64
 	exitStatus  int
@@ -216,7 +216,7 @@ type Config struct {
 }
 
 // Initialize program execution.
-func execInit(program *ast.Program, config *Config) (*interp, error) {
+func execInit(program *parser.Program, config *Config) (*interp, error) {
 	if len(config.Vars)%2 != 0 {
 		return nil, newError("length of config.Vars must be a multiple of 2, not %d", len(config.Vars))
 	}
@@ -322,7 +322,7 @@ func execInit(program *ast.Program, config *Config) (*interp, error) {
 // config, returning the exit status code of the program. Error is nil
 // on successful execution of the program, even if the program returns
 // a non-zero status code.
-func ExecProgram(program *ast.Program, config *Config) (int, error) {
+func ExecProgram(program *parser.Program, config *Config) (int, error) {
 	p, err := execInit(program, config)
 	if err != nil {
 		return 0, err

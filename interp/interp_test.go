@@ -803,7 +803,6 @@ func testGoAWK(
 	}
 
 	if runCompiled {
-		var compiledProg *compiler.Program
 		func() {
 			defer func() {
 				r := recover()
@@ -811,7 +810,7 @@ func testGoAWK(
 					t.Fatalf("panic compiling: %v", r)
 				}
 			}()
-			compiledProg = compiler.Compile(prog)
+			prog.Compiled = compiler.Compile(prog.ToAST())
 		}()
 
 		// TODO: also test disassembly doesn't panic
@@ -835,7 +834,7 @@ func testGoAWK(
 					t.Fatalf("panic executing: %v", r)
 				}
 			}()
-			_, err = interp.ExecCompiled(prog, config, compiledProg)
+			_, err = interp.ExecCompiled(prog, config)
 		}()
 
 		if err != nil {
@@ -1341,9 +1340,9 @@ func benchmarkProgram(b *testing.B, funcs map[string]interface{},
 		Error:  ioutil.Discard,
 		Funcs:  funcs,
 	}
-	compiledProg := compiler.Compile(prog)
+	prog.Compiled = compiler.Compile(prog.ToAST())
 	b.StartTimer()
-	_, err = interp.ExecCompiled(prog, config, compiledProg)
+	_, err = interp.ExecCompiled(prog, config)
 	b.StopTimer()
 	if err != nil {
 		b.Fatalf("error interpreting %s: %v", b.Name(), err)

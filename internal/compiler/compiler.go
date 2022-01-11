@@ -7,7 +7,6 @@ import (
 
 	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/lexer"
-	"github.com/benhoyt/goawk/parser"
 )
 
 /*
@@ -53,7 +52,7 @@ type Function struct {
 	Body   []Opcode
 }
 
-func Compile(prog *parser.Program) *Program {
+func Compile(prog *ast.Program) *Program {
 	p := &Program{}
 
 	for _, stmts := range prog.Begin {
