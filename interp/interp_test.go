@@ -15,7 +15,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/benhoyt/goawk/internal/bytecode"
+	"github.com/benhoyt/goawk/internal/compiler"
 	"github.com/benhoyt/goawk/interp"
 	"github.com/benhoyt/goawk/parser"
 )
@@ -803,7 +803,7 @@ func testGoAWK(
 	}
 
 	if runBytecode {
-		var byteProg *bytecode.Program
+		var byteProg *compiler.Program
 		func() {
 			defer func() {
 				r := recover()
@@ -811,7 +811,7 @@ func testGoAWK(
 					t.Fatalf("panic compiling bytecode: %v", r)
 				}
 			}()
-			byteProg = bytecode.Compile(prog)
+			byteProg = compiler.Compile(prog)
 		}()
 
 		// TODO: also test disassembly doesn't panic
@@ -1341,7 +1341,7 @@ func benchmarkProgram(b *testing.B, funcs map[string]interface{},
 		Error:  ioutil.Discard,
 		Funcs:  funcs,
 	}
-	byteProg := bytecode.Compile(prog)
+	byteProg := compiler.Compile(prog)
 	b.StartTimer()
 	_, err = interp.ExecBytecode(prog, config, byteProg)
 	b.StopTimer()

@@ -1,4 +1,4 @@
-package bytecode
+package compiler
 
 import (
 	"fmt"

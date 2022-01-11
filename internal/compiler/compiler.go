@@ -1,4 +1,4 @@
-package bytecode
+package compiler
 
 import (
 	"fmt"
@@ -676,7 +676,7 @@ func (c *compiler) expr(expr ast.Expr) {
 			case arrayExpr.Scope == ast.ScopeLocal:
 				c.add(CallSplitLocal, Op(arrayExpr.Index))
 			default:
-				panic(fmt.Sprintf("unexpected array scope %s or num args %d", arrayExpr.Scope, len(e.Args)))
+				panic(fmt.Sprintf("unexpected array scope %d or num args %d", arrayExpr.Scope, len(e.Args)))
 			}
 			return
 			// TODO: case lexer.F_SUB, lexer.F_GSUB:

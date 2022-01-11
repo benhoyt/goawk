@@ -38,7 +38,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/benhoyt/goawk/internal/bytecode"
+	"github.com/benhoyt/goawk/internal/compiler"
 	"github.com/benhoyt/goawk/interp"
 	"github.com/benhoyt/goawk/lexer"
 	"github.com/benhoyt/goawk/parser"
@@ -58,8 +58,8 @@ const (
 
 Additional GoAWK arguments:
   -b    use byte indexes for index(), length(), match(), and substr()
-  -bytecode
-        use bytecode compiler (faster, but experimental!)
+  -compiler
+        use compiler / virtual machine (faster, but experimental!)
   -cpuprofile file
         write CPU profile to file
   -d    debug mode (print parsed AST to stderr)
@@ -82,7 +82,7 @@ func main() {
 	debugTypes := false
 	memprofile := ""
 	useBytes := false
-	useBytecode := false
+	useCompiler := false
 
 	var i int
 	for i = 1; i < len(os.Args); i++ {
@@ -117,8 +117,8 @@ func main() {
 			vars = append(vars, os.Args[i])
 		case "-b":
 			useBytes = true
-		case "-bytecode":
-			useBytecode = true
+		case "-compiler":
+			useCompiler = true
 		case "-cpuprofile":
 			if i+1 >= len(os.Args) {
 				errorExitf("flag needs an argument: -cpuprofile")
@@ -217,14 +217,14 @@ func main() {
 		errorExitf("%s", err)
 	}
 
-	var byteProg *bytecode.Program
-	if useBytecode {
-		byteProg = bytecode.Compile(prog)
+	var compiledProg *compiler.Program
+	if useCompiler {
+		compiledProg = compiler.Compile(prog)
 	}
 
 	if debug {
-		if useBytecode {
-			byteProg.Disassemble(os.Stderr)
+		if useCompiler {
+			compiledProg.Disassemble(os.Stderr)
 		} else {
 			fmt.Fprintln(os.Stderr, prog)
 		}
@@ -256,8 +256,8 @@ func main() {
 
 	// Run the program!
 	var status int
-	if useBytecode {
-		status, err = interp.ExecBytecode(prog, config, byteProg)
+	if useCompiler {
+		status, err = interp.ExecBytecode(prog, config, compiledProg)
 	} else {
 		status, err = interp.ExecProgram(prog, config)
 	}

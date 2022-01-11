@@ -9,7 +9,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/benhoyt/goawk/internal/ast"
-	"github.com/benhoyt/goawk/internal/bytecode"
+	"github.com/benhoyt/goawk/internal/compiler"
 	"github.com/benhoyt/goawk/lexer"
 	"github.com/benhoyt/goawk/parser"
 )
@@ -17,7 +17,7 @@ import (
 // TODO: rename "bytecode" to "wordcode" or some such
 
 // ExecBytecode... TODO
-func ExecBytecode(program *parser.Program, config *Config, byteProg *bytecode.Program) (int, error) {
+func ExecBytecode(program *parser.Program, config *Config, byteProg *compiler.Program) (int, error) {
 	p, err := execInit(program, config)
 	if err != nil {
 		return 0, err
@@ -45,30 +45,30 @@ func ExecBytecode(program *parser.Program, config *Config, byteProg *bytecode.Pr
 	return p.exitStatus, nil
 }
 
-func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) error {
+func (p *interp) execBytecode(byteProg *compiler.Program, code []compiler.Op) error {
 	for i := 0; i < len(code); {
 		op := code[i]
 		//fmt.Printf("TODO %04x %s %v\n", i, op, p.st)
 		i++
 
 		switch op {
-		case bytecode.Num:
+		case compiler.Num:
 			index := code[i]
 			i++
 			p.push(num(byteProg.Nums[index]))
 
-		case bytecode.Str:
+		case compiler.Str:
 			index := code[i]
 			i++
 			p.push(str(byteProg.Strs[index]))
 
-		case bytecode.Dupe:
+		case compiler.Dupe:
 			p.push(p.st[len(p.st)-1])
 
-		case bytecode.Drop:
+		case compiler.Drop:
 			p.pop()
 
-		case bytecode.Field:
+		case compiler.Field:
 			index := p.pop()
 			v, err := p.getField(int(index.num()))
 			if err != nil {
@@ -76,7 +76,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 			p.push(v)
 
-		case bytecode.FieldNum:
+		case compiler.FieldNum:
 			index := code[i]
 			i++
 			v, err := p.getField(int(index))
@@ -85,17 +85,17 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 			p.push(v)
 
-		case bytecode.Global:
+		case compiler.Global:
 			index := code[i]
 			i++
 			p.push(p.globals[index])
 
-		case bytecode.Special:
+		case compiler.Special:
 			index := code[i]
 			i++
 			p.push(p.getVar(ast.ScopeSpecial, int(index))) // TODO: extract getVar to getSpecial function
 
-		case bytecode.ArrayGlobal:
+		case compiler.ArrayGlobal:
 			arrayIndex := code[i]
 			i++
 			array := p.arrays[arrayIndex]
@@ -109,7 +109,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 			p.push(v)
 
-		case bytecode.InGlobal:
+		case compiler.InGlobal:
 			arrayIndex := code[i]
 			i++
 			array := p.arrays[arrayIndex]
@@ -117,7 +117,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			_, ok := array[index]
 			p.push(boolean(ok))
 
-		case bytecode.InLocal:
+		case compiler.InLocal:
 			arrayIndex := code[i]
 			i++
 			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
@@ -125,7 +125,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			_, ok := array[index]
 			p.push(boolean(ok))
 
-		case bytecode.AssignField:
+		case compiler.AssignField:
 			index := p.pop()
 			right := p.pop()
 			err := p.setField(int(index.num()), p.toString(right))
@@ -133,17 +133,17 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				return err
 			}
 
-		case bytecode.AssignGlobal:
+		case compiler.AssignGlobal:
 			index := code[i]
 			i++
 			p.globals[index] = p.pop()
 
-		case bytecode.AssignLocal:
+		case compiler.AssignLocal:
 			index := code[i]
 			i++
 			p.frame[index] = p.pop()
 
-		case bytecode.AssignSpecial:
+		case compiler.AssignSpecial:
 			index := code[i]
 			i++
 			err := p.setVar(ast.ScopeSpecial, int(index), p.pop()) // TODO: extract setVar to setSpecial function
@@ -151,35 +151,35 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				return err
 			}
 
-		case bytecode.AssignArrayGlobal:
+		case compiler.AssignArrayGlobal:
 			arrayIndex := code[i]
 			i++
 			array := p.arrays[arrayIndex]
 			index := p.toString(p.pop())
 			array[index] = p.pop()
 
-		case bytecode.AssignArrayLocal:
+		case compiler.AssignArrayLocal:
 			arrayIndex := code[i]
 			i++
 			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
 			index := p.toString(p.pop())
 			array[index] = p.pop()
 
-		case bytecode.DeleteGlobal:
+		case compiler.DeleteGlobal:
 			arrayIndex := code[i]
 			i++
 			array := p.arrays[arrayIndex]
 			index := p.toString(p.pop())
 			delete(array, index)
 
-		case bytecode.DeleteLocal:
+		case compiler.DeleteLocal:
 			arrayIndex := code[i]
 			i++
 			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
 			index := p.toString(p.pop())
 			delete(array, index)
 
-		case bytecode.DeleteAllGlobal:
+		case compiler.DeleteAllGlobal:
 			arrayIndex := code[i]
 			i++
 			array := p.arrays[arrayIndex]
@@ -187,7 +187,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				delete(array, k)
 			}
 
-		case bytecode.DeleteAllLocal:
+		case compiler.DeleteAllLocal:
 			arrayIndex := code[i]
 			i++
 			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
@@ -195,7 +195,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				delete(array, k)
 			}
 
-		case bytecode.IncrField:
+		case compiler.IncrField:
 			amount := int32(code[i])
 			i++
 			index := int(p.pop().num())
@@ -208,19 +208,19 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				return err
 			}
 
-		case bytecode.IncrGlobal:
+		case compiler.IncrGlobal:
 			amount := int32(code[i])
 			index := code[i+1]
 			i += 2
 			p.globals[index] = num(p.globals[index].num() + float64(amount))
 
-		case bytecode.IncrLocal:
+		case compiler.IncrLocal:
 			amount := int32(code[i])
 			index := code[i+1]
 			i += 2
 			p.frame[index] = num(p.frame[index].num() + float64(amount))
 
-		case bytecode.IncrSpecial:
+		case compiler.IncrSpecial:
 			amount := int32(code[i])
 			index := int(code[i+1])
 			i += 2
@@ -230,7 +230,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				return err
 			}
 
-		case bytecode.IncrArrayGlobal:
+		case compiler.IncrArrayGlobal:
 			amount := int32(code[i])
 			arrayIndex := code[i+1]
 			i += 2
@@ -238,7 +238,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			index := p.toString(p.pop())
 			array[index] = num(array[index].num() + float64(amount))
 
-		case bytecode.IncrArrayLocal:
+		case compiler.IncrArrayLocal:
 			amount := int32(code[i])
 			arrayIndex := code[i+1]
 			i += 2
@@ -246,7 +246,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			index := p.toString(p.pop())
 			array[index] = num(array[index].num() + float64(amount))
 
-		case bytecode.AugAssignField:
+		case compiler.AugAssignField:
 			operation := lexer.Token(code[i])
 			i++
 			index := int(p.pop().num())
@@ -263,7 +263,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				return err
 			}
 
-		case bytecode.AugAssignGlobal:
+		case compiler.AugAssignGlobal:
 			operation := lexer.Token(code[i])
 			index := code[i+1]
 			i += 2
@@ -273,7 +273,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 			p.globals[index] = v
 
-		case bytecode.AugAssignLocal:
+		case compiler.AugAssignLocal:
 			operation := lexer.Token(code[i])
 			index := code[i+1]
 			i += 2
@@ -283,7 +283,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 			p.frame[index] = v
 
-		case bytecode.AugAssignSpecial:
+		case compiler.AugAssignSpecial:
 			operation := lexer.Token(code[i])
 			index := int(code[i+1])
 			i += 2
@@ -296,7 +296,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				return err
 			}
 
-		case bytecode.AugAssignArrayGlobal:
+		case compiler.AugAssignArrayGlobal:
 			operation := lexer.Token(code[i])
 			arrayIndex := code[i+1]
 			i += 2
@@ -308,7 +308,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 			array[index] = v
 
-		case bytecode.AugAssignArrayLocal:
+		case compiler.AugAssignArrayLocal:
 			operation := lexer.Token(code[i])
 			arrayIndex := code[i+1]
 			i += 2
@@ -320,29 +320,29 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 			array[index] = v
 
-		case bytecode.Regex:
+		case compiler.Regex:
 			// Stand-alone /regex/ is equivalent to: $0 ~ /regex/
 			index := code[i]
 			i++
 			re := byteProg.Regexes[index]
 			p.push(boolean(re.MatchString(p.line)))
 
-		case bytecode.Add:
+		case compiler.Add:
 			r := p.pop()
 			l := p.pop()
 			p.push(num(l.num() + r.num()))
 
-		case bytecode.Subtract:
+		case compiler.Subtract:
 			r := p.pop()
 			l := p.pop()
 			p.push(num(l.num() - r.num()))
 
-		case bytecode.Multiply:
+		case compiler.Multiply:
 			r := p.pop()
 			l := p.pop()
 			p.push(num(l.num() * r.num()))
 
-		case bytecode.Divide:
+		case compiler.Divide:
 			r := p.pop()
 			l := p.pop()
 			rf := r.num()
@@ -351,12 +351,12 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 			p.push(num(l.num() / rf))
 
-		case bytecode.Power:
+		case compiler.Power:
 			r := p.pop()
 			l := p.pop()
 			p.push(num(math.Pow(l.num(), r.num())))
 
-		case bytecode.Modulo:
+		case compiler.Modulo:
 			r := p.pop()
 			l := p.pop()
 			rf := r.num()
@@ -365,7 +365,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 			p.push(num(math.Mod(l.num(), rf)))
 
-		case bytecode.Equals:
+		case compiler.Equals:
 			r := p.pop()
 			l := p.pop()
 			ln, lIsStr := l.isTrueStr()
@@ -376,7 +376,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				p.push(boolean(ln == rn))
 			}
 
-		case bytecode.NotEquals:
+		case compiler.NotEquals:
 			r := p.pop()
 			l := p.pop()
 			ln, lIsStr := l.isTrueStr()
@@ -387,7 +387,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				p.push(boolean(ln != rn))
 			}
 
-		case bytecode.Less:
+		case compiler.Less:
 			r := p.pop()
 			l := p.pop()
 			ln, lIsStr := l.isTrueStr()
@@ -400,7 +400,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 			p.push(v)
 
-		case bytecode.Greater:
+		case compiler.Greater:
 			r := p.pop()
 			l := p.pop()
 			ln, lIsStr := l.isTrueStr()
@@ -413,7 +413,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 			p.push(v)
 
-		case bytecode.LessOrEqual:
+		case compiler.LessOrEqual:
 			r := p.pop()
 			l := p.pop()
 			ln, lIsStr := l.isTrueStr()
@@ -426,7 +426,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 			p.push(v)
 
-		case bytecode.GreaterOrEqual:
+		case compiler.GreaterOrEqual:
 			r := p.pop()
 			l := p.pop()
 			ln, lIsStr := l.isTrueStr()
@@ -439,12 +439,12 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 			p.push(v)
 
-		case bytecode.Concat:
+		case compiler.Concat:
 			r := p.pop()
 			l := p.pop()
 			p.push(str(p.toString(l) + p.toString(r)))
 
-		case bytecode.Match:
+		case compiler.Match:
 			r := p.pop()
 			l := p.pop()
 			re, err := p.compileRegex(p.toString(r))
@@ -454,7 +454,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			matched := re.MatchString(p.toString(l))
 			p.push(boolean(matched))
 
-		case bytecode.NotMatch:
+		case compiler.NotMatch:
 			r := p.pop()
 			l := p.pop()
 			re, err := p.compileRegex(p.toString(r))
@@ -464,23 +464,23 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			matched := re.MatchString(p.toString(l))
 			p.push(boolean(!matched))
 
-		case bytecode.Not:
+		case compiler.Not:
 			p.push(boolean(!p.pop().boolean()))
 
-		case bytecode.UnaryMinus:
+		case compiler.UnaryMinus:
 			p.push(num(-p.pop().num()))
 
-		case bytecode.UnaryPlus:
+		case compiler.UnaryPlus:
 			p.push(num(p.pop().num()))
 
-		case bytecode.Boolean:
+		case compiler.Boolean:
 			p.push(boolean(p.pop().boolean()))
 
-		case bytecode.Jump:
+		case compiler.Jump:
 			offset := int32(code[i])
 			i += 1 + int(offset)
 
-		case bytecode.JumpFalse:
+		case compiler.JumpFalse:
 			offset := int32(code[i])
 			v := p.pop()
 			if !v.boolean() {
@@ -489,7 +489,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				i++
 			}
 
-		case bytecode.JumpTrue:
+		case compiler.JumpTrue:
 			offset := int32(code[i])
 			v := p.pop()
 			if v.boolean() {
@@ -498,7 +498,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				i++
 			}
 
-		case bytecode.JumpNumLess:
+		case compiler.JumpNumLess:
 			offset := int32(code[i])
 			r := p.pop()
 			l := p.pop()
@@ -508,7 +508,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				i++
 			}
 
-		case bytecode.JumpNumGreater:
+		case compiler.JumpNumGreater:
 			offset := int32(code[i])
 			r := p.pop()
 			l := p.pop()
@@ -518,7 +518,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				i++
 			}
 
-		case bytecode.JumpNumLessOrEqual:
+		case compiler.JumpNumLessOrEqual:
 			offset := int32(code[i])
 			r := p.pop()
 			l := p.pop()
@@ -528,7 +528,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				i++
 			}
 
-		case bytecode.JumpNumGreaterOrEqual:
+		case compiler.JumpNumGreaterOrEqual:
 			offset := int32(code[i])
 			r := p.pop()
 			l := p.pop()
@@ -538,10 +538,10 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				i++
 			}
 
-		case bytecode.Next:
+		case compiler.Next:
 			return errNext
 
-		case bytecode.ForGlobalInGlobal:
+		case compiler.ForGlobalInGlobal:
 			varIndex := code[i]
 			arrayIndex := code[i+1]
 			offset := code[i+2]
@@ -561,10 +561,10 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 			i += int(offset)
 
-		case bytecode.BreakForIn:
+		case compiler.BreakForIn:
 			return errBreak
 
-		case bytecode.Print:
+		case compiler.Print:
 			numArgs := code[i]
 			redirect := lexer.Token(code[i+1])
 			i += 2
@@ -599,7 +599,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				return err
 			}
 
-		case bytecode.Printf:
+		case compiler.Printf:
 			numArgs := code[i]
 			redirect := lexer.Token(code[i+1])
 			i += 2
@@ -624,13 +624,13 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				return err
 			}
 
-		case bytecode.CallAtan2:
+		case compiler.CallAtan2:
 			// TODO: optimize stack operations for all of these (and binary ops) if it improves performance
 			x := p.pop()
 			y := p.pop()
 			p.push(num(math.Atan2(y.num(), x.num())))
 
-		case bytecode.CallClose:
+		case compiler.CallClose:
 			name := p.toString(p.pop())
 			var c io.Closer = p.inputStreams[name]
 			if c != nil {
@@ -659,13 +659,13 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				}
 			}
 
-		case bytecode.CallCos:
+		case compiler.CallCos:
 			p.push(num(math.Cos(p.pop().num())))
 
-		case bytecode.CallExp:
+		case compiler.CallExp:
 			p.push(num(math.Exp(p.pop().num())))
 
-		case bytecode.CallFflush:
+		case compiler.CallFflush:
 			name := p.toString(p.pop())
 			var ok bool
 			if name != "" {
@@ -681,7 +681,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				p.push(num(0))
 			}
 
-		case bytecode.CallFflushAll:
+		case compiler.CallFflushAll:
 			ok := p.flushAll()
 			if !ok {
 				p.push(num(-1))
@@ -697,7 +697,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 		//case bytecode.CallGsubArrayGlobal:
 		//case bytecode.CallGsubArrayLocal:
 
-		case bytecode.CallIndex:
+		case compiler.CallIndex:
 			substr := p.toString(p.pop())
 			s := p.toString(p.pop())
 			index := strings.Index(s, substr)
@@ -712,10 +712,10 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				}
 			}
 
-		case bytecode.CallInt:
+		case compiler.CallInt:
 			p.push(num(float64(int(p.pop().num()))))
 
-		case bytecode.CallLength:
+		case compiler.CallLength:
 			s := p.line
 			var n int
 			if p.bytes {
@@ -725,7 +725,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 			p.push(num(float64(n)))
 
-		case bytecode.CallLengthArg:
+		case compiler.CallLengthArg:
 			s := p.toString(p.pop())
 			var n int
 			if p.bytes {
@@ -735,10 +735,10 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 			p.push(num(float64(n)))
 
-		case bytecode.CallLog:
+		case compiler.CallLog:
 			p.push(num(math.Log(p.pop().num())))
 
-		case bytecode.CallMatch:
+		case compiler.CallMatch:
 			regex := p.toString(p.pop())
 			s := p.toString(p.pop())
 			// TODO: could optimize literal regexes to avoid map lookup? but probably not worth it
@@ -762,13 +762,13 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				p.push(num(float64(p.matchStart)))
 			}
 
-		case bytecode.CallRand:
+		case compiler.CallRand:
 			p.push(num(p.random.Float64()))
 
-		case bytecode.CallSin:
+		case compiler.CallSin:
 			p.push(num(math.Sin(p.pop().num())))
 
-		case bytecode.CallSplitGlobal:
+		case compiler.CallSplitGlobal:
 			arrayIndex := code[i]
 			i++
 			s := p.toString(p.pop())
@@ -778,7 +778,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 			p.push(num(float64(n)))
 
-		case bytecode.CallSplitLocal:
+		case compiler.CallSplitLocal:
 			arrayIndex := code[i]
 			i++
 			s := p.toString(p.pop())
@@ -788,7 +788,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 			p.push(num(float64(n)))
 
-		case bytecode.CallSplitSepGlobal:
+		case compiler.CallSplitSepGlobal:
 			arrayIndex := code[i]
 			i++
 			fieldSep := p.toString(p.pop())
@@ -799,7 +799,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 			p.push(num(float64(n)))
 
-		case bytecode.CallSplitSepLocal:
+		case compiler.CallSplitSepLocal:
 			arrayIndex := code[i]
 			i++
 			fieldSep := p.toString(p.pop())
@@ -810,7 +810,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 			p.push(num(float64(n)))
 
-		case bytecode.CallSprintf:
+		case compiler.CallSprintf:
 			numArgs := code[i]
 			i++
 			sp := len(p.st) - int(numArgs)
@@ -821,15 +821,15 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 			p.push(str(s))
 
-		case bytecode.CallSqrt:
+		case compiler.CallSqrt:
 			p.push(num(math.Sqrt(p.pop().num())))
 
-		case bytecode.CallSrand:
+		case compiler.CallSrand:
 			prevSeed := p.randSeed
 			p.random.Seed(time.Now().UnixNano())
 			p.push(num(prevSeed))
 
-		case bytecode.CallSrandSeed:
+		case compiler.CallSrandSeed:
 			prevSeed := p.randSeed
 			p.randSeed = p.pop().num()
 			p.random.Seed(int64(math.Float64bits(p.randSeed)))
@@ -843,7 +843,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 		//case bytecode.CallSubArrayGlobal:
 		//case bytecode.CallSubArrayLocal:
 
-		case bytecode.CallSubstr:
+		case compiler.CallSubstr:
 			// TODO: avoid duplication in function.go if we're keeping that
 			pos := int(p.pop().num())
 			s := p.toString(p.pop())
@@ -875,7 +875,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				p.push(str(s[start:end]))
 			}
 
-		case bytecode.CallSubstrLength:
+		case compiler.CallSubstrLength:
 			// TODO: avoid duplication in function.go if we're keeping that
 			length := int(p.pop().num())
 			pos := int(p.pop().num())
@@ -926,7 +926,7 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 				p.push(str(s[start:end]))
 			}
 
-		case bytecode.CallSystem:
+		case compiler.CallSystem:
 			if p.noExec {
 				return newError("can't call system() due to NoExec")
 			}
@@ -955,10 +955,10 @@ func (p *interp) execBytecode(byteProg *bytecode.Program, code []bytecode.Op) er
 			}
 			p.push(num(ret))
 
-		case bytecode.CallTolower:
+		case compiler.CallTolower:
 			p.push(str(strings.ToLower(p.toString(p.pop()))))
 
-		case bytecode.CallToupper:
+		case compiler.CallToupper:
 			p.push(str(strings.ToUpper(p.toString(p.pop()))))
 		}
 	}
@@ -977,7 +977,7 @@ func (p *interp) pop() value {
 }
 
 // Execute pattern-action blocks (may be multiple)
-func (p *interp) execBytecodeActions(byteProg *bytecode.Program, actions []bytecode.Action) error {
+func (p *interp) execBytecodeActions(byteProg *compiler.Program, actions []compiler.Action) error {
 	inRange := make([]bool, len(actions))
 lineLoop:
 	for {

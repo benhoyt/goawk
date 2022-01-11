@@ -1,4 +1,4 @@
-package bytecode
+package compiler
 
 //go:generate go run golang.org/x/tools/cmd/stringer@v0.1.8 -type=Op
 type Op uint32 // TODO: rename to Opcode?
