@@ -22,6 +22,9 @@ TODO:
 - fix/refactor TestFlushes
 - look at code coverage and get closer to 100%
   + add decrement tests under "Incr/decr expressions", for example
+  + use the following to see how much of the internal/bytecode package is covered:
+    $ go test -coverpkg=./... ./interp -v -awk="" -bytecode -coverprofile=cover.out
+    $ go tool cover -html cover.out
 - optimize!
 - fuzz testing
 */
@@ -31,8 +34,8 @@ type Program struct {
 	Actions     []Action
 	End         []Op
 	Functions   []Function
-	ScalarNames []string
-	ArrayNames  []string
+	ScalarNames []string // TODO: is this needed, or just create in disassembler?
+	ArrayNames  []string // TODO: is this needed, or just create in disassembler?
 	Nums        []float64
 	Strs        []string
 	Regexes     []*regexp.Regexp
@@ -44,7 +47,7 @@ type Action struct {
 }
 
 type Function struct {
-	Name   string
+	Name   string // TODO: is this needed?
 	Params []string
 	Arrays []bool
 	Body   []Op
@@ -486,6 +489,7 @@ func (c *compiler) cond(expr ast.Expr, invert bool) Op {
 	case *ast.BinaryExpr:
 		switch cond.Op {
 		case lexer.LESS:
+			// TODO: and StrExpr?
 			if _, ok := cond.Right.(*ast.NumExpr); ok {
 				c.expr(cond.Left)
 				c.expr(cond.Right)

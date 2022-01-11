@@ -1,7 +1,7 @@
 package bytecode
 
 //go:generate go run golang.org/x/tools/cmd/stringer@v0.1.8 -type=Op
-type Op uint32
+type Op uint32 // TODO: rename to Opcode?
 
 // TODO: do we need to optimize the order of the opcodes, if a Go switch is a binary tree?
 // TODO: does reducing the number of opcodes actually speed things up, for example all the opcodes required for assignment?
@@ -33,10 +33,12 @@ const (
 	AssignSpecial     // index
 	AssignArrayGlobal // arrayIndex
 	AssignArrayLocal  // arrayIndex
-	DeleteGlobal      // arrayIndex
-	DeleteLocal       // arrayIndex
-	DeleteAllGlobal   // arrayIndex
-	DeleteAllLocal    // arrayIndex
+
+	// Delete statement
+	DeleteGlobal    // arrayIndex
+	DeleteLocal     // arrayIndex
+	DeleteAllGlobal // arrayIndex
+	DeleteAllLocal  // arrayIndex
 
 	// Post-increment and post-decrement
 	IncrField       // amount
