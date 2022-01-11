@@ -11,13 +11,13 @@ import (
 	"sort"
 	"strconv"
 
-	. "github.com/benhoyt/goawk/internal/ast"
+	"github.com/benhoyt/goawk/internal/ast"
 	. "github.com/benhoyt/goawk/lexer"
-	. "github.com/benhoyt/goawk/parser"
+	"github.com/benhoyt/goawk/parser"
 )
 
 // compile compiles the parsed AWK program to Go and outputs to writer.
-func compile(prog *Program, writer io.Writer) (err error) {
+func compile(prog *parser.Program, writer io.Writer) (err error) {
 	// Both typer and compiler signal errors internally with
 	// panic(&errorExit{...}), so recover and return an error.
 	defer func() {
@@ -76,7 +76,7 @@ func (c *compiler) outputf(format string, args ...interface{}) {
 	fmt.Fprintf(c.writer, format, args...)
 }
 
-func (c *compiler) program(prog *Program) {
+func (c *compiler) program(prog *parser.Program) {
 	c.output(`package main
 
 import (
@@ -203,7 +203,7 @@ func main() {
 	c.outputHelpers()
 }
 
-func (c *compiler) actions(actions []Action) {
+func (c *compiler) actions(actions []ast.Action) {
 	for i, action := range actions {
 		c.output("\n")
 		switch len(action.Pattern) {
@@ -235,41 +235,41 @@ func (c *compiler) actions(actions []Action) {
 	}
 }
 
-func (c *compiler) stmts(stmts Stmts) {
+func (c *compiler) stmts(stmts ast.Stmts) {
 	for _, stmt := range stmts {
 		c.stmt(stmt)
 	}
 }
 
-func (c *compiler) assign(left, right Expr) string {
+func (c *compiler) assign(left, right ast.Expr) string {
 	switch left := left.(type) {
-	case *VarExpr:
-		if left.Scope == ScopeSpecial {
+	case *ast.VarExpr:
+		if left.Scope == ast.ScopeSpecial {
 			switch left.Index {
-			case V_NF, V_NR, V_FNR:
+			case ast.V_NF, ast.V_NR, ast.V_FNR:
 				panic(errorf("can't assign to special variable %s", left.Name))
 			}
 		}
 		return fmt.Sprintf("%s = %s", left.Name, c.expr(right))
-	case *IndexExpr:
+	case *ast.IndexExpr:
 		return fmt.Sprintf("%s[%s] = %s", left.Array.Name, c.index(left.Index), c.expr(right))
-	case *FieldExpr:
+	case *ast.FieldExpr:
 		return fmt.Sprintf("_setField(%s, %s)", c.intExpr(left.Index), c.strExpr(right))
 	default:
 		panic(errorf("expected lvalue, not %s", left))
 	}
 }
 
-func (c *compiler) stmtNoNewline(stmt Stmt) {
+func (c *compiler) stmtNoNewline(stmt ast.Stmt) {
 	switch s := stmt.(type) {
-	case *ExprStmt:
+	case *ast.ExprStmt:
 		switch e := s.Expr.(type) {
-		case *AssignExpr:
+		case *ast.AssignExpr:
 			c.output(c.assign(e.Left, e.Right))
 
-		case *AugAssignExpr:
+		case *ast.AugAssignExpr:
 			switch left := e.Left.(type) {
-			case *VarExpr:
+			case *ast.VarExpr:
 				switch e.Op {
 				case MOD, POW:
 					c.output(left.Name)
@@ -283,7 +283,7 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 					c.outputf("%s %s= %s", left.Name, e.Op, c.numExpr(e.Right))
 				}
 
-			case *IndexExpr:
+			case *ast.IndexExpr:
 				switch e.Op {
 				case MOD, POW:
 					c.outputf("%s[%s", left.Array.Name, c.index(left.Index))
@@ -297,7 +297,7 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 					c.outputf("%s[%s] %s= %s", left.Array.Name, c.index(left.Index), e.Op, c.numExpr(e.Right))
 				}
 
-			case *FieldExpr:
+			case *ast.FieldExpr:
 				// We have to be careful not to evaluate left.Index twice, in
 				// case it has side effects, as in: $(y++) += 10
 				switch e.Op {
@@ -315,13 +315,13 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 				}
 			}
 
-		case *IncrExpr:
+		case *ast.IncrExpr:
 			switch left := e.Expr.(type) {
-			case *VarExpr:
+			case *ast.VarExpr:
 				c.outputf("%s%s", left.Name, e.Op)
-			case *IndexExpr:
+			case *ast.IndexExpr:
 				c.outputf("%s[%s]%s", left.Array.Name, c.index(left.Index), e.Op)
-			case *FieldExpr:
+			case *ast.FieldExpr:
 				// We have to be careful not to evaluate left.Index twice, in
 				// case it has side effects, as in: $(y++)++
 				op := "+"
@@ -336,7 +336,7 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 			c.outputf("_ = %s", c.expr(s.Expr))
 		}
 
-	case *PrintStmt:
+	case *ast.PrintStmt:
 		if s.Dest != nil {
 			panic(errorf("print redirection not yet supported"))
 		}
@@ -368,11 +368,11 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 		}
 		c.output(")")
 
-	case *PrintfStmt:
+	case *ast.PrintfStmt:
 		if s.Dest != nil {
 			panic(errorf("printf redirection not yet supported"))
 		}
-		formatExpr, ok := s.Args[0].(*StrExpr)
+		formatExpr, ok := s.Args[0].(*ast.StrExpr)
 		if !ok {
 			panic(errorf("printf currently only supports literal format strings"))
 		}
@@ -383,10 +383,10 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 		}
 		c.output(")")
 
-	case *IfStmt:
+	case *ast.IfStmt:
 		c.output("if ")
 		switch cond := s.Cond.(type) {
-		case *InExpr:
+		case *ast.InExpr:
 			// if _, _ok := a[k]; ok { ... }
 			c.outputf("_, _ok := %s[%s]; _ok ", cond.Array.Name, c.index(cond.Index))
 		default:
@@ -396,7 +396,7 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 		c.stmts(s.Body)
 		c.output("}")
 		if len(s.Else) > 0 {
-			if _, isIf := s.Else[0].(*IfStmt); isIf && len(s.Else) == 1 {
+			if _, isIf := s.Else[0].(*ast.IfStmt); isIf && len(s.Else) == 1 {
 				// Simplify runs if-else if
 				c.output(" else ")
 				c.stmt(s.Else[0])
@@ -407,10 +407,10 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 			}
 		}
 
-	case *ForStmt:
+	case *ast.ForStmt:
 		c.output("for ")
 		if s.Pre != nil {
-			_, ok := s.Pre.(*ExprStmt)
+			_, ok := s.Pre.(*ast.ExprStmt)
 			if !ok {
 				panic(errorf(`only expressions are allowed in "for" initializer`))
 			}
@@ -422,7 +422,7 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 		}
 		c.output("; ")
 		if s.Post != nil {
-			_, ok := s.Post.(*ExprStmt)
+			_, ok := s.Post.(*ast.ExprStmt)
 			if !ok {
 				panic(errorf(`only expressions are allowed in "for" post expression`))
 			}
@@ -432,38 +432,38 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 		c.stmts(s.Body)
 		c.output("}")
 
-	case *ForInStmt:
+	case *ast.ForInStmt:
 		c.outputf("for %s = range %s {\n", s.Var.Name, s.Array.Name)
 		c.stmts(s.Body)
 		c.output("}")
 
-	case *WhileStmt:
+	case *ast.WhileStmt:
 		c.outputf("for %s {\n", c.cond(s.Cond))
 		c.stmts(s.Body)
 		c.output("}")
 
-	case *DoWhileStmt:
+	case *ast.DoWhileStmt:
 		c.output("for {\n")
 		c.stmts(s.Body)
 		c.outputf("if !(%s) {\nbreak\n}\n}", c.cond(s.Cond))
 
-	case *BreakStmt:
+	case *ast.BreakStmt:
 		c.output("break")
 
-	case *ContinueStmt:
+	case *ast.ContinueStmt:
 		c.output("continue")
 
-	case *NextStmt:
+	case *ast.NextStmt:
 		c.output("goto _nextLine")
 
-	case *ExitStmt:
+	case *ast.ExitStmt:
 		if s.Status != nil {
 			c.outputf("os.Exit(%s)", c.intExpr(s.Status))
 		} else {
 			c.output("os.Exit(0)")
 		}
 
-	case *DeleteStmt:
+	case *ast.DeleteStmt:
 		if len(s.Index) > 0 {
 			// Delete single key from array
 			c.outputf("delete(%s, %s)", s.Array.Name, c.index(s.Index))
@@ -472,7 +472,7 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 			c.outputf("for _k := range %s {\ndelete(%s, _k)\n}", s.Array.Name, s.Array.Name)
 		}
 
-	case *BlockStmt:
+	case *ast.BlockStmt:
 		c.output("{\n")
 		c.stmts(s.Body)
 		c.output("}")
@@ -482,7 +482,7 @@ func (c *compiler) stmtNoNewline(stmt Stmt) {
 	}
 }
 
-func (c *compiler) stmt(stmt Stmt) {
+func (c *compiler) stmt(stmt ast.Stmt) {
 	c.stmtNoNewline(stmt)
 	c.output("\n")
 }
@@ -512,9 +512,9 @@ func (t valueType) String() string {
 	}
 }
 
-func (c *compiler) expr(expr Expr) string {
+func (c *compiler) expr(expr ast.Expr) string {
 	switch e := expr.(type) {
-	case *NumExpr:
+	case *ast.NumExpr:
 		if e.Value == float64(int(e.Value)) {
 			return fmt.Sprintf("%d.0", int(e.Value))
 		}
@@ -523,29 +523,29 @@ func (c *compiler) expr(expr Expr) string {
 		}
 		return fmt.Sprintf("%g", e.Value)
 
-	case *StrExpr:
+	case *ast.StrExpr:
 		return strconv.Quote(e.Value)
 
-	case *FieldExpr:
+	case *ast.FieldExpr:
 		return "_getField(" + c.intExpr(e.Index) + ")"
 
-	case *VarExpr:
+	case *ast.VarExpr:
 		switch e.Scope {
-		case ScopeSpecial:
+		case ast.ScopeSpecial:
 			return c.special(e.Name, e.Index)
-		case ScopeGlobal:
+		case ast.ScopeGlobal:
 			return e.Name
 		default:
 			panic(errorf("unexpected scope %v", e.Scope))
 		}
 
-	case *RegExpr:
+	case *ast.RegExpr:
 		return fmt.Sprintf("_boolToNum(%s.MatchString(_line))", c.regexLiteral(e.Regex))
 
-	case *BinaryExpr:
+	case *ast.BinaryExpr:
 		return c.binaryExpr(e.Op, e.Left, e.Right)
 
-	case *IncrExpr:
+	case *ast.IncrExpr:
 		exprStr := c.expr(e.Expr) // will be an lvalue (VarExpr, IndexExpr, FieldExpr)
 		if e.Pre {
 			// Change ++x expression to:
@@ -559,31 +559,31 @@ func (c *compiler) expr(expr Expr) string {
 				exprStr, exprStr, e.Op)
 		}
 
-	case *AssignExpr:
+	case *ast.AssignExpr:
 		right := c.expr(e.Right)
 		switch l := e.Left.(type) {
-		case *VarExpr:
+		case *ast.VarExpr:
 			return fmt.Sprintf("func () %s { %s = %s; return %s }()",
 				c.goType(c.typer.exprs[e.Right]), l.Name, right, l.Name)
 		default:
 			panic(errorf("lvalue type %T not yet supported", l))
 		}
 
-	case *CondExpr:
+	case *ast.CondExpr:
 		return fmt.Sprintf("func() %s { if %s { return %s }; return %s }()",
 			c.goType(c.typer.exprs[e]), c.cond(e.Cond), c.expr(e.True), c.expr(e.False))
 
-	case *IndexExpr:
+	case *ast.IndexExpr:
 		switch e.Array.Scope {
-		case ScopeSpecial:
+		case ast.ScopeSpecial:
 			panic(errorf("special variable %s not yet supported", e.Array.Name))
-		case ScopeGlobal:
+		case ast.ScopeGlobal:
 			return e.Array.Name + "[" + c.index(e.Index) + "]"
 		default:
 			panic(errorf("unexpected scope %v", e.Array.Scope))
 		}
 
-	case *CallExpr:
+	case *ast.CallExpr:
 		switch e.Func {
 		case F_ATAN2:
 			return "math.Atan2(" + c.numExpr(e.Args[0]) + ", " + c.numExpr(e.Args[1]) + ")"
@@ -598,7 +598,7 @@ func (c *compiler) expr(expr Expr) string {
 			var arg string
 			if len(e.Args) > 0 {
 				switch argExpr := e.Args[0].(type) {
-				case *StrExpr:
+				case *ast.StrExpr:
 					arg = argExpr.Value
 				default:
 					arg = "not supported"
@@ -627,7 +627,7 @@ func (c *compiler) expr(expr Expr) string {
 			return "math.Log(" + c.numExpr(e.Args[0]) + ")"
 
 		case F_MATCH:
-			if strExpr, ok := e.Args[1].(*StrExpr); ok {
+			if strExpr, ok := e.Args[1].(*ast.StrExpr); ok {
 				return fmt.Sprintf("_match(%s, %s)", c.strExpr(e.Args[0]), c.regexLiteral(strExpr.Value))
 			}
 			return fmt.Sprintf("_match(%s, _reCompile(%s))", c.strExpr(e.Args[0]), c.strExpr(e.Args[1]))
@@ -639,7 +639,7 @@ func (c *compiler) expr(expr Expr) string {
 			return "math.Sin(" + c.numExpr(e.Args[0]) + ")"
 
 		case F_SPLIT:
-			arrayArg := e.Args[1].(*ArrayExpr)
+			arrayArg := e.Args[1].(*ast.ArrayExpr)
 			str := fmt.Sprintf("_split(%s, %s, ", c.strExpr(e.Args[0]), arrayArg.Name)
 			if len(e.Args) == 3 {
 				str += c.strExpr(e.Args[2])
@@ -650,7 +650,7 @@ func (c *compiler) expr(expr Expr) string {
 			return str
 
 		case F_SPRINTF:
-			formatExpr, ok := e.Args[0].(*StrExpr)
+			formatExpr, ok := e.Args[0].(*ast.StrExpr)
 			if !ok {
 				panic(errorf("sprintf currently only supports literal format strings"))
 			}
@@ -675,7 +675,7 @@ func (c *compiler) expr(expr Expr) string {
 			// sub() is actually an assignment to "in" (an lvalue) or $0:
 			// n = sub(re, repl[, in])
 			var reArg string
-			if strExpr, ok := e.Args[0].(*StrExpr); ok {
+			if strExpr, ok := e.Args[0].(*ast.StrExpr); ok {
 				reArg = c.regexLiteral(strExpr.Value)
 			} else {
 				reArg = fmt.Sprintf("_reCompile(%s)", c.strExpr(e.Args[0]))
@@ -692,7 +692,7 @@ func (c *compiler) expr(expr Expr) string {
 				str += ", false); "
 			}
 			if len(e.Args) == 3 {
-				str += c.assign(e.Args[2], &VarExpr{Name: "out", Scope: ScopeGlobal})
+				str += c.assign(e.Args[2], &ast.VarExpr{Name: "out", Scope: ast.ScopeGlobal})
 			} else {
 				str += "_setField(0, out)"
 			}
@@ -718,7 +718,7 @@ func (c *compiler) expr(expr Expr) string {
 			panic(errorf("%s() not yet supported", e.Func))
 		}
 
-	case *UnaryExpr:
+	case *ast.UnaryExpr:
 		str := c.expr(e.Value)
 		typ := c.typer.exprs[e.Value]
 		switch e.Op {
@@ -741,7 +741,7 @@ func (c *compiler) expr(expr Expr) string {
 			panic(errorf("unexpected unary operation: %s", e.Op))
 		}
 
-	case *InExpr:
+	case *ast.InExpr:
 		return fmt.Sprintf("func() float64 { _, ok := %s[%s]; if ok { return 1 }; return 0 }()",
 			e.Array.Name, c.index(e.Index))
 
@@ -750,7 +750,7 @@ func (c *compiler) expr(expr Expr) string {
 	}
 }
 
-func (c *compiler) binaryExpr(op Token, l, r Expr) (str string) {
+func (c *compiler) binaryExpr(op Token, l, r ast.Expr) (str string) {
 	switch op {
 	case ADD, SUB, MUL, DIV:
 		return "(" + c.numExpr(l) + " " + op.String() + " " + c.numExpr(r) + ")"
@@ -769,11 +769,11 @@ func (c *compiler) binaryExpr(op Token, l, r Expr) (str string) {
 	}
 }
 
-func (c *compiler) boolExpr(op Token, l, r Expr) (string, bool) {
+func (c *compiler) boolExpr(op Token, l, r ast.Expr) (string, bool) {
 	switch op {
 	case EQUALS, LESS, LTE, GREATER, GTE, NOT_EQUALS:
-		_, leftIsField := l.(*FieldExpr)
-		_, rightIsField := r.(*FieldExpr)
+		_, leftIsField := l.(*ast.FieldExpr)
+		_, rightIsField := r.(*ast.FieldExpr)
 		if leftIsField && rightIsField {
 			panic(errorf("can't compare two fields directly (%s %s %s); convert one to string or number", l, op, r))
 		}
@@ -799,12 +799,12 @@ func (c *compiler) boolExpr(op Token, l, r Expr) (string, bool) {
 		}
 		panic(errorf("unexpected types in %s (%s) %s %s (%s)", ls, lt, op, rs, rt))
 	case MATCH:
-		if strExpr, ok := r.(*StrExpr); ok {
+		if strExpr, ok := r.(*ast.StrExpr); ok {
 			return fmt.Sprintf("%s.MatchString(%s)", c.regexLiteral(strExpr.Value), c.strExpr(l)), true
 		}
 		return fmt.Sprintf("_reCompile(%s).MatchString(%s)", c.strExpr(l), c.strExpr(r)), true
 	case NOT_MATCH:
-		if strExpr, ok := r.(*StrExpr); ok {
+		if strExpr, ok := r.(*ast.StrExpr); ok {
 			return fmt.Sprintf("(!%s.MatchString(%s))", c.regexLiteral(strExpr.Value), c.strExpr(l)), true
 		}
 		return fmt.Sprintf("(!_reCompile(%s).MatchString(%s))", c.strExpr(l), c.strExpr(r)), true
@@ -815,19 +815,19 @@ func (c *compiler) boolExpr(op Token, l, r Expr) (string, bool) {
 	}
 }
 
-func (c *compiler) cond(expr Expr) string {
+func (c *compiler) cond(expr ast.Expr) string {
 	// If possible, simplify conditional expression to avoid "_boolToNum(b) != 0"
 	switch e := expr.(type) {
-	case *BinaryExpr:
+	case *ast.BinaryExpr:
 		str, ok := c.boolExpr(e.Op, e.Left, e.Right)
 		if ok {
 			return str
 		}
-	case *RegExpr:
+	case *ast.RegExpr:
 		return fmt.Sprintf("%s.MatchString(_line)", c.regexLiteral(e.Regex))
-	case *FieldExpr:
+	case *ast.FieldExpr:
 		return fmt.Sprintf("_isFieldTrue(%s)", c.expr(e))
-	case *UnaryExpr:
+	case *ast.UnaryExpr:
 		if e.Op == NOT {
 			return "(!(" + c.cond(e.Value) + "))"
 		}
@@ -842,7 +842,7 @@ func (c *compiler) cond(expr Expr) string {
 	return str
 }
 
-func (c *compiler) numExpr(expr Expr) string {
+func (c *compiler) numExpr(expr ast.Expr) string {
 	str := c.expr(expr)
 	if c.typer.exprs[expr] == typeStr {
 		str = "_strToNum(" + str + ")"
@@ -850,12 +850,12 @@ func (c *compiler) numExpr(expr Expr) string {
 	return str
 }
 
-func (c *compiler) intExpr(expr Expr) string {
+func (c *compiler) intExpr(expr ast.Expr) string {
 	switch e := expr.(type) {
-	case *NumExpr:
+	case *ast.NumExpr:
 		return strconv.Itoa(int(e.Value))
-	case *UnaryExpr:
-		ne, ok := e.Value.(*NumExpr)
+	case *ast.UnaryExpr:
+		ne, ok := e.Value.(*ast.NumExpr)
 		if ok && e.Op == SUB {
 			return "-" + strconv.Itoa(int(ne.Value))
 		}
@@ -863,9 +863,9 @@ func (c *compiler) intExpr(expr Expr) string {
 	return "int(" + c.numExpr(expr) + ")"
 }
 
-func (c *compiler) strExpr(expr Expr) string {
-	if fieldExpr, ok := expr.(*FieldExpr); ok {
-		if numExpr, ok := fieldExpr.Index.(*NumExpr); ok && numExpr.Value == 0 {
+func (c *compiler) strExpr(expr ast.Expr) string {
+	if fieldExpr, ok := expr.(*ast.FieldExpr); ok {
+		if numExpr, ok := fieldExpr.Index.(*ast.NumExpr); ok && numExpr.Value == 0 {
 			// Optimize _getField(0) to just _line
 			return "_line"
 		}
@@ -877,7 +877,7 @@ func (c *compiler) strExpr(expr Expr) string {
 	return str
 }
 
-func (c *compiler) index(index []Expr) string {
+func (c *compiler) index(index []ast.Expr) string {
 	indexStr := ""
 	for i, e := range index {
 		if i > 0 {
@@ -894,25 +894,25 @@ func (c *compiler) index(index []Expr) string {
 
 func (c *compiler) special(name string, index int) string {
 	switch index {
-	case V_NF:
+	case ast.V_NF:
 		return "float64(len(_fields))"
-	case V_NR, V_FNR:
+	case ast.V_NR, ast.V_FNR:
 		return "float64(_lineNum)"
-	case V_RLENGTH:
+	case ast.V_RLENGTH:
 		return "RLENGTH"
-	case V_RSTART:
+	case ast.V_RSTART:
 		return "RSTART"
-	case V_CONVFMT:
+	case ast.V_CONVFMT:
 		return "CONVFMT"
-	case V_FS:
+	case ast.V_FS:
 		return "FS"
-	case V_OFMT:
+	case ast.V_OFMT:
 		return "OFMT"
-	case V_OFS:
+	case ast.V_OFS:
 		return "OFS"
-	case V_ORS:
+	case ast.V_ORS:
 		return "ORS"
-	case V_SUBSEP:
+	case ast.V_SUBSEP:
 		return "SUBSEP"
 	default:
 		panic(errorf("special variable %s not yet supported", name))
@@ -934,9 +934,9 @@ func (c *compiler) goType(typ valueType) string {
 	}
 }
 
-func (c *compiler) printfArgs(format string, args []Expr) []string {
+func (c *compiler) printfArgs(format string, args []ast.Expr) []string {
 	argIndex := 0
-	nextArg := func() Expr {
+	nextArg := func() ast.Expr {
 		if argIndex >= len(args) {
 			panic(errorf("not enough arguments (%d) for format string %q", len(args), format))
 		}

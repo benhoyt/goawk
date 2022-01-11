@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"sort"
 
-	. "github.com/benhoyt/goawk/internal/ast"
+	"github.com/benhoyt/goawk/internal/ast"
 	. "github.com/benhoyt/goawk/lexer"
 )
 
@@ -33,8 +33,8 @@ func (t varType) String() string {
 // typeInfo records type information for a single variable
 type typeInfo struct {
 	typ      varType
-	ref      *VarExpr
-	scope    VarScope
+	ref      *ast.VarExpr
+	scope    ast.VarScope
 	index    int
 	callName string
 	argIndex int
@@ -44,9 +44,9 @@ type typeInfo struct {
 func (t typeInfo) String() string {
 	var scope string
 	switch t.scope {
-	case ScopeGlobal:
+	case ast.ScopeGlobal:
 		scope = "Global"
-	case ScopeLocal:
+	case ast.ScopeLocal:
 		scope = "Local"
 	default:
 		scope = "Special"
@@ -58,7 +58,7 @@ func (t typeInfo) String() string {
 // A single variable reference (normally scalar)
 type varRef struct {
 	funcName string
-	ref      *VarExpr
+	ref      *ast.VarExpr
 	isArg    bool
 	pos      Position
 }
@@ -66,7 +66,7 @@ type varRef struct {
 // A single array reference
 type arrayRef struct {
 	funcName string
-	ref      *ArrayExpr
+	ref      *ast.ArrayExpr
 	pos      Position
 }
 
@@ -77,7 +77,7 @@ func (p *parser) initResolve() {
 	p.functions = make(map[string]int)
 	p.arrayRef("ARGV", Position{1, 1})    // interpreter relies on ARGV being present
 	p.arrayRef("ENVIRON", Position{1, 1}) // and ENVIRON
-	p.multiExprs = make(map[*MultiExpr]Position, 3)
+	p.multiExprs = make(map[*ast.MultiExpr]Position, 3)
 }
 
 // Signal the start of a function
@@ -98,13 +98,13 @@ func (p *parser) addFunction(name string, index int) {
 
 // Records a call to a user function (for resolving indexes later)
 type userCall struct {
-	call   *UserCallExpr
+	call   *ast.UserCallExpr
 	pos    Position
 	inFunc string
 }
 
 // Record a user call site
-func (p *parser) recordUserCall(call *UserCallExpr, pos Position) {
+func (p *parser) recordUserCall(call *ast.UserCallExpr, pos Position) {
 	p.userCalls = append(p.userCalls, userCall{call, pos, p.funcName})
 }
 
@@ -149,8 +149,8 @@ func (p *parser) resolveUserCalls(prog *Program) {
 
 // For arguments that are variable references, we don't know the
 // type based on context, so mark the types for these as unknown.
-func (p *parser) processUserCallArg(funcName string, arg Expr, index int) {
-	if varExpr, ok := arg.(*VarExpr); ok {
+func (p *parser) processUserCallArg(funcName string, arg ast.Expr, index int) {
+	if varExpr, ok := arg.(*ast.VarExpr); ok {
 		scope, varFuncName := p.getScope(varExpr.Name)
 		ref := p.varTypes[varFuncName][varExpr.Name].ref
 		if ref == varExpr {
@@ -166,22 +166,22 @@ func (p *parser) processUserCallArg(funcName string, arg Expr, index int) {
 
 // Determine scope of given variable reference (and funcName if it's
 // a local, otherwise empty string)
-func (p *parser) getScope(name string) (VarScope, string) {
+func (p *parser) getScope(name string) (ast.VarScope, string) {
 	switch {
 	case p.locals[name]:
-		return ScopeLocal, p.funcName
-	case SpecialVarIndex(name) > 0:
-		return ScopeSpecial, ""
+		return ast.ScopeLocal, p.funcName
+	case ast.SpecialVarIndex(name) > 0:
+		return ast.ScopeSpecial, ""
 	default:
-		return ScopeGlobal, ""
+		return ast.ScopeGlobal, ""
 	}
 }
 
 // Record a variable (scalar) reference and return the *VarExpr (but
 // VarExpr.Index won't be set till later)
-func (p *parser) varRef(name string, pos Position) *VarExpr {
+func (p *parser) varRef(name string, pos Position) *ast.VarExpr {
 	scope, funcName := p.getScope(name)
-	expr := &VarExpr{scope, 0, name}
+	expr := &ast.VarExpr{scope, 0, name}
 	p.varRefs = append(p.varRefs, varRef{funcName, expr, false, pos})
 	info := p.varTypes[funcName][name]
 	if info.typ == typeUnknown {
@@ -192,12 +192,12 @@ func (p *parser) varRef(name string, pos Position) *VarExpr {
 
 // Record an array reference and return the *ArrayExpr (but
 // ArrayExpr.Index won't be set till later)
-func (p *parser) arrayRef(name string, pos Position) *ArrayExpr {
+func (p *parser) arrayRef(name string, pos Position) *ast.ArrayExpr {
 	scope, funcName := p.getScope(name)
-	if scope == ScopeSpecial {
+	if scope == ast.ScopeSpecial {
 		panic(p.errorf("can't use scalar %q as array", name))
 	}
-	expr := &ArrayExpr{scope, 0, name}
+	expr := &ast.ArrayExpr{scope, 0, name}
 	p.arrayRefs = append(p.arrayRefs, arrayRef{funcName, expr, pos})
 	info := p.varTypes[funcName][name]
 	if info.typ == typeUnknown {
@@ -248,7 +248,7 @@ func (p *parser) resolveVars(prog *Program) {
 		progressed := false
 		for funcName, infos := range p.varTypes {
 			for name, info := range infos {
-				if info.scope == ScopeSpecial || info.typ != typeUnknown {
+				if info.scope == ast.ScopeSpecial || info.typ != typeUnknown {
 					// It's a special var or type is already known
 					continue
 				}
@@ -293,8 +293,8 @@ func (p *parser) resolveVars(prog *Program) {
 			panic(p.errorf("global var %q can't also be a function", name))
 		}
 		var index int
-		if info.scope == ScopeSpecial {
-			index = SpecialVarIndex(name)
+		if info.scope == ast.ScopeSpecial {
+			index = ast.SpecialVarIndex(name)
 		} else if info.typ == typeArray {
 			index = len(prog.Arrays)
 			prog.Arrays[name] = index
@@ -317,7 +317,7 @@ func (p *parser) resolveVars(prog *Program) {
 		}
 		function := prog.Functions[c.call.Index]
 		for i, arg := range c.call.Args {
-			varExpr, ok := arg.(*VarExpr)
+			varExpr, ok := arg.(*ast.VarExpr)
 			if !ok {
 				continue
 			}
@@ -368,7 +368,7 @@ func (p *parser) resolveVars(prog *Program) {
 		// Check native function calls
 		if c.call.Native {
 			for _, arg := range c.call.Args {
-				varExpr, ok := arg.(*VarExpr)
+				varExpr, ok := arg.(*ast.VarExpr)
 				if !ok {
 					// Non-variable expression, must be scalar
 					continue
@@ -385,7 +385,7 @@ func (p *parser) resolveVars(prog *Program) {
 		// Check AWK function calls
 		function := prog.Functions[c.call.Index]
 		for i, arg := range c.call.Args {
-			varExpr, ok := arg.(*VarExpr)
+			varExpr, ok := arg.(*ast.VarExpr)
 			if !ok {
 				if function.Arrays[i] {
 					panic(p.posErrorf(c.pos, "can't pass scalar %s as array param", arg))
@@ -441,14 +441,14 @@ func (p *parser) getVarFuncName(prog *Program, name, inFunc string) string {
 
 // Record a "multi expression" (comma-separated pseudo-expression
 // used to allow commas around print/printf arguments).
-func (p *parser) multiExpr(exprs []Expr, pos Position) Expr {
-	expr := &MultiExpr{exprs}
+func (p *parser) multiExpr(exprs []ast.Expr, pos Position) ast.Expr {
+	expr := &ast.MultiExpr{exprs}
 	p.multiExprs[expr] = pos
 	return expr
 }
 
 // Mark the multi expression as used (by a print/printf statement).
-func (p *parser) useMultiExpr(expr *MultiExpr) {
+func (p *parser) useMultiExpr(expr *ast.MultiExpr) {
 	delete(p.multiExprs, expr)
 }
 

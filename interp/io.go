@@ -14,7 +14,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	. "github.com/benhoyt/goawk/internal/ast"
+	"github.com/benhoyt/goawk/internal/ast"
 	. "github.com/benhoyt/goawk/lexer"
 )
 
@@ -49,7 +49,7 @@ func (wc *bufferedWriteCloser) Close() error {
 
 // Determine the output stream for given redirect token and
 // destination (file or pipe name)
-func (p *interp) getOutputStream(redirect Token, dest Expr) (io.Writer, error) {
+func (p *interp) getOutputStream(redirect Token, dest ast.Expr) (io.Writer, error) {
 	if redirect == ILLEGAL {
 		// Token "ILLEGAL" means send to standard output
 		return p.output, nil
@@ -403,7 +403,7 @@ func (p *interp) nextLine() (string, error) {
 				// not present
 				index := strconv.Itoa(p.filenameIndex)
 				argvIndex := p.program.Arrays["ARGV"]
-				argvArray := p.arrays[p.getArrayIndex(ScopeGlobal, argvIndex)]
+				argvArray := p.arrays[p.getArrayIndex(ast.ScopeGlobal, argvIndex)]
 				filename := p.toString(argvArray[index])
 				p.filenameIndex++
 

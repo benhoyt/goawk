@@ -16,12 +16,12 @@ import (
 	"time"
 	"unicode/utf8"
 
-	. "github.com/benhoyt/goawk/internal/ast"
+	"github.com/benhoyt/goawk/internal/ast"
 	. "github.com/benhoyt/goawk/lexer"
 )
 
 // Call builtin function specified by "op" with given args
-func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
+func (p *interp) callBuiltin(op Token, argExprs []ast.Expr) (value, error) {
 	// split() has an array arg (not evaluated) and [g]sub() have an
 	// lvalue arg, so handle them as special cases
 	switch op {
@@ -41,7 +41,7 @@ func (p *interp) callBuiltin(op Token, argExprs []Expr) (value, error) {
 		} else {
 			fieldSep = p.fieldSep
 		}
-		arrayExpr := argExprs[1].(*ArrayExpr)
+		arrayExpr := argExprs[1].(*ast.ArrayExpr)
 		n, err := p.split(str, arrayExpr.Scope, arrayExpr.Index, fieldSep)
 		if err != nil {
 			return null(), err
@@ -331,7 +331,7 @@ func (p *interp) execShell(code string) *exec.Cmd {
 
 // Call user-defined function with given index and arguments, return
 // its return value (or null value if it doesn't return anything)
-func (p *interp) callUser(index int, args []Expr) (value, error) {
+func (p *interp) callUser(index int, args []ast.Expr) (value, error) {
 	f := p.program.Functions[index]
 
 	if p.callDepth >= maxCallDepth {
@@ -344,7 +344,7 @@ func (p *interp) callUser(index int, args []Expr) (value, error) {
 	var arrays []int
 	for i, arg := range args {
 		if f.Arrays[i] {
-			a := arg.(*VarExpr)
+			a := arg.(*ast.VarExpr)
 			arrays = append(arrays, p.getArrayIndex(a.Scope, a.Index))
 		} else {
 			argValue, err := p.eval(arg)
@@ -390,7 +390,7 @@ func (p *interp) callUser(index int, args []Expr) (value, error) {
 
 // Call native-defined function with given name and arguments, return
 // its return value (or null value if it doesn't return anything).
-func (p *interp) callNative(index int, args []Expr) (value, error) {
+func (p *interp) callNative(index int, args []ast.Expr) (value, error) {
 	f := p.nativeFuncs[index]
 	minIn := len(f.in) // Minimum number of args we should pass
 	var variadicType reflect.Type
@@ -618,7 +618,7 @@ func validNativeType(typ reflect.Type) bool {
 }
 
 // Guts of the split() function
-func (p *interp) split(s string, scope VarScope, index int, fs string) (int, error) {
+func (p *interp) split(s string, scope ast.VarScope, index int, fs string) (int, error) {
 	var parts []string
 	if fs == " " {
 		parts = strings.Fields(s)
