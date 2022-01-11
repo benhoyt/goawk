@@ -34,11 +34,11 @@ type Program struct {
 	Actions     []Action
 	End         []Opcode
 	Functions   []Function
-	ScalarNames []string // TODO: is this needed, or just create in disassembler?
-	ArrayNames  []string // TODO: is this needed, or just create in disassembler?
 	Nums        []float64
 	Strs        []string
 	Regexes     []*regexp.Regexp
+	ScalarNames []string // for disassembly
+	ArrayNames  []string // for disassembly
 }
 
 type Action struct {
@@ -47,8 +47,8 @@ type Action struct {
 }
 
 type Function struct {
-	Name   string // TODO: is this needed?
-	Params []string
+	Name   string   // for disassembly
+	Params []string // for disassembly
 	Arrays []bool
 	Body   []Opcode
 }
