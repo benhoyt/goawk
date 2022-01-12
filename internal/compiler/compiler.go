@@ -46,7 +46,7 @@ type Action struct {
 }
 
 type Function struct {
-	Name   string   // for disassembly
+	Name   string
 	Params []string // for disassembly
 	Arrays []bool
 	Body   []Opcode
@@ -54,6 +54,19 @@ type Function struct {
 
 func Compile(prog *ast.Program) *Program {
 	p := &Program{}
+
+	p.Functions = make([]Function, len(prog.Functions))
+	for i, astFunc := range prog.Functions {
+		c := &compiler{program: p}
+		c.stmts(astFunc.Body)
+		compiledFunc := Function{
+			Name:   astFunc.Name,
+			Params: astFunc.Params,
+			Arrays: astFunc.Arrays,
+			Body:   c.finish(),
+		}
+		p.Functions[i] = compiledFunc
+	}
 
 	for _, stmts := range prog.Begin {
 		c := &compiler{program: p}
@@ -352,8 +365,13 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		c.patchContinues()
 		c.breaks = c.breaks[:len(c.breaks)-1]
 
-	//case *ast.ReturnStmt:
-	//
+	case *ast.ReturnStmt:
+		if s.Value != nil {
+			c.expr(s.Value)
+			c.add(Return)
+		} else {
+			c.add(ReturnNull)
+		}
 
 	case *ast.WhileStmt:
 		c.breaks = append(c.breaks, []int{})
@@ -547,6 +565,7 @@ func (c *compiler) expr(expr ast.Expr) {
 		case ast.ScopeGlobal:
 			c.add(Global, Opcode(e.Index))
 		case ast.ScopeLocal:
+			c.add(Local, Opcode(e.Index))
 		case ast.ScopeSpecial:
 			c.add(Special, Opcode(e.Index))
 		}
@@ -769,8 +788,24 @@ func (c *compiler) expr(expr ast.Expr) {
 			c.add(InLocal, Opcode(e.Array.Index))
 		}
 
-	//case *ast.UserCallExpr:
-	//
+	case *ast.UserCallExpr:
+		if e.Native {
+			panic("TODO: native functions not yet supported")
+		}
+		f := c.program.Functions[e.Index]
+		for _, a := range f.Arrays {
+			if a {
+				panic("TODO: array parameters not yet supported")
+			}
+		}
+		for _, arg := range e.Args {
+			c.expr(arg)
+		}
+		if len(e.Args) < len(f.Params) {
+			c.add(Nulls, Opcode(len(f.Params)-len(e.Args)))
+		}
+		c.add(CallUser, Opcode(e.Index))
+
 	//case *ast.GetlineExpr:
 
 	default:

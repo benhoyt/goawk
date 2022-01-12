@@ -80,7 +80,7 @@ type interp struct {
 
 	// Scalars, arrays, and function state
 	globals     []value
-	stack       []value
+	stack       []value // TODO: don't need this anymore with compiler
 	frame       []value
 	arrays      []map[string]value
 	localArrays [][]int
@@ -123,7 +123,7 @@ type interp struct {
 	bytes       bool
 
 	// Virtual machine stack
-	vmStack []value
+	vmStack []value // TODO: rename to "stack" and "sp"
 	vmSp    int
 }
 

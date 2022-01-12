@@ -53,6 +53,20 @@ func boolean(b bool) value {
 	return num(0)
 }
 
+// String returns a string representation of v for debugging.
+func (v value) String() string {
+	switch v.typ {
+	case typeStr:
+		return fmt.Sprintf("str(%q)", v.s)
+	case typeNum:
+		return fmt.Sprintf("num(%s)", v.str("%.6g"))
+	case typeNumStr:
+		return fmt.Sprintf("numStr(%q)", v.s)
+	default:
+		return "null()"
+	}
+}
+
 // Return true if value is a "true string" (a string or a "numeric string"
 // from an input field that can't be converted to a number). If false,
 // also return the (possibly converted) number.

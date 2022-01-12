@@ -46,7 +46,7 @@ func ExecCompiled(program *parser.Program, config *Config) (int, error) {
 func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Opcode) error {
 	for i := 0; i < len(code); {
 		op := code[i]
-		//fmt.Printf("TODO %04x %s %v\n", i, op, p.vmStack)
+		//fmt.Printf("TODO %04x %s %v\n", i, op, p.vmStack[:p.vmSp])
 		i++
 
 		switch op {
@@ -89,6 +89,11 @@ func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op
 			index := code[i]
 			i++
 			p.push(p.globals[index])
+
+		case compiler.Local:
+			index := code[i]
+			i++
+			p.push(p.frame[index])
 
 		case compiler.Special:
 			index := code[i]
@@ -563,6 +568,47 @@ func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op
 
 		case compiler.BreakForIn:
 			return errBreak
+
+		case compiler.CallUser:
+			funcIndex := code[i]
+			i++
+
+			f := p.program.Compiled.Functions[funcIndex]
+			if p.callDepth >= maxCallDepth {
+				return newError("calling %q exceeded maximum call depth of %d", f.Name, maxCallDepth)
+			}
+
+			oldFrame := p.frame
+			p.frame = p.vmStack[p.vmSp-len(f.Params):] // TODO: replace with stackSlice() call or similar
+
+			p.callDepth++
+			err := p.execCompiled(compiledProg, f.Body)
+			p.callDepth--
+
+			p.popSlice(len(f.Params))
+			p.frame = oldFrame
+
+			if r, ok := err.(returnValue); ok {
+				p.push(r.Value)
+			} else if err != nil {
+				return err
+			} else {
+				p.push(null())
+			}
+
+		case compiler.Return:
+			v := p.pop()
+			return returnValue{v}
+
+		case compiler.ReturnNull:
+			return returnValue{null()}
+
+		case compiler.Nulls:
+			numNulls := int(code[i])
+			i++
+			for n := 0; n < numNulls; n++ {
+				p.push(null())
+			}
 
 		case compiler.Print:
 			numArgs := code[i]

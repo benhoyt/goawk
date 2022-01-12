@@ -60,7 +60,6 @@
 === RUN   TestInterp/_BEGIN_{__for_(i_=_0;_i_<_1;_i++)_{___for_(j_=_0;_j_<_1;_j++)_{____pri#01
 === RUN   TestInterp/{_if_(NR==2)_next;_print_}
 === RUN   TestInterp/{_if_(NR==2)_f();_print_}__function_f()_{_next_}
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/BEGIN_{_next_}
 === RUN   TestInterp/END_{_next_}
 === RUN   TestInterp/BEGIN_{_a["x"]_=_3;_print_"x"_in_a,_"y"_in_a_}
@@ -102,9 +101,7 @@
 === RUN   TestInterp/BEGIN_{_$1="10";_print($1<2)_}
 === RUN   TestInterp/BEGIN_{_$1="10x";_print($1<2)_}
 === RUN   TestInterp/_function_t()_{_print_"t";_return_2_}_function_f()_{_print_"f";_return
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/_function_t()_{_print_"t";_return_2_}_function_f()_{_print_"f";_return#01
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/BEGIN_{_print_0&&0,_0&&2,_2&&0,_2&&2_}
 === RUN   TestInterp/BEGIN_{_print_0||0,_0||2,_2||0,_2||2_}
 === RUN   TestInterp/BEGIN_{_print_1+2,_1+2+3,_1+-2,_-1+2,_"1"+"2",_3+.14_}
@@ -306,46 +303,39 @@
 === RUN   TestInterp/BEGIN_{_print_(1+2?"t":"f")_}
 === RUN   TestInterp/BEGIN_{_print(1_?_x="t"_:_"f");_print_x;_}
 === RUN   TestInterp/_function_f(loc)_{__glob_+=_1__loc_+=_1__print_glob,_loc_}_BEGIN_{__gl
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/_function_set(a,_x,_v)_{__a[x]_=_v_}_function_get(a,_x)_{__return_a[x]
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:810: panic compiling: TODO IndexExpr local array not yet supported
 === RUN   TestInterp/_function_fib(n)_{__return_n_<_3_?_1_:_fib(n-2)_+_fib(n-1)_}_BEGIN_{__
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/_function_f(a,_x)_{_return_a[x]_}_function_g(b,_y)_{_f(b,_y)_}_BEGIN_{
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:810: panic compiling: TODO IndexExpr local array not yet supported
 === RUN   TestInterp/_function_g(b,_y)_{_return_f(b,_y)_}_function_f(a,_x)_{_return_a[x]_}_
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:810: panic compiling: TODO IndexExpr local array not yet supported
 === RUN   TestInterp/_function_h(b,_y)_{_g(b,_y)_}_function_g(b,_y)_{_f(b,_y)_}_function_f(
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:810: panic compiling: TODO IndexExpr local array not yet supported
 === RUN   TestInterp/_function_h(b,_y)_{_return_g(b,_y)_}_function_g(b,_y)_{_return_f(b,_y)
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:810: panic compiling: TODO IndexExpr local array not yet supported
 === RUN   TestInterp/_function_get(a,_x)_{_return_a[x]_}_BEGIN_{_a[1]=2;_print_get(a,_x);_p
 === RUN   TestInterp/_function_early()_{__print_"x"__return__print_"y"_}_BEGIN_{_early()_}_
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/BEGIN_{_return_}
 === RUN   TestInterp/function_f()_{_printf_"x"_};_BEGIN_{_f()_}_
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/BEGIN_{_arr[0];_f(arr)_}_function_f(a)_{_printf_"x"_}
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:810: panic compiling: TODO: array parameters not yet supported
 === RUN   TestInterp/function_f(x)_{_0_in__;_f(_)_}__BEGIN_{_f()_}__#_!awk_!gawk
 === RUN   TestInterp/BEGIN_{_for_(i=0;_i<1001;_i++)_f();_print_x_}__function_f()_{_x++_}
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/_function_bar(y)_{_return_y[1]_}_function_foo()_{_return_bar(x)_}_BEGI
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:810: panic compiling: TODO IndexExpr local array not yet supported
 === RUN   TestInterp/_function_f1(x)_{_}_function_f2(x,_y)_{_return_x[y]_}_BEGIN_{_a[1]=2;_
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:810: panic compiling: TODO IndexExpr local array not yet supported
 === RUN   TestInterp/BEGIN_{_arr[0];_f(arr)_}_function_f(a)_{_print_"x"_}
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:810: panic compiling: TODO: array parameters not yet supported
 === RUN   TestInterp/BEGIN_{_a[x];_a=42_}
 === RUN   TestInterp/BEGIN_{_s=42;_s[x]_}
 === RUN   TestInterp/function_get(a,_k)_{_return_a[k]_}__BEGIN_{_a_=_42;_print_get(a,_1);_}
 === RUN   TestInterp/function_get(a,_k)_{_return_a+k_}_BEGIN_{_a[42];_print_get(a,_1);_}
 === RUN   TestInterp/{_f(z)_}__function_f(x)_{_print_NR_}
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/function_f()_{_f()_}__BEGIN_{_f()_}__#_!awk_!gawk
 === RUN   TestInterp/function_f(x)_{_0_in_x_}__BEGIN_{_f(FS)_}__#_!awk
 === RUN   TestInterp/_function_foo(x)_{_print_"foo",_x_}_function_bar(foo)_{_print_"bar",_f
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestInterp/_function_foo(foo)_{_print_"foo",_foo_}_function_bar(foo)_{_print_"bar
 === RUN   TestInterp/function_foo()_{_print_foo_}__BEGIN_{_foo()_}
 === RUN   TestInterp/function_f(x)_{_print_x,_x();_}__BEGIN_{_f()_}
@@ -406,7 +396,7 @@
 === RUN   TestInterp/BEGIN_{_print_(1,2),(3,4)_}
 === RUN   TestInterp/BEGIN_{_print_(1,2,(3,4),(5,6))_}
 === RUN   TestInterp/{_print_length()_}
---- FAIL: TestInterp (0.07s)
+--- FAIL: TestInterp (0.08s)
     --- PASS: TestInterp/BEGIN_{_print_"b"_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_"b"_}#01 (0.00s)
     --- PASS: TestInterp/END_{_print_"e"_} (0.00s)
@@ -467,7 +457,7 @@
     --- PASS: TestInterp/_BEGIN_{__for_(i_=_0;_i_<_1;_i++)_{___for_(j_=_0;_j_<_1;_j++)_{____pri (0.00s)
     --- PASS: TestInterp/_BEGIN_{__for_(i_=_0;_i_<_1;_i++)_{___for_(j_=_0;_j_<_1;_j++)_{____pri#01 (0.00s)
     --- PASS: TestInterp/{_if_(NR==2)_next;_print_} (0.00s)
-    --- FAIL: TestInterp/{_if_(NR==2)_f();_print_}__function_f()_{_next_} (0.00s)
+    --- PASS: TestInterp/{_if_(NR==2)_f();_print_}__function_f()_{_next_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_next_} (0.00s)
     --- PASS: TestInterp/END_{_next_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_a["x"]_=_3;_print_"x"_in_a,_"y"_in_a_} (0.00s)
@@ -506,8 +496,8 @@
     --- PASS: TestInterp/BEGIN_{_$0="10";_print($0<2)_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_$1="10";_print($1<2)_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_$1="10x";_print($1<2)_} (0.00s)
-    --- FAIL: TestInterp/_function_t()_{_print_"t";_return_2_}_function_f()_{_print_"f";_return (0.00s)
-    --- FAIL: TestInterp/_function_t()_{_print_"t";_return_2_}_function_f()_{_print_"f";_return#01 (0.00s)
+    --- PASS: TestInterp/_function_t()_{_print_"t";_return_2_}_function_f()_{_print_"f";_return (0.00s)
+    --- PASS: TestInterp/_function_t()_{_print_"t";_return_2_}_function_f()_{_print_"f";_return#01 (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_0&&0,_0&&2,_2&&0,_2&&2_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_0||0,_0||2,_2||0,_2||2_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_1+2,_1+2+3,_1+-2,_-1+2,_"1"+"2",_3+.14_} (0.00s)
@@ -691,20 +681,20 @@
     --- PASS: TestInterp/BEGIN_{_print_(1+2)?"t":"f"_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_(1+2?"t":"f")_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print(1_?_x="t"_:_"f");_print_x;_} (0.00s)
-    --- FAIL: TestInterp/_function_f(loc)_{__glob_+=_1__loc_+=_1__print_glob,_loc_}_BEGIN_{__gl (0.00s)
+    --- PASS: TestInterp/_function_f(loc)_{__glob_+=_1__loc_+=_1__print_glob,_loc_}_BEGIN_{__gl (0.00s)
     --- FAIL: TestInterp/_function_set(a,_x,_v)_{__a[x]_=_v_}_function_get(a,_x)_{__return_a[x] (0.00s)
-    --- FAIL: TestInterp/_function_fib(n)_{__return_n_<_3_?_1_:_fib(n-2)_+_fib(n-1)_}_BEGIN_{__ (0.00s)
+    --- PASS: TestInterp/_function_fib(n)_{__return_n_<_3_?_1_:_fib(n-2)_+_fib(n-1)_}_BEGIN_{__ (0.00s)
     --- FAIL: TestInterp/_function_f(a,_x)_{_return_a[x]_}_function_g(b,_y)_{_f(b,_y)_}_BEGIN_{ (0.00s)
     --- FAIL: TestInterp/_function_g(b,_y)_{_return_f(b,_y)_}_function_f(a,_x)_{_return_a[x]_}_ (0.00s)
     --- FAIL: TestInterp/_function_h(b,_y)_{_g(b,_y)_}_function_g(b,_y)_{_f(b,_y)_}_function_f( (0.00s)
     --- FAIL: TestInterp/_function_h(b,_y)_{_return_g(b,_y)_}_function_g(b,_y)_{_return_f(b,_y) (0.00s)
     --- PASS: TestInterp/_function_get(a,_x)_{_return_a[x]_}_BEGIN_{_a[1]=2;_print_get(a,_x);_p (0.00s)
-    --- FAIL: TestInterp/_function_early()_{__print_"x"__return__print_"y"_}_BEGIN_{_early()_}_ (0.00s)
+    --- PASS: TestInterp/_function_early()_{__print_"x"__return__print_"y"_}_BEGIN_{_early()_}_ (0.00s)
     --- PASS: TestInterp/BEGIN_{_return_} (0.00s)
-    --- FAIL: TestInterp/function_f()_{_printf_"x"_};_BEGIN_{_f()_}_ (0.00s)
+    --- PASS: TestInterp/function_f()_{_printf_"x"_};_BEGIN_{_f()_}_ (0.00s)
     --- FAIL: TestInterp/BEGIN_{_arr[0];_f(arr)_}_function_f(a)_{_printf_"x"_} (0.00s)
     --- PASS: TestInterp/function_f(x)_{_0_in__;_f(_)_}__BEGIN_{_f()_}__#_!awk_!gawk (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_for_(i=0;_i<1001;_i++)_f();_print_x_}__function_f()_{_x++_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_for_(i=0;_i<1001;_i++)_f();_print_x_}__function_f()_{_x++_} (0.00s)
     --- FAIL: TestInterp/_function_bar(y)_{_return_y[1]_}_function_foo()_{_return_bar(x)_}_BEGI (0.00s)
     --- FAIL: TestInterp/_function_f1(x)_{_}_function_f2(x,_y)_{_return_x[y]_}_BEGIN_{_a[1]=2;_ (0.00s)
     --- FAIL: TestInterp/BEGIN_{_arr[0];_f(arr)_}_function_f(a)_{_print_"x"_} (0.00s)
@@ -712,10 +702,10 @@
     --- PASS: TestInterp/BEGIN_{_s=42;_s[x]_} (0.00s)
     --- PASS: TestInterp/function_get(a,_k)_{_return_a[k]_}__BEGIN_{_a_=_42;_print_get(a,_1);_} (0.00s)
     --- PASS: TestInterp/function_get(a,_k)_{_return_a+k_}_BEGIN_{_a[42];_print_get(a,_1);_} (0.00s)
-    --- FAIL: TestInterp/{_f(z)_}__function_f(x)_{_print_NR_} (0.00s)
+    --- PASS: TestInterp/{_f(z)_}__function_f(x)_{_print_NR_} (0.00s)
     --- PASS: TestInterp/function_f()_{_f()_}__BEGIN_{_f()_}__#_!awk_!gawk (0.00s)
     --- PASS: TestInterp/function_f(x)_{_0_in_x_}__BEGIN_{_f(FS)_}__#_!awk (0.00s)
-    --- FAIL: TestInterp/_function_foo(x)_{_print_"foo",_x_}_function_bar(foo)_{_print_"bar",_f (0.00s)
+    --- PASS: TestInterp/_function_foo(x)_{_print_"foo",_x_}_function_bar(foo)_{_print_"bar",_f (0.00s)
     --- PASS: TestInterp/_function_foo(foo)_{_print_"foo",_foo_}_function_bar(foo)_{_print_"bar (0.00s)
     --- PASS: TestInterp/function_foo()_{_print_foo_}__BEGIN_{_foo()_} (0.00s)
     --- PASS: TestInterp/function_f(x)_{_print_x,_x();_}__BEGIN_{_f()_} (0.00s)
@@ -723,7 +713,7 @@
     --- FAIL: TestInterp/BEGIN_{_getline_$1;_print_$1_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_"echo_foo"_|_getline_a[1];_print_a[1]_} (0.00s)
     --- FAIL: TestInterp/BEGIN_{_"echo_foo"_|_getline_$1;_print_$1_} (0.00s)
-    --- PASS: TestInterp/BEGIN_{_print_"foo"_|"sort";_print_"bar"_|"sort"_}__#_!fuzz (0.00s)
+    --- PASS: TestInterp/BEGIN_{_print_"foo"_|"sort";_print_"bar"_|"sort"_}__#_!fuzz (0.01s)
     --- PASS: TestInterp/BEGIN_{_print_"foo"_|">&2_echo_error"_}__#_!gawk_!fuzz (0.00s)
     --- FAIL: TestInterp/BEGIN_{_"cat"_|_getline;_print_}__#_!fuzz (0.00s)
     --- FAIL: TestInterp/BEGIN_{_print_getline_x_<_"/no/such/file"_}__#_!fuzz (0.00s)
@@ -762,22 +752,22 @@
 === RUN   TestNative
 === RUN   TestNative/BEGIN_{_print_foo()_}
 === RUN   TestNative/BEGIN_{_print_foo()_}#01
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:810: panic compiling: TODO: native functions not yet supported
 === RUN   TestNative/BEGIN_{_print_foo()_}#02
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:810: panic compiling: TODO: native functions not yet supported
 === RUN   TestNative/BEGIN_{_print_foo()_}#03
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:810: panic compiling: TODO: native functions not yet supported
 === RUN   TestNative/BEGIN_{_print_repeat("xy",_5)_}
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:810: panic compiling: TODO: native functions not yet supported
 === RUN   TestNative/BEGIN_{_print_repeat("xy",_5)_}#01
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:810: panic compiling: TODO: native functions not yet supported
 === RUN   TestNative/_BEGIN_{__print_r0()__print_r1(),_r1(5)__print_r2(),_r2(5)_}
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:810: panic compiling: TODO: native functions not yet supported
 === RUN   TestNative/_BEGIN_{__print_r2()_}
 === RUN   TestNative/_BEGIN_{__print__print_bool(),_bool(0),_bool(1),_bool(""),_bool("0"),_
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:810: panic compiling: TODO: native functions not yet supported
 === RUN   TestNative/_BEGIN_{__print__print_sum(),_sum(1),_sum(2,_3),_sum(4,_5,_6,_7,_8)__p
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:810: panic compiling: TODO: native functions not yet supported
 === RUN   TestNative/BEGIN_{_0_}
 === RUN   TestNative/BEGIN_{_1_}
 === RUN   TestNative/BEGIN_{_2_}
@@ -790,24 +780,22 @@
 === RUN   TestNative/BEGIN_{_print_f(),_f(1,_2)_}
 === RUN   TestNative/BEGIN_{_print_split("x_y",_a)_}
 === RUN   TestNative/_function_foo(n)_{_return_n_*_2_}_BEGIN_{_print_foo(42)_}_
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
 === RUN   TestNative/BEGIN_{_x=3;_print_foo(x)_}
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:810: panic compiling: TODO: native functions not yet supported
 === RUN   TestNative/_function_bar(n)_{_return_foo(n)_}_BEGIN_{_x=4;_y=5;_print_foo(x),_bar
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:810: panic compiling: TODO: native functions not yet supported
 === RUN   TestNative/BEGIN_{_a["x"]=1;_print_foo(a)_}
 === RUN   TestNative/BEGIN_{_x["x"]=1;_print_f(x)_}__function_f(a)_{_return_foo(a)_}
 === RUN   TestNative/function_f(a)_{_return_foo(a)_}__BEGIN_{_x["x"]=1;_print_f(x)_}
 === RUN   TestNative/BEGIN_{_x["x"]=1;_print_f(x["x"])_}__function_f(a)_{_return_foo(a)_}
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:810: panic compiling: TODO: native functions not yet supported
 === RUN   TestNative/BEGIN_{_print_add(1,_add(2,_3))_}
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:810: panic compiling: TODO: native functions not yet supported
 === RUN   TestNative/BEGIN_{_print_foo(x)_}
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:810: panic compiling: TODO: native functions not yet supported
 === RUN   TestNative/BEGIN_{_print_foo(_var)_}
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
+    interp_test.go:810: panic compiling: TODO: native functions not yet supported
 === RUN   TestNative/function_foo(y)_{_return_y/2_}__BEGIN_{_print_foo(_var)_}
-    interp_test.go:810: panic compiling: unexpected expr type: *ast.UserCallExpr
 --- FAIL: TestNative (0.00s)
     --- PASS: TestNative/BEGIN_{_print_foo()_} (0.00s)
     --- FAIL: TestNative/BEGIN_{_print_foo()_}#01 (0.00s)
@@ -830,7 +818,7 @@
     --- PASS: TestNative/BEGIN_{_8_} (0.00s)
     --- PASS: TestNative/BEGIN_{_print_f(),_f(1,_2)_} (0.00s)
     --- PASS: TestNative/BEGIN_{_print_split("x_y",_a)_} (0.00s)
-    --- FAIL: TestNative/_function_foo(n)_{_return_n_*_2_}_BEGIN_{_print_foo(42)_}_ (0.00s)
+    --- PASS: TestNative/_function_foo(n)_{_return_n_*_2_}_BEGIN_{_print_foo(42)_}_ (0.00s)
     --- FAIL: TestNative/BEGIN_{_x=3;_print_foo(x)_} (0.00s)
     --- FAIL: TestNative/_function_bar(n)_{_return_foo(n)_}_BEGIN_{_x=4;_y=5;_print_foo(x),_bar (0.00s)
     --- PASS: TestNative/BEGIN_{_a["x"]=1;_print_foo(a)_} (0.00s)
@@ -840,7 +828,7 @@
     --- FAIL: TestNative/BEGIN_{_print_add(1,_add(2,_3))_} (0.00s)
     --- FAIL: TestNative/BEGIN_{_print_foo(x)_} (0.00s)
     --- FAIL: TestNative/BEGIN_{_print_foo(_var)_} (0.00s)
-    --- FAIL: TestNative/function_foo(y)_{_return_y/2_}__BEGIN_{_print_foo(_var)_} (0.00s)
+    --- PASS: TestNative/function_foo(y)_{_return_y/2_}__BEGIN_{_print_foo(_var)_} (0.00s)
 === RUN   TestSafeMode
 === RUN   TestSafeMode/BEGIN_{_print_"hi"_>"out"_}
 === RUN   TestSafeMode/BEGIN_{_print_"hi"_>>"out"_}
@@ -907,7 +895,7 @@
 --- PASS: TestConfigVarsCorrect (0.00s)
 === RUN   TestShellCommand
     interp_test.go:810: panic compiling: unexpected expr type: *ast.GetlineExpr
---- FAIL: TestShellCommand (0.00s)
+--- FAIL: TestShellCommand (0.01s)
 === RUN   TestFlushes
     interp_test.go:1241: expected flushes ["" "0\nx\ny\n" "0\nx\ny\n0\nz\n" "0\nx\ny\n0\nz\n0\n"], got ["" "0\nx\ny\n" "0\nx\ny\n0\nz\n" "0\nx\ny\n0\nz\n0\n" "0\nx\ny\n0\nz\n0\n" "0\nx\ny\n0\nz\n0\n0\nx\ny\n" "0\nx\ny\n0\nz\n0\n0\nx\ny\n0\nz\n" "0\nx\ny\n0\nz\n0\n0\nx\ny\n0\nz\n0\n"]
 --- FAIL: TestFlushes (0.00s)
@@ -925,5 +913,5 @@
 === RUN   Example_funcs
 --- PASS: Example_funcs (0.00s)
 FAIL
-FAIL	github.com/benhoyt/goawk/interp	0.088s
+FAIL	github.com/benhoyt/goawk/interp	0.096s
 FAIL

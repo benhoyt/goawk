@@ -80,6 +80,19 @@ func (p *Program) Disassemble(writer io.Writer) error {
 			return err
 		}
 	}
+
+	for _, f := range p.Functions {
+		d := &disassembler{
+			program: p,
+			writer:  writer,
+			code:    f.Body,
+		}
+		err := d.disassemble("function " + f.Name)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -122,6 +135,10 @@ func (d *disassembler) disassemble(prefix string) error {
 		case Global:
 			index := d.fetch()
 			d.writeOpf("Global %s", d.program.ScalarNames[index])
+
+		case Local:
+			index := d.fetch()
+			d.writeOpf("Local %d", index) // TODO: local name
 
 		case Special:
 			index := d.fetch()
@@ -320,6 +337,14 @@ func (d *disassembler) disassemble(prefix string) error {
 		//	d.writeOpf("CallSubArrayGlobal")
 		//case CallSubArrayLocal:
 		//	d.writeOpf("CallSubArrayLocal")
+
+		case CallUser:
+			funcIndex := d.fetch()
+			d.writeOpf("CallUser %s", d.program.Functions[funcIndex].Name)
+
+		case Nulls:
+			numNulls := d.fetch()
+			d.writeOpf("Nulls %d", numNulls)
 
 		case Print:
 			numArgs := d.fetch()

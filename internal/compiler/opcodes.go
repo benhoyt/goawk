@@ -94,7 +94,6 @@ const (
 	JumpNumGreaterOrEqual
 	JumpStrEquals
 	JumpStrNotEquals
-	Return
 	Next
 	Exit
 
@@ -151,8 +150,11 @@ const (
 	CallToupper
 
 	// User and native functions
-	CallUser   // index, numArgs
-	CallNative // index, numArgs
+	CallUser   // funcIndex, numArgs
+	CallNative // funcIndex, numArgs
+	Return
+	ReturnNull
+	Nulls // numNulls
 
 	// Print and getline operations
 	Print  // numArgs, redirect
