@@ -813,7 +813,18 @@ func testGoAWK(
 			prog.Compiled = compiler.Compile(prog.ToAST())
 		}()
 
-		// TODO: also test disassembly doesn't panic
+		func() {
+			defer func() {
+				r := recover()
+				if r != nil {
+					t.Fatalf("panic disassembling: %v", r)
+				}
+			}()
+			err := prog.Compiled.Disassemble(ioutil.Discard)
+			if err != nil {
+				t.Fatalf("error disassembling: %v", err)
+			}
+		}()
 
 		outBuf = &concurrentBuffer{}
 		config = &interp.Config{

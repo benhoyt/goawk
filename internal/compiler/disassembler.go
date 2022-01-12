@@ -8,8 +8,6 @@ import (
 	"github.com/benhoyt/goawk/lexer"
 )
 
-// TODO: test this, or at least run it through interp tests to ensure it doesn't panic/error
-
 func (p *Program) Disassemble(writer io.Writer) error {
 	if p.Begin != nil {
 		d := &disassembler{
