@@ -46,7 +46,7 @@ func ExecCompiled(program *parser.Program, config *Config) (int, error) {
 func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Opcode) error {
 	for i := 0; i < len(code); {
 		op := code[i]
-		//fmt.Printf("TODO %04x %s %v\n", i, op, p.st)
+		//fmt.Printf("TODO %04x %s %v\n", i, op, p.vmStack)
 		i++
 
 		switch op {
@@ -61,7 +61,9 @@ func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op
 			p.push(str(compiledProg.Strs[index]))
 
 		case compiler.Dupe:
-			p.push(p.st[len(p.st)-1])
+			v := p.pop()
+			p.push(v)
+			p.push(v)
 
 		case compiler.Drop:
 			p.pop()
@@ -570,13 +572,11 @@ func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op
 			// Print OFS-separated args followed by ORS (usually newline)
 			var line string
 			if numArgs > 0 {
-				sp := len(p.st) - int(numArgs)
-				args := p.st[sp:]
+				args := p.popSlice(int(numArgs))
 				strs := make([]string, len(args))
 				for i, a := range args {
 					strs[i] = a.str(p.outputFormat)
 				}
-				p.st = p.st[:sp]
 				line = strings.Join(strs, p.outputFieldSep)
 			} else {
 				// "print" with no args is equivalent to "print $0"
@@ -602,9 +602,8 @@ func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op
 			redirect := lexer.Token(code[i+1])
 			i += 2
 
-			sp := len(p.st) - int(numArgs)
-			s, err := p.sprintf(p.toString(p.st[sp]), p.st[sp+1:])
-			p.st = p.st[:sp]
+			args := p.popSlice(int(numArgs))
+			s, err := p.sprintf(p.toString(args[0]), args[1:])
 			if err != nil {
 				return err
 			}
@@ -811,9 +810,8 @@ func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op
 		case compiler.CallSprintf:
 			numArgs := code[i]
 			i++
-			sp := len(p.st) - int(numArgs)
-			s, err := p.sprintf(p.toString(p.st[sp]), p.st[sp+1:])
-			p.st = p.st[:sp]
+			args := p.popSlice(int(numArgs))
+			s, err := p.sprintf(p.toString(args[0]), args[1:])
 			if err != nil {
 				return err
 			}
@@ -963,15 +961,24 @@ func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op
 	return nil
 }
 
+// TODO: maybe add popTwo() for binary ops and pushTwo() if it helps? or are these all inlined anyway?
+
 func (p *interp) push(v value) {
-	p.st = append(p.st, v)
+	if p.vmSp >= len(p.vmStack) {
+		p.vmStack = append(p.vmStack, null())
+	}
+	p.vmStack[p.vmSp] = v
+	p.vmSp++
 }
 
 func (p *interp) pop() value {
-	last := len(p.st) - 1
-	v := p.st[last]
-	p.st = p.st[:last]
-	return v
+	p.vmSp--
+	return p.vmStack[p.vmSp]
+}
+
+func (p *interp) popSlice(n int) []value {
+	p.vmSp -= n
+	return p.vmStack[p.vmSp : p.vmSp+n]
 }
 
 // Execute pattern-action blocks (may be multiple)

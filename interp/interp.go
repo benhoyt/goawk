@@ -122,9 +122,9 @@ type interp struct {
 	formatCache map[string]cachedFormat
 	bytes       bool
 
-	// TODO: for compiled virtual machine
-	// TODO: consider changing to pre-allocated array/slice with separate stack pointer - slightly faster in my tests
-	st []value
+	// Virtual machine stack
+	vmStack []value
+	vmSp    int
 }
 
 // Various const configuration. Could make these part of Config if
@@ -226,13 +226,14 @@ func execInit(program *parser.Program, config *Config) (*interp, error) {
 
 	p := &interp{program: program}
 
-	// Allocate memory for variables
+	// Allocate memory for variables and virtual machine stack
 	p.globals = make([]value, len(program.Scalars))
 	p.stack = make([]value, 0, initialStackSize)
 	p.arrays = make([]map[string]value, len(program.Arrays), len(program.Arrays)+initialStackSize)
 	for i := 0; i < len(program.Arrays); i++ {
 		p.arrays[i] = make(map[string]value)
 	}
+	p.vmStack = make([]value, initialStackSize)
 
 	// Initialize defaults
 	p.regexCache = make(map[string]*regexp.Regexp, 10)
