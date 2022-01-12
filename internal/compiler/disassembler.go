@@ -81,11 +81,12 @@ func (p *Program) Disassemble(writer io.Writer) error {
 		}
 	}
 
-	for _, f := range p.Functions {
+	for i, f := range p.Functions {
 		d := &disassembler{
-			program: p,
-			writer:  writer,
-			code:    f.Body,
+			program:   p,
+			writer:    writer,
+			code:      f.Body,
+			funcIndex: i,
 		}
 		err := d.disassemble("function " + f.Name)
 		if err != nil {
@@ -97,12 +98,13 @@ func (p *Program) Disassemble(writer io.Writer) error {
 }
 
 type disassembler struct {
-	program *Program
-	writer  io.Writer
-	code    []Opcode
-	ip      int
-	opAddr  int
-	err     error
+	program   *Program
+	writer    io.Writer
+	code      []Opcode
+	funcIndex int
+	ip        int
+	opAddr    int
+	err       error
 }
 
 func (d *disassembler) disassemble(prefix string) error {
@@ -137,8 +139,8 @@ func (d *disassembler) disassemble(prefix string) error {
 			d.writeOpf("Global %s", d.program.ScalarNames[index])
 
 		case Local:
-			index := d.fetch()
-			d.writeOpf("Local %d", index) // TODO: local name
+			index := int(d.fetch())
+			d.writeOpf("Local %s", d.localName(index))
 
 		case Special:
 			index := d.fetch()
@@ -161,8 +163,8 @@ func (d *disassembler) disassemble(prefix string) error {
 			d.writeOpf("AssignGlobal %s", d.program.ScalarNames[index])
 
 		case AssignLocal:
-			index := d.fetch()
-			d.writeOpf("AssignLocal %d", index) // TODO: local name
+			index := int(d.fetch())
+			d.writeOpf("AssignLocal %s", d.localName(index))
 
 		case AssignSpecial:
 			index := d.fetch()
@@ -203,8 +205,8 @@ func (d *disassembler) disassemble(prefix string) error {
 
 		case IncrLocal:
 			amount := int32(d.fetch())
-			index := d.fetch()
-			d.writeOpf("IncrLocal %d %s", amount, index) // TODO: local name
+			index := int(d.fetch())
+			d.writeOpf("IncrLocal %d %s", amount, d.localName(index))
 
 		case IncrSpecial:
 			amount := int32(d.fetch())
@@ -232,8 +234,8 @@ func (d *disassembler) disassemble(prefix string) error {
 
 		case AugAssignLocal:
 			operation := lexer.Token(d.fetch())
-			index := d.fetch()
-			d.writeOpf("AugAssignLocal %s %d", operation, index) // TODO: local name
+			index := int(d.fetch())
+			d.writeOpf("AugAssignLocal %s %s", operation, d.localName(index))
 
 		case AugAssignSpecial:
 			operation := lexer.Token(d.fetch())
@@ -392,4 +394,14 @@ func (d *disassembler) writeOpf(format string, args ...interface{}) {
 	}
 	addrStr := fmt.Sprintf("%04x", d.opAddr)
 	_, d.err = fmt.Fprintf(d.writer, addrStr+"    "+format+"\n", args...)
+}
+
+func (d *disassembler) localName(index int) string {
+	f := d.program.Functions[d.funcIndex]
+	for i, p := range f.Params {
+		if i == index {
+			return p
+		}
+	}
+	panic(fmt.Sprintf("unexpected local variable index %d", index))
 }
