@@ -12,9 +12,9 @@ import (
 /*
 TODO:
 - user-defined functions
+  + array parameter support
 - native functions
 - assignment expressions (not standalone)
-- multi indexes
 - sub() and gsub()
 - getline
 - other TODOs
@@ -25,6 +25,7 @@ TODO:
     $ go test -coverpkg=./... ./interp -v -awk="" -compiled -coverprofile=cover.out
     $ go tool cover -html cover.out
 - optimize!
+  + optimize CONCAT(a,CONCAT(b,c)) etc to CONCAT(a, b, c) to avoid allocs/copying
 - fuzz testing
 */
 
@@ -168,17 +169,15 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 				c.add(AssignField)
 				return
 			case *ast.IndexExpr:
-				if len(target.Index) == 1 { // multi-index will fall through to c.expr()
-					c.expr(expr.Right)
-					c.expr(target.Index[0])
-					switch target.Array.Scope {
-					case ast.ScopeGlobal:
-						c.add(AssignArrayGlobal, Opcode(target.Array.Index))
-						return
-					case ast.ScopeLocal:
-						c.add(AssignArrayLocal, Opcode(target.Array.Index))
-						return
-					}
+				c.expr(expr.Right)
+				c.index(target.Index)
+				switch target.Array.Scope {
+				case ast.ScopeGlobal:
+					c.add(AssignArrayGlobal, Opcode(target.Array.Index))
+					return
+				case ast.ScopeLocal:
+					c.add(AssignArrayLocal, Opcode(target.Array.Index))
+					return
 				}
 			}
 
@@ -219,24 +218,22 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 				}
 				return
 			case *ast.IndexExpr:
-				if len(target.Index) == 1 { // multi-index will fall through to c.expr()
-					c.expr(target.Index[0])
-					switch target.Array.Scope {
-					case ast.ScopeGlobal:
-						if expr.Op == lexer.INCR {
-							c.add(IncrArrayGlobal, 1, Opcode(target.Array.Index))
-						} else {
-							c.add(IncrArrayGlobal, math.MaxUint32, Opcode(target.Array.Index))
-						}
-						return
-					case ast.ScopeLocal:
-						if expr.Op == lexer.INCR {
-							c.add(IncrArrayLocal, 1, Opcode(target.Array.Index))
-						} else {
-							c.add(IncrArrayLocal, math.MaxUint32, Opcode(target.Array.Index))
-						}
-						return
+				c.index(target.Index)
+				switch target.Array.Scope {
+				case ast.ScopeGlobal:
+					if expr.Op == lexer.INCR {
+						c.add(IncrArrayGlobal, 1, Opcode(target.Array.Index))
+					} else {
+						c.add(IncrArrayGlobal, math.MaxUint32, Opcode(target.Array.Index))
 					}
+					return
+				case ast.ScopeLocal:
+					if expr.Op == lexer.INCR {
+						c.add(IncrArrayLocal, 1, Opcode(target.Array.Index))
+					} else {
+						c.add(IncrArrayLocal, math.MaxUint32, Opcode(target.Array.Index))
+					}
+					return
 				}
 			}
 
@@ -261,17 +258,15 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 				c.add(AugAssignField, Opcode(expr.Op))
 				return
 			case *ast.IndexExpr:
-				if len(target.Index) == 1 { // multi-index will fall through to c.expr()
-					c.expr(expr.Right)
-					c.expr(target.Index[0])
-					switch target.Array.Scope {
-					case ast.ScopeGlobal:
-						c.add(AugAssignArrayGlobal, Opcode(expr.Op), Opcode(target.Array.Index))
-						return
-					case ast.ScopeLocal:
-						c.add(AugAssignArrayLocal, Opcode(expr.Op), Opcode(target.Array.Index))
-						return
-					}
+				c.expr(expr.Right)
+				c.index(target.Index)
+				switch target.Array.Scope {
+				case ast.ScopeGlobal:
+					c.add(AugAssignArrayGlobal, Opcode(expr.Op), Opcode(target.Array.Index))
+					return
+				case ast.ScopeLocal:
+					c.add(AugAssignArrayLocal, Opcode(expr.Op), Opcode(target.Array.Index))
+					return
 				}
 			}
 		}
@@ -427,10 +422,7 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 
 	case *ast.DeleteStmt:
 		if len(s.Index) > 0 {
-			if len(s.Index) > 1 {
-				panic("TODO multi indexes not yet supported")
-			}
-			c.expr(s.Index[0])
+			c.index(s.Index)
 			switch s.Array.Scope {
 			case ast.ScopeGlobal:
 				c.add(DeleteGlobal, Opcode(s.Array.Index))
@@ -666,15 +658,12 @@ func (c *compiler) expr(expr ast.Expr) {
 		c.patchForward(elseMark)
 
 	case *ast.IndexExpr:
-		if len(e.Index) > 1 {
-			panic("TODO multi indexes not yet supported")
-		}
+		c.index(e.Index)
 		switch e.Array.Scope {
 		case ast.ScopeGlobal:
-			c.expr(e.Index[0])
 			c.add(ArrayGlobal, Opcode(e.Array.Index))
 		case ast.ScopeLocal:
-			panic("TODO IndexExpr local array not yet supported")
+			c.add(ArrayLocal, Opcode(e.Array.Index))
 		}
 
 	case *ast.CallExpr:
@@ -776,15 +765,11 @@ func (c *compiler) expr(expr ast.Expr) {
 		}
 
 	case *ast.InExpr:
-		if len(e.Index) > 1 {
-			panic("TODO multi indexes not yet supported")
-		}
+		c.index(e.Index)
 		switch e.Array.Scope {
 		case ast.ScopeGlobal:
-			c.expr(e.Index[0])
 			c.add(InGlobal, Opcode(e.Array.Index))
 		case ast.ScopeLocal:
-			c.expr(e.Index[0])
 			c.add(InLocal, Opcode(e.Array.Index))
 		}
 
@@ -811,5 +796,14 @@ func (c *compiler) expr(expr ast.Expr) {
 	default:
 		// Should never happen
 		panic(fmt.Sprintf("unexpected expr type: %T", expr))
+	}
+}
+
+func (c *compiler) index(index []ast.Expr) {
+	for _, expr := range index {
+		c.expr(expr)
+	}
+	if len(index) > 1 {
+		c.add(MultiIndex, Opcode(len(index)))
 	}
 }

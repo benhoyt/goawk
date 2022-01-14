@@ -59,6 +59,9 @@ const (
 	// Stand-alone regex expression /foo/
 	Regex // regexIndex
 
+	// Multi-index concatenation
+	MultiIndex // num
+
 	// Binary operators
 	Add
 	Subtract

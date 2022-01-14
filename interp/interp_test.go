@@ -1382,7 +1382,7 @@ BEGIN {
 `, b.N)
 }
 
-func TODO_BenchmarkLocalVars(b *testing.B) {
+func BenchmarkLocalVars(b *testing.B) {
 	benchmarkProgram(b, nil, "", "b 2", `
 function f(i, x, y, t) {
   for (i = 0; i < %d; i++) {
@@ -1607,7 +1607,7 @@ BEGIN {
 `, b.N)
 }
 
-func TODO_BenchmarkRecursiveFunc(b *testing.B) {
+func BenchmarkRecursiveFunc(b *testing.B) {
 	benchmarkProgram(b, nil, "", "55", `
 function fib(n) {
   if (n <= 2) {
@@ -1625,7 +1625,7 @@ BEGIN {
 `, b.N)
 }
 
-func TODO_BenchmarkFuncCall(b *testing.B) {
+func BenchmarkFuncCall(b *testing.B) {
 	benchmarkProgram(b, nil, "", "75", `
 function add(a, b) {
   return a + b

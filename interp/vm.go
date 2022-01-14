@@ -332,6 +332,16 @@ func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op
 			re := compiledProg.Regexes[index]
 			p.push(boolean(re.MatchString(p.line)))
 
+		case compiler.MultiIndex:
+			numValues := int(code[i])
+			i++
+			values := p.popSlice(numValues)
+			indices := make([]string, 0, 3) // up to 3-dimensional indices won't require heap allocation
+			for _, v := range values {
+				indices = append(indices, p.toString(v))
+			}
+			p.push(str(strings.Join(indices, p.subscriptSep)))
+
 		case compiler.Add:
 			r := p.pop()
 			l := p.pop()
@@ -847,7 +857,7 @@ func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op
 			i++
 			fieldSep := p.toString(p.pop())
 			s := p.toString(p.pop())
-			n, err := p.split(s, ast.ScopeGlobal, int(arrayIndex), fieldSep)
+			n, err := p.split(s, ast.ScopeLocal, int(arrayIndex), fieldSep)
 			if err != nil {
 				return err
 			}
