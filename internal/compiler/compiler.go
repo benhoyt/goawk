@@ -11,7 +11,6 @@ import (
 
 /*
 TODO:
-- assignment expressions (not standalone)
 - sub() and gsub()
 - getline
 - other TODOs
@@ -163,40 +162,11 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		// Optimize assignment expressions to avoid Dupe and Drop
 		switch expr := s.Expr.(type) {
 		case *ast.AssignExpr:
-			switch target := expr.Left.(type) {
-			case *ast.VarExpr:
-				c.expr(expr.Right)
-				switch target.Scope {
-				case ast.ScopeGlobal:
-					c.add(AssignGlobal, Opcode(target.Index))
-					return
-				case ast.ScopeLocal:
-					c.add(AssignLocal, Opcode(target.Index))
-					return
-				case ast.ScopeSpecial:
-					c.add(AssignSpecial, Opcode(target.Index))
-					return
-				}
-			case *ast.FieldExpr:
-				c.expr(expr.Right)
-				c.expr(target.Index)
-				c.add(AssignField)
-				return
-			case *ast.IndexExpr:
-				c.expr(expr.Right)
-				c.index(target.Index)
-				switch target.Array.Scope {
-				case ast.ScopeGlobal:
-					c.add(AssignArrayGlobal, Opcode(target.Array.Index))
-					return
-				case ast.ScopeLocal:
-					c.add(AssignArrayLocal, Opcode(target.Array.Index))
-					return
-				}
-			}
+			c.expr(expr.Right)
+			c.assign(expr.Left)
+			return
 
 		case *ast.IncrExpr:
-			// TODO: Decr
 			// Pre or post doesn't matter for an assignment expression
 			switch target := expr.Expr.(type) {
 			case *ast.VarExpr:
@@ -252,37 +222,30 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 			}
 
 		case *ast.AugAssignExpr:
+			c.expr(expr.Right)
 			switch target := expr.Left.(type) {
 			case *ast.VarExpr:
-				c.expr(expr.Right)
 				switch target.Scope {
 				case ast.ScopeGlobal:
 					c.add(AugAssignGlobal, Opcode(expr.Op), Opcode(target.Index))
-					return
 				case ast.ScopeLocal:
 					c.add(AugAssignLocal, Opcode(expr.Op), Opcode(target.Index))
-					return
 				case ast.ScopeSpecial:
 					c.add(AugAssignSpecial, Opcode(expr.Op), Opcode(target.Index))
-					return
 				}
 			case *ast.FieldExpr:
-				c.expr(expr.Right)
 				c.expr(target.Index)
 				c.add(AugAssignField, Opcode(expr.Op))
-				return
 			case *ast.IndexExpr:
-				c.expr(expr.Right)
 				c.index(target.Index)
 				switch target.Array.Scope {
 				case ast.ScopeGlobal:
 					c.add(AugAssignArrayGlobal, Opcode(expr.Op), Opcode(target.Array.Index))
-					return
 				case ast.ScopeLocal:
 					c.add(AugAssignArrayLocal, Opcode(expr.Op), Opcode(target.Array.Index))
-					return
 				}
 			}
+			return
 		}
 
 		// Non-optimized expression: push it and then drop
@@ -460,6 +423,31 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 	}
 }
 
+func (c *compiler) assign(target ast.Expr) {
+	switch target := target.(type) {
+	case *ast.VarExpr:
+		switch target.Scope {
+		case ast.ScopeGlobal:
+			c.add(AssignGlobal, Opcode(target.Index))
+		case ast.ScopeLocal:
+			c.add(AssignLocal, Opcode(target.Index))
+		case ast.ScopeSpecial:
+			c.add(AssignSpecial, Opcode(target.Index))
+		}
+	case *ast.FieldExpr:
+		c.expr(target.Index)
+		c.add(AssignField)
+	case *ast.IndexExpr:
+		c.index(target.Index)
+		switch target.Array.Scope {
+		case ast.ScopeGlobal:
+			c.add(AssignArrayGlobal, Opcode(target.Array.Index))
+		case ast.ScopeLocal:
+			c.add(AssignArrayLocal, Opcode(target.Array.Index))
+		}
+	}
+}
+
 func (c *compiler) patchBreaks() {
 	breaks := c.breaks[len(c.breaks)-1]
 	for _, mark := range breaks {
@@ -590,7 +578,6 @@ func (c *compiler) expr(expr ast.Expr) {
 			c.expr(e.Right)
 			c.patchForward(mark)
 			c.add(Boolean)
-			return
 		case lexer.OR:
 			c.expr(e.Left)
 			c.add(Dupe)
@@ -599,67 +586,43 @@ func (c *compiler) expr(expr ast.Expr) {
 			c.expr(e.Right)
 			c.patchForward(mark)
 			c.add(Boolean)
-			return
-		}
-
-		c.expr(e.Left)
-		c.expr(e.Right)
-		var op Opcode
-		switch e.Op {
-		case lexer.ADD:
-			op = Add
-		case lexer.SUB:
-			op = Subtract
-		case lexer.EQUALS:
-			op = Equals
-		case lexer.LESS:
-			op = Less
-		case lexer.LTE:
-			op = LessOrEqual
-		case lexer.CONCAT:
-			op = Concat
-		case lexer.MUL:
-			op = Multiply
-		case lexer.DIV:
-			op = Divide
-		case lexer.GREATER:
-			op = Greater
-		case lexer.GTE:
-			op = GreaterOrEqual
-		case lexer.NOT_EQUALS:
-			op = NotEquals
-		case lexer.MATCH:
-			op = Match
-		case lexer.NOT_MATCH:
-			op = NotMatch
-		case lexer.POW:
-			op = Power
-		case lexer.MOD:
-			op = Modulo
 		default:
-			panic(fmt.Sprintf("unexpected binary operation: %s", e.Op))
+			c.expr(e.Left)
+			c.expr(e.Right)
+			c.binaryOp(e.Op)
 		}
-		c.add(op)
 
-	//case *ast.IncrExpr:
+	case *ast.IncrExpr:
+		op := Add
+		if e.Op == lexer.DECR {
+			op = Subtract
+		}
+		if e.Pre {
+			c.expr(e.Expr)
+			c.expr(&ast.NumExpr{1})
+			c.add(op)
+			c.add(Dupe)
+		} else {
+			c.expr(e.Expr)
+			c.expr(&ast.NumExpr{0})
+			c.add(Add)
+			c.add(Dupe)
+			c.expr(&ast.NumExpr{1})
+			c.add(op)
+		}
+		c.assign(e.Expr)
 
 	case *ast.AssignExpr:
 		c.expr(e.Right)
 		c.add(Dupe)
-		switch left := e.Left.(type) {
-		case *ast.VarExpr:
-			switch left.Scope {
-			case ast.ScopeGlobal:
-				c.add(AssignGlobal, Opcode(left.Index))
-			case ast.ScopeLocal:
-			default: // ast.ScopeSpecial
-			}
-		case *ast.IndexExpr:
-		default: // *ast.FieldExpr
-		}
+		c.assign(e.Left)
 
-	//case *ast.AugAssignExpr:
-	//
+	case *ast.AugAssignExpr:
+		c.expr(e.Left)
+		c.expr(e.Right)
+		c.binaryOp(e.Op)
+		c.add(Dupe)
+		c.assign(e.Left)
 
 	case *ast.CondExpr:
 		jumpOp := c.cond(e.Cond, true)
@@ -815,11 +778,66 @@ func (c *compiler) expr(expr ast.Expr) {
 		}
 
 	//case *ast.GetlineExpr:
+	//	switch {
+	//	case e.Command != nil:
+	//		c.expr(e.Command)
+	//		c.add(GetlineCommand)
+	//	case e.File != nil:
+	//		c.expr(e.File)
+	//		c.add(GetlineFile)
+	//	default:
+	//		c.add(Getline)
+	//	}
+	//	if e.Target != nil {
+	//		c.assign(e.Target)
+	//	} else {
+	//		target := &ast.FieldExpr{&ast.NumExpr{Value: 0}} // assign to $0
+	//		c.assign(target)
+	//	}
 
 	default:
 		// Should never happen
 		panic(fmt.Sprintf("unexpected expr type: %T", expr))
 	}
+}
+
+func (c *compiler) binaryOp(op lexer.Token) {
+	var opcode Opcode
+	switch op {
+	case lexer.ADD:
+		opcode = Add
+	case lexer.SUB:
+		opcode = Subtract
+	case lexer.EQUALS:
+		opcode = Equals
+	case lexer.LESS:
+		opcode = Less
+	case lexer.LTE:
+		opcode = LessOrEqual
+	case lexer.CONCAT:
+		opcode = Concat
+	case lexer.MUL:
+		opcode = Multiply
+	case lexer.DIV:
+		opcode = Divide
+	case lexer.GREATER:
+		opcode = Greater
+	case lexer.GTE:
+		opcode = GreaterOrEqual
+	case lexer.NOT_EQUALS:
+		opcode = NotEquals
+	case lexer.MATCH:
+		opcode = Match
+	case lexer.NOT_MATCH:
+		opcode = NotMatch
+	case lexer.POW:
+		opcode = Power
+	case lexer.MOD:
+		opcode = Modulo
+	default:
+		panic(fmt.Sprintf("unexpected binary operation: %s", op))
+	}
+	c.add(opcode)
 }
 
 func (c *compiler) index(index []ast.Expr) {

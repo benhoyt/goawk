@@ -669,63 +669,6 @@ func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op
 				p.push(null())
 			}
 
-		case compiler.Print:
-			numArgs := code[i]
-			redirect := lexer.Token(code[i+1])
-			i += 2
-
-			// Print OFS-separated args followed by ORS (usually newline)
-			var line string
-			if numArgs > 0 {
-				args := p.popSlice(int(numArgs))
-				strs := make([]string, len(args))
-				for i, a := range args {
-					strs[i] = a.str(p.outputFormat)
-				}
-				line = strings.Join(strs, p.outputFieldSep)
-			} else {
-				// "print" with no args is equivalent to "print $0"
-				line = p.line
-			}
-
-			output := p.output
-			if redirect != lexer.ILLEGAL {
-				var err error
-				dest := p.pop()
-				output, err = p.getOutputStream(redirect, dest)
-				if err != nil {
-					return err
-				}
-			}
-			err := p.printLine(output, line)
-			if err != nil {
-				return err
-			}
-
-		case compiler.Printf:
-			numArgs := code[i]
-			redirect := lexer.Token(code[i+1])
-			i += 2
-
-			args := p.popSlice(int(numArgs))
-			s, err := p.sprintf(p.toString(args[0]), args[1:])
-			if err != nil {
-				return err
-			}
-
-			output := p.output
-			if redirect != lexer.ILLEGAL {
-				dest := p.pop()
-				output, err = p.getOutputStream(redirect, dest)
-				if err != nil {
-					return err
-				}
-			}
-			err = writeOutput(output, s)
-			if err != nil {
-				return err
-			}
-
 		case compiler.CallAtan2:
 			// TODO: optimize stack operations for all of these (and binary ops) if it improves performance
 			x := p.pop()
@@ -1061,6 +1004,69 @@ func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op
 
 		case compiler.CallToupper:
 			p.push(str(strings.ToUpper(p.toString(p.pop()))))
+
+		case compiler.Print:
+			numArgs := code[i]
+			redirect := lexer.Token(code[i+1])
+			i += 2
+
+			// Print OFS-separated args followed by ORS (usually newline)
+			var line string
+			if numArgs > 0 {
+				args := p.popSlice(int(numArgs))
+				strs := make([]string, len(args))
+				for i, a := range args {
+					strs[i] = a.str(p.outputFormat)
+				}
+				line = strings.Join(strs, p.outputFieldSep)
+			} else {
+				// "print" with no args is equivalent to "print $0"
+				line = p.line
+			}
+
+			output := p.output
+			if redirect != lexer.ILLEGAL {
+				var err error
+				dest := p.pop()
+				output, err = p.getOutputStream(redirect, dest)
+				if err != nil {
+					return err
+				}
+			}
+			err := p.printLine(output, line)
+			if err != nil {
+				return err
+			}
+
+		case compiler.Printf:
+			numArgs := code[i]
+			redirect := lexer.Token(code[i+1])
+			i += 2
+
+			args := p.popSlice(int(numArgs))
+			s, err := p.sprintf(p.toString(args[0]), args[1:])
+			if err != nil {
+				return err
+			}
+
+			output := p.output
+			if redirect != lexer.ILLEGAL {
+				dest := p.pop()
+				output, err = p.getOutputStream(redirect, dest)
+				if err != nil {
+					return err
+				}
+			}
+			err = writeOutput(output, s)
+			if err != nil {
+				return err
+			}
+
+		//case compiler.Getline:
+		//
+		//case compiler.GetlineFile:
+		//
+		//case compiler.GetlineCommand:
 
 		default:
 			panic(fmt.Sprintf("TODO remove: unsupported opcode %s", op))
