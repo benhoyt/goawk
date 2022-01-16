@@ -11,9 +11,10 @@ import (
 func (p *Program) Disassemble(writer io.Writer) error {
 	if p.Begin != nil {
 		d := &disassembler{
-			program: p,
-			writer:  writer,
-			code:    p.Begin,
+			program:         p,
+			writer:          writer,
+			code:            p.Begin,
+			nativeFuncNames: p.NativeFuncNames,
 		}
 		err := d.disassemble("BEGIN")
 		if err != nil {
@@ -26,9 +27,10 @@ func (p *Program) Disassemble(writer io.Writer) error {
 		case 0:
 		case 1:
 			d := &disassembler{
-				program: p,
-				writer:  writer,
-				code:    action.Pattern[0],
+				program:         p,
+				writer:          writer,
+				code:            action.Pattern[0],
+				nativeFuncNames: p.NativeFuncNames,
 			}
 			err := d.disassemble("pattern")
 			if err != nil {
@@ -36,18 +38,20 @@ func (p *Program) Disassemble(writer io.Writer) error {
 			}
 		case 2:
 			d := &disassembler{
-				program: p,
-				writer:  writer,
-				code:    action.Pattern[0],
+				program:         p,
+				writer:          writer,
+				code:            action.Pattern[0],
+				nativeFuncNames: p.NativeFuncNames,
 			}
 			err := d.disassemble("start")
 			if err != nil {
 				return err
 			}
 			d = &disassembler{
-				program: p,
-				writer:  writer,
-				code:    action.Pattern[1],
+				program:         p,
+				writer:          writer,
+				code:            action.Pattern[1],
+				nativeFuncNames: p.NativeFuncNames,
 			}
 			err = d.disassemble("stop")
 			if err != nil {
@@ -56,9 +60,10 @@ func (p *Program) Disassemble(writer io.Writer) error {
 		}
 		if len(action.Body) > 0 {
 			d := &disassembler{
-				program: p,
-				writer:  writer,
-				code:    action.Body,
+				program:         p,
+				writer:          writer,
+				code:            action.Body,
+				nativeFuncNames: p.NativeFuncNames,
 			}
 			err := d.disassemble("{ body }")
 			if err != nil {
@@ -69,9 +74,10 @@ func (p *Program) Disassemble(writer io.Writer) error {
 
 	if p.End != nil {
 		d := &disassembler{
-			program: p,
-			writer:  writer,
-			code:    p.End,
+			program:         p,
+			writer:          writer,
+			code:            p.End,
+			nativeFuncNames: p.NativeFuncNames,
 		}
 		err := d.disassemble("END")
 		if err != nil {
@@ -81,10 +87,11 @@ func (p *Program) Disassemble(writer io.Writer) error {
 
 	for i, f := range p.Functions {
 		d := &disassembler{
-			program:   p,
-			writer:    writer,
-			code:      f.Body,
-			funcIndex: i,
+			program:         p,
+			writer:          writer,
+			code:            f.Body,
+			nativeFuncNames: p.NativeFuncNames,
+			funcIndex:       i,
 		}
 		err := d.disassemble("function " + f.Name)
 		if err != nil {
@@ -96,13 +103,14 @@ func (p *Program) Disassemble(writer io.Writer) error {
 }
 
 type disassembler struct {
-	program   *Program
-	writer    io.Writer
-	code      []Opcode
-	funcIndex int
-	ip        int
-	opAddr    int
-	err       error
+	program         *Program
+	writer          io.Writer
+	code            []Opcode
+	nativeFuncNames []string
+	funcIndex       int
+	ip              int
+	opAddr          int
+	err             error
 }
 
 func (d *disassembler) disassemble(prefix string) error {
@@ -345,6 +353,11 @@ func (d *disassembler) disassemble(prefix string) error {
 		case CallUser:
 			funcIndex := d.fetch()
 			d.writeOpf("CallUser %s", d.program.Functions[funcIndex].Name)
+
+		case CallNative:
+			funcIndex := d.fetch()
+			numArgs := d.fetch()
+			d.writeOpf("CallNative %s %d", d.nativeFuncNames[funcIndex], numArgs)
 
 		case Nulls:
 			numNulls := d.fetch()

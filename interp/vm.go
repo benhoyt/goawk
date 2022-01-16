@@ -1,9 +1,11 @@
 package interp
 
 import (
+	"fmt"
 	"io"
 	"math"
 	"os/exec"
+	"reflect"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -606,6 +608,18 @@ func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op
 				p.push(null())
 			}
 
+		case compiler.CallNative:
+			funcIndex := int(code[i])
+			numArgs := int(code[i+1])
+			i += 2
+
+			args := p.popSlice(numArgs)
+			r, err := p.callNativeCompiled(funcIndex, args)
+			if err != nil {
+				return err
+			}
+			p.push(r)
+
 		case compiler.Return:
 			v := p.pop()
 			return returnValue{v}
@@ -1110,4 +1124,53 @@ lineLoop:
 		}
 	}
 	return nil
+}
+
+// Call native-defined function with given name and arguments, return
+// its return value (or null value if it doesn't return anything).
+func (p *interp) callNativeCompiled(index int, args []value) (value, error) {
+	f := p.nativeFuncs[index]
+	minIn := len(f.in) // Minimum number of args we should pass
+	var variadicType reflect.Type
+	if f.isVariadic {
+		variadicType = f.in[len(f.in)-1].Elem()
+		minIn--
+	}
+
+	// Build list of args to pass to function
+	values := make([]reflect.Value, 0, 7) // up to 7 args won't require heap allocation
+	for i, a := range args {
+		var argType reflect.Type
+		if !f.isVariadic || i < len(f.in)-1 {
+			argType = f.in[i]
+		} else {
+			// Final arg(s) when calling a variadic are all of this type
+			argType = variadicType
+		}
+		values = append(values, p.toNative(a, argType))
+	}
+	// Use zero value for any unspecified args
+	for i := len(args); i < minIn; i++ {
+		values = append(values, reflect.Zero(f.in[i]))
+	}
+
+	// Call Go function, determine return value
+	outs := f.value.Call(values)
+	switch len(outs) {
+	case 0:
+		// No return value, return null value to AWK
+		return null(), nil
+	case 1:
+		// Single return value
+		return fromNative(outs[0]), nil
+	case 2:
+		// Two-valued return of (scalar, error)
+		if !outs[1].IsNil() {
+			return null(), outs[1].Interface().(error)
+		}
+		return fromNative(outs[0]), nil
+	default:
+		// Should never happen (checked at parse time)
+		panic(fmt.Sprintf("unexpected number of return values: %d", len(outs)))
+	}
 }

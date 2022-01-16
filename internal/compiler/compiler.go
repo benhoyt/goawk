@@ -30,15 +30,18 @@ TODO:
 */
 
 type Program struct {
-	Begin       []Opcode
-	Actions     []Action
-	End         []Opcode
-	Functions   []Function
-	Nums        []float64
-	Strs        []string
-	Regexes     []*regexp.Regexp
-	ScalarNames []string // for disassembly
-	ArrayNames  []string // for disassembly
+	Begin     []Opcode
+	Actions   []Action
+	End       []Opcode
+	Functions []Function
+	Nums      []float64
+	Strs      []string
+	Regexes   []*regexp.Regexp
+
+	// For disassembly
+	ScalarNames     []string
+	ArrayNames      []string
+	NativeFuncNames []string
 }
 
 type Action struct {
@@ -775,21 +778,29 @@ func (c *compiler) expr(expr ast.Expr) {
 
 	case *ast.UserCallExpr:
 		if e.Native {
-			panic("TODO: native functions not yet supported")
-		}
-		f := c.program.Functions[e.Index]
-		for _, a := range f.Arrays {
-			if a {
-				panic("TODO: array parameters not yet supported")
+			for _, arg := range e.Args {
+				c.expr(arg)
 			}
+			c.add(CallNative, Opcode(e.Index), Opcode(len(e.Args)))
+			for len(c.program.NativeFuncNames) <= e.Index {
+				c.program.NativeFuncNames = append(c.program.NativeFuncNames, "")
+			}
+			c.program.NativeFuncNames[e.Index] = e.Name
+		} else {
+			f := c.program.Functions[e.Index]
+			for _, a := range f.Arrays {
+				if a {
+					panic("TODO: array parameters not yet supported")
+				}
+			}
+			for _, arg := range e.Args {
+				c.expr(arg)
+			}
+			if len(e.Args) < len(f.Params) {
+				c.add(Nulls, Opcode(len(f.Params)-len(e.Args)))
+			}
+			c.add(CallUser, Opcode(e.Index))
 		}
-		for _, arg := range e.Args {
-			c.expr(arg)
-		}
-		if len(e.Args) < len(f.Params) {
-			c.add(Nulls, Opcode(len(f.Params)-len(e.Args)))
-		}
-		c.add(CallUser, Opcode(e.Index))
 
 	//case *ast.GetlineExpr:
 
