@@ -734,13 +734,16 @@ func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op
 				p.push(num(0))
 			}
 
-		//case compiler.CallGsub:
-		//case compiler.CallGsubField:
-		//case compiler.CallGsubGlobal:
-		//case compiler.CallGsubLocal:
-		//case compiler.CallGsubSpecial:
-		//case compiler.CallGsubArrayGlobal:
-		//case compiler.CallGsubArrayLocal:
+		case compiler.CallGsub:
+			in := p.toString(p.pop())
+			repl := p.toString(p.pop())
+			regex := p.toString(p.pop())
+			out, n, err := p.sub(regex, repl, in, true)
+			if err != nil {
+				return err
+			}
+			p.push(num(float64(n)))
+			p.push(str(out))
 
 		case compiler.CallIndex:
 			substr := p.toString(p.pop())
@@ -879,13 +882,16 @@ func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op
 			p.random.Seed(int64(math.Float64bits(p.randSeed)))
 			p.push(num(prevSeed))
 
-		//case compiler.CallSub:
-		//case compiler.CallSubField:
-		//case compiler.CallSubGlobal:
-		//case compiler.CallSubLocal:
-		//case compiler.CallSubSpecial:
-		//case compiler.CallSubArrayGlobal:
-		//case compiler.CallSubArrayLocal:
+		case compiler.CallSub:
+			in := p.toString(p.pop())
+			repl := p.toString(p.pop())
+			regex := p.toString(p.pop())
+			out, n, err := p.sub(regex, repl, in, false)
+			if err != nil {
+				return err
+			}
+			p.push(num(float64(n)))
+			p.push(str(out))
 
 		case compiler.CallSubstr:
 			// TODO: avoid duplication in function.go if we're keeping that

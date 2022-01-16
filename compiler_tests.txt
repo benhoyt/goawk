@@ -263,23 +263,14 @@
 === RUN   TestInterp/BEGIN_{_n_=_split("ab,c.d,",_a,_/[,.]/);_for_(i=1;_i<=n;_i++)_print_a[
 === RUN   TestInterp/BEGIN_{_n_=_split("1_2",_a);_print_(n,_a[1],_a[2],_a[1]==1,_a[2]==2)_}
 === RUN   TestInterp/BEGIN_{_x_=_"1.2.3";_print_sub(/\./,_",",_x);_print_x_}
-    interp_test.go:810: panic compiling: TODO: func sub not yet supported
 === RUN   TestInterp/{_print_sub(/\./,_",");_print_$0_}
-    interp_test.go:810: panic compiling: TODO: func sub not yet supported
 === RUN   TestInterp/BEGIN_{_x_=_"1.2.3";_print_gsub(/\./,_",",_x);_print_x_}
-    interp_test.go:810: panic compiling: TODO: func gsub not yet supported
 === RUN   TestInterp/{_print_gsub(/\./,_",");_print_$0_}
-    interp_test.go:810: panic compiling: TODO: func gsub not yet supported
 === RUN   TestInterp/{_print_gsub(/[0-9]/,_"(&)");_print_$0_}
-    interp_test.go:810: panic compiling: TODO: func gsub not yet supported
 === RUN   TestInterp/{_print_gsub(/[0-9]+/,_"(&)");_print_$0_}
-    interp_test.go:810: panic compiling: TODO: func gsub not yet supported
 === RUN   TestInterp/{_print_gsub(/[0-9]/,_"\\&");_print_$0_}
-    interp_test.go:810: panic compiling: TODO: func gsub not yet supported
 === RUN   TestInterp/{_print_gsub(/[0-9]/,_"\\z");_print_$0_}
-    interp_test.go:810: panic compiling: TODO: func gsub not yet supported
 === RUN   TestInterp/{_print_gsub("0",_"x\\\\y");_print_$0_}__#_!awk_!gawk_--_our_behaviour
-    interp_test.go:810: panic compiling: TODO: func gsub not yet supported
 === RUN   TestInterp/sub("",_"\\e",_FS)__#_!awk_!gawk
 === RUN   TestInterp/BEGIN_{_print_tolower("Foo_BaR")_}
 === RUN   TestInterp/BEGIN_{_print_toupper("Foo_BaR")_}
@@ -641,15 +632,15 @@
     --- PASS: TestInterp/BEGIN_{_n_=_split("ab,c,d,",_a,_",");_for_(i=1;_i<=n;_i++)_print_a[i]_ (0.00s)
     --- PASS: TestInterp/BEGIN_{_n_=_split("ab,c.d,",_a,_/[,.]/);_for_(i=1;_i<=n;_i++)_print_a[ (0.00s)
     --- PASS: TestInterp/BEGIN_{_n_=_split("1_2",_a);_print_(n,_a[1],_a[2],_a[1]==1,_a[2]==2)_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_x_=_"1.2.3";_print_sub(/\./,_",",_x);_print_x_} (0.00s)
-    --- FAIL: TestInterp/{_print_sub(/\./,_",");_print_$0_} (0.00s)
-    --- FAIL: TestInterp/BEGIN_{_x_=_"1.2.3";_print_gsub(/\./,_",",_x);_print_x_} (0.00s)
-    --- FAIL: TestInterp/{_print_gsub(/\./,_",");_print_$0_} (0.00s)
-    --- FAIL: TestInterp/{_print_gsub(/[0-9]/,_"(&)");_print_$0_} (0.00s)
-    --- FAIL: TestInterp/{_print_gsub(/[0-9]+/,_"(&)");_print_$0_} (0.00s)
-    --- FAIL: TestInterp/{_print_gsub(/[0-9]/,_"\\&");_print_$0_} (0.00s)
-    --- FAIL: TestInterp/{_print_gsub(/[0-9]/,_"\\z");_print_$0_} (0.00s)
-    --- FAIL: TestInterp/{_print_gsub("0",_"x\\\\y");_print_$0_}__#_!awk_!gawk_--_our_behaviour (0.00s)
+    --- PASS: TestInterp/BEGIN_{_x_=_"1.2.3";_print_sub(/\./,_",",_x);_print_x_} (0.00s)
+    --- PASS: TestInterp/{_print_sub(/\./,_",");_print_$0_} (0.00s)
+    --- PASS: TestInterp/BEGIN_{_x_=_"1.2.3";_print_gsub(/\./,_",",_x);_print_x_} (0.00s)
+    --- PASS: TestInterp/{_print_gsub(/\./,_",");_print_$0_} (0.00s)
+    --- PASS: TestInterp/{_print_gsub(/[0-9]/,_"(&)");_print_$0_} (0.00s)
+    --- PASS: TestInterp/{_print_gsub(/[0-9]+/,_"(&)");_print_$0_} (0.00s)
+    --- PASS: TestInterp/{_print_gsub(/[0-9]/,_"\\&");_print_$0_} (0.00s)
+    --- PASS: TestInterp/{_print_gsub(/[0-9]/,_"\\z");_print_$0_} (0.00s)
+    --- PASS: TestInterp/{_print_gsub("0",_"x\\\\y");_print_$0_}__#_!awk_!gawk_--_our_behaviour (0.00s)
     --- PASS: TestInterp/sub("",_"\\e",_FS)__#_!awk_!gawk (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_tolower("Foo_BaR")_} (0.00s)
     --- PASS: TestInterp/BEGIN_{_print_toupper("Foo_BaR")_} (0.00s)

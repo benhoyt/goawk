@@ -117,12 +117,6 @@ const (
 	CallFflush
 	CallFflushAll
 	CallGsub
-	CallGsubField
-	CallGsubGlobal      // index
-	CallGsubLocal       // index
-	CallGsubSpecial     // index
-	CallGsubArrayGlobal // arrayIndex
-	CallGsubArrayLocal  // arrayIndex
 	CallIndex
 	CallInt
 	CallLength
@@ -140,12 +134,6 @@ const (
 	CallSrand
 	CallSrandSeed
 	CallSub
-	CallSubField
-	CallSubGlobal      // index
-	CallSubLocal       // index
-	CallSubSpecial     // index
-	CallSubArrayGlobal // arrayIndex
-	CallSubArrayLocal  // arrayIndex
 	CallSubstr
 	CallSubstrLength
 	CallSystem

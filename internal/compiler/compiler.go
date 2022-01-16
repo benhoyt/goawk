@@ -662,7 +662,21 @@ func (c *compiler) expr(expr ast.Expr) {
 				panic(fmt.Sprintf("unexpected array scope %d or num args %d", arrayExpr.Scope, len(e.Args)))
 			}
 			return
-			// TODO: case lexer.F_SUB, lexer.F_GSUB:
+		case lexer.F_SUB, lexer.F_GSUB:
+			op := CallSub
+			if e.Func == lexer.F_GSUB {
+				op = CallGsub
+			}
+			var target ast.Expr = &ast.FieldExpr{&ast.NumExpr{0}} // default value and target is $0
+			if len(e.Args) == 3 {
+				target = e.Args[2]
+			}
+			c.expr(e.Args[0])
+			c.expr(e.Args[1])
+			c.expr(target)
+			c.add(op)
+			c.assign(target)
+			return
 		}
 
 		for _, arg := range e.Args {
