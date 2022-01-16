@@ -3,6 +3,7 @@ package compiler
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/lexer"
@@ -156,13 +157,17 @@ func (d *disassembler) disassemble(prefix string) error {
 			arrayIndex := d.fetch()
 			d.writeOpf("ArrayGlobal %s", d.program.ArrayNames[arrayIndex])
 
+		case ArrayLocal:
+			arrayIndex := d.fetch()
+			d.writeOpf("ArrayLocal %s", d.localArrayName(int(arrayIndex)))
+
 		case InGlobal:
 			arrayIndex := d.fetch()
 			d.writeOpf("InGlobal %s", d.program.ArrayNames[arrayIndex])
 
 		case InLocal:
-			arrayIndex := d.fetch()
-			d.writeOpf("InLocal %d", arrayIndex)
+			arrayIndex := int(d.fetch())
+			d.writeOpf("InLocal %s", d.localArrayName(arrayIndex))
 
 		case AssignGlobal:
 			index := d.fetch()
@@ -181,24 +186,24 @@ func (d *disassembler) disassemble(prefix string) error {
 			d.writeOpf("AssignArrayGlobal %s", d.program.ArrayNames[arrayIndex])
 
 		case AssignArrayLocal:
-			arrayIndex := d.fetch()
-			d.writeOpf("AssignArrayLocal %d", arrayIndex) // TODO: local name
+			arrayIndex := int(d.fetch())
+			d.writeOpf("AssignArrayLocal %s", d.localArrayName(arrayIndex))
 
 		case DeleteGlobal:
 			arrayIndex := d.fetch()
 			d.writeOpf("DeleteGlobal %s", d.program.ArrayNames[arrayIndex])
 
 		case DeleteLocal:
-			arrayIndex := d.fetch()
-			d.writeOpf("DeleteLocal %d", arrayIndex) // TODO: local name
+			arrayIndex := int(d.fetch())
+			d.writeOpf("DeleteLocal %d", d.localArrayName(arrayIndex))
 
 		case DeleteAllGlobal:
 			arrayIndex := d.fetch()
 			d.writeOpf("DeleteAllGlobal %s", d.program.ArrayNames[arrayIndex])
 
 		case DeleteAllLocal:
-			arrayIndex := d.fetch()
-			d.writeOpf("DeleteAllLocal %d", arrayIndex) // TODO: local name
+			arrayIndex := int(d.fetch())
+			d.writeOpf("DeleteAllLocal %d", d.localArrayName(arrayIndex))
 
 		case IncrField:
 			amount := int32(d.fetch())
@@ -226,8 +231,8 @@ func (d *disassembler) disassemble(prefix string) error {
 
 		case IncrArrayLocal:
 			amount := int32(d.fetch())
-			arrayIndex := d.fetch()
-			d.writeOpf("IncrArrayLocal %d %d", amount, arrayIndex) // TODO: local name
+			arrayIndex := int(d.fetch())
+			d.writeOpf("IncrArrayLocal %d %s", amount, d.localArrayName(arrayIndex))
 
 		case AugAssignField:
 			operation := lexer.Token(d.fetch())
@@ -255,8 +260,8 @@ func (d *disassembler) disassemble(prefix string) error {
 
 		case AugAssignArrayLocal:
 			operation := lexer.Token(d.fetch())
-			arrayIndex := d.fetch()
-			d.writeOpf("AugAssignArrayLocal %s %d", operation, arrayIndex) // TODO: local name
+			arrayIndex := int(d.fetch())
+			d.writeOpf("AugAssignArrayLocal %s %s", operation, d.localArrayName(arrayIndex))
 
 		case Regex:
 			regexIndex := d.fetch()
@@ -300,6 +305,15 @@ func (d *disassembler) disassemble(prefix string) error {
 			offset := d.fetch()
 			d.writeOpf("ForGlobalInGlobal %s %s 0x%04x", d.program.ScalarNames[varIndex], d.program.ArrayNames[arrayIndex], d.ip+int(offset))
 
+		case ForGlobalInLocal:
+			panic("TODO")
+
+		case ForLocalInGlobal:
+			panic("TODO")
+
+		case ForLocalInLocal:
+			panic("TODO")
+
 		//case CallGsub:
 		//	d.writeOpf("CallGsub")
 		//case CallGsubField:
@@ -320,16 +334,16 @@ func (d *disassembler) disassemble(prefix string) error {
 			d.writeOpf("CallSplitGlobal %s", d.program.ArrayNames[arrayIndex])
 
 		case CallSplitLocal:
-			arrayIndex := d.fetch()
-			d.writeOpf("CallSplitLocal %s", d.program.ArrayNames[arrayIndex])
+			arrayIndex := int(d.fetch())
+			d.writeOpf("CallSplitLocal %s", d.localArrayName(arrayIndex))
 
 		case CallSplitSepGlobal:
 			arrayIndex := d.fetch()
 			d.writeOpf("CallSplitSepGlobal %s", d.program.ArrayNames[arrayIndex])
 
 		case CallSplitSepLocal:
-			arrayIndex := d.fetch()
-			d.writeOpf("CallSplitSepLocal %s", d.program.ArrayNames[arrayIndex])
+			arrayIndex := int(d.fetch())
+			d.writeOpf("CallSplitSepLocal %s", d.localArrayName(arrayIndex))
 
 		case CallSprintf:
 			numArgs := d.fetch()
@@ -352,7 +366,19 @@ func (d *disassembler) disassemble(prefix string) error {
 
 		case CallUser:
 			funcIndex := d.fetch()
-			d.writeOpf("CallUser %s", d.program.Functions[funcIndex].Name)
+			numArrayArgs := int(d.fetch())
+			var arrayArgs []string
+			for i := 0; i < numArrayArgs; i++ {
+				arrayScope := ast.VarScope(d.fetch())
+				arrayIndex := int(d.fetch())
+				switch arrayScope {
+				case ast.ScopeGlobal:
+					arrayArgs = append(arrayArgs, d.program.ArrayNames[arrayIndex])
+				case ast.ScopeLocal:
+					arrayArgs = append(arrayArgs, d.localArrayName(arrayIndex))
+				}
+			}
+			d.writeOpf("CallUser %s [%s]", d.program.Functions[funcIndex].Name, strings.Join(arrayArgs, ", "))
 
 		case CallNative:
 			funcIndex := d.fetch()
@@ -413,10 +439,30 @@ func (d *disassembler) writeOpf(format string, args ...interface{}) {
 
 func (d *disassembler) localName(index int) string {
 	f := d.program.Functions[d.funcIndex]
+	n := 0
 	for i, p := range f.Params {
-		if i == index {
+		if f.Arrays[i] {
+			continue
+		}
+		if n == index {
 			return p
 		}
+		n++
 	}
 	panic(fmt.Sprintf("unexpected local variable index %d", index))
+}
+
+func (d *disassembler) localArrayName(index int) string {
+	f := d.program.Functions[d.funcIndex]
+	n := 0
+	for i, p := range f.Params {
+		if !f.Arrays[i] {
+			continue
+		}
+		if n == index {
+			return p
+		}
+		n++
+	}
+	panic(fmt.Sprintf("unexpected local array index %d", index))
 }

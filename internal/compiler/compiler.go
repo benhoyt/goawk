@@ -11,9 +11,6 @@ import (
 
 /*
 TODO:
-- user-defined functions
-  + array parameter support
-- native functions
 - assignment expressions (not standalone)
 - sub() and gsub()
 - getline
@@ -50,26 +47,40 @@ type Action struct {
 }
 
 type Function struct {
-	Name   string
-	Params []string // for disassembly
-	Arrays []bool
-	Body   []Opcode
+	Name       string
+	Params     []string
+	Arrays     []bool
+	NumScalars int
+	NumArrays  int
+	Body       []Opcode
 }
 
 func Compile(prog *ast.Program) *Program {
 	p := &Program{}
 
+	// For functions called before they're defined or recursive functions, we
+	// have to set most p.Functions data first, then compile Body after.
 	p.Functions = make([]Function, len(prog.Functions))
+	for i, astFunc := range prog.Functions {
+		numArrays := 0
+		for _, a := range astFunc.Arrays {
+			if a {
+				numArrays++
+			}
+		}
+		compiledFunc := Function{
+			Name:       astFunc.Name,
+			Params:     astFunc.Params,
+			Arrays:     astFunc.Arrays,
+			NumScalars: len(astFunc.Arrays) - numArrays,
+			NumArrays:  numArrays,
+		}
+		p.Functions[i] = compiledFunc
+	}
 	for i, astFunc := range prog.Functions {
 		c := &compiler{program: p}
 		c.stmts(astFunc.Body)
-		compiledFunc := Function{
-			Name:   astFunc.Name,
-			Params: astFunc.Params,
-			Arrays: astFunc.Arrays,
-			Body:   c.finish(),
-		}
-		p.Functions[i] = compiledFunc
+		p.Functions[i].Body = c.finish()
 	}
 
 	for _, stmts := range prog.Begin {
@@ -334,7 +345,6 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		}
 
 		if s.Cond != nil {
-			// TODO: if s.Cond is BinaryExpr num == != < > <= >= or str == != then use JumpLess and similar optimizations
 			jumpOp := c.cond(s.Cond, false)
 			c.jumpBackward(loopStart, jumpOp)
 			c.patchForward(mark)
@@ -788,18 +798,20 @@ func (c *compiler) expr(expr ast.Expr) {
 			c.program.NativeFuncNames[e.Index] = e.Name
 		} else {
 			f := c.program.Functions[e.Index]
-			for _, a := range f.Arrays {
-				if a {
-					panic("TODO: array parameters not yet supported")
+			var arrayOpcodes []Opcode
+			for i, arg := range e.Args {
+				if f.Arrays[i] {
+					a := arg.(*ast.VarExpr)
+					arrayOpcodes = append(arrayOpcodes, Opcode(a.Scope), Opcode(a.Index))
+				} else {
+					c.expr(arg)
 				}
-			}
-			for _, arg := range e.Args {
-				c.expr(arg)
 			}
 			if len(e.Args) < len(f.Params) {
 				c.add(Nulls, Opcode(len(f.Params)-len(e.Args)))
 			}
-			c.add(CallUser, Opcode(e.Index))
+			c.add(CallUser, Opcode(e.Index), Opcode(len(arrayOpcodes)/2))
+			c.add(arrayOpcodes...)
 		}
 
 	//case *ast.GetlineExpr:

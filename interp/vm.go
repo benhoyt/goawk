@@ -116,6 +116,20 @@ func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op
 			}
 			p.push(v)
 
+		case compiler.ArrayLocal:
+			arrayIndex := code[i]
+			i++
+			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
+			index := p.toString(p.pop())
+			v, ok := array[index]
+			if !ok {
+				// Strangely, per the POSIX spec, "Any other reference to a
+				// nonexistent array element [apart from "in" expressions]
+				// shall automatically create it."
+				array[index] = v
+			}
+			p.push(v)
+
 		case compiler.InGlobal:
 			arrayIndex := code[i]
 			i++
@@ -583,22 +597,43 @@ func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op
 
 		case compiler.CallUser:
 			funcIndex := code[i]
-			i++
+			numArrayArgs := int(code[i+1])
+			i += 2
 
 			f := p.program.Compiled.Functions[funcIndex]
 			if p.callDepth >= maxCallDepth {
 				return newError("calling %q exceeded maximum call depth of %d", f.Name, maxCallDepth)
 			}
 
+			// Set up frame for scalar arguments
 			oldFrame := p.frame
-			p.frame = p.vmStack[p.vmSp-len(f.Params):] // TODO: replace with stackSlice() call or similar
+			p.frame = p.vmStack[p.vmSp-f.NumScalars:] // TODO: replace with stackSlice() call or similar
 
+			// Handle array arguments
+			var arrays []int
+			for j := 0; j < numArrayArgs; j++ {
+				arrayScope := ast.VarScope(code[i])
+				arrayIndex := int(code[i+1])
+				i += 2
+				arrays = append(arrays, p.getArrayIndex(arrayScope, arrayIndex))
+			}
+			oldArraysLen := len(p.arrays)
+			for j := numArrayArgs; j < f.NumArrays; j++ {
+				arrays = append(arrays, len(p.arrays))
+				p.arrays = append(p.arrays, make(map[string]value))
+			}
+			p.localArrays = append(p.localArrays, arrays)
+
+			// Execute the function!
 			p.callDepth++
 			err := p.execCompiled(compiledProg, f.Body)
 			p.callDepth--
 
-			p.popSlice(len(f.Params))
+			// Pop the locals off the stack
+			p.popSlice(f.NumScalars)
 			p.frame = oldFrame
+			p.localArrays = p.localArrays[:len(p.localArrays)-1]
+			p.arrays = p.arrays[:oldArraysLen]
 
 			if r, ok := err.(returnValue); ok {
 				p.push(r.Value)
@@ -1026,6 +1061,9 @@ func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op
 
 		case compiler.CallToupper:
 			p.push(str(strings.ToUpper(p.toString(p.pop()))))
+
+		default:
+			panic(fmt.Sprintf("TODO remove: unsupported opcode %s", op))
 		}
 	}
 	return nil

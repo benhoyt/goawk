@@ -153,7 +153,7 @@ const (
 	CallToupper
 
 	// User and native functions
-	CallUser   // funcIndex
+	CallUser   // funcIndex, numArrayArgs[, arrayScope1, arrayIndex1, ...]
 	CallNative // funcIndex, numArgs
 	Return
 	ReturnNull
