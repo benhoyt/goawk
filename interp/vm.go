@@ -572,6 +572,11 @@ func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op
 		case compiler.Next:
 			return errNext
 
+		case compiler.Exit:
+			p.exitStatus = int(p.pop().num())
+			// Return special errExit value "caught" by top-level executor
+			return errExit
+
 		case compiler.ForGlobalInGlobal:
 			varIndex := code[i]
 			arrayIndex := code[i+1]
@@ -585,7 +590,6 @@ func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op
 				if err == errBreak {
 					break
 				}
-				// TODO: handle continue with jump to end of loopCode block?
 				if err != nil {
 					return err
 				}
@@ -789,7 +793,6 @@ func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op
 		case compiler.CallMatch:
 			regex := p.toString(p.pop())
 			s := p.toString(p.pop())
-			// TODO: could optimize literal regexes to avoid map lookup? but probably not worth it
 			re, err := p.compileRegex(regex)
 			if err != nil {
 				return err

@@ -784,7 +784,7 @@ func testGoAWK(
 		configure(config)
 	}
 
-	_, err = interp.ExecProgram(prog, config)
+	status, err := interp.ExecProgram(prog, config)
 	if err != nil {
 		if errStr != "" {
 			if err.Error() == errStr {
@@ -800,6 +800,9 @@ func testGoAWK(
 	normalized := normalizeNewlines(outBuf.String())
 	if normalized != out {
 		t.Fatalf("expected %q, got %q", out, normalized)
+	}
+	if status != 0 {
+		t.Fatalf("expected status 0, got %d", status)
 	}
 
 	if runCompiled {
@@ -1332,6 +1335,46 @@ BEGIN {
 	})
 }
 
+func TestExit(t *testing.T) {
+	tests := []struct {
+		src    string
+		out    string
+		status int
+	}{
+		{`BEGIN { print "x"; exit; print "y" }  { print "a" }  END { print "z" }`, "x\nz\n", 0},
+		{`BEGIN { print "x"; exit 1+2; print "y" }  { print "a" }  END { print "z" }`, "x\nz\n", 3},
+		{`{ print "x"; exit; print "y" }  END { print "z" }`, "x\nz\n", 0},
+		{`{ print "x"; exit 1+2; print "y" }  END { print "z" }`, "x\nz\n", 3},
+		{`END { print "x"; exit; print "y" }`, "x\n", 0},
+		{`END { print "x"; exit 1+2; print "y" }`, "x\n", 3},
+	}
+	for _, test := range tests {
+		t.Run(test.src, func(t *testing.T) {
+			prog, err := parser.ParseProgram([]byte(test.src), nil)
+			if err != nil {
+				t.Fatalf("error parsing: %v", err)
+			}
+			outBuf := &bytes.Buffer{}
+			config := &interp.Config{
+				Stdin:  strings.NewReader("line\n"),
+				Output: outBuf,
+			}
+			prog.Compiled = compiler.Compile(prog.ToAST())
+			status, err := interp.ExecCompiled(prog, config)
+			if err != nil {
+				t.Fatalf("error interpreting: %v", err)
+			}
+			normalized := normalizeNewlines(outBuf.String())
+			if normalized != test.out {
+				t.Fatalf("expected %q, got %q", test.out, normalized)
+			}
+			if status != test.status {
+				t.Fatalf("expected status %d, got %d", test.status, status)
+			}
+		})
+	}
+}
+
 func benchmarkProgram(b *testing.B, funcs map[string]interface{},
 	input, expected, srcFormat string, args ...interface{},
 ) {
@@ -1526,7 +1569,7 @@ BEGIN {
 `, b.N)
 }
 
-func TODO_BenchmarkBuiltinSub(b *testing.B) {
+func BenchmarkBuiltinSub(b *testing.B) {
 	benchmarkProgram(b, nil, "", "1 164", `
 BEGIN {
   for (i = 0; i < %d; i++) {
@@ -1542,7 +1585,7 @@ BEGIN {
 `, b.N)
 }
 
-func TODO_BenchmarkBuiltinSubAmpersand(b *testing.B) {
+func BenchmarkBuiltinSubAmpersand(b *testing.B) {
 	benchmarkProgram(b, nil, "", "1 164", `
 BEGIN {
   for (i = 0; i < %d; i++) {
@@ -1558,7 +1601,7 @@ BEGIN {
 `, b.N)
 }
 
-func TODO_BenchmarkBuiltinGsub(b *testing.B) {
+func BenchmarkBuiltinGsub(b *testing.B) {
 	benchmarkProgram(b, nil, "", "3 224", `
 BEGIN {
   for (i = 0; i < %d; i++) {
@@ -1574,7 +1617,7 @@ BEGIN {
 `, b.N)
 }
 
-func TODO_BenchmarkBuiltinGsubAmpersand(b *testing.B) {
+func BenchmarkBuiltinGsubAmpersand(b *testing.B) {
 	benchmarkProgram(b, nil, "", "3 224", `
 BEGIN {
   for (i = 0; i < %d; i++) {
@@ -1644,7 +1687,7 @@ BEGIN {
 `, b.N)
 }
 
-func TODO_BenchmarkNativeFunc(b *testing.B) {
+func BenchmarkNativeFunc(b *testing.B) {
 	funcs := map[string]interface{}{
 		"add": func(a, b float64) float64 { return a + b },
 	}

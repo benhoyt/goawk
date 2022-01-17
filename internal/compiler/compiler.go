@@ -11,7 +11,6 @@ import (
 
 /*
 TODO:
-- sub() and gsub()
 - getline
 - other TODOs
 - fix/refactor TestFlushes
@@ -393,8 +392,13 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 	case *ast.NextStmt:
 		c.add(Next)
 
-	//case *ast.ExitStmt:
-	//
+	case *ast.ExitStmt:
+		if s.Status != nil {
+			c.expr(s.Status)
+		} else {
+			c.expr(&ast.NumExpr{0})
+		}
+		c.add(Exit)
 
 	case *ast.DeleteStmt:
 		if len(s.Index) > 0 {
