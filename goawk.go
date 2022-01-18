@@ -213,7 +213,7 @@ func main() {
 
 	if debug {
 		fmt.Fprintln(os.Stderr, prog)
-		err := prog.Disassemble(os.Stderr)
+		err := prog.Disassemble(os.Stderr) // TODO: add new -dd option for this instead?
 		if err != nil {
 			errorExitf("could not disassemble program: %v", err)
 		}

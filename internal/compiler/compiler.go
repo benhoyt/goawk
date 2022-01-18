@@ -11,10 +11,10 @@ import (
 
 /*
 TODO:
+- other "for in" cases (add tests!)
 - refactor, simplify, reduce copy-n-pasta
 - other TODOs
 - check overflow everywhere we output a number in an opcode
-- fix/refactor TestFlushes
 - look at code coverage and get closer to 100%
   + add decrement tests under "Incr/decr expressions", for example
   + use the following to see how much of the internal/compiler package is covered:
@@ -358,7 +358,6 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		c.stmts(s.Body)
 		c.patchContinues()
 
-		// TODO: if s.Cond is BinaryExpr num == != < > <= >= or str == != then use JumpLess and similar optimizations
 		jumpOp = c.cond(s.Cond, false)
 		c.jumpBackward(loopStart, jumpOp)
 		c.patchForward(mark)
@@ -746,7 +745,7 @@ func (c *compiler) expr(expr ast.Expr) {
 		case lexer.F_TOUPPER:
 			c.add(CallToupper)
 		default:
-			panic(fmt.Sprintf("TODO: func %s not yet supported", e.Func))
+			panic(fmt.Sprintf("unexpected function: %s", e.Func))
 		}
 
 	case *ast.UnaryExpr:

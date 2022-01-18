@@ -9,6 +9,7 @@ func TestNameIndex(t *testing.T) {
 		name  string
 		index int
 	}{
+		{"ILLEGAL", V_ILLEGAL},
 		{"ARGC", V_ARGC},
 		{"CONVFMT", V_CONVFMT},
 		{"FILENAME", V_FILENAME},
@@ -24,16 +25,20 @@ func TestNameIndex(t *testing.T) {
 		{"RSTART", V_RSTART},
 		{"RT", V_RT},
 		{"SUBSEP", V_SUBSEP},
-		{"<unknown special var 0>", V_ILLEGAL},
+		{"<unknown special var 42>", 42},
 	}
 	for _, test := range tests {
-		name := SpecialVarName(test.index)
-		if name != test.name {
-			t.Errorf("got %q, want %q", name, test.name)
-		}
-		index := SpecialVarIndex(test.name)
-		if index != test.index {
-			t.Errorf("got %d, want %d", index, test.index)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			name := SpecialVarName(test.index)
+			if name != test.name {
+				t.Errorf("got %q, want %q", name, test.name)
+			}
+			if test.index <= V_LAST {
+				index := SpecialVarIndex(test.name)
+				if index != test.index {
+					t.Errorf("got %d, want %d", index, test.index)
+				}
+			}
+		})
 	}
 }

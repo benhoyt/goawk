@@ -2,7 +2,9 @@
 
 package ast
 
-import "fmt"
+import (
+	"fmt"
+)
 
 const (
 	V_ILLEGAL = iota
@@ -52,6 +54,8 @@ func SpecialVarIndex(name string) int {
 // SpecialVarName returns the name of the special variable by index.
 func SpecialVarName(index int) string {
 	switch index {
+	case V_ILLEGAL:
+		return "ILLEGAL"
 	case V_ARGC:
 		return "ARGC"
 	case V_CONVFMT:
