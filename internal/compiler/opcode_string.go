@@ -122,13 +122,17 @@ func _() {
 	_ = x[Print-111]
 	_ = x[Printf-112]
 	_ = x[Getline-113]
-	_ = x[GetlineFile-114]
-	_ = x[GetlineCommand-115]
+	_ = x[GetlineField-114]
+	_ = x[GetlineGlobal-115]
+	_ = x[GetlineLocal-116]
+	_ = x[GetlineSpecial-117]
+	_ = x[GetlineArrayGlobal-118]
+	_ = x[GetlineArrayLocal-119]
 }
 
-const _Opcode_name = "NopNumStrDupeDropFieldFieldNumGlobalLocalSpecialArrayGlobalArrayLocalInGlobalInLocalAssignFieldAssignGlobalAssignLocalAssignSpecialAssignArrayGlobalAssignArrayLocalDeleteGlobalDeleteLocalDeleteAllGlobalDeleteAllLocalIncrFieldIncrGlobalIncrLocalIncrSpecialIncrArrayGlobalIncrArrayLocalAugAssignFieldAugAssignGlobalAugAssignLocalAugAssignSpecialAugAssignArrayGlobalAugAssignArrayLocalRegexMultiIndexAddSubtractMultiplyDividePowerModuloEqualsNotEqualsLessGreaterLessOrEqualGreaterOrEqualConcatMatchNotMatchNotUnaryMinusUnaryPlusBooleanJumpJumpFalseJumpTrueJumpNumEqualsJumpNumNotEqualsJumpNumLessJumpNumGreaterJumpNumLessOrEqualJumpNumGreaterOrEqualJumpStrEqualsJumpStrNotEqualsNextExitForGlobalInGlobalForGlobalInLocalForLocalInGlobalForLocalInLocalForSpecialInGlobalForSpecialInLocalBreakForInCallAtan2CallCloseCallCosCallExpCallFflushCallFflushAllCallGsubCallIndexCallIntCallLengthCallLengthArgCallLogCallMatchCallRandCallSinCallSplitGlobalCallSplitLocalCallSplitSepGlobalCallSplitSepLocalCallSprintfCallSqrtCallSrandCallSrandSeedCallSubCallSubstrCallSubstrLengthCallSystemCallTolowerCallToupperCallUserCallNativeReturnReturnNullNullsPrintPrintfGetlineGetlineFileGetlineCommand"
+const _Opcode_name = "NopNumStrDupeDropFieldFieldNumGlobalLocalSpecialArrayGlobalArrayLocalInGlobalInLocalAssignFieldAssignGlobalAssignLocalAssignSpecialAssignArrayGlobalAssignArrayLocalDeleteGlobalDeleteLocalDeleteAllGlobalDeleteAllLocalIncrFieldIncrGlobalIncrLocalIncrSpecialIncrArrayGlobalIncrArrayLocalAugAssignFieldAugAssignGlobalAugAssignLocalAugAssignSpecialAugAssignArrayGlobalAugAssignArrayLocalRegexMultiIndexAddSubtractMultiplyDividePowerModuloEqualsNotEqualsLessGreaterLessOrEqualGreaterOrEqualConcatMatchNotMatchNotUnaryMinusUnaryPlusBooleanJumpJumpFalseJumpTrueJumpNumEqualsJumpNumNotEqualsJumpNumLessJumpNumGreaterJumpNumLessOrEqualJumpNumGreaterOrEqualJumpStrEqualsJumpStrNotEqualsNextExitForGlobalInGlobalForGlobalInLocalForLocalInGlobalForLocalInLocalForSpecialInGlobalForSpecialInLocalBreakForInCallAtan2CallCloseCallCosCallExpCallFflushCallFflushAllCallGsubCallIndexCallIntCallLengthCallLengthArgCallLogCallMatchCallRandCallSinCallSplitGlobalCallSplitLocalCallSplitSepGlobalCallSplitSepLocalCallSprintfCallSqrtCallSrandCallSrandSeedCallSubCallSubstrCallSubstrLengthCallSystemCallTolowerCallToupperCallUserCallNativeReturnReturnNullNullsPrintPrintfGetlineGetlineFieldGetlineGlobalGetlineLocalGetlineSpecialGetlineArrayGlobalGetlineArrayLocal"
 
-var _Opcode_index = [...]uint16{0, 3, 6, 9, 13, 17, 22, 30, 36, 41, 48, 59, 69, 77, 84, 95, 107, 118, 131, 148, 164, 176, 187, 202, 216, 225, 235, 244, 255, 270, 284, 298, 313, 327, 343, 363, 382, 387, 397, 400, 408, 416, 422, 427, 433, 439, 448, 452, 459, 470, 484, 490, 495, 503, 506, 516, 525, 532, 536, 545, 553, 566, 582, 593, 607, 625, 646, 659, 675, 679, 683, 700, 716, 732, 747, 765, 782, 792, 801, 810, 817, 824, 834, 847, 855, 864, 871, 881, 894, 901, 910, 918, 925, 940, 954, 972, 989, 1000, 1008, 1017, 1030, 1037, 1047, 1063, 1073, 1084, 1095, 1103, 1113, 1119, 1129, 1134, 1139, 1145, 1152, 1163, 1177}
+var _Opcode_index = [...]uint16{0, 3, 6, 9, 13, 17, 22, 30, 36, 41, 48, 59, 69, 77, 84, 95, 107, 118, 131, 148, 164, 176, 187, 202, 216, 225, 235, 244, 255, 270, 284, 298, 313, 327, 343, 363, 382, 387, 397, 400, 408, 416, 422, 427, 433, 439, 448, 452, 459, 470, 484, 490, 495, 503, 506, 516, 525, 532, 536, 545, 553, 566, 582, 593, 607, 625, 646, 659, 675, 679, 683, 700, 716, 732, 747, 765, 782, 792, 801, 810, 817, 824, 834, 847, 855, 864, 871, 881, 894, 901, 910, 918, 925, 940, 954, 972, 989, 1000, 1008, 1017, 1030, 1037, 1047, 1063, 1073, 1084, 1095, 1103, 1113, 1119, 1129, 1134, 1139, 1145, 1152, 1164, 1177, 1189, 1203, 1221, 1238}
 
 func (i Opcode) String() string {
 	if i >= Opcode(len(_Opcode_index)-1) {

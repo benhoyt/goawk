@@ -407,6 +407,39 @@ func (d *disassembler) disassemble(prefix string) error {
 				d.writeOpf("Printf %d %s", numArgs, redirect)
 			}
 
+		case Getline:
+			redirect := lexer.Token(d.fetch())
+			d.writeOpf("Getline %s", redirect)
+
+		case GetlineField:
+			redirect := lexer.Token(d.fetch())
+			d.writeOpf("GetlineField %s", redirect)
+
+		case GetlineGlobal:
+			redirect := lexer.Token(d.fetch())
+			index := d.fetch()
+			d.writeOpf("GetlineGlobal %s %s", redirect, d.program.ScalarNames[index])
+
+		case GetlineLocal:
+			redirect := lexer.Token(d.fetch())
+			index := int(d.fetch())
+			d.writeOpf("GetlineLocal %s %s", redirect, d.localName(index))
+
+		case GetlineSpecial:
+			redirect := lexer.Token(d.fetch())
+			index := d.fetch()
+			d.writeOpf("GetlineSpecial %s %s", redirect, ast.SpecialVarName(int(index)))
+
+		case GetlineArrayGlobal:
+			redirect := lexer.Token(d.fetch())
+			arrayIndex := d.fetch()
+			d.writeOpf("GetlineArrayGlobal %s %s", redirect, d.program.ArrayNames[arrayIndex])
+
+		case GetlineArrayLocal:
+			redirect := lexer.Token(d.fetch())
+			arrayIndex := int(d.fetch())
+			d.writeOpf("GetlineArrayLocal %s %s", redirect, d.localArrayName(arrayIndex))
+
 		default:
 			d.writeOpf("%s", op)
 		}

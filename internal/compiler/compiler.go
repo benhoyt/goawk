@@ -11,15 +11,19 @@ import (
 
 /*
 TODO:
-- getline
+- refactor, simplify, reduce copy-n-pasta
 - other TODOs
+- check overflow everywhere we output a number in an opcode
 - fix/refactor TestFlushes
 - look at code coverage and get closer to 100%
   + add decrement tests under "Incr/decr expressions", for example
   + use the following to see how much of the internal/compiler package is covered:
     $ go test -coverpkg=./... ./interp -v -awk="" -compiled -coverprofile=cover.out
     $ go tool cover -html cover.out
-- optimize!
+- optimize! probably on new branch
+  + any super-instructions to add?
+  + any instructions to remove?
+  + specializations
   + optimize CONCAT(a,CONCAT(b,c)) etc to CONCAT(a, b, c) to avoid allocs/copying
 - fuzz testing
 */
@@ -795,23 +799,43 @@ func (c *compiler) expr(expr ast.Expr) {
 			c.add(arrayOpcodes...)
 		}
 
-	//case *ast.GetlineExpr:
-	//	switch {
-	//	case e.Command != nil:
-	//		c.expr(e.Command)
-	//		c.add(GetlineCommand)
-	//	case e.File != nil:
-	//		c.expr(e.File)
-	//		c.add(GetlineFile)
-	//	default:
-	//		c.add(Getline)
-	//	}
-	//	if e.Target != nil {
-	//		c.assign(e.Target)
-	//	} else {
-	//		target := &ast.FieldExpr{&ast.NumExpr{Value: 0}} // assign to $0
-	//		c.assign(target)
-	//	}
+	case *ast.GetlineExpr:
+		redirect := func() Opcode {
+			switch {
+			case e.Command != nil:
+				c.expr(e.Command)
+				return Opcode(lexer.PIPE)
+			case e.File != nil:
+				c.expr(e.File)
+				return Opcode(lexer.LESS)
+			default:
+				return Opcode(lexer.ILLEGAL)
+			}
+		}
+		switch target := e.Target.(type) {
+		case *ast.VarExpr:
+			switch target.Scope {
+			case ast.ScopeGlobal:
+				c.add(GetlineGlobal, redirect(), Opcode(target.Index))
+			case ast.ScopeLocal:
+				c.add(GetlineLocal, redirect(), Opcode(target.Index))
+			case ast.ScopeSpecial:
+				c.add(GetlineSpecial, redirect(), Opcode(target.Index))
+			}
+		case *ast.FieldExpr:
+			c.expr(target.Index)
+			c.add(GetlineField, redirect())
+		case *ast.IndexExpr:
+			c.index(target.Index)
+			switch target.Array.Scope {
+			case ast.ScopeGlobal:
+				c.add(GetlineArrayGlobal, redirect(), Opcode(target.Array.Index))
+			case ast.ScopeLocal:
+				c.add(GetlineArrayLocal, redirect(), Opcode(target.Array.Index))
+			}
+		default:
+			c.add(Getline, redirect())
+		}
 
 	default:
 		// Should never happen

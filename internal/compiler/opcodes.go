@@ -147,10 +147,14 @@ const (
 	ReturnNull
 	Nulls // numNulls
 
-	// Print and getline operations
-	Print  // numArgs, redirect
-	Printf // numArgs, redirect
-	Getline
-	GetlineFile
-	GetlineCommand
+	// Print, printf, and getline
+	Print              // numArgs, redirect
+	Printf             // numArgs, redirect
+	Getline            // redirect
+	GetlineField       // redirect
+	GetlineGlobal      // redirect, index
+	GetlineLocal       // redirect, index
+	GetlineSpecial     // redirect, index
+	GetlineArrayGlobal // redirect, arrayIndex
+	GetlineArrayLocal  // redirect, arrayIndex
 )

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"os"
 	"os/exec"
 	"reflect"
 	"strings"
@@ -1071,11 +1072,111 @@ func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op
 				return err
 			}
 
-		//case compiler.Getline:
-		//
-		//case compiler.GetlineFile:
-		//
-		//case compiler.GetlineCommand:
+		case compiler.Getline:
+			redirect := lexer.Token(code[i])
+			i++
+
+			ret, line, err := p.getline(redirect)
+			if err != nil {
+				return err
+			}
+			if ret == 1 {
+				p.setLine(line, false)
+			}
+			p.push(num(ret))
+
+		case compiler.GetlineField:
+			redirect := lexer.Token(code[i])
+			i++
+
+			ret, line, err := p.getline(redirect)
+			if err != nil {
+				return err
+			}
+			if ret == 1 {
+				err := p.setField(0, line)
+				if err != nil {
+					return err
+				}
+			}
+			p.push(num(ret))
+
+		case compiler.GetlineGlobal:
+			redirect := lexer.Token(code[i])
+			index := code[i+1]
+			i += 2
+
+			ret, line, err := p.getline(redirect)
+			if err != nil {
+				return err
+			}
+			if ret == 1 {
+				p.globals[index] = numStr(line)
+			}
+			p.push(num(ret))
+
+		case compiler.GetlineLocal:
+			redirect := lexer.Token(code[i])
+			index := code[i+1]
+			i += 2
+
+			ret, line, err := p.getline(redirect)
+			if err != nil {
+				return err
+			}
+			if ret == 1 {
+				p.frame[index] = numStr(line)
+			}
+			p.push(num(ret))
+
+		case compiler.GetlineSpecial:
+			redirect := lexer.Token(code[i])
+			index := code[i+1]
+			i += 2
+
+			ret, line, err := p.getline(redirect)
+			if err != nil {
+				return err
+			}
+			if ret == 1 {
+				err := p.setVar(ast.ScopeSpecial, int(index), numStr(line))
+				if err != nil {
+					return err
+				}
+			}
+			p.push(num(ret))
+
+		case compiler.GetlineArrayGlobal:
+			redirect := lexer.Token(code[i])
+			arrayIndex := code[i+1]
+			i += 2
+
+			ret, line, err := p.getline(redirect)
+			if err != nil {
+				return err
+			}
+			if ret == 1 {
+				array := p.arrays[arrayIndex]
+				index := p.toString(p.pop())
+				array[index] = numStr(line)
+			}
+			p.push(num(ret))
+
+		case compiler.GetlineArrayLocal:
+			redirect := lexer.Token(code[i])
+			arrayIndex := code[i+1]
+			i += 2
+
+			ret, line, err := p.getline(redirect)
+			if err != nil {
+				return err
+			}
+			if ret == 1 {
+				array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
+				index := p.toString(p.pop())
+				array[index] = numStr(line)
+			}
+			p.push(num(ret))
 
 		default:
 			panic(fmt.Sprintf("TODO remove: unsupported opcode %s", op))
@@ -1225,5 +1326,54 @@ func (p *interp) callNativeCompiled(index int, args []value) (value, error) {
 	default:
 		// Should never happen (checked at parse time)
 		panic(fmt.Sprintf("unexpected number of return values: %d", len(outs)))
+	}
+}
+
+func (p *interp) getline(redirect lexer.Token) (float64, string, error) {
+	switch redirect {
+	case lexer.PIPE: // redirect from command
+		name := p.toString(p.pop())
+		scanner, err := p.getInputScannerPipe(name)
+		if err != nil {
+			return 0, "", err
+		}
+		if !scanner.Scan() {
+			if err := scanner.Err(); err != nil {
+				return -1, "", nil
+			}
+			return 0, "", nil
+		}
+		return 1, scanner.Text(), nil
+
+	case lexer.LESS: // redirect from file
+		name := p.toString(p.pop())
+		scanner, err := p.getInputScannerFile(name)
+		if err != nil {
+			if _, ok := err.(*os.PathError); ok {
+				// File not found is not a hard error, getline just returns -1.
+				// See: https://github.com/benhoyt/goawk/issues/41
+				return -1, "", nil
+			}
+			return 0, "", err
+		}
+		if !scanner.Scan() {
+			if err := scanner.Err(); err != nil {
+				return -1, "", nil
+			}
+			return 0, "", nil
+		}
+		return 1, scanner.Text(), nil
+
+	default: // no redirect
+		p.flushOutputAndError() // Flush output in case they've written a prompt
+		var err error
+		line, err := p.nextLine()
+		if err == io.EOF {
+			return 0, "", nil
+		}
+		if err != nil {
+			return -1, "", nil
+		}
+		return 1, line, nil
 	}
 }
