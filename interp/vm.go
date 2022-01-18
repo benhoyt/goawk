@@ -6,7 +6,6 @@ import (
 	"math"
 	"os"
 	"os/exec"
-	"reflect"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -14,39 +13,9 @@ import (
 	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/internal/compiler"
 	"github.com/benhoyt/goawk/lexer"
-	"github.com/benhoyt/goawk/parser"
 )
 
-// ExecCompiled... TODO
-func ExecCompiled(program *parser.Program, config *Config) (int, error) {
-	p, err := execInit(program, config)
-	if err != nil {
-		return 0, err
-	}
-	defer p.closeAll()
-
-	// Execute the program! BEGIN, then pattern/actions, then END
-	err = p.execCompiled(program.Compiled, program.Compiled.Begin)
-	if err != nil && err != errExit {
-		return 0, err
-	}
-	if program.Actions == nil && program.End == nil {
-		return p.exitStatus, nil
-	}
-	if err != errExit {
-		err = p.execCompiledActions(program.Compiled, program.Compiled.Actions)
-		if err != nil && err != errExit {
-			return 0, err
-		}
-	}
-	err = p.execCompiled(program.Compiled, program.Compiled.End)
-	if err != nil && err != errExit {
-		return 0, err
-	}
-	return p.exitStatus, nil
-}
-
-func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Opcode) error {
+func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) error {
 	for i := 0; i < len(code); {
 		op := code[i]
 		//fmt.Printf("TODO %04x %s %v\n", i, op, p.vmStack[:p.vmSp])
@@ -56,12 +25,12 @@ func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op
 		case compiler.Num:
 			index := code[i]
 			i++
-			p.push(num(compiledProg.Nums[index]))
+			p.push(num(compiled.Nums[index]))
 
 		case compiler.Str:
 			index := code[i]
 			i++
-			p.push(str(compiledProg.Strs[index]))
+			p.push(str(compiled.Strs[index]))
 
 		case compiler.Dupe:
 			v := p.pop()
@@ -346,7 +315,7 @@ func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op
 			// Stand-alone /regex/ is equivalent to: $0 ~ /regex/
 			index := code[i]
 			i++
-			re := compiledProg.Regexes[index]
+			re := compiled.Regexes[index]
 			p.push(boolean(re.MatchString(p.line)))
 
 		case compiler.MultiIndex:
@@ -587,7 +556,7 @@ func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op
 			loopCode := code[i : i+int(offset)]
 			for index := range array {
 				p.globals[varIndex] = str(index)
-				err := p.execCompiled(compiledProg, loopCode)
+				err := p.execute(compiled, loopCode)
 				if err == errBreak {
 					break
 				}
@@ -631,7 +600,7 @@ func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op
 
 			// Execute the function!
 			p.callDepth++
-			err := p.execCompiled(compiledProg, f.Body)
+			err := p.execute(compiled, f.Body)
 			p.callDepth--
 
 			// Pop the locals off the stack
@@ -654,7 +623,7 @@ func (p *interp) execCompiled(compiledProg *compiler.Program, code []compiler.Op
 			i += 2
 
 			args := p.popSlice(numArgs)
-			r, err := p.callNativeCompiled(funcIndex, args)
+			r, err := p.callNative(funcIndex, args)
 			if err != nil {
 				return err
 			}
@@ -1203,130 +1172,6 @@ func (p *interp) pop() value {
 func (p *interp) popSlice(n int) []value {
 	p.vmSp -= n
 	return p.vmStack[p.vmSp : p.vmSp+n]
-}
-
-// Execute pattern-action blocks (may be multiple)
-func (p *interp) execCompiledActions(compiledProg *compiler.Program, actions []compiler.Action) error {
-	inRange := make([]bool, len(actions))
-lineLoop:
-	for {
-		// Read and setup next line of input
-		line, err := p.nextLine()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return err
-		}
-		p.setLine(line, false)
-
-		// Execute all the pattern-action blocks for each line
-		for i, action := range actions {
-			// First determine whether the pattern matches
-			matched := false
-			switch len(action.Pattern) {
-			case 0:
-				// No pattern is equivalent to pattern evaluating to true
-				matched = true
-			case 1:
-				// Single boolean pattern
-				err := p.execCompiled(compiledProg, action.Pattern[0])
-				if err != nil {
-					return err
-				}
-				matched = p.pop().boolean()
-			case 2:
-				// Range pattern (matches between start and stop lines)
-				if !inRange[i] {
-					err := p.execCompiled(compiledProg, action.Pattern[0])
-					if err != nil {
-						return err
-					}
-					inRange[i] = p.pop().boolean()
-				}
-				matched = inRange[i]
-				if inRange[i] {
-					err := p.execCompiled(compiledProg, action.Pattern[1])
-					if err != nil {
-						return err
-					}
-					inRange[i] = !p.pop().boolean()
-				}
-			}
-			if !matched {
-				continue
-			}
-
-			// No action is equivalent to { print $0 }
-			if len(action.Body) == 0 {
-				err := p.printLine(p.output, p.line)
-				if err != nil {
-					return err
-				}
-				continue
-			}
-
-			// Execute the body statements
-			err := p.execCompiled(compiledProg, action.Body)
-			if err == errNext {
-				// "next" statement skips straight to next line
-				continue lineLoop
-			}
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-// Call native-defined function with given name and arguments, return
-// its return value (or null value if it doesn't return anything).
-func (p *interp) callNativeCompiled(index int, args []value) (value, error) {
-	f := p.nativeFuncs[index]
-	minIn := len(f.in) // Minimum number of args we should pass
-	var variadicType reflect.Type
-	if f.isVariadic {
-		variadicType = f.in[len(f.in)-1].Elem()
-		minIn--
-	}
-
-	// Build list of args to pass to function
-	values := make([]reflect.Value, 0, 7) // up to 7 args won't require heap allocation
-	for i, a := range args {
-		var argType reflect.Type
-		if !f.isVariadic || i < len(f.in)-1 {
-			argType = f.in[i]
-		} else {
-			// Final arg(s) when calling a variadic are all of this type
-			argType = variadicType
-		}
-		values = append(values, p.toNative(a, argType))
-	}
-	// Use zero value for any unspecified args
-	for i := len(args); i < minIn; i++ {
-		values = append(values, reflect.Zero(f.in[i]))
-	}
-
-	// Call Go function, determine return value
-	outs := f.value.Call(values)
-	switch len(outs) {
-	case 0:
-		// No return value, return null value to AWK
-		return null(), nil
-	case 1:
-		// Single return value
-		return fromNative(outs[0]), nil
-	case 2:
-		// Two-valued return of (scalar, error)
-		if !outs[1].IsNil() {
-			return null(), outs[1].Interface().(error)
-		}
-		return fromNative(outs[0]), nil
-	default:
-		// Should never happen (checked at parse time)
-		panic(fmt.Sprintf("unexpected number of return values: %d", len(outs)))
-	}
 }
 
 func (p *interp) getline(redirect lexer.Token) (float64, string, error) {

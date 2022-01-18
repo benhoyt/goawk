@@ -38,7 +38,6 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/benhoyt/goawk/internal/compiler"
 	"github.com/benhoyt/goawk/interp"
 	"github.com/benhoyt/goawk/lexer"
 	"github.com/benhoyt/goawk/parser"
@@ -58,11 +57,9 @@ const (
 
 Additional GoAWK arguments:
   -b    use byte indexes for index(), length(), match(), and substr()
-  -compiler
-        use compiler / virtual machine (faster, but experimental!)
   -cpuprofile file
         write CPU profile to file
-  -d    debug mode (print parsed AST to stderr)
+  -d    debug mode (print parsed AST and disassembly to stderr)
   -dt   show variable types debug info
   -h    show this usage message
   -version
@@ -82,7 +79,6 @@ func main() {
 	debugTypes := false
 	memprofile := ""
 	useBytes := false
-	useCompiler := false
 
 	var i int
 	for i = 1; i < len(os.Args); i++ {
@@ -117,8 +113,6 @@ func main() {
 			vars = append(vars, os.Args[i])
 		case "-b":
 			useBytes = true
-		case "-compiler":
-			useCompiler = true
 		case "-cpuprofile":
 			if i+1 >= len(os.Args) {
 				errorExitf("flag needs an argument: -cpuprofile")
@@ -217,18 +211,11 @@ func main() {
 		errorExitf("%s", err)
 	}
 
-	if useCompiler {
-		prog.Compiled = compiler.Compile(prog.ToAST())
-	}
-
 	if debug {
-		if useCompiler {
-			err := prog.Compiled.Disassemble(os.Stderr)
-			if err != nil {
-				errorExitf("could not disassemble program: %v", err)
-			}
-		} else {
-			fmt.Fprintln(os.Stderr, prog)
+		fmt.Fprintln(os.Stderr, prog)
+		err := prog.Disassemble(os.Stderr)
+		if err != nil {
+			errorExitf("could not disassemble program: %v", err)
 		}
 	}
 
@@ -257,12 +244,7 @@ func main() {
 	}
 
 	// Run the program!
-	var status int
-	if useCompiler {
-		status, err = interp.ExecCompiled(prog, config)
-	} else {
-		status, err = interp.ExecProgram(prog, config)
-	}
+	status, err := interp.ExecProgram(prog, config)
 	if err != nil {
 		errorExit(err)
 	}

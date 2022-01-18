@@ -74,8 +74,7 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	prog = p.program()
 
 	// Compile to virtual machine code
-	// TODO: uncomment this when compiler is done so it's automatic
-	//prog.Compiled = compiler.Compile(prog.toAST())
+	prog.Compiled = compiler.Compile(prog.toAST())
 	return prog, nil
 }
 
@@ -97,7 +96,7 @@ type Program struct {
 // String returns an indented, pretty-printed version of the parsed
 // program.
 func (p *Program) String() string {
-	return p.ToAST().String()
+	return p.toAST().String()
 }
 
 // Disassemble writes a human-readable form of the program's virtual machine
@@ -106,9 +105,8 @@ func (p *Program) Disassemble(writer io.Writer) error {
 	return p.Compiled.Disassemble(writer)
 }
 
-// ToAST converts the *Program to an *ast.Program.
-// TODO: rename this to toAST when compiler stuff is done -- shouldn't be exported
-func (p *Program) ToAST() *ast.Program {
+// toAST converts the *Program to an *ast.Program.
+func (p *Program) toAST() *ast.Program {
 	return &ast.Program{
 		Begin:     p.Begin,
 		Actions:   p.Actions,

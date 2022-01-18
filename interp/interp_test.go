@@ -15,19 +15,16 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/benhoyt/goawk/internal/compiler"
 	"github.com/benhoyt/goawk/interp"
 	"github.com/benhoyt/goawk/parser"
 )
 
 var (
-	awkExe      string
-	runCompiled bool
+	awkExe string
 )
 
 func TestMain(m *testing.M) {
 	flag.StringVar(&awkExe, "awk", "gawk", "awk executable name")
-	flag.BoolVar(&runCompiled, "compiled", false, "run tests on compiler / virtual machine as well")
 	flag.Parse()
 	os.Exit(m.Run())
 }
@@ -804,70 +801,6 @@ func testGoAWK(
 	if status != 0 {
 		t.Fatalf("expected status 0, got %d", status)
 	}
-
-	if runCompiled {
-		func() {
-			defer func() {
-				r := recover()
-				if r != nil {
-					t.Fatalf("panic compiling: %v", r)
-				}
-			}()
-			prog.Compiled = compiler.Compile(prog.ToAST())
-		}()
-
-		func() {
-			defer func() {
-				r := recover()
-				if r != nil {
-					t.Fatalf("panic disassembling: %v", r)
-				}
-			}()
-			err := prog.Compiled.Disassemble(ioutil.Discard)
-			if err != nil {
-				t.Fatalf("error disassembling: %v", err)
-			}
-		}()
-
-		outBuf = &concurrentBuffer{}
-		config = &interp.Config{
-			Stdin:  strings.NewReader(in),
-			Output: outBuf,
-			Error:  outBuf,
-			Vars:   []string{"_var", "42"},
-			Funcs:  funcs,
-		}
-		if configure != nil {
-			configure(config)
-		}
-
-		func() {
-			defer func() {
-				r := recover()
-				if r != nil {
-					t.Fatalf("panic executing: %v", r)
-				}
-			}()
-			_, err = interp.ExecCompiled(prog, config)
-		}()
-
-		if err != nil {
-			if errStr != "" {
-				if err.Error() == errStr {
-					return
-				}
-				t.Fatalf("[compiled] expected error %q, got %q", errStr, err.Error())
-			}
-			t.Fatal(err)
-		}
-		if errStr != "" {
-			t.Fatalf(`[compiled] expected error %q, got ""`, errStr)
-		}
-		normalized = normalizeNewlines(outBuf.String())
-		if normalized != out {
-			t.Fatalf("[compiled] expected %q, got %q", out, normalized)
-		}
-	}
 }
 
 func TestNative(t *testing.T) {
@@ -1359,8 +1292,7 @@ func TestExit(t *testing.T) {
 				Stdin:  strings.NewReader("line\n"),
 				Output: outBuf,
 			}
-			prog.Compiled = compiler.Compile(prog.ToAST())
-			status, err := interp.ExecCompiled(prog, config)
+			status, err := interp.ExecProgram(prog, config)
 			if err != nil {
 				t.Fatalf("error interpreting: %v", err)
 			}
@@ -1394,9 +1326,8 @@ func benchmarkProgram(b *testing.B, funcs map[string]interface{},
 		Error:  ioutil.Discard,
 		Funcs:  funcs,
 	}
-	prog.Compiled = compiler.Compile(prog.ToAST())
 	b.StartTimer()
-	_, err = interp.ExecCompiled(prog, config)
+	_, err = interp.ExecProgram(prog, config)
 	b.StopTimer()
 	if err != nil {
 		b.Fatalf("error interpreting %s: %v", b.Name(), err)
