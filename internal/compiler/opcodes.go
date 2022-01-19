@@ -88,17 +88,15 @@ const (
 	Boolean
 
 	// Control flow
-	Jump
-	JumpFalse
-	JumpTrue
-	JumpNumEquals
-	JumpNumNotEquals
-	JumpNumLess
-	JumpNumGreater
-	JumpNumLessOrEqual
-	JumpNumGreaterOrEqual
-	JumpStrEquals
-	JumpStrNotEquals
+	Jump               // offset
+	JumpFalse          // offset
+	JumpTrue           // offset
+	JumpEquals         // offset
+	JumpNotEquals      // offset
+	JumpLess           // offset
+	JumpGreater        // offset
+	JumpLessOrEqual    // offset
+	JumpGreaterOrEqual // offset
 	Next
 	Exit
 

@@ -283,21 +283,29 @@ func (d *disassembler) disassemble(prefix string) error {
 			offset := int32(d.fetch())
 			d.writeOpf("JumpTrue 0x%04x", d.ip+int(offset))
 
-		case JumpNumLess:
+		case JumpEquals:
 			offset := int32(d.fetch())
-			d.writeOpf("JumpNumLess 0x%04x", d.ip+int(offset))
+			d.writeOpf("JumpEquals 0x%04x", d.ip+int(offset))
 
-		case JumpNumGreater:
+		case JumpNotEquals:
 			offset := int32(d.fetch())
-			d.writeOpf("JumpNumGreater 0x%04x", d.ip+int(offset))
+			d.writeOpf("JumpNotEquals 0x%04x", d.ip+int(offset))
 
-		case JumpNumLessOrEqual:
+		case JumpLess:
 			offset := int32(d.fetch())
-			d.writeOpf("JumpNumLessOrEqual 0x%04x", d.ip+int(offset))
+			d.writeOpf("JumpLess 0x%04x", d.ip+int(offset))
 
-		case JumpNumGreaterOrEqual:
+		case JumpGreater:
 			offset := int32(d.fetch())
-			d.writeOpf("JumpNumGreaterOrEqual 0x%04x", d.ip+int(offset))
+			d.writeOpf("JumpGreater 0x%04x", d.ip+int(offset))
+
+		case JumpLessOrEqual:
+			offset := int32(d.fetch())
+			d.writeOpf("JumpLessOrEqual 0x%04x", d.ip+int(offset))
+
+		case JumpGreaterOrEqual:
+			offset := int32(d.fetch())
+			d.writeOpf("JumpGreaterOrEqual 0x%04x", d.ip+int(offset))
 
 		case ForInGlobal:
 			// TODO: factor next three into function - also other similar opcodes?

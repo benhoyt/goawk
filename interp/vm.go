@@ -499,41 +499,109 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 				i++
 			}
 
-		case compiler.JumpNumLess:
+		case compiler.JumpEquals:
 			offset := int32(code[i])
 			r := p.pop()
 			l := p.pop()
-			if l.num() < r.num() {
+			ln, lIsStr := l.isTrueStr()
+			rn, rIsStr := r.isTrueStr()
+			var b bool
+			if lIsStr || rIsStr {
+				b = p.toString(l) == p.toString(r)
+			} else {
+				b = ln == rn
+			}
+			if b {
 				i += 1 + int(offset)
 			} else {
 				i++
 			}
 
-		case compiler.JumpNumGreater:
+		case compiler.JumpNotEquals:
 			offset := int32(code[i])
 			r := p.pop()
 			l := p.pop()
-			if l.num() > r.num() {
+			ln, lIsStr := l.isTrueStr()
+			rn, rIsStr := r.isTrueStr()
+			var b bool
+			if lIsStr || rIsStr {
+				b = p.toString(l) != p.toString(r)
+			} else {
+				b = ln != rn
+			}
+			if b {
 				i += 1 + int(offset)
 			} else {
 				i++
 			}
 
-		case compiler.JumpNumLessOrEqual:
+		case compiler.JumpLess:
 			offset := int32(code[i])
 			r := p.pop()
 			l := p.pop()
-			if l.num() <= r.num() {
+			ln, lIsStr := l.isTrueStr()
+			rn, rIsStr := r.isTrueStr()
+			var b bool
+			if lIsStr || rIsStr {
+				b = p.toString(l) < p.toString(r)
+			} else {
+				b = ln < rn
+			}
+			if b {
 				i += 1 + int(offset)
 			} else {
 				i++
 			}
 
-		case compiler.JumpNumGreaterOrEqual:
+		case compiler.JumpGreater:
 			offset := int32(code[i])
 			r := p.pop()
 			l := p.pop()
-			if l.num() >= r.num() {
+			ln, lIsStr := l.isTrueStr()
+			rn, rIsStr := r.isTrueStr()
+			var b bool
+			if lIsStr || rIsStr {
+				b = p.toString(l) > p.toString(r)
+			} else {
+				b = ln > rn
+			}
+			if b {
+				i += 1 + int(offset)
+			} else {
+				i++
+			}
+
+		case compiler.JumpLessOrEqual:
+			offset := int32(code[i])
+			r := p.pop()
+			l := p.pop()
+			ln, lIsStr := l.isTrueStr()
+			rn, rIsStr := r.isTrueStr()
+			var b bool
+			if lIsStr || rIsStr {
+				b = p.toString(l) <= p.toString(r)
+			} else {
+				b = ln <= rn
+			}
+			if b {
+				i += 1 + int(offset)
+			} else {
+				i++
+			}
+
+		case compiler.JumpGreaterOrEqual:
+			offset := int32(code[i])
+			r := p.pop()
+			l := p.pop()
+			ln, lIsStr := l.isTrueStr()
+			rn, rIsStr := r.isTrueStr()
+			var b bool
+			if lIsStr || rIsStr {
+				b = p.toString(l) >= p.toString(r)
+			} else {
+				b = ln >= rn
+			}
+			if b {
 				i += 1 + int(offset)
 			} else {
 				i++

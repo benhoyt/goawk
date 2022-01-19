@@ -502,43 +502,74 @@ func (c *compiler) jumpBackward(label int, jumpOp Opcode, args ...Opcode) {
 	c.add(Opcode(int32(offset)))
 }
 
+// TODO: how much does this help with performance? is it worth it?
+// TODO: refactor, use lookup table?
 func (c *compiler) cond(expr ast.Expr, invert bool) Opcode {
-	var jumpOp Opcode
 	switch cond := expr.(type) {
 	case *ast.BinaryExpr:
 		switch cond.Op {
-		case lexer.LESS:
-			// TODO: and StrExpr?
-			if _, ok := cond.Right.(*ast.NumExpr); ok {
-				c.expr(cond.Left)
-				c.expr(cond.Right)
-				if invert {
-					jumpOp = JumpNumGreaterOrEqual
-				} else {
-					jumpOp = JumpNumLess
-				}
-			}
-		case lexer.LTE:
-			//if _, ok := cond.Right.(*ast.NumExpr); ok { // TODO: or number special variable like NF
+		case lexer.EQUALS:
 			c.expr(cond.Left)
 			c.expr(cond.Right)
 			if invert {
-				jumpOp = JumpNumGreater
+				return JumpNotEquals
 			} else {
-				jumpOp = JumpNumLessOrEqual
+				return JumpEquals
 			}
-			//}
+
+		case lexer.NOT_EQUALS:
+			c.expr(cond.Left)
+			c.expr(cond.Right)
+			if invert {
+				return JumpEquals
+			} else {
+				return JumpNotEquals
+			}
+
+		case lexer.LESS:
+			c.expr(cond.Left)
+			c.expr(cond.Right)
+			if invert {
+				return JumpGreaterOrEqual
+			} else {
+				return JumpLess
+			}
+
+		case lexer.LTE:
+			c.expr(cond.Left)
+			c.expr(cond.Right)
+			if invert {
+				return JumpGreater
+			} else {
+				return JumpLessOrEqual
+			}
+
+		case lexer.GREATER:
+			c.expr(cond.Left)
+			c.expr(cond.Right)
+			if invert {
+				return JumpLessOrEqual
+			} else {
+				return JumpGreater
+			}
+
+		case lexer.GTE:
+			c.expr(cond.Left)
+			c.expr(cond.Right)
+			if invert {
+				return JumpLess
+			} else {
+				return JumpGreaterOrEqual
+			}
 		}
 	}
-	if jumpOp == Nop {
-		c.expr(expr)
-		if invert {
-			jumpOp = JumpFalse
-		} else {
-			jumpOp = JumpTrue
-		}
+
+	c.expr(expr)
+	if invert {
+		return JumpFalse
+	} else {
+		return JumpTrue
 	}
-	return jumpOp
 }
 
 func (c *compiler) expr(expr ast.Expr) {
