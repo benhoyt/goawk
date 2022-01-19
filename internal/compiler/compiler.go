@@ -11,7 +11,6 @@ import (
 
 /*
 TODO:
-- fix c.cond issues
 - refactor, simplify, reduce copy-n-pasta
 - other TODOs
 - check overflow everywhere we output a number in an opcode
@@ -661,8 +660,9 @@ func (c *compiler) expr(expr ast.Expr) {
 		c.assign(e.Left)
 
 	case *ast.AugAssignExpr:
-		c.expr(e.Left)
 		c.expr(e.Right)
+		c.expr(e.Left)
+		c.add(Swap)
 		c.binaryOp(e.Op)
 		c.add(Dupe)
 		c.assign(e.Left)

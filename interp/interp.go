@@ -30,10 +30,9 @@ import (
 )
 
 var (
-	errExit     = errors.New("exit")
-	errBreak    = errors.New("break")
-	errContinue = errors.New("continue")
-	errNext     = errors.New("next")
+	errExit  = errors.New("exit")
+	errBreak = errors.New("break")
+	errNext  = errors.New("next")
 
 	crlfNewline = runtime.GOOS == "windows"
 	varRegex    = regexp.MustCompile(`^([_a-zA-Z][_a-zA-Z0-9]*)=(.*)`)

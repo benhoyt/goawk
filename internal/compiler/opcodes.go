@@ -15,6 +15,7 @@ const (
 	Str // strIndex
 	Dupe
 	Drop
+	Swap
 
 	// Fetch a field, variable, or array item
 	Field

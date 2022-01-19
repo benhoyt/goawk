@@ -40,6 +40,12 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 		case compiler.Drop:
 			p.pop()
 
+		case compiler.Swap:
+			r := p.pop()
+			l := p.pop()
+			p.push(r)
+			p.push(l)
+
 		case compiler.Field:
 			index := p.pop()
 			v, err := p.getField(int(index.num()))
