@@ -15,7 +15,7 @@ func (p *Program) Disassemble(writer io.Writer) error {
 			program:         p,
 			writer:          writer,
 			code:            p.Begin,
-			nativeFuncNames: p.NativeFuncNames,
+			nativeFuncNames: p.nativeFuncNames,
 		}
 		err := d.disassemble("BEGIN")
 		if err != nil {
@@ -31,7 +31,7 @@ func (p *Program) Disassemble(writer io.Writer) error {
 				program:         p,
 				writer:          writer,
 				code:            action.Pattern[0],
-				nativeFuncNames: p.NativeFuncNames,
+				nativeFuncNames: p.nativeFuncNames,
 			}
 			err := d.disassemble("pattern")
 			if err != nil {
@@ -42,7 +42,7 @@ func (p *Program) Disassemble(writer io.Writer) error {
 				program:         p,
 				writer:          writer,
 				code:            action.Pattern[0],
-				nativeFuncNames: p.NativeFuncNames,
+				nativeFuncNames: p.nativeFuncNames,
 			}
 			err := d.disassemble("start")
 			if err != nil {
@@ -52,7 +52,7 @@ func (p *Program) Disassemble(writer io.Writer) error {
 				program:         p,
 				writer:          writer,
 				code:            action.Pattern[1],
-				nativeFuncNames: p.NativeFuncNames,
+				nativeFuncNames: p.nativeFuncNames,
 			}
 			err = d.disassemble("stop")
 			if err != nil {
@@ -64,7 +64,7 @@ func (p *Program) Disassemble(writer io.Writer) error {
 				program:         p,
 				writer:          writer,
 				code:            action.Body,
-				nativeFuncNames: p.NativeFuncNames,
+				nativeFuncNames: p.nativeFuncNames,
 			}
 			err := d.disassemble("{ body }")
 			if err != nil {
@@ -78,7 +78,7 @@ func (p *Program) Disassemble(writer io.Writer) error {
 			program:         p,
 			writer:          writer,
 			code:            p.End,
-			nativeFuncNames: p.NativeFuncNames,
+			nativeFuncNames: p.nativeFuncNames,
 		}
 		err := d.disassemble("END")
 		if err != nil {
@@ -91,7 +91,7 @@ func (p *Program) Disassemble(writer io.Writer) error {
 			program:         p,
 			writer:          writer,
 			code:            f.Body,
-			nativeFuncNames: p.NativeFuncNames,
+			nativeFuncNames: p.nativeFuncNames,
 			funcIndex:       i,
 		}
 		err := d.disassemble("function " + f.Name)
@@ -143,7 +143,7 @@ func (d *disassembler) disassemble(prefix string) error {
 
 		case Global:
 			index := d.fetch()
-			d.writeOpf("Global %s", d.program.ScalarNames[index])
+			d.writeOpf("Global %s", d.program.scalarNames[index])
 
 		case Local:
 			index := int(d.fetch())
@@ -155,7 +155,7 @@ func (d *disassembler) disassemble(prefix string) error {
 
 		case ArrayGlobal:
 			arrayIndex := d.fetch()
-			d.writeOpf("ArrayGlobal %s", d.program.ArrayNames[arrayIndex])
+			d.writeOpf("ArrayGlobal %s", d.program.arrayNames[arrayIndex])
 
 		case ArrayLocal:
 			arrayIndex := d.fetch()
@@ -163,7 +163,7 @@ func (d *disassembler) disassemble(prefix string) error {
 
 		case InGlobal:
 			arrayIndex := d.fetch()
-			d.writeOpf("InGlobal %s", d.program.ArrayNames[arrayIndex])
+			d.writeOpf("InGlobal %s", d.program.arrayNames[arrayIndex])
 
 		case InLocal:
 			arrayIndex := int(d.fetch())
@@ -171,7 +171,7 @@ func (d *disassembler) disassemble(prefix string) error {
 
 		case AssignGlobal:
 			index := d.fetch()
-			d.writeOpf("AssignGlobal %s", d.program.ScalarNames[index])
+			d.writeOpf("AssignGlobal %s", d.program.scalarNames[index])
 
 		case AssignLocal:
 			index := int(d.fetch())
@@ -183,7 +183,7 @@ func (d *disassembler) disassemble(prefix string) error {
 
 		case AssignArrayGlobal:
 			arrayIndex := d.fetch()
-			d.writeOpf("AssignArrayGlobal %s", d.program.ArrayNames[arrayIndex])
+			d.writeOpf("AssignArrayGlobal %s", d.program.arrayNames[arrayIndex])
 
 		case AssignArrayLocal:
 			arrayIndex := int(d.fetch())
@@ -191,7 +191,7 @@ func (d *disassembler) disassemble(prefix string) error {
 
 		case DeleteGlobal:
 			arrayIndex := d.fetch()
-			d.writeOpf("DeleteGlobal %s", d.program.ArrayNames[arrayIndex])
+			d.writeOpf("DeleteGlobal %s", d.program.arrayNames[arrayIndex])
 
 		case DeleteLocal:
 			arrayIndex := int(d.fetch())
@@ -199,7 +199,7 @@ func (d *disassembler) disassemble(prefix string) error {
 
 		case DeleteAllGlobal:
 			arrayIndex := d.fetch()
-			d.writeOpf("DeleteAllGlobal %s", d.program.ArrayNames[arrayIndex])
+			d.writeOpf("DeleteAllGlobal %s", d.program.arrayNames[arrayIndex])
 
 		case DeleteAllLocal:
 			arrayIndex := int(d.fetch())
@@ -212,7 +212,7 @@ func (d *disassembler) disassemble(prefix string) error {
 		case IncrGlobal:
 			amount := int32(d.fetch())
 			index := d.fetch()
-			d.writeOpf("IncrGlobal %d %s", amount, d.program.ScalarNames[index])
+			d.writeOpf("IncrGlobal %d %s", amount, d.program.scalarNames[index])
 
 		case IncrLocal:
 			amount := int32(d.fetch())
@@ -227,7 +227,7 @@ func (d *disassembler) disassemble(prefix string) error {
 		case IncrArrayGlobal:
 			amount := int32(d.fetch())
 			arrayIndex := d.fetch()
-			d.writeOpf("IncrArrayGlobal %d %s", amount, d.program.ArrayNames[arrayIndex])
+			d.writeOpf("IncrArrayGlobal %d %s", amount, d.program.arrayNames[arrayIndex])
 
 		case IncrArrayLocal:
 			amount := int32(d.fetch())
@@ -241,7 +241,7 @@ func (d *disassembler) disassemble(prefix string) error {
 		case AugAssignGlobal:
 			operation := lexer.Token(d.fetch())
 			index := d.fetch()
-			d.writeOpf("AugAssignGlobal %s %s", operation, d.program.ScalarNames[index])
+			d.writeOpf("AugAssignGlobal %s %s", operation, d.program.scalarNames[index])
 
 		case AugAssignLocal:
 			operation := lexer.Token(d.fetch())
@@ -256,7 +256,7 @@ func (d *disassembler) disassemble(prefix string) error {
 		case AugAssignArrayGlobal:
 			operation := lexer.Token(d.fetch())
 			arrayIndex := d.fetch()
-			d.writeOpf("AugAssignArrayGlobal %s %s", operation, d.program.ArrayNames[arrayIndex])
+			d.writeOpf("AugAssignArrayGlobal %s %s", operation, d.program.arrayNames[arrayIndex])
 
 		case AugAssignArrayLocal:
 			operation := lexer.Token(d.fetch())
@@ -307,11 +307,11 @@ func (d *disassembler) disassemble(prefix string) error {
 			offset := d.fetch()
 			var arrayName string
 			if ast.VarScope(arrayScope) == ast.ScopeGlobal {
-				arrayName = d.program.ArrayNames[arrayIndex]
+				arrayName = d.program.arrayNames[arrayIndex]
 			} else {
 				arrayName = d.localArrayName(int(arrayIndex))
 			}
-			d.writeOpf("ForInGlobal %s %s 0x%04x", d.program.ScalarNames[varIndex], arrayName, d.ip+int(offset))
+			d.writeOpf("ForInGlobal %s %s 0x%04x", d.program.scalarNames[varIndex], arrayName, d.ip+int(offset))
 
 		case ForInLocal:
 			varIndex := d.fetch()
@@ -320,7 +320,7 @@ func (d *disassembler) disassemble(prefix string) error {
 			offset := d.fetch()
 			var arrayName string
 			if ast.VarScope(arrayScope) == ast.ScopeGlobal {
-				arrayName = d.program.ArrayNames[arrayIndex]
+				arrayName = d.program.arrayNames[arrayIndex]
 			} else {
 				arrayName = d.localArrayName(int(arrayIndex))
 			}
@@ -333,7 +333,7 @@ func (d *disassembler) disassemble(prefix string) error {
 			offset := d.fetch()
 			var arrayName string
 			if ast.VarScope(arrayScope) == ast.ScopeGlobal {
-				arrayName = d.program.ArrayNames[arrayIndex]
+				arrayName = d.program.arrayNames[arrayIndex]
 			} else {
 				arrayName = d.localArrayName(int(arrayIndex))
 			}
@@ -356,7 +356,7 @@ func (d *disassembler) disassemble(prefix string) error {
 
 		case CallSplitGlobal:
 			arrayIndex := d.fetch()
-			d.writeOpf("CallSplitGlobal %s", d.program.ArrayNames[arrayIndex])
+			d.writeOpf("CallSplitGlobal %s", d.program.arrayNames[arrayIndex])
 
 		case CallSplitLocal:
 			arrayIndex := int(d.fetch())
@@ -364,7 +364,7 @@ func (d *disassembler) disassemble(prefix string) error {
 
 		case CallSplitSepGlobal:
 			arrayIndex := d.fetch()
-			d.writeOpf("CallSplitSepGlobal %s", d.program.ArrayNames[arrayIndex])
+			d.writeOpf("CallSplitSepGlobal %s", d.program.arrayNames[arrayIndex])
 
 		case CallSplitSepLocal:
 			arrayIndex := int(d.fetch())
@@ -398,7 +398,7 @@ func (d *disassembler) disassemble(prefix string) error {
 				arrayIndex := int(d.fetch())
 				switch arrayScope {
 				case ast.ScopeGlobal:
-					arrayArgs = append(arrayArgs, d.program.ArrayNames[arrayIndex])
+					arrayArgs = append(arrayArgs, d.program.arrayNames[arrayIndex])
 				case ast.ScopeLocal:
 					arrayArgs = append(arrayArgs, d.localArrayName(arrayIndex))
 				}
@@ -443,7 +443,7 @@ func (d *disassembler) disassemble(prefix string) error {
 		case GetlineGlobal:
 			redirect := lexer.Token(d.fetch())
 			index := d.fetch()
-			d.writeOpf("GetlineGlobal %s %s", redirect, d.program.ScalarNames[index])
+			d.writeOpf("GetlineGlobal %s %s", redirect, d.program.scalarNames[index])
 
 		case GetlineLocal:
 			redirect := lexer.Token(d.fetch())
@@ -458,7 +458,7 @@ func (d *disassembler) disassemble(prefix string) error {
 		case GetlineArrayGlobal:
 			redirect := lexer.Token(d.fetch())
 			arrayIndex := d.fetch()
-			d.writeOpf("GetlineArrayGlobal %s %s", redirect, d.program.ArrayNames[arrayIndex])
+			d.writeOpf("GetlineArrayGlobal %s %s", redirect, d.program.arrayNames[arrayIndex])
 
 		case GetlineArrayLocal:
 			redirect := lexer.Token(d.fetch())

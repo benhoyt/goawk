@@ -38,10 +38,9 @@ type Program struct {
 	Regexes   []*regexp.Regexp
 
 	// For disassembly
-	// TODO: can these fields be unexported if they're only used for disassembly? what about others?
-	ScalarNames     []string
-	ArrayNames      []string
-	NativeFuncNames []string
+	scalarNames     []string
+	arrayNames      []string
+	nativeFuncNames []string
 }
 
 type Action struct {
@@ -127,13 +126,13 @@ func Compile(prog *ast.Program) *Program {
 		p.End = append(p.End, c.finish()...)
 	}
 
-	p.ScalarNames = make([]string, len(prog.Scalars))
+	p.scalarNames = make([]string, len(prog.Scalars))
 	for name, index := range prog.Scalars {
-		p.ScalarNames[index] = name
+		p.scalarNames[index] = name
 	}
-	p.ArrayNames = make([]string, len(prog.Arrays))
+	p.arrayNames = make([]string, len(prog.Arrays))
 	for name, index := range prog.Arrays {
-		p.ArrayNames[index] = name
+		p.arrayNames[index] = name
 	}
 
 	return p
@@ -782,10 +781,10 @@ func (c *compiler) expr(expr ast.Expr) {
 				c.expr(arg)
 			}
 			c.add(CallNative, Opcode(e.Index), Opcode(len(e.Args)))
-			for len(c.program.NativeFuncNames) <= e.Index {
-				c.program.NativeFuncNames = append(c.program.NativeFuncNames, "")
+			for len(c.program.nativeFuncNames) <= e.Index {
+				c.program.nativeFuncNames = append(c.program.nativeFuncNames, "")
 			}
-			c.program.NativeFuncNames[e.Index] = e.Name
+			c.program.nativeFuncNames[e.Index] = e.Name
 		} else {
 			f := c.program.Functions[e.Index]
 			var arrayOpcodes []Opcode
