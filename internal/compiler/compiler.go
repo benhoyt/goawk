@@ -788,16 +788,18 @@ func (c *compiler) expr(expr ast.Expr) {
 		} else {
 			f := c.program.Functions[e.Index]
 			var arrayOpcodes []Opcode
+			numScalarArgs := 0
 			for i, arg := range e.Args {
 				if f.Arrays[i] {
 					a := arg.(*ast.VarExpr)
 					arrayOpcodes = append(arrayOpcodes, Opcode(a.Scope), Opcode(a.Index))
 				} else {
 					c.expr(arg)
+					numScalarArgs++
 				}
 			}
-			if len(e.Args) < len(f.Params) {
-				c.add(Nulls, Opcode(len(f.Params)-len(e.Args)))
+			if numScalarArgs < f.NumScalars {
+				c.add(Nulls, Opcode(f.NumScalars-numScalarArgs))
 			}
 			c.add(CallUser, Opcode(e.Index), Opcode(len(arrayOpcodes)/2))
 			c.add(arrayOpcodes...)
