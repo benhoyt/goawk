@@ -3,6 +3,7 @@ package compiler
 //go:generate go run golang.org/x/tools/cmd/stringer@v0.1.8 -type=Opcode
 type Opcode uint32
 
+// TODO: simpler if Opcode is signed int32?
 // TODO: do we need to optimize the order of the opcodes, if a Go switch is a binary tree?
 // TODO: does reducing the number of opcodes actually speed things up, for example all the opcodes required for assignment?
 
@@ -35,6 +36,7 @@ const (
 	AssignArrayLocal  // arrayIndex
 
 	// Delete statement
+	// TODO: add arrayScope param and reduce to just Delete and DeleteAll opcodes
 	DeleteGlobal    // arrayIndex
 	DeleteLocal     // arrayIndex
 	DeleteAllGlobal // arrayIndex
@@ -101,12 +103,9 @@ const (
 	Exit
 
 	// "for (k in a)" combinations
-	ForGlobalInGlobal  // varIndex arrayIndex offset
-	ForGlobalInLocal   // varIndex arrayIndex offset
-	ForLocalInGlobal   // varIndex arrayIndex offset
-	ForLocalInLocal    // varIndex arrayIndex offset
-	ForSpecialInGlobal // varIndex arrayIndex offset
-	ForSpecialInLocal  // varIndex arrayIndex offset
+	ForInGlobal  // varIndex arrayScope arrayIndex offset
+	ForInLocal   // varIndex arrayScope arrayIndex offset
+	ForInSpecial // varIndex arrayScope arrayIndex offset
 	BreakForIn
 
 	// Builtin functions
@@ -125,6 +124,7 @@ const (
 	CallMatch
 	CallRand
 	CallSin
+	// TODO: add arrayScope and reduce opcodes to just CallSplit and CallSplitSep (or even push sep and combine into one)
 	CallSplitGlobal    // arrayIndex
 	CallSplitLocal     // arrayIndex
 	CallSplitSepGlobal // arrayIndex
@@ -148,13 +148,14 @@ const (
 	Nulls // numNulls
 
 	// Print, printf, and getline
-	Print              // numArgs, redirect
-	Printf             // numArgs, redirect
-	Getline            // redirect
-	GetlineField       // redirect
-	GetlineGlobal      // redirect, index
-	GetlineLocal       // redirect, index
-	GetlineSpecial     // redirect, index
+	Print          // numArgs, redirect
+	Printf         // numArgs, redirect
+	Getline        // redirect
+	GetlineField   // redirect
+	GetlineGlobal  // redirect, index
+	GetlineLocal   // redirect, index
+	GetlineSpecial // redirect, index
+	// TODO: add arrayScope and reduce to one opcode
 	GetlineArrayGlobal // redirect, arrayIndex
 	GetlineArrayLocal  // redirect, arrayIndex
 )

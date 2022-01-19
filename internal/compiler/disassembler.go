@@ -299,20 +299,45 @@ func (d *disassembler) disassemble(prefix string) error {
 			offset := int32(d.fetch())
 			d.writeOpf("JumpNumGreaterOrEqual 0x%04x", d.ip+int(offset))
 
-		case ForGlobalInGlobal:
+		case ForInGlobal:
+			// TODO: factor next three into function - also other similar opcodes?
 			varIndex := d.fetch()
+			arrayScope := d.fetch()
 			arrayIndex := d.fetch()
 			offset := d.fetch()
-			d.writeOpf("ForGlobalInGlobal %s %s 0x%04x", d.program.ScalarNames[varIndex], d.program.ArrayNames[arrayIndex], d.ip+int(offset))
+			var arrayName string
+			if ast.VarScope(arrayScope) == ast.ScopeGlobal {
+				arrayName = d.program.ArrayNames[arrayIndex]
+			} else {
+				arrayName = d.localArrayName(int(arrayIndex))
+			}
+			d.writeOpf("ForInGlobal %s %s 0x%04x", d.program.ScalarNames[varIndex], arrayName, d.ip+int(offset))
 
-		case ForGlobalInLocal:
-			panic("TODO")
+		case ForInLocal:
+			varIndex := d.fetch()
+			arrayScope := d.fetch()
+			arrayIndex := d.fetch()
+			offset := d.fetch()
+			var arrayName string
+			if ast.VarScope(arrayScope) == ast.ScopeGlobal {
+				arrayName = d.program.ArrayNames[arrayIndex]
+			} else {
+				arrayName = d.localArrayName(int(arrayIndex))
+			}
+			d.writeOpf("ForInLocal %s %s 0x%04x", d.localName(int(varIndex)), arrayName, d.ip+int(offset))
 
-		case ForLocalInGlobal:
-			panic("TODO")
-
-		case ForLocalInLocal:
-			panic("TODO")
+		case ForInSpecial:
+			varIndex := d.fetch()
+			arrayScope := d.fetch()
+			arrayIndex := d.fetch()
+			offset := d.fetch()
+			var arrayName string
+			if ast.VarScope(arrayScope) == ast.ScopeGlobal {
+				arrayName = d.program.ArrayNames[arrayIndex]
+			} else {
+				arrayName = d.localArrayName(int(arrayIndex))
+			}
+			d.writeOpf("ForInSpecial %s %s 0x%04x", ast.SpecialVarName(int(varIndex)), arrayName, d.ip+int(offset))
 
 		//case CallGsub:
 		//	d.writeOpf("CallGsub")

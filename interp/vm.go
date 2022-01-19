@@ -547,16 +547,62 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			// Return special errExit value "caught" by top-level executor
 			return errExit
 
-		case compiler.ForGlobalInGlobal:
+		case compiler.ForInGlobal:
+			// TODO: can we reduce the copy-pasta here and below?
 			varIndex := code[i]
-			arrayIndex := code[i+1]
-			offset := code[i+2]
-			i += 3
-			array := p.arrays[arrayIndex]
+			arrayScope := code[i+1]
+			arrayIndex := code[i+2]
+			offset := code[i+3]
+			i += 4
+			array := p.arrays[p.getArrayIndex(ast.VarScope(arrayScope), int(arrayIndex))]
 			loopCode := code[i : i+int(offset)]
 			for index := range array {
 				p.globals[varIndex] = str(index)
 				err := p.execute(compiled, loopCode)
+				if err == errBreak {
+					break
+				}
+				if err != nil {
+					return err
+				}
+			}
+			i += int(offset)
+
+		case compiler.ForInLocal:
+			varIndex := code[i]
+			arrayScope := code[i+1]
+			arrayIndex := code[i+2]
+			offset := code[i+3]
+			i += 4
+			array := p.arrays[p.getArrayIndex(ast.VarScope(arrayScope), int(arrayIndex))]
+			loopCode := code[i : i+int(offset)]
+			for index := range array {
+				p.frame[varIndex] = str(index)
+				err := p.execute(compiled, loopCode)
+				if err == errBreak {
+					break
+				}
+				if err != nil {
+					return err
+				}
+			}
+			i += int(offset)
+
+		case compiler.ForInSpecial:
+			varIndex := code[i]
+			arrayScope := code[i+1]
+			arrayIndex := code[i+2]
+			offset := code[i+3]
+			i += 4
+			array := p.arrays[p.getArrayIndex(ast.VarScope(arrayScope), int(arrayIndex))]
+			loopCode := code[i : i+int(offset)]
+			for index := range array {
+				err := p.setVar(ast.ScopeSpecial, int(varIndex), str(index))
+				if err != nil {
+					return err
+				}
+				p.frame[varIndex] = str(index)
+				err = p.execute(compiled, loopCode)
 				if err == errBreak {
 					break
 				}

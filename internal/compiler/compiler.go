@@ -11,7 +11,7 @@ import (
 
 /*
 TODO:
-- other "for in" cases (add tests!)
+- fix c.cond issues
 - refactor, simplify, reduce copy-n-pasta
 - other TODOs
 - check overflow everywhere we output a number in an opcode
@@ -38,6 +38,7 @@ type Program struct {
 	Regexes   []*regexp.Regexp
 
 	// For disassembly
+	// TODO: can these fields be unexported if they're only used for disassembly? what about others?
 	ScalarNames     []string
 	ArrayNames      []string
 	NativeFuncNames []string
@@ -322,13 +323,15 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 
 	case *ast.ForInStmt:
 		var op Opcode
-		switch {
-		case s.Var.Scope == ast.ScopeGlobal && s.Array.Scope == ast.ScopeGlobal:
-			op = ForGlobalInGlobal
-		default:
-			panic("TODO: for in with local/special not yet supported")
+		switch s.Var.Scope {
+		case ast.ScopeGlobal:
+			op = ForInGlobal
+		case ast.ScopeLocal:
+			op = ForInLocal
+		default: // ScopeSpecial
+			op = ForInSpecial
 		}
-		mark := c.jumpForward(op, Opcode(s.Var.Index), Opcode(s.Array.Index))
+		mark := c.jumpForward(op, Opcode(s.Var.Index), Opcode(s.Array.Scope), Opcode(s.Array.Index))
 
 		c.breaks = append(c.breaks, nil) // nil tells BreakStmt it's a for..in loop
 		c.continues = append(c.continues, []int{})
@@ -542,10 +545,12 @@ func (c *compiler) cond(expr ast.Expr, invert bool) Opcode {
 func (c *compiler) expr(expr ast.Expr) {
 	switch e := expr.(type) {
 	case *ast.NumExpr:
+		// TODO: reuse constants if we can
 		c.add(Num, Opcode(len(c.program.Nums)))
 		c.program.Nums = append(c.program.Nums, e.Value)
 
 	case *ast.StrExpr:
+		// TODO: reuse constants if we can
 		c.add(Str, Opcode(len(c.program.Strs)))
 		c.program.Strs = append(c.program.Strs, e.Value)
 
@@ -571,6 +576,7 @@ func (c *compiler) expr(expr ast.Expr) {
 		}
 
 	case *ast.RegExpr:
+		// TODO: reuse constants if we can
 		c.add(Regex, Opcode(len(c.program.Regexes)))
 		c.program.Regexes = append(c.program.Regexes, regexp.MustCompile(e.Regex))
 
