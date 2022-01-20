@@ -1,7 +1,6 @@
 package interp
 
 import (
-	"fmt"
 	"io"
 	"math"
 	"os"
@@ -18,7 +17,6 @@ import (
 func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) error {
 	for i := 0; i < len(code); {
 		op := code[i]
-		//fmt.Printf("TODO %04x %s %v\n", i, op, p.vmStack[:p.vmSp])
 		i++
 
 		switch op {
@@ -1225,9 +1223,6 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 				array[index] = numStr(line)
 			}
 			p.replaceTop(num(ret))
-
-		default:
-			panic(fmt.Sprintf("TODO remove: unsupported opcode %s", op))
 		}
 	}
 	return nil

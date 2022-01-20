@@ -26,6 +26,7 @@ func (p *Program) Disassemble(writer io.Writer) error {
 	for _, action := range p.Actions {
 		switch len(action.Pattern) {
 		case 0:
+			// Nothing to do here.
 		case 1:
 			d := &disassembler{
 				program:         p,

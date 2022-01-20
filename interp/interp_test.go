@@ -769,6 +769,13 @@ func testGoAWK(
 		}
 		t.Fatal(err)
 	}
+
+	// Test that disassembler at least doesn't panic or return an error.
+	err = prog.Disassemble(ioutil.Discard)
+	if err != nil {
+		t.Fatalf("disassembler returned an error: %v", err)
+	}
+
 	outBuf := &concurrentBuffer{}
 	config := &interp.Config{
 		Stdin:  strings.NewReader(in),
@@ -780,7 +787,6 @@ func testGoAWK(
 	if configure != nil {
 		configure(config)
 	}
-
 	status, err := interp.ExecProgram(prog, config)
 	if err != nil {
 		if errStr != "" {
