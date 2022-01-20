@@ -74,8 +74,8 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	prog = p.program()
 
 	// Compile to virtual machine code
-	prog.Compiled = compiler.Compile(prog.toAST())
-	return prog, nil
+	prog.Compiled, err = compiler.Compile(prog.toAST())
+	return prog, err
 }
 
 // Program is the parsed and compiled representation of an entire AWK program.

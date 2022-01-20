@@ -62,7 +62,28 @@ type Function struct {
 	Body       []Opcode
 }
 
-func Compile(prog *ast.Program) *Program {
+// compileError is the internal error type raised in the rare cases when
+// compilation can't succeed, such as program too large (jump offsets greater
+// than 2GB). Most actual problems are caught as parse time.
+type compileError struct {
+	message string
+}
+
+func (e *compileError) Error() string {
+	return e.message
+}
+
+func Compile(prog *ast.Program) (compiledProg *Program, err error) {
+	defer func() {
+		// The compiler uses panic with a *CompileError to signal compile
+		// errors internally, and they're caught here. This avoids the
+		// need to check errors everywhere.
+		if r := recover(); r != nil {
+			// Convert to ParseError or re-panic
+			err = r.(*compileError)
+		}
+	}()
+
 	p := &Program{}
 
 	// For functions called before they're defined or recursive functions, we
@@ -140,7 +161,7 @@ func Compile(prog *ast.Program) *Program {
 		p.arrayNames[index] = name
 	}
 
-	return p
+	return p, nil
 }
 
 type compiler struct {
@@ -181,23 +202,23 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 				switch target.Scope {
 				case ast.ScopeGlobal:
 					if expr.Op == lexer.INCR {
-						c.add(IncrGlobal, 1, Opcode(target.Index))
+						c.add(IncrGlobal, 1, opcodeInt(target.Index))
 					} else {
-						c.add(IncrGlobal, -1, Opcode(target.Index))
+						c.add(IncrGlobal, -1, opcodeInt(target.Index))
 					}
 					return
 				case ast.ScopeLocal:
 					if expr.Op == lexer.INCR {
-						c.add(IncrLocal, 1, Opcode(target.Index))
+						c.add(IncrLocal, 1, opcodeInt(target.Index))
 					} else {
-						c.add(IncrLocal, -1, Opcode(target.Index))
+						c.add(IncrLocal, -1, opcodeInt(target.Index))
 					}
 					return
 				case ast.ScopeSpecial:
 					if expr.Op == lexer.INCR {
-						c.add(IncrSpecial, 1, Opcode(target.Index))
+						c.add(IncrSpecial, 1, opcodeInt(target.Index))
 					} else {
-						c.add(IncrSpecial, -1, Opcode(target.Index))
+						c.add(IncrSpecial, -1, opcodeInt(target.Index))
 					}
 					return
 				}
@@ -214,16 +235,16 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 				switch target.Array.Scope {
 				case ast.ScopeGlobal:
 					if expr.Op == lexer.INCR {
-						c.add(IncrArrayGlobal, 1, Opcode(target.Array.Index))
+						c.add(IncrArrayGlobal, 1, opcodeInt(target.Array.Index))
 					} else {
-						c.add(IncrArrayGlobal, -1, Opcode(target.Array.Index))
+						c.add(IncrArrayGlobal, -1, opcodeInt(target.Array.Index))
 					}
 					return
 				case ast.ScopeLocal:
 					if expr.Op == lexer.INCR {
-						c.add(IncrArrayLocal, 1, Opcode(target.Array.Index))
+						c.add(IncrArrayLocal, 1, opcodeInt(target.Array.Index))
 					} else {
-						c.add(IncrArrayLocal, -1, Opcode(target.Array.Index))
+						c.add(IncrArrayLocal, -1, opcodeInt(target.Array.Index))
 					}
 					return
 				}
@@ -235,11 +256,11 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 			case *ast.VarExpr:
 				switch target.Scope {
 				case ast.ScopeGlobal:
-					c.add(AugAssignGlobal, Opcode(expr.Op), Opcode(target.Index))
+					c.add(AugAssignGlobal, Opcode(expr.Op), opcodeInt(target.Index))
 				case ast.ScopeLocal:
-					c.add(AugAssignLocal, Opcode(expr.Op), Opcode(target.Index))
+					c.add(AugAssignLocal, Opcode(expr.Op), opcodeInt(target.Index))
 				case ast.ScopeSpecial:
-					c.add(AugAssignSpecial, Opcode(expr.Op), Opcode(target.Index))
+					c.add(AugAssignSpecial, Opcode(expr.Op), opcodeInt(target.Index))
 				}
 			case *ast.FieldExpr:
 				c.expr(target.Index)
@@ -248,9 +269,9 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 				c.index(target.Index)
 				switch target.Array.Scope {
 				case ast.ScopeGlobal:
-					c.add(AugAssignArrayGlobal, Opcode(expr.Op), Opcode(target.Array.Index))
+					c.add(AugAssignArrayGlobal, Opcode(expr.Op), opcodeInt(target.Array.Index))
 				case ast.ScopeLocal:
-					c.add(AugAssignArrayLocal, Opcode(expr.Op), Opcode(target.Array.Index))
+					c.add(AugAssignArrayLocal, Opcode(expr.Op), opcodeInt(target.Array.Index))
 				}
 			}
 			return
@@ -267,7 +288,7 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		for _, a := range s.Args {
 			c.expr(a)
 		}
-		c.add(Print, Opcode(len(s.Args)), Opcode(s.Redirect))
+		c.add(Print, opcodeInt(len(s.Args)), Opcode(s.Redirect))
 
 	case *ast.PrintfStmt:
 		if s.Redirect != lexer.ILLEGAL {
@@ -276,7 +297,7 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		for _, a := range s.Args {
 			c.expr(a)
 		}
-		c.add(Printf, Opcode(len(s.Args)), Opcode(s.Redirect))
+		c.add(Printf, opcodeInt(len(s.Args)), Opcode(s.Redirect))
 
 	case *ast.IfStmt:
 		if len(s.Else) == 0 {
@@ -335,7 +356,7 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		default: // ScopeSpecial
 			op = ForInSpecial
 		}
-		mark := c.jumpForward(op, Opcode(s.Var.Index), Opcode(s.Array.Scope), Opcode(s.Array.Index))
+		mark := c.jumpForward(op, opcodeInt(s.Var.Index), Opcode(s.Array.Scope), opcodeInt(s.Array.Index))
 
 		c.breaks = append(c.breaks, nil) // nil tells BreakStmt it's a for..in loop
 		c.continues = append(c.continues, []int{})
@@ -415,16 +436,16 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 			c.index(s.Index)
 			switch s.Array.Scope {
 			case ast.ScopeGlobal:
-				c.add(DeleteGlobal, Opcode(s.Array.Index))
+				c.add(DeleteGlobal, opcodeInt(s.Array.Index))
 			case ast.ScopeLocal:
-				c.add(DeleteLocal, Opcode(s.Array.Index))
+				c.add(DeleteLocal, opcodeInt(s.Array.Index))
 			}
 		} else {
 			switch s.Array.Scope {
 			case ast.ScopeGlobal:
-				c.add(DeleteAllGlobal, Opcode(s.Array.Index))
+				c.add(DeleteAllGlobal, opcodeInt(s.Array.Index))
 			case ast.ScopeLocal:
-				c.add(DeleteAllLocal, Opcode(s.Array.Index))
+				c.add(DeleteAllLocal, opcodeInt(s.Array.Index))
 			}
 		}
 
@@ -442,11 +463,11 @@ func (c *compiler) assign(target ast.Expr) {
 	case *ast.VarExpr:
 		switch target.Scope {
 		case ast.ScopeGlobal:
-			c.add(AssignGlobal, Opcode(target.Index))
+			c.add(AssignGlobal, opcodeInt(target.Index))
 		case ast.ScopeLocal:
-			c.add(AssignLocal, Opcode(target.Index))
+			c.add(AssignLocal, opcodeInt(target.Index))
 		case ast.ScopeSpecial:
-			c.add(AssignSpecial, Opcode(target.Index))
+			c.add(AssignSpecial, opcodeInt(target.Index))
 		}
 	case *ast.FieldExpr:
 		c.expr(target.Index)
@@ -455,11 +476,20 @@ func (c *compiler) assign(target ast.Expr) {
 		c.index(target.Index)
 		switch target.Array.Scope {
 		case ast.ScopeGlobal:
-			c.add(AssignArrayGlobal, Opcode(target.Array.Index))
+			c.add(AssignArrayGlobal, opcodeInt(target.Array.Index))
 		case ast.ScopeLocal:
-			c.add(AssignArrayLocal, Opcode(target.Array.Index))
+			c.add(AssignArrayLocal, opcodeInt(target.Array.Index))
 		}
 	}
+}
+
+// opcodeInt converts int to Opcode, ensuring it fits.
+func opcodeInt(n int) Opcode {
+	if n > math.MaxInt32 || n < math.MinInt32 {
+		// Two billion should be enough for anybody.
+		panic(&compileError{message: fmt.Sprintf("program too large (constant index or jump offset %d doesn't fit in int32)", n)})
+	}
+	return Opcode(n)
 }
 
 func (c *compiler) patchBreaks() {
@@ -487,10 +517,7 @@ func (c *compiler) jumpForward(jumpOp Opcode, args ...Opcode) int {
 
 func (c *compiler) patchForward(mark int) {
 	offset := len(c.code) - mark
-	if offset > math.MaxInt32 || offset < math.MinInt32 {
-		panic("forward jump offset too large") // TODO: handle more gracefully?
-	}
-	c.code[mark-1] = Opcode(offset)
+	c.code[mark-1] = opcodeInt(offset)
 }
 
 func (c *compiler) labelBackward() int {
@@ -499,12 +526,9 @@ func (c *compiler) labelBackward() int {
 
 func (c *compiler) jumpBackward(label int, jumpOp Opcode, args ...Opcode) {
 	offset := label - (len(c.code) + len(args) + 2)
-	if offset > math.MaxInt32 || offset < math.MinInt32 {
-		panic("backward jump offset too large") // TODO: handle more gracefully?
-	}
 	c.add(jumpOp)
 	c.add(args...)
-	c.add(Opcode(offset))
+	c.add(opcodeInt(offset))
 }
 
 // TODO: better performance to have JumpNumLess and so on with number as opcode?
@@ -579,16 +603,16 @@ func (c *compiler) cond(expr ast.Expr, invert bool) Opcode {
 func (c *compiler) expr(expr ast.Expr) {
 	switch e := expr.(type) {
 	case *ast.NumExpr:
-		c.add(Num, Opcode(c.numIndex(e.Value)))
+		c.add(Num, opcodeInt(c.numIndex(e.Value)))
 
 	case *ast.StrExpr:
-		c.add(Str, Opcode(c.strIndex(e.Value)))
+		c.add(Str, opcodeInt(c.strIndex(e.Value)))
 
 	case *ast.FieldExpr:
 		switch index := e.Index.(type) {
 		case *ast.NumExpr:
 			if index.Value == float64(int32(index.Value)) {
-				c.add(FieldNum, Opcode(index.Value))
+				c.add(FieldNum, opcodeInt(int(index.Value)))
 				return
 			}
 		}
@@ -598,15 +622,15 @@ func (c *compiler) expr(expr ast.Expr) {
 	case *ast.VarExpr:
 		switch e.Scope {
 		case ast.ScopeGlobal:
-			c.add(Global, Opcode(e.Index))
+			c.add(Global, opcodeInt(e.Index))
 		case ast.ScopeLocal:
-			c.add(Local, Opcode(e.Index))
+			c.add(Local, opcodeInt(e.Index))
 		case ast.ScopeSpecial:
-			c.add(Special, Opcode(e.Index))
+			c.add(Special, opcodeInt(e.Index))
 		}
 
 	case *ast.RegExpr:
-		c.add(Regex, Opcode(c.regexIndex(e.Regex)))
+		c.add(Regex, opcodeInt(c.regexIndex(e.Regex)))
 
 	case *ast.BinaryExpr:
 		// && and || are special cases as they're short-circuit operators.
@@ -679,9 +703,9 @@ func (c *compiler) expr(expr ast.Expr) {
 		c.index(e.Index)
 		switch e.Array.Scope {
 		case ast.ScopeGlobal:
-			c.add(ArrayGlobal, Opcode(e.Array.Index))
+			c.add(ArrayGlobal, opcodeInt(e.Array.Index))
 		case ast.ScopeLocal:
-			c.add(ArrayLocal, Opcode(e.Array.Index))
+			c.add(ArrayLocal, opcodeInt(e.Array.Index))
 		}
 
 	case *ast.CallExpr:
@@ -692,14 +716,14 @@ func (c *compiler) expr(expr ast.Expr) {
 			switch {
 			case arrayExpr.Scope == ast.ScopeGlobal && len(e.Args) > 2:
 				c.expr(e.Args[2])
-				c.add(CallSplitSepGlobal, Opcode(arrayExpr.Index))
+				c.add(CallSplitSepGlobal, opcodeInt(arrayExpr.Index))
 			case arrayExpr.Scope == ast.ScopeGlobal:
-				c.add(CallSplitGlobal, Opcode(arrayExpr.Index))
+				c.add(CallSplitGlobal, opcodeInt(arrayExpr.Index))
 			case arrayExpr.Scope == ast.ScopeLocal && len(e.Args) > 2:
 				c.expr(e.Args[2])
-				c.add(CallSplitSepLocal, Opcode(arrayExpr.Index))
+				c.add(CallSplitSepLocal, opcodeInt(arrayExpr.Index))
 			case arrayExpr.Scope == ast.ScopeLocal:
-				c.add(CallSplitLocal, Opcode(arrayExpr.Index))
+				c.add(CallSplitLocal, opcodeInt(arrayExpr.Index))
 			default:
 				panic(fmt.Sprintf("unexpected array scope %d or num args %d", arrayExpr.Scope, len(e.Args)))
 			}
@@ -758,7 +782,7 @@ func (c *compiler) expr(expr ast.Expr) {
 		case lexer.F_SIN:
 			c.add(CallSin)
 		case lexer.F_SPRINTF:
-			c.add(CallSprintf, Opcode(len(e.Args)))
+			c.add(CallSprintf, opcodeInt(len(e.Args)))
 		case lexer.F_SQRT:
 			c.add(CallSqrt)
 		case lexer.F_SRAND:
@@ -800,9 +824,9 @@ func (c *compiler) expr(expr ast.Expr) {
 		c.index(e.Index)
 		switch e.Array.Scope {
 		case ast.ScopeGlobal:
-			c.add(InGlobal, Opcode(e.Array.Index))
+			c.add(InGlobal, opcodeInt(e.Array.Index))
 		case ast.ScopeLocal:
-			c.add(InLocal, Opcode(e.Array.Index))
+			c.add(InLocal, opcodeInt(e.Array.Index))
 		}
 
 	case *ast.UserCallExpr:
@@ -810,7 +834,7 @@ func (c *compiler) expr(expr ast.Expr) {
 			for _, arg := range e.Args {
 				c.expr(arg)
 			}
-			c.add(CallNative, Opcode(e.Index), Opcode(len(e.Args)))
+			c.add(CallNative, opcodeInt(e.Index), opcodeInt(len(e.Args)))
 			for len(c.program.nativeFuncNames) <= e.Index {
 				c.program.nativeFuncNames = append(c.program.nativeFuncNames, "")
 			}
@@ -822,16 +846,16 @@ func (c *compiler) expr(expr ast.Expr) {
 			for i, arg := range e.Args {
 				if f.Arrays[i] {
 					a := arg.(*ast.VarExpr)
-					arrayOpcodes = append(arrayOpcodes, Opcode(a.Scope), Opcode(a.Index))
+					arrayOpcodes = append(arrayOpcodes, Opcode(a.Scope), opcodeInt(a.Index))
 				} else {
 					c.expr(arg)
 					numScalarArgs++
 				}
 			}
 			if numScalarArgs < f.NumScalars {
-				c.add(Nulls, Opcode(f.NumScalars-numScalarArgs))
+				c.add(Nulls, opcodeInt(f.NumScalars-numScalarArgs))
 			}
-			c.add(CallUser, Opcode(e.Index), Opcode(len(arrayOpcodes)/2))
+			c.add(CallUser, opcodeInt(e.Index), opcodeInt(len(arrayOpcodes)/2))
 			c.add(arrayOpcodes...)
 		}
 
@@ -852,11 +876,11 @@ func (c *compiler) expr(expr ast.Expr) {
 		case *ast.VarExpr:
 			switch target.Scope {
 			case ast.ScopeGlobal:
-				c.add(GetlineGlobal, redirect(), Opcode(target.Index))
+				c.add(GetlineGlobal, redirect(), opcodeInt(target.Index))
 			case ast.ScopeLocal:
-				c.add(GetlineLocal, redirect(), Opcode(target.Index))
+				c.add(GetlineLocal, redirect(), opcodeInt(target.Index))
 			case ast.ScopeSpecial:
-				c.add(GetlineSpecial, redirect(), Opcode(target.Index))
+				c.add(GetlineSpecial, redirect(), opcodeInt(target.Index))
 			}
 		case *ast.FieldExpr:
 			c.expr(target.Index)
@@ -865,9 +889,9 @@ func (c *compiler) expr(expr ast.Expr) {
 			c.index(target.Index)
 			switch target.Array.Scope {
 			case ast.ScopeGlobal:
-				c.add(GetlineArrayGlobal, redirect(), Opcode(target.Array.Index))
+				c.add(GetlineArrayGlobal, redirect(), opcodeInt(target.Array.Index))
 			case ast.ScopeLocal:
-				c.add(GetlineArrayLocal, redirect(), Opcode(target.Array.Index))
+				c.add(GetlineArrayLocal, redirect(), opcodeInt(target.Array.Index))
 			}
 		default:
 			c.add(Getline, redirect())
@@ -965,6 +989,6 @@ func (c *compiler) index(index []ast.Expr) {
 		c.expr(expr)
 	}
 	if len(index) > 1 {
-		c.add(MultiIndex, Opcode(len(index)))
+		c.add(MultiIndex, opcodeInt(len(index)))
 	}
 }
