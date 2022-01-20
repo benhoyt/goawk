@@ -13,6 +13,8 @@ import (
 TODO:
 - refactor, simplify, reduce copy-n-pasta
 - other TODOs
+- test disassembler in interp tests, at least that it doesn't panic
+- test disassembler in compiler package, for each instruction that it outputs instructions name - can we do that generically?
 - check overflow everywhere we output a number in an opcode
 - look at code coverage and get closer to 100%
   + add decrement tests under "Incr/decr expressions", for example

@@ -33,26 +33,23 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			p.push(str(compiled.Strs[index]))
 
 		case compiler.Dupe:
-			v := p.pop()
-			p.push(v)
+			v := p.peekTop()
 			p.push(v)
 
 		case compiler.Drop:
 			p.pop()
 
 		case compiler.Swap:
-			r := p.pop()
-			l := p.pop()
-			p.push(r)
-			p.push(l)
+			l, r := p.peekTwo()
+			p.replaceTwo(r, l)
 
 		case compiler.Field:
-			index := p.pop()
+			index := p.peekTop()
 			v, err := p.getField(int(index.num()))
 			if err != nil {
 				return err
 			}
-			p.push(v)
+			p.replaceTop(v)
 
 		case compiler.FieldNum:
 			index := code[i]
@@ -82,7 +79,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			arrayIndex := code[i]
 			i++
 			array := p.arrays[arrayIndex]
-			index := p.toString(p.pop())
+			index := p.toString(p.peekTop())
 			v, ok := array[index]
 			if !ok {
 				// Strangely, per the POSIX spec, "Any other reference to a
@@ -90,13 +87,13 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 				// shall automatically create it."
 				array[index] = v
 			}
-			p.push(v)
+			p.replaceTop(v)
 
 		case compiler.ArrayLocal:
 			arrayIndex := code[i]
 			i++
 			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
-			index := p.toString(p.pop())
+			index := p.toString(p.peekTop())
 			v, ok := array[index]
 			if !ok {
 				// Strangely, per the POSIX spec, "Any other reference to a
@@ -104,27 +101,26 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 				// shall automatically create it."
 				array[index] = v
 			}
-			p.push(v)
+			p.replaceTop(v)
 
 		case compiler.InGlobal:
 			arrayIndex := code[i]
 			i++
 			array := p.arrays[arrayIndex]
-			index := p.toString(p.pop())
+			index := p.toString(p.peekTop())
 			_, ok := array[index]
-			p.push(boolean(ok))
+			p.replaceTop(boolean(ok))
 
 		case compiler.InLocal:
 			arrayIndex := code[i]
 			i++
 			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
-			index := p.toString(p.pop())
+			index := p.toString(p.peekTop())
 			_, ok := array[index]
-			p.push(boolean(ok))
+			p.replaceTop(boolean(ok))
 
 		case compiler.AssignField:
-			index := p.pop()
-			right := p.pop()
+			right, index := p.popTwo()
 			err := p.setField(int(index.num()), p.toString(right))
 			if err != nil {
 				return err
@@ -152,15 +148,15 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			arrayIndex := code[i]
 			i++
 			array := p.arrays[arrayIndex]
-			index := p.toString(p.pop())
-			array[index] = p.pop()
+			v, index := p.popTwo()
+			array[p.toString(index)] = v
 
 		case compiler.AssignArrayLocal:
 			arrayIndex := code[i]
 			i++
 			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
-			index := p.toString(p.pop())
-			array[index] = p.pop()
+			v, index := p.popTwo()
+			array[p.toString(index)] = v
 
 		case compiler.DeleteGlobal:
 			arrayIndex := code[i]
@@ -246,12 +242,13 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 		case compiler.AugAssignField:
 			operation := lexer.Token(code[i])
 			i++
-			index := int(p.pop().num())
+			right, indexVal := p.popTwo()
+			index := int(indexVal.num())
 			field, err := p.getField(index)
 			if err != nil {
 				return err
 			}
-			v, err := p.evalBinary(operation, field, p.pop())
+			v, err := p.evalBinary(operation, field, right)
 			if err != nil {
 				return err
 			}
@@ -310,8 +307,9 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			arrayIndex := code[i+1]
 			i += 2
 			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
-			index := p.toString(p.pop())
-			v, err := p.evalBinary(operation, array[index], p.pop())
+			right, indexVal := p.popTwo()
+			index := p.toString(indexVal)
+			v, err := p.evalBinary(operation, array[index], right)
 			if err != nil {
 				return err
 			}
@@ -335,153 +333,130 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			p.push(str(strings.Join(indices, p.subscriptSep)))
 
 		case compiler.Add:
-			r := p.pop()
-			l := p.pop()
-			p.push(num(l.num() + r.num()))
+			l, r := p.peekPop()
+			p.replaceTop(num(l.num() + r.num()))
 
 		case compiler.Subtract:
-			r := p.pop()
-			l := p.pop()
-			p.push(num(l.num() - r.num()))
+			l, r := p.peekPop()
+			p.replaceTop(num(l.num() - r.num()))
 
 		case compiler.Multiply:
-			r := p.pop()
-			l := p.pop()
-			p.push(num(l.num() * r.num()))
+			l, r := p.peekPop()
+			p.replaceTop(num(l.num() * r.num()))
 
 		case compiler.Divide:
-			r := p.pop()
-			l := p.pop()
+			l, r := p.peekPop()
 			rf := r.num()
 			if rf == 0.0 {
 				return newError("division by zero")
 			}
-			p.push(num(l.num() / rf))
+			p.replaceTop(num(l.num() / rf))
 
 		case compiler.Power:
-			r := p.pop()
-			l := p.pop()
-			p.push(num(math.Pow(l.num(), r.num())))
+			l, r := p.peekPop()
+			p.replaceTop(num(math.Pow(l.num(), r.num())))
 
 		case compiler.Modulo:
-			r := p.pop()
-			l := p.pop()
+			l, r := p.peekPop()
 			rf := r.num()
 			if rf == 0.0 {
 				return newError("division by zero in mod")
 			}
-			p.push(num(math.Mod(l.num(), rf)))
+			p.replaceTop(num(math.Mod(l.num(), rf)))
 
 		case compiler.Equals:
-			r := p.pop()
-			l := p.pop()
+			l, r := p.peekPop()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
 			if lIsStr || rIsStr {
-				p.push(boolean(p.toString(l) == p.toString(r)))
+				p.replaceTop(boolean(p.toString(l) == p.toString(r)))
 			} else {
-				p.push(boolean(ln == rn))
+				p.replaceTop(boolean(ln == rn))
 			}
 
 		case compiler.NotEquals:
-			r := p.pop()
-			l := p.pop()
+			l, r := p.peekPop()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
 			if lIsStr || rIsStr {
-				p.push(boolean(p.toString(l) != p.toString(r)))
+				p.replaceTop(boolean(p.toString(l) != p.toString(r)))
 			} else {
-				p.push(boolean(ln != rn))
+				p.replaceTop(boolean(ln != rn))
 			}
 
 		case compiler.Less:
-			r := p.pop()
-			l := p.pop()
+			l, r := p.peekPop()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
-			var v value
 			if lIsStr || rIsStr {
-				v = boolean(p.toString(l) < p.toString(r))
+				p.replaceTop(boolean(p.toString(l) < p.toString(r)))
 			} else {
-				v = boolean(ln < rn)
+				p.replaceTop(boolean(ln < rn))
 			}
-			p.push(v)
 
 		case compiler.Greater:
-			r := p.pop()
-			l := p.pop()
+			l, r := p.peekPop()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
-			var v value
 			if lIsStr || rIsStr {
-				v = boolean(p.toString(l) > p.toString(r))
+				p.replaceTop(boolean(p.toString(l) > p.toString(r)))
 			} else {
-				v = boolean(ln > rn)
+				p.replaceTop(boolean(ln > rn))
 			}
-			p.push(v)
 
 		case compiler.LessOrEqual:
-			r := p.pop()
-			l := p.pop()
+			l, r := p.peekPop()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
-			var v value
 			if lIsStr || rIsStr {
-				v = boolean(p.toString(l) <= p.toString(r))
+				p.replaceTop(boolean(p.toString(l) <= p.toString(r)))
 			} else {
-				v = boolean(ln <= rn)
+				p.replaceTop(boolean(ln <= rn))
 			}
-			p.push(v)
 
 		case compiler.GreaterOrEqual:
-			r := p.pop()
-			l := p.pop()
+			l, r := p.peekPop()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
-			var v value
 			if lIsStr || rIsStr {
-				v = boolean(p.toString(l) >= p.toString(r))
+				p.replaceTop(boolean(p.toString(l) >= p.toString(r)))
 			} else {
-				v = boolean(ln >= rn)
+				p.replaceTop(boolean(ln >= rn))
 			}
-			p.push(v)
 
 		case compiler.Concat:
-			r := p.pop()
-			l := p.pop()
-			p.push(str(p.toString(l) + p.toString(r)))
+			l, r := p.peekPop()
+			p.replaceTop(str(p.toString(l) + p.toString(r)))
 
 		case compiler.Match:
-			r := p.pop()
-			l := p.pop()
+			l, r := p.peekPop()
 			re, err := p.compileRegex(p.toString(r))
 			if err != nil {
 				return err
 			}
 			matched := re.MatchString(p.toString(l))
-			p.push(boolean(matched))
+			p.replaceTop(boolean(matched))
 
 		case compiler.NotMatch:
-			r := p.pop()
-			l := p.pop()
+			l, r := p.peekPop()
 			re, err := p.compileRegex(p.toString(r))
 			if err != nil {
 				return err
 			}
 			matched := re.MatchString(p.toString(l))
-			p.push(boolean(!matched))
+			p.replaceTop(boolean(!matched))
 
 		case compiler.Not:
-			p.push(boolean(!p.pop().boolean()))
+			p.replaceTop(boolean(!p.peekTop().boolean()))
 
 		case compiler.UnaryMinus:
-			p.push(num(-p.pop().num()))
+			p.replaceTop(num(-p.peekTop().num()))
 
 		case compiler.UnaryPlus:
-			p.push(num(p.pop().num()))
+			p.replaceTop(num(p.peekTop().num()))
 
 		case compiler.Boolean:
-			p.push(boolean(p.pop().boolean()))
+			p.replaceTop(boolean(p.peekTop().boolean()))
 
 		case compiler.Jump:
 			offset := int32(code[i])
@@ -507,8 +482,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 
 		case compiler.JumpEquals:
 			offset := int32(code[i])
-			r := p.pop()
-			l := p.pop()
+			l, r := p.popTwo()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
 			var b bool
@@ -525,8 +499,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 
 		case compiler.JumpNotEquals:
 			offset := int32(code[i])
-			r := p.pop()
-			l := p.pop()
+			l, r := p.popTwo()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
 			var b bool
@@ -543,8 +516,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 
 		case compiler.JumpLess:
 			offset := int32(code[i])
-			r := p.pop()
-			l := p.pop()
+			l, r := p.popTwo()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
 			var b bool
@@ -561,8 +533,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 
 		case compiler.JumpGreater:
 			offset := int32(code[i])
-			r := p.pop()
-			l := p.pop()
+			l, r := p.popTwo()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
 			var b bool
@@ -579,8 +550,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 
 		case compiler.JumpLessOrEqual:
 			offset := int32(code[i])
-			r := p.pop()
-			l := p.pop()
+			l, r := p.popTwo()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
 			var b bool
@@ -597,8 +567,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 
 		case compiler.JumpGreaterOrEqual:
 			offset := int32(code[i])
-			r := p.pop()
-			l := p.pop()
+			l, r := p.popTwo()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
 			var b bool
@@ -760,26 +729,24 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			numNulls := int(code[i])
 			i++
 			for n := 0; n < numNulls; n++ {
-				p.push(null())
+				p.push(null()) // TODO: optimize?
 			}
 
 		case compiler.CallAtan2:
-			// TODO: optimize stack operations for all of these (and binary ops) if it improves performance
-			x := p.pop()
-			y := p.pop()
-			p.push(num(math.Atan2(y.num(), x.num())))
+			y, x := p.peekPop()
+			p.replaceTop(num(math.Atan2(y.num(), x.num())))
 
 		case compiler.CallClose:
-			name := p.toString(p.pop())
+			name := p.toString(p.peekTop())
 			var c io.Closer = p.inputStreams[name]
 			if c != nil {
 				// Close input stream
 				delete(p.inputStreams, name)
 				err := c.Close()
 				if err != nil {
-					p.push(num(-1))
+					p.replaceTop(num(-1))
 				} else {
-					p.push(num(0))
+					p.replaceTop(num(0))
 				}
 			} else {
 				c = p.outputStreams[name]
@@ -788,24 +755,24 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 					delete(p.outputStreams, name)
 					err := c.Close()
 					if err != nil {
-						p.push(num(-1))
+						p.replaceTop(num(-1))
 					} else {
-						p.push(num(0))
+						p.replaceTop(num(0))
 					}
 				} else {
 					// Nothing to close
-					p.push(num(-1))
+					p.replaceTop(num(-1))
 				}
 			}
 
 		case compiler.CallCos:
-			p.push(num(math.Cos(p.pop().num())))
+			p.replaceTop(num(math.Cos(p.peekTop().num())))
 
 		case compiler.CallExp:
-			p.push(num(math.Exp(p.pop().num())))
+			p.replaceTop(num(math.Exp(p.peekTop().num())))
 
 		case compiler.CallFflush:
-			name := p.toString(p.pop())
+			name := p.toString(p.peekTop())
 			var ok bool
 			if name != "" {
 				// Flush a single, named output stream
@@ -815,9 +782,9 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 				ok = p.flushAll()
 			}
 			if !ok {
-				p.push(num(-1))
+				p.replaceTop(num(-1))
 			} else {
-				p.push(num(0))
+				p.replaceTop(num(0))
 			}
 
 		case compiler.CallFflushAll:
@@ -829,33 +796,30 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			}
 
 		case compiler.CallGsub:
-			in := p.toString(p.pop())
-			repl := p.toString(p.pop())
-			regex := p.toString(p.pop())
-			out, n, err := p.sub(regex, repl, in, true)
+			regex, repl, in := p.peekPeekPop()
+			out, n, err := p.sub(p.toString(regex), p.toString(repl), p.toString(in), true)
 			if err != nil {
 				return err
 			}
-			p.push(num(float64(n)))
-			p.push(str(out))
+			p.replaceTwo(num(float64(n)), str(out))
 
 		case compiler.CallIndex:
-			substr := p.toString(p.pop())
-			s := p.toString(p.pop())
-			index := strings.Index(s, substr)
+			sValue, substr := p.peekPop()
+			s := p.toString(sValue)
+			index := strings.Index(s, p.toString(substr))
 			if p.bytes {
-				p.push(num(float64(index + 1)))
+				p.replaceTop(num(float64(index + 1)))
 			} else {
 				if index < 0 {
-					p.push(num(float64(0)))
+					p.replaceTop(num(float64(0)))
 				} else {
 					index = utf8.RuneCountInString(s[:index])
-					p.push(num(float64(index + 1)))
+					p.replaceTop(num(float64(index + 1)))
 				}
 			}
 
 		case compiler.CallInt:
-			p.push(num(float64(int(p.pop().num()))))
+			p.replaceTop(num(float64(int(p.peekTop().num()))))
 
 		case compiler.CallLength:
 			s := p.line
@@ -868,22 +832,22 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			p.push(num(float64(n)))
 
 		case compiler.CallLengthArg:
-			s := p.toString(p.pop())
+			s := p.toString(p.peekTop())
 			var n int
 			if p.bytes {
 				n = len(s)
 			} else {
 				n = utf8.RuneCountInString(s)
 			}
-			p.push(num(float64(n)))
+			p.replaceTop(num(float64(n)))
 
 		case compiler.CallLog:
-			p.push(num(math.Log(p.pop().num())))
+			p.replaceTop(num(math.Log(p.peekTop().num())))
 
 		case compiler.CallMatch:
-			regex := p.toString(p.pop())
-			s := p.toString(p.pop())
-			re, err := p.compileRegex(regex)
+			sValue, regex := p.peekPop()
+			s := p.toString(sValue)
+			re, err := p.compileRegex(p.toString(regex))
 			if err != nil {
 				return err
 			}
@@ -891,7 +855,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			if loc == nil {
 				p.matchStart = 0
 				p.matchLength = -1
-				p.push(num(0))
+				p.replaceTop(num(0))
 			} else {
 				if p.bytes {
 					p.matchStart = loc[0] + 1
@@ -900,56 +864,54 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 					p.matchStart = utf8.RuneCountInString(s[:loc[0]]) + 1
 					p.matchLength = utf8.RuneCountInString(s[loc[0]:loc[1]])
 				}
-				p.push(num(float64(p.matchStart)))
+				p.replaceTop(num(float64(p.matchStart)))
 			}
 
 		case compiler.CallRand:
 			p.push(num(p.random.Float64()))
 
 		case compiler.CallSin:
-			p.push(num(math.Sin(p.pop().num())))
+			p.replaceTop(num(math.Sin(p.peekTop().num())))
 
 		case compiler.CallSplitGlobal:
 			arrayIndex := code[i]
 			i++
-			s := p.toString(p.pop())
+			s := p.toString(p.peekTop())
 			n, err := p.split(s, ast.ScopeGlobal, int(arrayIndex), p.fieldSep)
 			if err != nil {
 				return err
 			}
-			p.push(num(float64(n)))
+			p.replaceTop(num(float64(n)))
 
 		case compiler.CallSplitLocal:
 			arrayIndex := code[i]
 			i++
-			s := p.toString(p.pop())
+			s := p.toString(p.peekTop())
 			n, err := p.split(s, ast.ScopeLocal, int(arrayIndex), p.fieldSep)
 			if err != nil {
 				return err
 			}
-			p.push(num(float64(n)))
+			p.replaceTop(num(float64(n)))
 
 		case compiler.CallSplitSepGlobal:
 			arrayIndex := code[i]
 			i++
-			fieldSep := p.toString(p.pop())
-			s := p.toString(p.pop())
-			n, err := p.split(s, ast.ScopeGlobal, int(arrayIndex), fieldSep)
+			s, fieldSep := p.peekPop()
+			n, err := p.split(p.toString(s), ast.ScopeGlobal, int(arrayIndex), p.toString(fieldSep))
 			if err != nil {
 				return err
 			}
-			p.push(num(float64(n)))
+			p.replaceTop(num(float64(n)))
 
 		case compiler.CallSplitSepLocal:
 			arrayIndex := code[i]
 			i++
-			fieldSep := p.toString(p.pop())
-			s := p.toString(p.pop())
-			n, err := p.split(s, ast.ScopeLocal, int(arrayIndex), fieldSep)
+			s, fieldSep := p.peekPop()
+			n, err := p.split(p.toString(s), ast.ScopeLocal, int(arrayIndex), p.toString(fieldSep))
 			if err != nil {
 				return err
 			}
-			p.push(num(float64(n)))
+			p.replaceTop(num(float64(n)))
 
 		case compiler.CallSprintf:
 			numArgs := code[i]
@@ -962,7 +924,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			p.push(str(s))
 
 		case compiler.CallSqrt:
-			p.push(num(math.Sqrt(p.pop().num())))
+			p.replaceTop(num(math.Sqrt(p.peekTop().num())))
 
 		case compiler.CallSrand:
 			prevSeed := p.randSeed
@@ -971,25 +933,22 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 
 		case compiler.CallSrandSeed:
 			prevSeed := p.randSeed
-			p.randSeed = p.pop().num()
+			p.randSeed = p.peekTop().num()
 			p.random.Seed(int64(math.Float64bits(p.randSeed)))
-			p.push(num(prevSeed))
+			p.replaceTop(num(prevSeed))
 
 		case compiler.CallSub:
-			in := p.toString(p.pop())
-			repl := p.toString(p.pop())
-			regex := p.toString(p.pop())
-			out, n, err := p.sub(regex, repl, in, false)
+			regex, repl, in := p.peekPeekPop()
+			out, n, err := p.sub(p.toString(regex), p.toString(repl), p.toString(in), false)
 			if err != nil {
 				return err
 			}
-			p.push(num(float64(n)))
-			p.push(str(out))
+			p.replaceTwo(num(float64(n)), str(out))
 
 		case compiler.CallSubstr:
-			// TODO: avoid duplication in function.go if we're keeping that
-			pos := int(p.pop().num())
-			s := p.toString(p.pop())
+			sValue, posValue := p.peekPop()
+			pos := int(posValue.num())
+			s := p.toString(sValue)
 			if p.bytes {
 				if pos > len(s) {
 					pos = len(s) + 1
@@ -998,7 +957,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 					pos = 1
 				}
 				length := len(s) - pos + 1
-				p.push(str(s[pos-1 : pos-1+length]))
+				p.replaceTop(str(s[pos-1 : pos-1+length]))
 			} else {
 				// Count characters till we get to pos.
 				chars := 1
@@ -1015,14 +974,14 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 
 				// Count characters from start till we reach length.
 				end := len(s)
-				p.push(str(s[start:end]))
+				p.replaceTop(str(s[start:end]))
 			}
 
 		case compiler.CallSubstrLength:
-			// TODO: avoid duplication in function.go if we're keeping that
-			length := int(p.pop().num())
-			pos := int(p.pop().num())
-			s := p.toString(p.pop())
+			posValue, lengthValue := p.popTwo()
+			length := int(lengthValue.num())
+			pos := int(posValue.num())
+			s := p.toString(p.peekTop())
 			if p.bytes {
 				if pos > len(s) {
 					pos = len(s) + 1
@@ -1037,7 +996,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 				if length > maxLength {
 					length = maxLength
 				}
-				p.push(str(s[pos-1 : pos-1+length]))
+				p.replaceTop(str(s[pos-1 : pos-1+length]))
 			} else {
 				// Count characters till we get to pos.
 				chars := 1
@@ -1066,14 +1025,14 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 				} else {
 					end += start
 				}
-				p.push(str(s[start:end]))
+				p.replaceTop(str(s[start:end]))
 			}
 
 		case compiler.CallSystem:
 			if p.noExec {
 				return newError("can't call system() due to NoExec")
 			}
-			cmdline := p.toString(p.pop())
+			cmdline := p.toString(p.peekTop())
 			cmd := p.execShell(cmdline)
 			cmd.Stdout = p.output
 			cmd.Stderr = p.errorOutput
@@ -1096,13 +1055,13 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 					ret = 0
 				}
 			}
-			p.push(num(ret))
+			p.replaceTop(num(ret))
 
 		case compiler.CallTolower:
-			p.push(str(strings.ToLower(p.toString(p.pop()))))
+			p.replaceTop(str(strings.ToLower(p.toString(p.peekTop()))))
 
 		case compiler.CallToupper:
-			p.push(str(strings.ToUpper(p.toString(p.pop()))))
+			p.replaceTop(str(strings.ToUpper(p.toString(p.peekTop()))))
 
 		case compiler.Print:
 			numArgs := code[i]
@@ -1244,12 +1203,12 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			if err != nil {
 				return err
 			}
+			index := p.toString(p.peekTop())
 			if ret == 1 {
 				array := p.arrays[arrayIndex]
-				index := p.toString(p.pop())
 				array[index] = numStr(line)
 			}
-			p.push(num(ret))
+			p.replaceTop(num(ret))
 
 		case compiler.GetlineArrayLocal:
 			redirect := lexer.Token(code[i])
@@ -1260,12 +1219,12 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			if err != nil {
 				return err
 			}
+			index := p.toString(p.peekTop())
 			if ret == 1 {
 				array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
-				index := p.toString(p.pop())
 				array[index] = numStr(line)
 			}
-			p.push(num(ret))
+			p.replaceTop(num(ret))
 
 		default:
 			panic(fmt.Sprintf("TODO remove: unsupported opcode %s", op))
@@ -1274,9 +1233,8 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 	return nil
 }
 
-// TODO: maybe add popTwo() for binary ops and pushTwo() if it helps? or are these all inlined anyway?
-
 func (p *interp) push(v value) {
+	// TODO: hmmm, this check slows things (eg: BinaryOperators benchmark) down quite a bit -- can we avoid somehow?
 	if p.vmSp >= len(p.vmStack) {
 		p.vmStack = append(p.vmStack, null())
 	}
@@ -1287,6 +1245,38 @@ func (p *interp) push(v value) {
 func (p *interp) pop() value {
 	p.vmSp--
 	return p.vmStack[p.vmSp]
+}
+
+func (p *interp) popTwo() (value, value) {
+	p.vmSp -= 2
+	return p.vmStack[p.vmSp], p.vmStack[p.vmSp+1]
+}
+
+func (p *interp) peekTop() value {
+	return p.vmStack[p.vmSp-1]
+}
+
+func (p *interp) peekTwo() (value, value) {
+	return p.vmStack[p.vmSp-2], p.vmStack[p.vmSp-1]
+}
+
+func (p *interp) peekPop() (value, value) {
+	p.vmSp--
+	return p.vmStack[p.vmSp-1], p.vmStack[p.vmSp]
+}
+
+func (p *interp) peekPeekPop() (value, value, value) {
+	p.vmSp--
+	return p.vmStack[p.vmSp-2], p.vmStack[p.vmSp-1], p.vmStack[p.vmSp]
+}
+
+func (p *interp) replaceTop(v value) {
+	p.vmStack[p.vmSp-1] = v
+}
+
+func (p *interp) replaceTwo(l, r value) {
+	p.vmStack[p.vmSp-2] = l
+	p.vmStack[p.vmSp-1] = r
 }
 
 func (p *interp) popSlice(n int) []value {
