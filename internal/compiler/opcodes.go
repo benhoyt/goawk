@@ -52,11 +52,11 @@ const (
 
 	// Augmented assignment (also used for pre-increment and pre-decrement)
 	AugAssignField       // operation
-	AugAssignGlobal      // operation, index
-	AugAssignLocal       // operation, index
-	AugAssignSpecial     // operation, index
-	AugAssignArrayGlobal // operation, arrayIndex
-	AugAssignArrayLocal  // operation, arrayIndex
+	AugAssignGlobal      // operation index
+	AugAssignLocal       // operation index
+	AugAssignSpecial     // operation index
+	AugAssignArrayGlobal // operation arrayIndex
+	AugAssignArrayLocal  // operation arrayIndex
 
 	// Stand-alone regex expression /foo/
 	Regex // regexIndex
@@ -139,21 +139,23 @@ const (
 	CallToupper
 
 	// User and native functions
-	CallUser   // funcIndex, numArrayArgs[, arrayScope1, arrayIndex1, ...]
-	CallNative // funcIndex, numArgs
+	CallUser   // funcIndex numArrayArgs [arrayScope1 arrayIndex1 ...]
+	CallNative // funcIndex numArgs
 	Return
 	ReturnNull
 	Nulls // numNulls
 
 	// Print, printf, and getline
-	Print          // numArgs, redirect
-	Printf         // numArgs, redirect
+	Print          // numArgs redirect
+	Printf         // numArgs redirect
 	Getline        // redirect
 	GetlineField   // redirect
-	GetlineGlobal  // redirect, index
-	GetlineLocal   // redirect, index
-	GetlineSpecial // redirect, index
+	GetlineGlobal  // redirect index
+	GetlineLocal   // redirect index
+	GetlineSpecial // redirect index
 	// TODO: add arrayScope and reduce to one opcode
-	GetlineArrayGlobal // redirect, arrayIndex
-	GetlineArrayLocal  // redirect, arrayIndex
+	GetlineArrayGlobal // redirect arrayIndex
+	GetlineArrayLocal  // redirect arrayIndex
+
+	EndOpcode
 )
