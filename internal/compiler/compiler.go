@@ -13,7 +13,6 @@ import (
 TODO:
 - refactor, simplify, reduce copy-n-pasta
 - other TODOs
-- check overflow everywhere we output a number in an opcode
 - look at code coverage and get closer to 100%
   + add decrement tests under "Incr/decr expressions", for example
   + use the following to see how much of the internal/compiler package is covered:
@@ -79,7 +78,7 @@ func Compile(prog *ast.Program) (compiledProg *Program, err error) {
 		// errors internally, and they're caught here. This avoids the
 		// need to check errors everywhere.
 		if r := recover(); r != nil {
-			// Convert to ParseError or re-panic
+			// Convert to compileError or re-panic
 			err = r.(*compileError)
 		}
 	}()
@@ -208,54 +207,25 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 			case *ast.VarExpr:
 				switch target.Scope {
 				case ast.ScopeGlobal:
-					if expr.Op == lexer.INCR {
-						c.add(IncrGlobal, 1, opcodeInt(target.Index))
-					} else {
-						c.add(IncrGlobal, -1, opcodeInt(target.Index))
-					}
-					return
+					c.add(IncrGlobal, incrAmount(expr.Op), opcodeInt(target.Index))
 				case ast.ScopeLocal:
-					if expr.Op == lexer.INCR {
-						c.add(IncrLocal, 1, opcodeInt(target.Index))
-					} else {
-						c.add(IncrLocal, -1, opcodeInt(target.Index))
-					}
-					return
-				case ast.ScopeSpecial:
-					if expr.Op == lexer.INCR {
-						c.add(IncrSpecial, 1, opcodeInt(target.Index))
-					} else {
-						c.add(IncrSpecial, -1, opcodeInt(target.Index))
-					}
-					return
+					c.add(IncrLocal, incrAmount(expr.Op), opcodeInt(target.Index))
+				default: // ScopeSpecial
+					c.add(IncrSpecial, incrAmount(expr.Op), opcodeInt(target.Index))
 				}
 			case *ast.FieldExpr:
 				c.expr(target.Index)
-				if expr.Op == lexer.INCR {
-					c.add(IncrField, 1)
-				} else {
-					c.add(IncrField, -1)
-				}
-				return
+				c.add(IncrField, incrAmount(expr.Op))
 			case *ast.IndexExpr:
 				c.index(target.Index)
 				switch target.Array.Scope {
 				case ast.ScopeGlobal:
-					if expr.Op == lexer.INCR {
-						c.add(IncrArrayGlobal, 1, opcodeInt(target.Array.Index))
-					} else {
-						c.add(IncrArrayGlobal, -1, opcodeInt(target.Array.Index))
-					}
-					return
-				case ast.ScopeLocal:
-					if expr.Op == lexer.INCR {
-						c.add(IncrArrayLocal, 1, opcodeInt(target.Array.Index))
-					} else {
-						c.add(IncrArrayLocal, -1, opcodeInt(target.Array.Index))
-					}
-					return
+					c.add(IncrArrayGlobal, incrAmount(expr.Op), opcodeInt(target.Array.Index))
+				default: // ScopeLocal
+					c.add(IncrArrayLocal, incrAmount(expr.Op), opcodeInt(target.Array.Index))
 				}
 			}
+			return
 
 		case *ast.AugAssignExpr:
 			c.expr(expr.Right)
@@ -462,6 +432,14 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 	default:
 		// Should never happen
 		panic(fmt.Sprintf("unexpected stmt type: %T", stmt))
+	}
+}
+
+func incrAmount(op lexer.Token) Opcode {
+	if op == lexer.INCR {
+		return 1
+	} else {
+		return -1 // DECR
 	}
 }
 
