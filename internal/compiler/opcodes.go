@@ -1,9 +1,8 @@
 package compiler
 
 //go:generate go run golang.org/x/tools/cmd/stringer@v0.1.8 -type=Opcode
-type Opcode uint32
+type Opcode int32
 
-// TODO: simpler if Opcode is signed int32?
 // TODO: do we need to optimize the order of the opcodes, if a Go switch is a binary tree?
 // TODO: does reducing the number of opcodes actually speed things up, for example all the opcodes required for assignment?
 

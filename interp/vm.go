@@ -189,7 +189,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			}
 
 		case compiler.IncrField:
-			amount := int32(code[i])
+			amount := code[i]
 			i++
 			index := int(p.pop().num())
 			v, err := p.getField(index)
@@ -202,19 +202,19 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			}
 
 		case compiler.IncrGlobal:
-			amount := int32(code[i])
+			amount := code[i]
 			index := code[i+1]
 			i += 2
 			p.globals[index] = num(p.globals[index].num() + float64(amount))
 
 		case compiler.IncrLocal:
-			amount := int32(code[i])
+			amount := code[i]
 			index := code[i+1]
 			i += 2
 			p.frame[index] = num(p.frame[index].num() + float64(amount))
 
 		case compiler.IncrSpecial:
-			amount := int32(code[i])
+			amount := code[i]
 			index := int(code[i+1])
 			i += 2
 			v := p.getVar(ast.ScopeSpecial, index)
@@ -224,7 +224,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			}
 
 		case compiler.IncrArrayGlobal:
-			amount := int32(code[i])
+			amount := code[i]
 			arrayIndex := code[i+1]
 			i += 2
 			array := p.arrays[arrayIndex]
@@ -232,7 +232,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			array[index] = num(array[index].num() + float64(amount))
 
 		case compiler.IncrArrayLocal:
-			amount := int32(code[i])
+			amount := code[i]
 			arrayIndex := code[i+1]
 			i += 2
 			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
@@ -459,11 +459,11 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			p.replaceTop(boolean(p.peekTop().boolean()))
 
 		case compiler.Jump:
-			offset := int32(code[i])
+			offset := code[i]
 			i += 1 + int(offset)
 
 		case compiler.JumpFalse:
-			offset := int32(code[i])
+			offset := code[i]
 			v := p.pop()
 			if !v.boolean() {
 				i += 1 + int(offset)
@@ -472,7 +472,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			}
 
 		case compiler.JumpTrue:
-			offset := int32(code[i])
+			offset := code[i]
 			v := p.pop()
 			if v.boolean() {
 				i += 1 + int(offset)
@@ -481,7 +481,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			}
 
 		case compiler.JumpEquals:
-			offset := int32(code[i])
+			offset := code[i]
 			l, r := p.popTwo()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
@@ -498,7 +498,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			}
 
 		case compiler.JumpNotEquals:
-			offset := int32(code[i])
+			offset := code[i]
 			l, r := p.popTwo()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
@@ -515,7 +515,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			}
 
 		case compiler.JumpLess:
-			offset := int32(code[i])
+			offset := code[i]
 			l, r := p.popTwo()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
@@ -532,7 +532,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			}
 
 		case compiler.JumpGreater:
-			offset := int32(code[i])
+			offset := code[i]
 			l, r := p.popTwo()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
@@ -549,7 +549,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			}
 
 		case compiler.JumpLessOrEqual:
-			offset := int32(code[i])
+			offset := code[i]
 			l, r := p.popTwo()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
@@ -566,7 +566,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			}
 
 		case compiler.JumpGreaterOrEqual:
-			offset := int32(code[i])
+			offset := code[i]
 			l, r := p.popTwo()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()

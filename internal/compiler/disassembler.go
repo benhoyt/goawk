@@ -206,31 +206,31 @@ func (d *disassembler) disassemble(prefix string) error {
 			d.writeOpf("DeleteAllLocal %d", d.localArrayName(arrayIndex))
 
 		case IncrField:
-			amount := int32(d.fetch())
+			amount := d.fetch()
 			d.writeOpf("IncrField %d", amount)
 
 		case IncrGlobal:
-			amount := int32(d.fetch())
+			amount := d.fetch()
 			index := d.fetch()
 			d.writeOpf("IncrGlobal %d %s", amount, d.program.scalarNames[index])
 
 		case IncrLocal:
-			amount := int32(d.fetch())
+			amount := d.fetch()
 			index := int(d.fetch())
 			d.writeOpf("IncrLocal %d %s", amount, d.localName(index))
 
 		case IncrSpecial:
-			amount := int32(d.fetch())
+			amount := d.fetch()
 			index := d.fetch()
 			d.writeOpf("IncrSpecial %d %s", amount, ast.SpecialVarName(int(index)))
 
 		case IncrArrayGlobal:
-			amount := int32(d.fetch())
+			amount := d.fetch()
 			arrayIndex := d.fetch()
 			d.writeOpf("IncrArrayGlobal %d %s", amount, d.program.arrayNames[arrayIndex])
 
 		case IncrArrayLocal:
-			amount := int32(d.fetch())
+			amount := d.fetch()
 			arrayIndex := int(d.fetch())
 			d.writeOpf("IncrArrayLocal %d %s", amount, d.localArrayName(arrayIndex))
 
@@ -272,39 +272,39 @@ func (d *disassembler) disassemble(prefix string) error {
 			d.writeOpf("MultiIndex %d", num)
 
 		case Jump:
-			offset := int32(d.fetch())
+			offset := d.fetch()
 			d.writeOpf("Jump 0x%04x", d.ip+int(offset))
 
 		case JumpFalse:
-			offset := int32(d.fetch())
+			offset := d.fetch()
 			d.writeOpf("JumpFalse 0x%04x", d.ip+int(offset))
 
 		case JumpTrue:
-			offset := int32(d.fetch())
+			offset := d.fetch()
 			d.writeOpf("JumpTrue 0x%04x", d.ip+int(offset))
 
 		case JumpEquals:
-			offset := int32(d.fetch())
+			offset := d.fetch()
 			d.writeOpf("JumpEquals 0x%04x", d.ip+int(offset))
 
 		case JumpNotEquals:
-			offset := int32(d.fetch())
+			offset := d.fetch()
 			d.writeOpf("JumpNotEquals 0x%04x", d.ip+int(offset))
 
 		case JumpLess:
-			offset := int32(d.fetch())
+			offset := d.fetch()
 			d.writeOpf("JumpLess 0x%04x", d.ip+int(offset))
 
 		case JumpGreater:
-			offset := int32(d.fetch())
+			offset := d.fetch()
 			d.writeOpf("JumpGreater 0x%04x", d.ip+int(offset))
 
 		case JumpLessOrEqual:
-			offset := int32(d.fetch())
+			offset := d.fetch()
 			d.writeOpf("JumpLessOrEqual 0x%04x", d.ip+int(offset))
 
 		case JumpGreaterOrEqual:
-			offset := int32(d.fetch())
+			offset := d.fetch()
 			d.writeOpf("JumpGreaterOrEqual 0x%04x", d.ip+int(offset))
 
 		case ForInGlobal:

@@ -183,21 +183,21 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 					if expr.Op == lexer.INCR {
 						c.add(IncrGlobal, 1, Opcode(target.Index))
 					} else {
-						c.add(IncrGlobal, math.MaxUint32, Opcode(target.Index))
+						c.add(IncrGlobal, -1, Opcode(target.Index))
 					}
 					return
 				case ast.ScopeLocal:
 					if expr.Op == lexer.INCR {
 						c.add(IncrLocal, 1, Opcode(target.Index))
 					} else {
-						c.add(IncrLocal, math.MaxUint32, Opcode(target.Index))
+						c.add(IncrLocal, -1, Opcode(target.Index))
 					}
 					return
 				case ast.ScopeSpecial:
 					if expr.Op == lexer.INCR {
 						c.add(IncrSpecial, 1, Opcode(target.Index))
 					} else {
-						c.add(IncrSpecial, math.MaxUint32, Opcode(target.Index))
+						c.add(IncrSpecial, -1, Opcode(target.Index))
 					}
 					return
 				}
@@ -206,7 +206,7 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 				if expr.Op == lexer.INCR {
 					c.add(IncrField, 1)
 				} else {
-					c.add(IncrField, math.MaxUint32)
+					c.add(IncrField, -1)
 				}
 				return
 			case *ast.IndexExpr:
@@ -216,14 +216,14 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 					if expr.Op == lexer.INCR {
 						c.add(IncrArrayGlobal, 1, Opcode(target.Array.Index))
 					} else {
-						c.add(IncrArrayGlobal, math.MaxUint32, Opcode(target.Array.Index))
+						c.add(IncrArrayGlobal, -1, Opcode(target.Array.Index))
 					}
 					return
 				case ast.ScopeLocal:
 					if expr.Op == lexer.INCR {
 						c.add(IncrArrayLocal, 1, Opcode(target.Array.Index))
 					} else {
-						c.add(IncrArrayLocal, math.MaxUint32, Opcode(target.Array.Index))
+						c.add(IncrArrayLocal, -1, Opcode(target.Array.Index))
 					}
 					return
 				}
@@ -490,7 +490,7 @@ func (c *compiler) patchForward(mark int) {
 	if offset > math.MaxInt32 || offset < math.MinInt32 {
 		panic("forward jump offset too large") // TODO: handle more gracefully?
 	}
-	c.code[mark-1] = Opcode(int32(offset))
+	c.code[mark-1] = Opcode(offset)
 }
 
 func (c *compiler) labelBackward() int {
@@ -504,7 +504,7 @@ func (c *compiler) jumpBackward(label int, jumpOp Opcode, args ...Opcode) {
 	}
 	c.add(jumpOp)
 	c.add(args...)
-	c.add(Opcode(int32(offset)))
+	c.add(Opcode(offset))
 }
 
 // TODO: better performance to have JumpNumLess and so on with number as opcode?
@@ -587,7 +587,7 @@ func (c *compiler) expr(expr ast.Expr) {
 	case *ast.FieldExpr:
 		switch index := e.Index.(type) {
 		case *ast.NumExpr:
-			if index.Value == float64(uint32(index.Value)) {
+			if index.Value == float64(int32(index.Value)) {
 				c.add(FieldNum, Opcode(index.Value))
 				return
 			}
