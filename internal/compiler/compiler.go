@@ -236,7 +236,7 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 					c.add(AugAssignGlobal, Opcode(expr.Op), opcodeInt(target.Index))
 				case ast.ScopeLocal:
 					c.add(AugAssignLocal, Opcode(expr.Op), opcodeInt(target.Index))
-				case ast.ScopeSpecial:
+				default: // ScopeSpecial
 					c.add(AugAssignSpecial, Opcode(expr.Op), opcodeInt(target.Index))
 				}
 			case *ast.FieldExpr:
@@ -247,14 +247,14 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 				switch target.Array.Scope {
 				case ast.ScopeGlobal:
 					c.add(AugAssignArrayGlobal, Opcode(expr.Op), opcodeInt(target.Array.Index))
-				case ast.ScopeLocal:
+				default: // ScopeLocal
 					c.add(AugAssignArrayLocal, Opcode(expr.Op), opcodeInt(target.Array.Index))
 				}
 			}
 			return
 		}
 
-		// Non-optimized expression: push it and then drop
+		// Non-optimized ExprStmt: push value and then drop it
 		c.expr(s.Expr)
 		c.add(Drop)
 
