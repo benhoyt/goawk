@@ -38,6 +38,10 @@ type Program struct {
 	Strs      []string
 	Regexes   []*regexp.Regexp
 
+	numIndexes   map[float64]int
+	strIndexes   map[string]int
+	regexIndexes map[string]int
+
 	// For disassembly
 	scalarNames     []string
 	arrayNames      []string
@@ -96,7 +100,7 @@ func Compile(prog *ast.Program) *Program {
 		var pattern [][]Opcode
 		switch len(action.Pattern) {
 		case 0:
-			// TODO: can we somehow do more at compile time here?
+			// Always considered a match
 		case 1:
 			c := &compiler{program: p}
 			c.expr(action.Pattern[0])
@@ -144,9 +148,6 @@ type compiler struct {
 	code      []Opcode
 	breaks    [][]int
 	continues [][]int
-	nums      map[float64]int
-	strs      map[string]int
-	regexes   map[string]int
 }
 
 func (c *compiler) add(ops ...Opcode) {
@@ -880,43 +881,43 @@ func (c *compiler) expr(expr ast.Expr) {
 
 // numIndex adds (or reuses) a number constant and returns its index.
 func (c *compiler) numIndex(n float64) int {
-	if index, ok := c.nums[n]; ok {
+	if index, ok := c.program.numIndexes[n]; ok {
 		return index // reuse existing constant
 	}
 	index := len(c.program.Nums)
 	c.program.Nums = append(c.program.Nums, n)
-	if c.nums == nil {
-		c.nums = make(map[float64]int)
+	if c.program.numIndexes == nil {
+		c.program.numIndexes = make(map[float64]int)
 	}
-	c.nums[n] = index
+	c.program.numIndexes[n] = index
 	return index
 }
 
 // strIndex adds (or reuses) a string constant and returns its index.
 func (c *compiler) strIndex(s string) int {
-	if index, ok := c.strs[s]; ok {
+	if index, ok := c.program.strIndexes[s]; ok {
 		return index // reuse existing constant
 	}
 	index := len(c.program.Strs)
 	c.program.Strs = append(c.program.Strs, s)
-	if c.strs == nil {
-		c.strs = make(map[string]int)
+	if c.program.strIndexes == nil {
+		c.program.strIndexes = make(map[string]int)
 	}
-	c.strs[s] = index
+	c.program.strIndexes[s] = index
 	return index
 }
 
 // regexIndex adds (or reuses) a regex constant and returns its index.
 func (c *compiler) regexIndex(r string) int {
-	if index, ok := c.regexes[r]; ok {
+	if index, ok := c.program.regexIndexes[r]; ok {
 		return index // reuse existing constant
 	}
 	index := len(c.program.Regexes)
 	c.program.Regexes = append(c.program.Regexes, regexp.MustCompile(r))
-	if c.regexes == nil {
-		c.regexes = make(map[string]int)
+	if c.program.regexIndexes == nil {
+		c.program.regexIndexes = make(map[string]int)
 	}
-	c.regexes[r] = index
+	c.program.regexIndexes[r] = index
 	return index
 }
 
