@@ -144,6 +144,9 @@ type compiler struct {
 	code      []Opcode
 	breaks    [][]int
 	continues [][]int
+	nums      map[float64]int
+	strs      map[string]int
+	regexes   map[string]int
 }
 
 func (c *compiler) add(ops ...Opcode) {
@@ -503,8 +506,7 @@ func (c *compiler) jumpBackward(label int, jumpOp Opcode, args ...Opcode) {
 	c.add(Opcode(int32(offset)))
 }
 
-// TODO: how much does this help with performance? is it worth it?
-// TODO: refactor, use lookup table?
+// TODO: better performance to have JumpNumLess and so on with number as opcode?
 func (c *compiler) cond(expr ast.Expr, invert bool) Opcode {
 	switch cond := expr.(type) {
 	case *ast.BinaryExpr:
@@ -576,14 +578,10 @@ func (c *compiler) cond(expr ast.Expr, invert bool) Opcode {
 func (c *compiler) expr(expr ast.Expr) {
 	switch e := expr.(type) {
 	case *ast.NumExpr:
-		// TODO: reuse constants if we can
-		c.add(Num, Opcode(len(c.program.Nums)))
-		c.program.Nums = append(c.program.Nums, e.Value)
+		c.add(Num, Opcode(c.numIndex(e.Value)))
 
 	case *ast.StrExpr:
-		// TODO: reuse constants if we can
-		c.add(Str, Opcode(len(c.program.Strs)))
-		c.program.Strs = append(c.program.Strs, e.Value)
+		c.add(Str, Opcode(c.strIndex(e.Value)))
 
 	case *ast.FieldExpr:
 		switch index := e.Index.(type) {
@@ -607,9 +605,7 @@ func (c *compiler) expr(expr ast.Expr) {
 		}
 
 	case *ast.RegExpr:
-		// TODO: reuse constants if we can
-		c.add(Regex, Opcode(len(c.program.Regexes)))
-		c.program.Regexes = append(c.program.Regexes, regexp.MustCompile(e.Regex))
+		c.add(Regex, Opcode(c.regexIndex(e.Regex)))
 
 	case *ast.BinaryExpr:
 		// && and || are special cases as they're short-circuit operators.
@@ -880,6 +876,48 @@ func (c *compiler) expr(expr ast.Expr) {
 		// Should never happen
 		panic(fmt.Sprintf("unexpected expr type: %T", expr))
 	}
+}
+
+// numIndex adds (or reuses) a number constant and returns its index.
+func (c *compiler) numIndex(n float64) int {
+	if index, ok := c.nums[n]; ok {
+		return index // reuse existing constant
+	}
+	index := len(c.program.Nums)
+	c.program.Nums = append(c.program.Nums, n)
+	if c.nums == nil {
+		c.nums = make(map[float64]int)
+	}
+	c.nums[n] = index
+	return index
+}
+
+// strIndex adds (or reuses) a string constant and returns its index.
+func (c *compiler) strIndex(s string) int {
+	if index, ok := c.strs[s]; ok {
+		return index // reuse existing constant
+	}
+	index := len(c.program.Strs)
+	c.program.Strs = append(c.program.Strs, s)
+	if c.strs == nil {
+		c.strs = make(map[string]int)
+	}
+	c.strs[s] = index
+	return index
+}
+
+// regexIndex adds (or reuses) a regex constant and returns its index.
+func (c *compiler) regexIndex(r string) int {
+	if index, ok := c.regexes[r]; ok {
+		return index // reuse existing constant
+	}
+	index := len(c.program.Regexes)
+	c.program.Regexes = append(c.program.Regexes, regexp.MustCompile(r))
+	if c.regexes == nil {
+		c.regexes = make(map[string]int)
+	}
+	c.regexes[r] = index
+	return index
 }
 
 func (c *compiler) binaryOp(op lexer.Token) {

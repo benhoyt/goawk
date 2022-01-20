@@ -128,14 +128,14 @@ func (d *disassembler) disassemble(prefix string) error {
 			index := d.fetch()
 			num := d.program.Nums[index]
 			if num == float64(int(num)) {
-				d.writeOpf("Num %d", int(num))
+				d.writeOpf("Num %d (%d)", int(num), index)
 			} else {
-				d.writeOpf("Num %.6g", num)
+				d.writeOpf("Num %.6g (%d)", num, index)
 			}
 
 		case Str:
 			index := d.fetch()
-			d.writeOpf("Str %q", d.program.Strs[index])
+			d.writeOpf("Str %q (%d)", d.program.Strs[index], index)
 
 		case FieldNum:
 			index := d.fetch()
@@ -265,7 +265,7 @@ func (d *disassembler) disassemble(prefix string) error {
 
 		case Regex:
 			regexIndex := d.fetch()
-			d.writeOpf("Regex %q", d.program.Regexes[regexIndex])
+			d.writeOpf("Regex %q (%d)", d.program.Regexes[regexIndex], regexIndex)
 
 		case MultiIndex:
 			num := d.fetch()
