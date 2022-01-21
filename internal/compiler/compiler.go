@@ -18,8 +18,6 @@ TODO:
     $ go test -coverpkg=./... ./interp -v -awk="" -coverprofile=cover.out
     $ go tool cover -html cover.out
 - optimize! probably on new branch
-  + do we need to optimize the order of the opcodes, if a Go switch is a binary tree?
-  + does reducing the number of opcodes actually speed things up, for example all the opcodes required for assignment?
   + does it help if vmStack and vmSp are local variables to execute?
   + the append check in push() slows things (eg: BinaryOperators benchmark) down quite a bit -- can we avoid somehow?
   + any super-instructions to add?
