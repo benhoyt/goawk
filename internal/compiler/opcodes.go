@@ -116,12 +116,9 @@ const (
 	CallMatch
 	CallRand
 	CallSin
-	// TODO: add arrayScope and reduce opcodes to just CallSplit and CallSplitSep (or even push sep and combine into one)
-	CallSplitGlobal    // arrayIndex
-	CallSplitLocal     // arrayIndex
-	CallSplitSepGlobal // arrayIndex
-	CallSplitSepLocal  // arrayIndex
-	CallSprintf        // numArgs
+	CallSplit    // arrayScope arrayIndex
+	CallSplitSep // arrayScope arrayIndex
+	CallSprintf  // numArgs
 	CallSqrt
 	CallSrand
 	CallSrandSeed

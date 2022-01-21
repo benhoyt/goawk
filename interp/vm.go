@@ -858,41 +858,23 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 		case compiler.CallSin:
 			p.replaceTop(num(math.Sin(p.peekTop().num())))
 
-		case compiler.CallSplitGlobal:
-			arrayIndex := code[i]
-			i++
+		case compiler.CallSplit:
+			arrayScope := code[i]
+			arrayIndex := code[i+1]
+			i += 2
 			s := p.toString(p.peekTop())
-			n, err := p.split(s, ast.ScopeGlobal, int(arrayIndex), p.fieldSep)
+			n, err := p.split(s, ast.VarScope(arrayScope), int(arrayIndex), p.fieldSep)
 			if err != nil {
 				return err
 			}
 			p.replaceTop(num(float64(n)))
 
-		case compiler.CallSplitLocal:
-			arrayIndex := code[i]
-			i++
-			s := p.toString(p.peekTop())
-			n, err := p.split(s, ast.ScopeLocal, int(arrayIndex), p.fieldSep)
-			if err != nil {
-				return err
-			}
-			p.replaceTop(num(float64(n)))
-
-		case compiler.CallSplitSepGlobal:
-			arrayIndex := code[i]
-			i++
+		case compiler.CallSplitSep:
+			arrayScope := code[i]
+			arrayIndex := code[i+1]
+			i += 2
 			s, fieldSep := p.peekPop()
-			n, err := p.split(p.toString(s), ast.ScopeGlobal, int(arrayIndex), p.toString(fieldSep))
-			if err != nil {
-				return err
-			}
-			p.replaceTop(num(float64(n)))
-
-		case compiler.CallSplitSepLocal:
-			arrayIndex := code[i]
-			i++
-			s, fieldSep := p.peekPop()
-			n, err := p.split(p.toString(s), ast.ScopeLocal, int(arrayIndex), p.toString(fieldSep))
+			n, err := p.split(p.toString(s), ast.VarScope(arrayScope), int(arrayIndex), p.toString(fieldSep))
 			if err != nil {
 				return err
 			}

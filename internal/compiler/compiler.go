@@ -691,19 +691,11 @@ func (c *compiler) expr(expr ast.Expr) {
 		case lexer.F_SPLIT:
 			c.expr(e.Args[0])
 			arrayExpr := e.Args[1].(*ast.ArrayExpr)
-			switch {
-			case arrayExpr.Scope == ast.ScopeGlobal && len(e.Args) > 2:
+			if len(e.Args) > 2 {
 				c.expr(e.Args[2])
-				c.add(CallSplitSepGlobal, opcodeInt(arrayExpr.Index))
-			case arrayExpr.Scope == ast.ScopeGlobal:
-				c.add(CallSplitGlobal, opcodeInt(arrayExpr.Index))
-			case arrayExpr.Scope == ast.ScopeLocal && len(e.Args) > 2:
-				c.expr(e.Args[2])
-				c.add(CallSplitSepLocal, opcodeInt(arrayExpr.Index))
-			case arrayExpr.Scope == ast.ScopeLocal:
-				c.add(CallSplitLocal, opcodeInt(arrayExpr.Index))
-			default:
-				panic(fmt.Sprintf("unexpected array scope %d or num args %d", arrayExpr.Scope, len(e.Args)))
+				c.add(CallSplitSep, Opcode(arrayExpr.Scope), opcodeInt(arrayExpr.Index))
+			} else {
+				c.add(CallSplit, Opcode(arrayExpr.Scope), opcodeInt(arrayExpr.Index))
 			}
 			return
 		case lexer.F_SUB, lexer.F_GSUB:

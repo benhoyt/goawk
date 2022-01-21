@@ -323,21 +323,15 @@ func (d *disassembler) disassemble(prefix string) error {
 			offset := d.fetch()
 			d.writeOpf("ForInSpecial %s %s 0x%04x", ast.SpecialVarName(int(varIndex)), d.arrayName(arrayScope, arrayIndex), d.ip+int(offset))
 
-		case CallSplitGlobal:
-			arrayIndex := d.fetch()
-			d.writeOpf("CallSplitGlobal %s", d.program.arrayNames[arrayIndex])
-
-		case CallSplitLocal:
+		case CallSplit:
+			arrayScope := ast.VarScope(d.fetch())
 			arrayIndex := int(d.fetch())
-			d.writeOpf("CallSplitLocal %s", d.localArrayName(arrayIndex))
+			d.writeOpf("CallSplit %s", d.arrayName(arrayScope, arrayIndex))
 
-		case CallSplitSepGlobal:
-			arrayIndex := d.fetch()
-			d.writeOpf("CallSplitSepGlobal %s", d.program.arrayNames[arrayIndex])
-
-		case CallSplitSepLocal:
+		case CallSplitSep:
+			arrayScope := ast.VarScope(d.fetch())
 			arrayIndex := int(d.fetch())
-			d.writeOpf("CallSplitSepLocal %s", d.localArrayName(arrayIndex))
+			d.writeOpf("CallSplitSep %s", d.arrayName(arrayScope, arrayIndex))
 
 		case CallSprintf:
 			numArgs := d.fetch()
