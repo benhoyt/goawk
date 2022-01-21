@@ -147,9 +147,7 @@ const (
 	GetlineGlobal  // redirect index
 	GetlineLocal   // redirect index
 	GetlineSpecial // redirect index
-	// TODO: add arrayScope and reduce to one opcode
-	GetlineArrayGlobal // redirect arrayIndex
-	GetlineArrayLocal  // redirect arrayIndex
+	GetlineArray   // redirect arrayScope arrayIndex
 
 	EndOpcode
 )

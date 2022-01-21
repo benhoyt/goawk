@@ -120,14 +120,13 @@ func _() {
 	_ = x[GetlineGlobal-109]
 	_ = x[GetlineLocal-110]
 	_ = x[GetlineSpecial-111]
-	_ = x[GetlineArrayGlobal-112]
-	_ = x[GetlineArrayLocal-113]
-	_ = x[EndOpcode-114]
+	_ = x[GetlineArray-112]
+	_ = x[EndOpcode-113]
 }
 
-const _Opcode_name = "NopNumStrDupeDropSwapFieldFieldNumGlobalLocalSpecialArrayGlobalArrayLocalInGlobalInLocalAssignFieldAssignGlobalAssignLocalAssignSpecialAssignArrayGlobalAssignArrayLocalDeleteDeleteAllIncrFieldIncrGlobalIncrLocalIncrSpecialIncrArrayGlobalIncrArrayLocalAugAssignFieldAugAssignGlobalAugAssignLocalAugAssignSpecialAugAssignArrayGlobalAugAssignArrayLocalRegexMultiIndexAddSubtractMultiplyDividePowerModuloEqualsNotEqualsLessGreaterLessOrEqualGreaterOrEqualConcatMatchNotMatchNotUnaryMinusUnaryPlusBooleanJumpJumpFalseJumpTrueJumpEqualsJumpNotEqualsJumpLessJumpGreaterJumpLessOrEqualJumpGreaterOrEqualNextExitForInGlobalForInLocalForInSpecialBreakForInCallAtan2CallCloseCallCosCallExpCallFflushCallFflushAllCallGsubCallIndexCallIntCallLengthCallLengthArgCallLogCallMatchCallRandCallSinCallSplitGlobalCallSplitLocalCallSplitSepGlobalCallSplitSepLocalCallSprintfCallSqrtCallSrandCallSrandSeedCallSubCallSubstrCallSubstrLengthCallSystemCallTolowerCallToupperCallUserCallNativeReturnReturnNullNullsPrintPrintfGetlineGetlineFieldGetlineGlobalGetlineLocalGetlineSpecialGetlineArrayGlobalGetlineArrayLocalEndOpcode"
+const _Opcode_name = "NopNumStrDupeDropSwapFieldFieldNumGlobalLocalSpecialArrayGlobalArrayLocalInGlobalInLocalAssignFieldAssignGlobalAssignLocalAssignSpecialAssignArrayGlobalAssignArrayLocalDeleteDeleteAllIncrFieldIncrGlobalIncrLocalIncrSpecialIncrArrayGlobalIncrArrayLocalAugAssignFieldAugAssignGlobalAugAssignLocalAugAssignSpecialAugAssignArrayGlobalAugAssignArrayLocalRegexMultiIndexAddSubtractMultiplyDividePowerModuloEqualsNotEqualsLessGreaterLessOrEqualGreaterOrEqualConcatMatchNotMatchNotUnaryMinusUnaryPlusBooleanJumpJumpFalseJumpTrueJumpEqualsJumpNotEqualsJumpLessJumpGreaterJumpLessOrEqualJumpGreaterOrEqualNextExitForInGlobalForInLocalForInSpecialBreakForInCallAtan2CallCloseCallCosCallExpCallFflushCallFflushAllCallGsubCallIndexCallIntCallLengthCallLengthArgCallLogCallMatchCallRandCallSinCallSplitGlobalCallSplitLocalCallSplitSepGlobalCallSplitSepLocalCallSprintfCallSqrtCallSrandCallSrandSeedCallSubCallSubstrCallSubstrLengthCallSystemCallTolowerCallToupperCallUserCallNativeReturnReturnNullNullsPrintPrintfGetlineGetlineFieldGetlineGlobalGetlineLocalGetlineSpecialGetlineArrayEndOpcode"
 
-var _Opcode_index = [...]uint16{0, 3, 6, 9, 13, 17, 21, 26, 34, 40, 45, 52, 63, 73, 81, 88, 99, 111, 122, 135, 152, 168, 174, 183, 192, 202, 211, 222, 237, 251, 265, 280, 294, 310, 330, 349, 354, 364, 367, 375, 383, 389, 394, 400, 406, 415, 419, 426, 437, 451, 457, 462, 470, 473, 483, 492, 499, 503, 512, 520, 530, 543, 551, 562, 577, 595, 599, 603, 614, 624, 636, 646, 655, 664, 671, 678, 688, 701, 709, 718, 725, 735, 748, 755, 764, 772, 779, 794, 808, 826, 843, 854, 862, 871, 884, 891, 901, 917, 927, 938, 949, 957, 967, 973, 983, 988, 993, 999, 1006, 1018, 1031, 1043, 1057, 1075, 1092, 1101}
+var _Opcode_index = [...]uint16{0, 3, 6, 9, 13, 17, 21, 26, 34, 40, 45, 52, 63, 73, 81, 88, 99, 111, 122, 135, 152, 168, 174, 183, 192, 202, 211, 222, 237, 251, 265, 280, 294, 310, 330, 349, 354, 364, 367, 375, 383, 389, 394, 400, 406, 415, 419, 426, 437, 451, 457, 462, 470, 473, 483, 492, 499, 503, 512, 520, 530, 543, 551, 562, 577, 595, 599, 603, 614, 624, 636, 646, 655, 664, 671, 678, 688, 701, 709, 718, 725, 735, 748, 755, 764, 772, 779, 794, 808, 826, 843, 854, 862, 871, 884, 891, 901, 917, 927, 938, 949, 957, 967, 973, 983, 988, 993, 999, 1006, 1018, 1031, 1043, 1057, 1069, 1078}
 
 func (i Opcode) String() string {
 	if i < 0 || i >= Opcode(len(_Opcode_index)-1) {

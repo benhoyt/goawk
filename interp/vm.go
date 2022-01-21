@@ -1179,10 +1179,11 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			}
 			p.push(num(ret))
 
-		case compiler.GetlineArrayGlobal:
+		case compiler.GetlineArray:
 			redirect := lexer.Token(code[i])
-			arrayIndex := code[i+1]
-			i += 2
+			arrayScope := code[i+1]
+			arrayIndex := code[i+2]
+			i += 3
 
 			ret, line, err := p.getline(redirect)
 			if err != nil {
@@ -1190,23 +1191,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			}
 			index := p.toString(p.peekTop())
 			if ret == 1 {
-				array := p.arrays[arrayIndex]
-				array[index] = numStr(line)
-			}
-			p.replaceTop(num(ret))
-
-		case compiler.GetlineArrayLocal:
-			redirect := lexer.Token(code[i])
-			arrayIndex := code[i+1]
-			i += 2
-
-			ret, line, err := p.getline(redirect)
-			if err != nil {
-				return err
-			}
-			index := p.toString(p.peekTop())
-			if ret == 1 {
-				array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
+				array := p.arrays[p.getArrayIndex(ast.VarScope(arrayScope), int(arrayIndex))]
 				array[index] = numStr(line)
 			}
 			p.replaceTop(num(ret))

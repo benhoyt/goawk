@@ -865,12 +865,7 @@ func (c *compiler) expr(expr ast.Expr) {
 			c.add(GetlineField, redirect())
 		case *ast.IndexExpr:
 			c.index(target.Index)
-			switch target.Array.Scope {
-			case ast.ScopeGlobal:
-				c.add(GetlineArrayGlobal, redirect(), opcodeInt(target.Array.Index))
-			case ast.ScopeLocal:
-				c.add(GetlineArrayLocal, redirect(), opcodeInt(target.Array.Index))
-			}
+			c.add(GetlineArray, redirect(), Opcode(target.Array.Scope), opcodeInt(target.Array.Index))
 		default:
 			c.add(Getline, redirect())
 		}

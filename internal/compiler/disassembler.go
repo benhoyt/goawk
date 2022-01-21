@@ -404,15 +404,11 @@ func (d *disassembler) disassemble(prefix string) error {
 			index := d.fetch()
 			d.writeOpf("GetlineSpecial %s %s", redirect, ast.SpecialVarName(int(index)))
 
-		case GetlineArrayGlobal:
+		case GetlineArray:
 			redirect := lexer.Token(d.fetch())
-			arrayIndex := d.fetch()
-			d.writeOpf("GetlineArrayGlobal %s %s", redirect, d.program.arrayNames[arrayIndex])
-
-		case GetlineArrayLocal:
-			redirect := lexer.Token(d.fetch())
+			arrayScope := ast.VarScope(d.fetch())
 			arrayIndex := int(d.fetch())
-			d.writeOpf("GetlineArrayLocal %s %s", redirect, d.localArrayName(arrayIndex))
+			d.writeOpf("GetlineArray %s %s", redirect, d.arrayName(arrayScope, arrayIndex))
 
 		default:
 			d.writeOpf("%s", op)
