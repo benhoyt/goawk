@@ -12,16 +12,20 @@ import (
 /*
 TODO:
 - refactor, simplify, reduce copy-n-pasta
-- other TODOs
 - look at code coverage and get closer to 100%
   + add decrement tests under "Incr/decr expressions", for example
   + use the following to see how much of the internal/compiler package is covered:
     $ go test -coverpkg=./... ./interp -v -awk="" -coverprofile=cover.out
     $ go tool cover -html cover.out
 - optimize! probably on new branch
+  + do we need to optimize the order of the opcodes, if a Go switch is a binary tree?
+  + does reducing the number of opcodes actually speed things up, for example all the opcodes required for assignment?
+  + does it help if vmStack and vmSp are local variables to execute?
+  + the append check in push() slows things (eg: BinaryOperators benchmark) down quite a bit -- can we avoid somehow?
   + any super-instructions to add?
   + any instructions to remove?
   + specializations
+  + better performance to replace JumpLess with JumpLessNum and so on with indexed number constant?
   + optimize CONCAT(a,CONCAT(b,c)) etc to CONCAT(a, b, c) to avoid allocs/copying
 - fuzz testing
 */
@@ -411,19 +415,9 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 	case *ast.DeleteStmt:
 		if len(s.Index) > 0 {
 			c.index(s.Index)
-			switch s.Array.Scope {
-			case ast.ScopeGlobal:
-				c.add(DeleteGlobal, opcodeInt(s.Array.Index))
-			case ast.ScopeLocal:
-				c.add(DeleteLocal, opcodeInt(s.Array.Index))
-			}
+			c.add(Delete, Opcode(s.Array.Scope), opcodeInt(s.Array.Index))
 		} else {
-			switch s.Array.Scope {
-			case ast.ScopeGlobal:
-				c.add(DeleteAllGlobal, opcodeInt(s.Array.Index))
-			case ast.ScopeLocal:
-				c.add(DeleteAllLocal, opcodeInt(s.Array.Index))
-			}
+			c.add(DeleteAll, Opcode(s.Array.Scope), opcodeInt(s.Array.Index))
 		}
 
 	case *ast.BlockStmt:
@@ -516,7 +510,6 @@ func (c *compiler) jumpBackward(label int, jumpOp Opcode, args ...Opcode) {
 	c.add(opcodeInt(offset))
 }
 
-// TODO: better performance to have JumpNumLess and so on with number as opcode?
 func (c *compiler) cond(expr ast.Expr, invert bool) Opcode {
 	switch cond := expr.(type) {
 	case *ast.BinaryExpr:

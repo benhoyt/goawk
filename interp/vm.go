@@ -156,32 +156,19 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			v, index := p.popTwo()
 			array[p.toString(index)] = v
 
-		case compiler.DeleteGlobal:
-			arrayIndex := code[i]
-			i++
-			array := p.arrays[arrayIndex]
+		case compiler.Delete:
+			arrayScope := code[i]
+			arrayIndex := code[i+1]
+			i += 2
+			array := p.arrays[p.getArrayIndex(ast.VarScope(arrayScope), int(arrayIndex))]
 			index := p.toString(p.pop())
 			delete(array, index)
 
-		case compiler.DeleteLocal:
-			arrayIndex := code[i]
-			i++
-			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
-			index := p.toString(p.pop())
-			delete(array, index)
-
-		case compiler.DeleteAllGlobal:
-			arrayIndex := code[i]
-			i++
-			array := p.arrays[arrayIndex]
-			for k := range array {
-				delete(array, k)
-			}
-
-		case compiler.DeleteAllLocal:
-			arrayIndex := code[i]
-			i++
-			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
+		case compiler.DeleteAll:
+			arrayScope := code[i]
+			arrayIndex := code[i+1]
+			i += 2
+			array := p.arrays[p.getArrayIndex(ast.VarScope(arrayScope), int(arrayIndex))]
 			for k := range array {
 				delete(array, k)
 			}
@@ -1229,7 +1216,6 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 }
 
 func (p *interp) push(v value) {
-	// TODO: hmmm, this check slows things (eg: BinaryOperators benchmark) down quite a bit -- can we avoid somehow?
 	if p.vmSp >= len(p.vmStack) {
 		p.vmStack = append(p.vmStack, null())
 	}

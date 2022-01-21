@@ -190,21 +190,15 @@ func (d *disassembler) disassemble(prefix string) error {
 			arrayIndex := int(d.fetch())
 			d.writeOpf("AssignArrayLocal %s", d.localArrayName(arrayIndex))
 
-		case DeleteGlobal:
-			arrayIndex := d.fetch()
-			d.writeOpf("DeleteGlobal %s", d.program.arrayNames[arrayIndex])
-
-		case DeleteLocal:
+		case Delete:
+			arrayScope := ast.VarScope(d.fetch())
 			arrayIndex := int(d.fetch())
-			d.writeOpf("DeleteLocal %d", d.localArrayName(arrayIndex))
+			d.writeOpf("Delete %s", d.arrayName(arrayScope, arrayIndex))
 
-		case DeleteAllGlobal:
-			arrayIndex := d.fetch()
-			d.writeOpf("DeleteAllGlobal %s", d.program.arrayNames[arrayIndex])
-
-		case DeleteAllLocal:
+		case DeleteAll:
+			arrayScope := ast.VarScope(d.fetch())
 			arrayIndex := int(d.fetch())
-			d.writeOpf("DeleteAllLocal %d", d.localArrayName(arrayIndex))
+			d.writeOpf("DeleteAll %s", d.arrayName(arrayScope, arrayIndex))
 
 		case IncrField:
 			amount := d.fetch()
@@ -309,59 +303,25 @@ func (d *disassembler) disassemble(prefix string) error {
 			d.writeOpf("JumpGreaterOrEqual 0x%04x", d.ip+int(offset))
 
 		case ForInGlobal:
-			// TODO: factor next three into function - also other similar opcodes?
 			varIndex := d.fetch()
-			arrayScope := d.fetch()
-			arrayIndex := d.fetch()
+			arrayScope := ast.VarScope(d.fetch())
+			arrayIndex := int(d.fetch())
 			offset := d.fetch()
-			var arrayName string
-			if ast.VarScope(arrayScope) == ast.ScopeGlobal {
-				arrayName = d.program.arrayNames[arrayIndex]
-			} else {
-				arrayName = d.localArrayName(int(arrayIndex))
-			}
-			d.writeOpf("ForInGlobal %s %s 0x%04x", d.program.scalarNames[varIndex], arrayName, d.ip+int(offset))
+			d.writeOpf("ForInGlobal %s %s 0x%04x", d.program.scalarNames[varIndex], d.arrayName(arrayScope, arrayIndex), d.ip+int(offset))
 
 		case ForInLocal:
 			varIndex := d.fetch()
-			arrayScope := d.fetch()
-			arrayIndex := d.fetch()
+			arrayScope := ast.VarScope(d.fetch())
+			arrayIndex := int(d.fetch())
 			offset := d.fetch()
-			var arrayName string
-			if ast.VarScope(arrayScope) == ast.ScopeGlobal {
-				arrayName = d.program.arrayNames[arrayIndex]
-			} else {
-				arrayName = d.localArrayName(int(arrayIndex))
-			}
-			d.writeOpf("ForInLocal %s %s 0x%04x", d.localName(int(varIndex)), arrayName, d.ip+int(offset))
+			d.writeOpf("ForInLocal %s %s 0x%04x", d.localName(int(varIndex)), d.arrayName(arrayScope, arrayIndex), d.ip+int(offset))
 
 		case ForInSpecial:
 			varIndex := d.fetch()
-			arrayScope := d.fetch()
-			arrayIndex := d.fetch()
+			arrayScope := ast.VarScope(d.fetch())
+			arrayIndex := int(d.fetch())
 			offset := d.fetch()
-			var arrayName string
-			if ast.VarScope(arrayScope) == ast.ScopeGlobal {
-				arrayName = d.program.arrayNames[arrayIndex]
-			} else {
-				arrayName = d.localArrayName(int(arrayIndex))
-			}
-			d.writeOpf("ForInSpecial %s %s 0x%04x", ast.SpecialVarName(int(varIndex)), arrayName, d.ip+int(offset))
-
-		//case CallGsub:
-		//	d.writeOpf("CallGsub")
-		//case CallGsubField:
-		//	d.writeOpf("CallGsubField")
-		//case CallGsubGlobal:
-		//	d.writeOpf("CallGsubGlobal")
-		//case CallGsubLocal:
-		//	d.writeOpf("CallGsubLocal")
-		//case CallGsubSpecial:
-		//	d.writeOpf("CallGsubSpecial")
-		//case CallGsubArrayGlobal:
-		//	d.writeOpf("CallGsubArrayGlobal")
-		//case CallGsubArrayLocal:
-		//	d.writeOpf("CallGsubArrayLocal")
+			d.writeOpf("ForInSpecial %s %s 0x%04x", ast.SpecialVarName(int(varIndex)), d.arrayName(arrayScope, arrayIndex), d.ip+int(offset))
 
 		case CallSplitGlobal:
 			arrayIndex := d.fetch()
@@ -383,21 +343,6 @@ func (d *disassembler) disassemble(prefix string) error {
 			numArgs := d.fetch()
 			d.writeOpf("CallSprintf %d", numArgs)
 
-		//case CallSub:
-		//	d.writeOpf("CallSub")
-		//case CallSubField:
-		//	d.writeOpf("CallSubField")
-		//case CallSubGlobal:
-		//	d.writeOpf("CallSubGlobal")
-		//case CallSubLocal:
-		//	d.writeOpf("CallSubLocal")
-		//case CallSubSpecial:
-		//	d.writeOpf("CallSubSpecial")
-		//case CallSubArrayGlobal:
-		//	d.writeOpf("CallSubArrayGlobal")
-		//case CallSubArrayLocal:
-		//	d.writeOpf("CallSubArrayLocal")
-
 		case CallUser:
 			funcIndex := d.fetch()
 			numArrayArgs := int(d.fetch())
@@ -405,12 +350,7 @@ func (d *disassembler) disassemble(prefix string) error {
 			for i := 0; i < numArrayArgs; i++ {
 				arrayScope := ast.VarScope(d.fetch())
 				arrayIndex := int(d.fetch())
-				switch arrayScope {
-				case ast.ScopeGlobal:
-					arrayArgs = append(arrayArgs, d.program.arrayNames[arrayIndex])
-				case ast.ScopeLocal:
-					arrayArgs = append(arrayArgs, d.localArrayName(arrayIndex))
-				}
+				arrayArgs = append(arrayArgs, d.arrayName(arrayScope, arrayIndex))
 			}
 			d.writeOpf("CallUser %s [%s]", d.program.Functions[funcIndex].Name, strings.Join(arrayArgs, ", "))
 
@@ -517,6 +457,13 @@ func (d *disassembler) localName(index int) string {
 		n++
 	}
 	panic(fmt.Sprintf("unexpected local variable index %d", index))
+}
+
+func (d *disassembler) arrayName(scope ast.VarScope, index int) string {
+	if scope == ast.ScopeLocal {
+		return d.localArrayName(index)
+	}
+	return d.program.arrayNames[index]
 }
 
 func (d *disassembler) localArrayName(index int) string {
