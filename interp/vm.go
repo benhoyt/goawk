@@ -1151,71 +1151,71 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 // top of stack without changing the stack pointer. Primarily this avoids the
 // check for append in push.
 func (p *interp) push(v value) {
-	sp := p.vmSp
-	if sp >= len(p.vmStack) {
-		p.vmStack = append(p.vmStack, null())
+	sp := p.sp
+	if sp >= len(p.stack) {
+		p.stack = append(p.stack, null())
 	}
-	p.vmStack[sp] = v
+	p.stack[sp] = v
 	sp++
-	p.vmSp = sp
+	p.sp = sp
 }
 
 func (p *interp) pushNulls(num int) {
-	sp := p.vmSp
-	for p.vmSp+num-1 >= len(p.vmStack) {
-		p.vmStack = append(p.vmStack, null())
+	sp := p.sp
+	for p.sp+num-1 >= len(p.stack) {
+		p.stack = append(p.stack, null())
 	}
 	for i := 0; i < num; i++ {
-		p.vmStack[sp] = null()
+		p.stack[sp] = null()
 		sp++
 	}
-	p.vmSp = sp
+	p.sp = sp
 }
 
 func (p *interp) pop() value {
-	p.vmSp--
-	return p.vmStack[p.vmSp]
+	p.sp--
+	return p.stack[p.sp]
 }
 
 func (p *interp) popTwo() (value, value) {
-	p.vmSp -= 2
-	return p.vmStack[p.vmSp], p.vmStack[p.vmSp+1]
+	p.sp -= 2
+	return p.stack[p.sp], p.stack[p.sp+1]
 }
 
 func (p *interp) peekTop() value {
-	return p.vmStack[p.vmSp-1]
+	return p.stack[p.sp-1]
 }
 
 func (p *interp) peekTwo() (value, value) {
-	return p.vmStack[p.vmSp-2], p.vmStack[p.vmSp-1]
+	return p.stack[p.sp-2], p.stack[p.sp-1]
 }
 
 func (p *interp) peekPop() (value, value) {
-	p.vmSp--
-	return p.vmStack[p.vmSp-1], p.vmStack[p.vmSp]
+	p.sp--
+	return p.stack[p.sp-1], p.stack[p.sp]
 }
 
 func (p *interp) peekPeekPop() (value, value, value) {
-	p.vmSp--
-	return p.vmStack[p.vmSp-2], p.vmStack[p.vmSp-1], p.vmStack[p.vmSp]
+	p.sp--
+	return p.stack[p.sp-2], p.stack[p.sp-1], p.stack[p.sp]
 }
 
 func (p *interp) replaceTop(v value) {
-	p.vmStack[p.vmSp-1] = v
+	p.stack[p.sp-1] = v
 }
 
 func (p *interp) replaceTwo(l, r value) {
-	p.vmStack[p.vmSp-2] = l
-	p.vmStack[p.vmSp-1] = r
+	p.stack[p.sp-2] = l
+	p.stack[p.sp-1] = r
 }
 
 func (p *interp) popSlice(n int) []value {
-	p.vmSp -= n
-	return p.vmStack[p.vmSp : p.vmSp+n]
+	p.sp -= n
+	return p.stack[p.sp : p.sp+n]
 }
 
 func (p *interp) peekSlice(n int) []value {
-	return p.vmStack[p.vmSp-n:]
+	return p.stack[p.sp-n:]
 }
 
 // Helper for getline operations. This performs the (possibly redirected) read

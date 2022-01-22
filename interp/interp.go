@@ -79,7 +79,8 @@ type interp struct {
 
 	// Scalars, arrays, and function state
 	globals     []value
-	stack       []value // TODO: don't need this anymore with compiler
+	stack       []value
+	sp          int
 	frame       []value
 	arrays      []map[string]value
 	localArrays [][]int
@@ -120,10 +121,6 @@ type interp struct {
 	regexCache  map[string]*regexp.Regexp
 	formatCache map[string]cachedFormat
 	bytes       bool
-
-	// Virtual machine stack
-	vmStack []value // TODO: rename to "stack" and "sp"
-	vmSp    int
 }
 
 // Various const configuration. Could make these part of Config if
@@ -215,6 +212,7 @@ type Config struct {
 }
 
 // Initialize program execution.
+// TODO: remove this as before, as it's only used once
 func execInit(program *parser.Program, config *Config) (*interp, error) {
 	if len(config.Vars)%2 != 0 {
 		return nil, newError("length of config.Vars must be a multiple of 2, not %d", len(config.Vars))
@@ -227,12 +225,11 @@ func execInit(program *parser.Program, config *Config) (*interp, error) {
 
 	// Allocate memory for variables and virtual machine stack
 	p.globals = make([]value, len(program.Scalars))
-	p.stack = make([]value, 0, initialStackSize)
+	p.stack = make([]value, initialStackSize)
 	p.arrays = make([]map[string]value, len(program.Arrays), len(program.Arrays)+initialStackSize)
 	for i := 0; i < len(program.Arrays); i++ {
 		p.arrays[i] = make(map[string]value)
 	}
-	p.vmStack = make([]value, initialStackSize)
 
 	// Initialize defaults
 	p.regexCache = make(map[string]*regexp.Regexp, 10)
