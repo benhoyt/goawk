@@ -28,7 +28,7 @@ TODO:
 - fuzz testing
 */
 
-// Program
+// Program holds an entire compiled program.
 type Program struct {
 	Begin     []Opcode
 	Actions   []Action
@@ -44,11 +44,13 @@ type Program struct {
 	nativeFuncNames []string
 }
 
+// Action holds a compiled pattern-action block.
 type Action struct {
 	Pattern [][]Opcode
 	Body    []Opcode
 }
 
+// Function holds a compiled function.
 type Function struct {
 	Name       string
 	Params     []string
@@ -69,15 +71,10 @@ func (e *compileError) Error() string {
 	return e.message
 }
 
-type constantIndexes struct {
-	nums    map[float64]int
-	strs    map[string]int
-	regexes map[string]int
-}
-
+// Compile compiles an AST (parsed program) into virtual machine instructions.
 func Compile(prog *ast.Program) (compiledProg *Program, err error) {
 	defer func() {
-		// The compiler uses panic with a *CompileError to signal compile
+		// The compiler uses panic with a *compileError to signal compile
 		// errors internally, and they're caught here. This avoids the
 		// need to check errors everywhere.
 		if r := recover(); r != nil {
@@ -88,14 +85,16 @@ func Compile(prog *ast.Program) (compiledProg *Program, err error) {
 
 	p := &Program{}
 
+	// Reuse identical constants across entire program.
 	indexes := constantIndexes{
 		nums:    make(map[float64]int),
 		strs:    make(map[string]int),
 		regexes: make(map[string]int),
 	}
 
-	// For functions called before they're defined or recursive functions, we
-	// have to set most p.Functions data first, then compile Body after.
+	// Compile functions. For functions called before they're defined or
+	// recursive functions, we have to set most p.Functions data first, then
+	// compile Body afterward.
 	p.Functions = make([]Function, len(prog.Functions))
 	for i, astFunc := range prog.Functions {
 		numArrays := 0
@@ -119,12 +118,14 @@ func Compile(prog *ast.Program) (compiledProg *Program, err error) {
 		p.Functions[i].Body = c.finish()
 	}
 
+	// Compile BEGIN blocks.
 	for _, stmts := range prog.Begin {
 		c := &compiler{program: p, indexes: indexes}
 		c.stmts(stmts)
 		p.Begin = append(p.Begin, c.finish()...)
 	}
 
+	// Compile pattern-action blocks.
 	for _, action := range prog.Actions {
 		var pattern [][]Opcode
 		switch len(action.Pattern) {
@@ -154,12 +155,14 @@ func Compile(prog *ast.Program) (compiledProg *Program, err error) {
 		})
 	}
 
+	// Compile END blocks.
 	for _, stmts := range prog.End {
 		c := &compiler{program: p, indexes: indexes}
 		c.stmts(stmts)
 		p.End = append(p.End, c.finish()...)
 	}
 
+	// These are only used for disassembly, but set them up here.
 	p.scalarNames = make([]string, len(prog.Scalars))
 	for name, index := range prog.Scalars {
 		p.scalarNames[index] = name
@@ -172,6 +175,14 @@ func Compile(prog *ast.Program) (compiledProg *Program, err error) {
 	return p, nil
 }
 
+// So we can look up the indexes of constants that have been used before.
+type constantIndexes struct {
+	nums    map[float64]int
+	strs    map[string]int
+	regexes map[string]int
+}
+
+// Holds the compilation state.
 type compiler struct {
 	program   *Program
 	indexes   constantIndexes
@@ -197,7 +208,7 @@ func (c *compiler) stmts(stmts []ast.Stmt) {
 func (c *compiler) stmt(stmt ast.Stmt) {
 	switch s := stmt.(type) {
 	case *ast.ExprStmt:
-		// Optimize assignment expressions to avoid Dupe and Drop
+		// Optimize assignment expressions to avoid the extra Dupe and Drop
 		switch expr := s.Expr.(type) {
 		case *ast.AssignExpr:
 			c.expr(expr.Right)
@@ -298,12 +309,12 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 
 	case *ast.IfStmt:
 		if len(s.Else) == 0 {
-			jumpOp := c.cond(s.Cond, true)
+			jumpOp := c.condition(s.Cond, true)
 			ifMark := c.jumpForward(jumpOp)
 			c.stmts(s.Body)
 			c.patchForward(ifMark)
 		} else {
-			jumpOp := c.cond(s.Cond, true)
+			jumpOp := c.condition(s.Cond, true)
 			ifMark := c.jumpForward(jumpOp)
 			c.stmts(s.Body)
 			elseMark := c.jumpForward(Jump)
@@ -319,10 +330,11 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		c.breaks = append(c.breaks, []int{})
 		c.continues = append(c.continues, []int{})
 
-		// Optimization: include condition once before loop and at the end
+		// Optimization: include condition once before loop and at the end.
+		// This idea was stolen from an optimization CPython did recently.
 		var mark int
 		if s.Cond != nil {
-			jumpOp := c.cond(s.Cond, true)
+			jumpOp := c.condition(s.Cond, true)
 			mark = c.jumpForward(jumpOp)
 		}
 
@@ -334,7 +346,7 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		}
 
 		if s.Cond != nil {
-			jumpOp := c.cond(s.Cond, false)
+			jumpOp := c.condition(s.Cond, false)
 			c.jumpBackward(loopStart, jumpOp)
 			c.patchForward(mark)
 		} else {
@@ -344,9 +356,10 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		c.patchBreaks()
 
 	case *ast.ForInStmt:
-		mark := c.jumpForward(ForIn, opcodeInt(int(s.Var.Scope)), opcodeInt(s.Var.Index), Opcode(s.Array.Scope), opcodeInt(s.Array.Index))
+		mark := c.jumpForward(ForIn, opcodeInt(int(s.Var.Scope)), opcodeInt(s.Var.Index),
+			Opcode(s.Array.Scope), opcodeInt(s.Array.Index))
 
-		c.breaks = append(c.breaks, nil) // nil tells BreakStmt it's a for..in loop
+		c.breaks = append(c.breaks, nil) // nil tells BreakStmt it's a for-in loop
 		c.continues = append(c.continues, []int{})
 
 		c.stmts(s.Body)
@@ -367,14 +380,14 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		c.breaks = append(c.breaks, []int{})
 		c.continues = append(c.continues, []int{})
 
-		jumpOp := c.cond(s.Cond, true)
+		jumpOp := c.condition(s.Cond, true)
 		mark := c.jumpForward(jumpOp)
 
 		loopStart := c.labelBackward()
 		c.stmts(s.Body)
 		c.patchContinues()
 
-		jumpOp = c.cond(s.Cond, false)
+		jumpOp = c.condition(s.Cond, false)
 		c.jumpBackward(loopStart, jumpOp)
 		c.patchForward(mark)
 
@@ -388,7 +401,7 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		c.stmts(s.Body)
 		c.patchContinues()
 
-		jumpOp := c.cond(s.Cond, false)
+		jumpOp := c.condition(s.Cond, false)
 		c.jumpBackward(loopStart, jumpOp)
 
 		c.patchBreaks()
@@ -396,7 +409,7 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 	case *ast.BreakStmt:
 		i := len(c.breaks) - 1
 		if c.breaks[i] == nil {
-			// break in for..in loop is executed differently, use errBreak to exit
+			// break in for-in loop is executed differently, use errBreak to exit
 			c.add(BreakForIn)
 		} else {
 			mark := c.jumpForward(Jump)
@@ -436,6 +449,7 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 	}
 }
 
+// Return the amount (+1 or -1) to add for an increment expression.
 func incrAmount(op lexer.Token) Opcode {
 	if op == lexer.INCR {
 		return 1
@@ -444,6 +458,7 @@ func incrAmount(op lexer.Token) Opcode {
 	}
 }
 
+// Generate opcodes for an assignment.
 func (c *compiler) assign(target ast.Expr) {
 	switch target := target.(type) {
 	case *ast.VarExpr:
@@ -469,7 +484,7 @@ func (c *compiler) assign(target ast.Expr) {
 	}
 }
 
-// opcodeInt converts int to Opcode, ensuring it fits.
+// Convert int to Opcode, raising a *compileError if it doesn't fit.
 func opcodeInt(n int) Opcode {
 	if n > math.MaxInt32 || n < math.MinInt32 {
 		// Two billion should be enough for anybody.
@@ -478,6 +493,7 @@ func opcodeInt(n int) Opcode {
 	return Opcode(n)
 }
 
+// Patch jump addresses for break statements in a loop.
 func (c *compiler) patchBreaks() {
 	breaks := c.breaks[len(c.breaks)-1]
 	for _, mark := range breaks {
@@ -486,6 +502,7 @@ func (c *compiler) patchBreaks() {
 	c.breaks = c.breaks[:len(c.breaks)-1]
 }
 
+// Patch jump addresses for continue statements in a loop
 func (c *compiler) patchContinues() {
 	continues := c.continues[len(c.continues)-1]
 	for _, mark := range continues {
@@ -494,6 +511,7 @@ func (c *compiler) patchContinues() {
 	c.continues = c.continues[:len(c.continues)-1]
 }
 
+// Generate a forward jump (patched later) and return a "mark".
 func (c *compiler) jumpForward(jumpOp Opcode, args ...Opcode) int {
 	c.add(jumpOp)
 	c.add(args...)
@@ -501,15 +519,18 @@ func (c *compiler) jumpForward(jumpOp Opcode, args ...Opcode) int {
 	return len(c.code)
 }
 
+// Patch a previously-generated forward jump.
 func (c *compiler) patchForward(mark int) {
 	offset := len(c.code) - mark
 	c.code[mark-1] = opcodeInt(offset)
 }
 
+// Return a "label" for a subsequent backward jump.
 func (c *compiler) labelBackward() int {
 	return len(c.code)
 }
 
+// Jump to a previously-created label.
 func (c *compiler) jumpBackward(label int, jumpOp Opcode, args ...Opcode) {
 	offset := label - (len(c.code) + len(args) + 2)
 	c.add(jumpOp)
@@ -517,9 +538,12 @@ func (c *compiler) jumpBackward(label int, jumpOp Opcode, args ...Opcode) {
 	c.add(opcodeInt(offset))
 }
 
-func (c *compiler) cond(expr ast.Expr, invert bool) Opcode {
+// Generate opcodes for a boolean condition.
+func (c *compiler) condition(expr ast.Expr, invert bool) Opcode {
 	switch cond := expr.(type) {
 	case *ast.BinaryExpr:
+		// Optimize binary comparison expressions like "x < 10" into just
+		// JumpLess instead of two instructions (Less and JumpTrue).
 		switch cond.Op {
 		case lexer.EQUALS:
 			c.expr(cond.Left)
@@ -577,6 +601,8 @@ func (c *compiler) cond(expr ast.Expr, invert bool) Opcode {
 		}
 	}
 
+	// Fall back to evaluating the expression normally, followed by JumpTrue
+	// or JumpFalse.
 	c.expr(expr)
 	if invert {
 		return JumpFalse
@@ -597,6 +623,7 @@ func (c *compiler) expr(expr ast.Expr) {
 		switch index := e.Index.(type) {
 		case *ast.NumExpr:
 			if index.Value == float64(int32(index.Value)) {
+				// Optimize $i to FieldNum opcode with integer argument
 				c.add(FieldNum, opcodeInt(int(index.Value)))
 				return
 			}
@@ -637,12 +664,14 @@ func (c *compiler) expr(expr ast.Expr) {
 			c.patchForward(mark)
 			c.add(Boolean)
 		default:
+			// All other binary expressions
 			c.expr(e.Left)
 			c.expr(e.Right)
 			c.binaryOp(e.Op)
 		}
 
 	case *ast.IncrExpr:
+		// Most IncrExpr (standalone) will be handled by the ExprStmt special case
 		op := Add
 		if e.Op == lexer.DECR {
 			op = Subtract
@@ -663,11 +692,13 @@ func (c *compiler) expr(expr ast.Expr) {
 		c.assign(e.Expr)
 
 	case *ast.AssignExpr:
+		// Most AssignExpr (standalone) will be handled by the ExprStmt special case
 		c.expr(e.Right)
 		c.add(Dupe)
 		c.assign(e.Left)
 
 	case *ast.AugAssignExpr:
+		// Most AugAssignExpr (standalone) will be handled by the ExprStmt special case
 		c.expr(e.Right)
 		c.expr(e.Left)
 		c.add(Swap)
@@ -676,7 +707,7 @@ func (c *compiler) expr(expr ast.Expr) {
 		c.assign(e.Left)
 
 	case *ast.CondExpr:
-		jumpOp := c.cond(e.Cond, true)
+		jumpOp := c.condition(e.Cond, true)
 		ifMark := c.jumpForward(jumpOp)
 		c.expr(e.True)
 		elseMark := c.jumpForward(Jump)
@@ -694,6 +725,7 @@ func (c *compiler) expr(expr ast.Expr) {
 		}
 
 	case *ast.CallExpr:
+		// split and sub/gsub require special cases as they have lvalue arguments
 		switch e.Func {
 		case lexer.F_SPLIT:
 			c.expr(e.Args[0])
@@ -791,10 +823,8 @@ func (c *compiler) expr(expr ast.Expr) {
 			c.add(UnaryMinus)
 		case lexer.NOT:
 			c.add(Not)
-		case lexer.ADD:
+		default: // ADD
 			c.add(UnaryPlus)
-		default:
-			panic(fmt.Sprintf("unexpected unary operation: %s", e.Op))
 		}
 
 	case *ast.InExpr:
@@ -802,7 +832,7 @@ func (c *compiler) expr(expr ast.Expr) {
 		switch e.Array.Scope {
 		case ast.ScopeGlobal:
 			c.add(InGlobal, opcodeInt(e.Array.Index))
-		case ast.ScopeLocal:
+		default: // ScopeLocal
 			c.add(InLocal, opcodeInt(e.Array.Index))
 		}
 
@@ -875,7 +905,7 @@ func (c *compiler) expr(expr ast.Expr) {
 	}
 }
 
-// numIndex adds (or reuses) a number constant and returns its index.
+// Add (or reuse) a number constant and returns its index.
 func (c *compiler) numIndex(n float64) int {
 	if index, ok := c.indexes.nums[n]; ok {
 		return index // reuse existing constant
@@ -886,7 +916,7 @@ func (c *compiler) numIndex(n float64) int {
 	return index
 }
 
-// strIndex adds (or reuses) a string constant and returns its index.
+// Add (or reuse) a string constant and returns its index.
 func (c *compiler) strIndex(s string) int {
 	if index, ok := c.indexes.strs[s]; ok {
 		return index // reuse existing constant
@@ -897,7 +927,7 @@ func (c *compiler) strIndex(s string) int {
 	return index
 }
 
-// regexIndex adds (or reuses) a regex constant and returns its index.
+// Add (or reuse) a regex constant and returns its index.
 func (c *compiler) regexIndex(r string) int {
 	if index, ok := c.indexes.regexes[r]; ok {
 		return index // reuse existing constant
@@ -947,6 +977,7 @@ func (c *compiler) binaryOp(op lexer.Token) {
 	c.add(opcode)
 }
 
+// Generate an array index, handling multi-indexes properly.
 func (c *compiler) index(index []ast.Expr) {
 	for _, expr := range index {
 		c.expr(expr)

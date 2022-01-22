@@ -94,8 +94,6 @@ const (
 	JumpGreaterOrEqual // offset
 	Next
 	Exit
-
-	// "for (k in a)" loops
 	ForIn // varScope varIndex arrayScope arrayIndex offset
 	BreakForIn
 
