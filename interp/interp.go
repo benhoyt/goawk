@@ -211,14 +211,16 @@ type Config struct {
 	Bytes bool
 }
 
-// Initialize program execution.
-// TODO: remove this as before, as it's only used once
-func execInit(program *parser.Program, config *Config) (*interp, error) {
+// ExecProgram executes the parsed program using the given interpreter
+// config, returning the exit status code of the program. Error is nil
+// on successful execution of the program, even if the program returns
+// a non-zero status code.
+func ExecProgram(program *parser.Program, config *Config) (int, error) {
 	if len(config.Vars)%2 != 0 {
-		return nil, newError("length of config.Vars must be a multiple of 2, not %d", len(config.Vars))
+		return 0, newError("length of config.Vars must be a multiple of 2, not %d", len(config.Vars))
 	}
 	if len(config.Environ)%2 != 0 {
-		return nil, newError("length of config.Environ must be a multiple of 2, not %d", len(config.Environ))
+		return 0, newError("length of config.Environ must be a multiple of 2, not %d", len(config.Environ))
 	}
 
 	p := &interp{program: program}
@@ -250,7 +252,7 @@ func execInit(program *parser.Program, config *Config) (*interp, error) {
 	p.bytes = config.Bytes
 	err := p.initNativeFuncs(config.Funcs)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
 	// Setup ARGV and other variables from config
@@ -265,7 +267,7 @@ func execInit(program *parser.Program, config *Config) (*interp, error) {
 	for i := 0; i < len(config.Vars); i += 2 {
 		err := p.setVarByName(config.Vars[i], config.Vars[i+1])
 		if err != nil {
-			return nil, err
+			return 0, err
 		}
 	}
 
@@ -312,21 +314,9 @@ func execInit(program *parser.Program, config *Config) (*interp, error) {
 	p.outputStreams = make(map[string]io.WriteCloser)
 	p.commands = make(map[string]*exec.Cmd)
 	p.scanners = make(map[string]*bufio.Scanner)
-	return p, nil
-}
-
-// ExecProgram executes the parsed program using the given interpreter
-// config, returning the exit status code of the program. Error is nil
-// on successful execution of the program, even if the program returns
-// a non-zero status code.
-func ExecProgram(program *parser.Program, config *Config) (int, error) {
-	p, err := execInit(program, config)
-	if err != nil {
-		return 0, err
-	}
 	defer p.closeAll()
 
-	// Execute the program! BEGIN, then pattern/actions, then END
+	// Execute the program: BEGIN, then pattern/actions, then END
 	err = p.execute(program.Compiled, program.Compiled.Begin)
 	if err != nil && err != errExit {
 		return 0, err
