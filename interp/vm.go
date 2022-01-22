@@ -655,7 +655,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 
 			// Set up frame for scalar arguments
 			oldFrame := p.frame
-			p.frame = p.vmStack[p.vmSp-f.NumScalars:] // TODO: replace with stackSlice() call or similar
+			p.frame = p.peekSlice(f.NumScalars)
 
 			// Handle array arguments
 			var arrays []int
@@ -1242,6 +1242,10 @@ func (p *interp) replaceTwo(l, r value) {
 func (p *interp) popSlice(n int) []value {
 	p.vmSp -= n
 	return p.vmStack[p.vmSp : p.vmSp+n]
+}
+
+func (p *interp) peekSlice(n int) []value {
+	return p.vmStack[p.vmSp-n:]
 }
 
 func (p *interp) getline(redirect lexer.Token) (float64, string, error) {
