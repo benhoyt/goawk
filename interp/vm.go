@@ -222,7 +222,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			if err != nil {
 				return err
 			}
-			v, err := p.evalForAugAssign(operation, field, right)
+			v, err := p.augAssignOp(operation, field, right)
 			if err != nil {
 				return err
 			}
@@ -235,7 +235,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			operation := compiler.AugOp(code[i])
 			index := code[i+1]
 			i += 2
-			v, err := p.evalForAugAssign(operation, p.globals[index], p.pop())
+			v, err := p.augAssignOp(operation, p.globals[index], p.pop())
 			if err != nil {
 				return err
 			}
@@ -245,7 +245,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			operation := compiler.AugOp(code[i])
 			index := code[i+1]
 			i += 2
-			v, err := p.evalForAugAssign(operation, p.frame[index], p.pop())
+			v, err := p.augAssignOp(operation, p.frame[index], p.pop())
 			if err != nil {
 				return err
 			}
@@ -255,7 +255,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			operation := compiler.AugOp(code[i])
 			index := int(code[i+1])
 			i += 2
-			v, err := p.evalForAugAssign(operation, p.getSpecial(index), p.pop())
+			v, err := p.augAssignOp(operation, p.getSpecial(index), p.pop())
 			if err != nil {
 				return err
 			}
@@ -270,7 +270,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			i += 2
 			array := p.arrays[arrayIndex]
 			index := p.toString(p.pop())
-			v, err := p.evalForAugAssign(operation, array[index], p.pop())
+			v, err := p.augAssignOp(operation, array[index], p.pop())
 			if err != nil {
 				return err
 			}
@@ -283,7 +283,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			array := p.localArray(int(arrayIndex))
 			right, indexVal := p.popTwo()
 			index := p.toString(indexVal)
-			v, err := p.evalForAugAssign(operation, array[index], right)
+			v, err := p.augAssignOp(operation, array[index], right)
 			if err != nil {
 				return err
 			}
@@ -1260,5 +1260,31 @@ func (p *interp) getline(redirect lexer.Token) (float64, string, error) {
 			return -1, "", nil
 		}
 		return 1, line, nil
+	}
+}
+
+// Perform augmented assignment operation.
+func (p *interp) augAssignOp(op compiler.AugOp, l, r value) (value, error) {
+	switch op {
+	case compiler.AugOpAdd:
+		return num(l.num() + r.num()), nil
+	case compiler.AugOpSub:
+		return num(l.num() - r.num()), nil
+	case compiler.AugOpMul:
+		return num(l.num() * r.num()), nil
+	case compiler.AugOpDiv:
+		rf := r.num()
+		if rf == 0.0 {
+			return null(), newError("division by zero")
+		}
+		return num(l.num() / rf), nil
+	case compiler.AugOpPow:
+		return num(math.Pow(l.num(), r.num())), nil
+	default: // AugOpMod
+		rf := r.num()
+		if rf == 0.0 {
+			return null(), newError("division by zero in mod")
+		}
+		return num(math.Mod(l.num(), rf)), nil
 	}
 }

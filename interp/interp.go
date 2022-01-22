@@ -671,29 +671,3 @@ func (p *interp) compileRegex(regex string) (*regexp.Regexp, error) {
 	}
 	return re, nil
 }
-
-// Evaluate binary expression for augmented assignment and return result
-func (p *interp) evalForAugAssign(op compiler.AugOp, l, r value) (value, error) {
-	switch op {
-	case compiler.AugOpAdd:
-		return num(l.num() + r.num()), nil
-	case compiler.AugOpSub:
-		return num(l.num() - r.num()), nil
-	case compiler.AugOpMul:
-		return num(l.num() * r.num()), nil
-	case compiler.AugOpDiv:
-		rf := r.num()
-		if rf == 0.0 {
-			return null(), newError("division by zero")
-		}
-		return num(l.num() / rf), nil
-	case compiler.AugOpPow:
-		return num(math.Pow(l.num(), r.num())), nil
-	default: // AugOpMod
-		rf := r.num()
-		if rf == 0.0 {
-			return null(), newError("division by zero in mod")
-		}
-		return num(math.Mod(l.num(), rf)), nil
-	}
-}
