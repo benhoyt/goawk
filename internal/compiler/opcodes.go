@@ -2,6 +2,12 @@ package compiler
 
 //go:generate go run golang.org/x/tools/cmd/stringer@v0.1.8 -type=Opcode,AugOp
 
+// Opcode represents a single virtual machine instruction (or argument). The
+// comments beside each opcode show any arguments that instruction consumes.
+//
+// I tested various bit widths, and I believe 32 bit was the fastest, but also
+// means we don't have to worry about jump offsets overflowing. That's tested
+// in the compiler, but who's going to have an AWK program bigger than 2GB?
 type Opcode int32
 
 const (
@@ -146,6 +152,7 @@ const (
 	EndOpcode
 )
 
+// AugOp represents an augmented assignment operation.
 type AugOp int32
 
 const (
