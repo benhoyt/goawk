@@ -1,3 +1,4 @@
+// Package compiler compiles an AST to virtual machine instructions.
 package compiler
 
 import (
@@ -18,7 +19,6 @@ TODO:
     $ go test -coverpkg=./... ./interp -v -awk="" -coverprofile=cover.out
     $ go tool cover -html cover.out
 - optimize! probably on new branch
-  + does it help if vmStack and vmSp are local variables to execute?
   + the append check in push() slows things (eg: BinaryOperators benchmark) down quite a bit -- can we avoid somehow?
   + any super-instructions to add?
   + any instructions to remove?
@@ -28,6 +28,7 @@ TODO:
 - fuzz testing
 */
 
+// Program
 type Program struct {
 	Begin     []Opcode
 	Actions   []Action

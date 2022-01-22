@@ -1,3 +1,5 @@
+// Disassembles compiled program to text assembly instructions
+
 package compiler
 
 import (
@@ -9,6 +11,8 @@ import (
 	"github.com/benhoyt/goawk/lexer"
 )
 
+// Disassemble writes a human-readable form of the program's virtual machine
+// instructions to writer.
 func (p *Program) Disassemble(writer io.Writer) error {
 	if p.Begin != nil {
 		d := &disassembler{
@@ -104,6 +108,7 @@ func (p *Program) Disassemble(writer io.Writer) error {
 	return nil
 }
 
+// Disassembles a single block of opcodes.
 type disassembler struct {
 	program         *Program
 	writer          io.Writer
@@ -303,22 +308,12 @@ func (d *disassembler) disassemble(prefix string) error {
 			d.writeOpf("JumpGreaterOrEqual 0x%04x", d.ip+int(offset))
 
 		case ForIn:
-			varScope := d.fetch()
-			varIndex := d.fetch()
+			varScope := ast.VarScope(d.fetch())
+			varIndex := int(d.fetch())
 			arrayScope := ast.VarScope(d.fetch())
 			arrayIndex := int(d.fetch())
 			offset := d.fetch()
-
-			var varName string
-			switch ast.VarScope(varScope) {
-			case ast.ScopeGlobal:
-				varName = d.program.scalarNames[varIndex]
-			case ast.ScopeLocal:
-				varName = d.localName(int(varIndex))
-			default: // ScopeSpecial
-				varName = ast.SpecialVarName(int(varIndex))
-			}
-			d.writeOpf("ForIn %s %s 0x%04x", varName, d.arrayName(arrayScope, arrayIndex), d.ip+int(offset))
+			d.writeOpf("ForIn %s %s 0x%04x", d.varName(varScope, varIndex), d.arrayName(arrayScope, arrayIndex), d.ip+int(offset))
 
 		case CallSplit:
 			arrayScope := ast.VarScope(d.fetch())
@@ -402,6 +397,7 @@ func (d *disassembler) disassemble(prefix string) error {
 			d.writeOpf("GetlineArray %s %s", redirect, d.arrayName(arrayScope, arrayIndex))
 
 		default:
+			// Handles all other opcodes with no arguments
 			d.writeOpf("%s", op)
 		}
 	}
@@ -410,12 +406,14 @@ func (d *disassembler) disassemble(prefix string) error {
 	return d.err
 }
 
+// Fetch the next opcode and increment the "instruction pointer".
 func (d *disassembler) fetch() Opcode {
 	op := d.code[d.ip]
 	d.ip++
 	return op
 }
 
+// Write formatted string to the disassembly output.
 func (d *disassembler) writef(format string, args ...interface{}) {
 	if d.err != nil {
 		return
@@ -423,6 +421,7 @@ func (d *disassembler) writef(format string, args ...interface{}) {
 	_, d.err = fmt.Fprintf(d.writer, format, args...)
 }
 
+// Write formatted opcode (with address and newline) to disassembly output.
 func (d *disassembler) writeOpf(format string, args ...interface{}) {
 	if d.err != nil {
 		return
@@ -431,6 +430,19 @@ func (d *disassembler) writeOpf(format string, args ...interface{}) {
 	_, d.err = fmt.Fprintf(d.writer, addrStr+"    "+format+"\n", args...)
 }
 
+// Return the scalar variable name described by scope and index.
+func (d *disassembler) varName(scope ast.VarScope, index int) string {
+	switch scope {
+	case ast.ScopeGlobal:
+		return d.program.scalarNames[index]
+	case ast.ScopeLocal:
+		return d.localName(index)
+	default: // ScopeSpecial
+		return ast.SpecialVarName(index)
+	}
+}
+
+// Return the local variable name with the given index.
 func (d *disassembler) localName(index int) string {
 	f := d.program.Functions[d.funcIndex]
 	n := 0
@@ -446,6 +458,7 @@ func (d *disassembler) localName(index int) string {
 	panic(fmt.Sprintf("unexpected local variable index %d", index))
 }
 
+// Return the array variable name describes by scope and index.
 func (d *disassembler) arrayName(scope ast.VarScope, index int) string {
 	if scope == ast.ScopeLocal {
 		return d.localArrayName(index)
@@ -453,6 +466,7 @@ func (d *disassembler) arrayName(scope ast.VarScope, index int) string {
 	return d.program.arrayNames[index]
 }
 
+// Return the local array name with the given index.
 func (d *disassembler) localArrayName(index int) string {
 	f := d.program.Functions[d.funcIndex]
 	n := 0
