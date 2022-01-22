@@ -160,7 +160,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			arrayScope := code[i]
 			arrayIndex := code[i+1]
 			i += 2
-			array := p.arrays[p.getArrayIndex(ast.VarScope(arrayScope), int(arrayIndex))]
+			array := p.getArray(ast.VarScope(arrayScope), int(arrayIndex))
 			index := p.toString(p.pop())
 			delete(array, index)
 
@@ -168,7 +168,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			arrayScope := code[i]
 			arrayIndex := code[i+1]
 			i += 2
-			array := p.arrays[p.getArrayIndex(ast.VarScope(arrayScope), int(arrayIndex))]
+			array := p.getArray(ast.VarScope(arrayScope), int(arrayIndex))
 			for k := range array {
 				delete(array, k)
 			}
@@ -582,7 +582,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			arrayIndex := code[i+2]
 			offset := code[i+3]
 			i += 4
-			array := p.arrays[p.getArrayIndex(ast.VarScope(arrayScope), int(arrayIndex))]
+			array := p.getArray(ast.VarScope(arrayScope), int(arrayIndex))
 			loopCode := code[i : i+int(offset)]
 			for index := range array {
 				p.globals[varIndex] = str(index)
@@ -602,7 +602,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			arrayIndex := code[i+2]
 			offset := code[i+3]
 			i += 4
-			array := p.arrays[p.getArrayIndex(ast.VarScope(arrayScope), int(arrayIndex))]
+			array := p.getArray(ast.VarScope(arrayScope), int(arrayIndex))
 			loopCode := code[i : i+int(offset)]
 			for index := range array {
 				p.frame[varIndex] = str(index)
@@ -622,7 +622,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			arrayIndex := code[i+2]
 			offset := code[i+3]
 			i += 4
-			array := p.arrays[p.getArrayIndex(ast.VarScope(arrayScope), int(arrayIndex))]
+			array := p.getArray(ast.VarScope(arrayScope), int(arrayIndex))
 			loopCode := code[i : i+int(offset)]
 			for index := range array {
 				err := p.setSpecial(int(varIndex), str(index))
@@ -1171,7 +1171,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			}
 			index := p.toString(p.peekTop())
 			if ret == 1 {
-				array := p.arrays[p.getArrayIndex(ast.VarScope(arrayScope), int(arrayIndex))]
+				array := p.getArray(ast.VarScope(arrayScope), int(arrayIndex))
 				array[index] = numStr(line)
 			}
 			p.replaceTop(num(ret))

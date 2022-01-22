@@ -600,10 +600,15 @@ func (p *interp) getArrayIndex(scope ast.VarScope, index int) int {
 	}
 }
 
+// Return array with given scope and index.
+func (p *interp) getArray(scope ast.VarScope, index int) map[string]value {
+	return p.arrays[p.getArrayIndex(scope, index)]
+}
+
 // Set a value in given array by key (index)
 func (p *interp) setArrayValue(scope ast.VarScope, arrayIndex int, index string, v value) {
-	resolved := p.getArrayIndex(scope, arrayIndex)
-	p.arrays[resolved][index] = v
+	array := p.getArray(scope, arrayIndex)
+	array[index] = v
 }
 
 // Get the value of given numbered field, equivalent to "$index"
