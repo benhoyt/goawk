@@ -12,7 +12,7 @@ import (
 
 /*
 TODO:
-- refactor, simplify, reduce copy-n-pasta
+- use funcslice instead of big switch: https://github.com/benhoyt/goawk/pull/89
 - look at code coverage and get closer to 100%
   + add decrement tests under "Incr/decr expressions", for example
   + use the following to see how much of the internal/compiler package is covered:
