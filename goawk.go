@@ -59,8 +59,9 @@ Additional GoAWK arguments:
   -b    use byte indexes for index(), length(), match(), and substr()
   -cpuprofile file
         write CPU profile to file
-  -d    debug mode (print parsed AST and disassembly to stderr)
-  -dt   show variable types debug info
+  -d    print parsed syntax tree to stderr (debug mode)
+  -da   print virtual machine assembly instructions to stderr
+  -dt   print variable type information to stderr
   -h    show this usage message
   -version
         show GoAWK version and exit
@@ -76,6 +77,7 @@ func main() {
 	fieldSep := " "
 	cpuprofile := ""
 	debug := false
+	debugAsm := false
 	debugTypes := false
 	memprofile := ""
 	useBytes := false
@@ -121,6 +123,8 @@ func main() {
 			cpuprofile = os.Args[i]
 		case "-d":
 			debug = true
+		case "-da":
+			debugAsm = true
 		case "-dt":
 			debugTypes = true
 		case "-h", "--help":
@@ -213,7 +217,10 @@ func main() {
 
 	if debug {
 		fmt.Fprintln(os.Stderr, prog)
-		err := prog.Disassemble(os.Stderr) // TODO: add new -dd option for this instead?
+	}
+
+	if debugAsm {
+		err := prog.Disassemble(os.Stderr)
 		if err != nil {
 			errorExitf("could not disassemble program: %v", err)
 		}
