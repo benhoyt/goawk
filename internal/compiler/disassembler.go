@@ -302,26 +302,23 @@ func (d *disassembler) disassemble(prefix string) error {
 			offset := d.fetch()
 			d.writeOpf("JumpGreaterOrEqual 0x%04x", d.ip+int(offset))
 
-		case ForInGlobal:
+		case ForIn:
+			varScope := d.fetch()
 			varIndex := d.fetch()
 			arrayScope := ast.VarScope(d.fetch())
 			arrayIndex := int(d.fetch())
 			offset := d.fetch()
-			d.writeOpf("ForInGlobal %s %s 0x%04x", d.program.scalarNames[varIndex], d.arrayName(arrayScope, arrayIndex), d.ip+int(offset))
 
-		case ForInLocal:
-			varIndex := d.fetch()
-			arrayScope := ast.VarScope(d.fetch())
-			arrayIndex := int(d.fetch())
-			offset := d.fetch()
-			d.writeOpf("ForInLocal %s %s 0x%04x", d.localName(int(varIndex)), d.arrayName(arrayScope, arrayIndex), d.ip+int(offset))
-
-		case ForInSpecial:
-			varIndex := d.fetch()
-			arrayScope := ast.VarScope(d.fetch())
-			arrayIndex := int(d.fetch())
-			offset := d.fetch()
-			d.writeOpf("ForInSpecial %s %s 0x%04x", ast.SpecialVarName(int(varIndex)), d.arrayName(arrayScope, arrayIndex), d.ip+int(offset))
+			var varName string
+			switch ast.VarScope(varScope) {
+			case ast.ScopeGlobal:
+				varName = d.program.scalarNames[varIndex]
+			case ast.ScopeLocal:
+				varName = d.localName(int(varIndex))
+			default: // ScopeSpecial
+				varName = ast.SpecialVarName(int(varIndex))
+			}
+			d.writeOpf("ForIn %s %s 0x%04x", varName, d.arrayName(arrayScope, arrayIndex), d.ip+int(offset))
 
 		case CallSplit:
 			arrayScope := ast.VarScope(d.fetch())

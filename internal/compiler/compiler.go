@@ -343,16 +343,7 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		c.patchBreaks()
 
 	case *ast.ForInStmt:
-		var op Opcode
-		switch s.Var.Scope {
-		case ast.ScopeGlobal:
-			op = ForInGlobal
-		case ast.ScopeLocal:
-			op = ForInLocal
-		default: // ScopeSpecial
-			op = ForInSpecial
-		}
-		mark := c.jumpForward(op, opcodeInt(s.Var.Index), Opcode(s.Array.Scope), opcodeInt(s.Array.Index))
+		mark := c.jumpForward(ForIn, opcodeInt(int(s.Var.Scope)), opcodeInt(s.Var.Index), Opcode(s.Array.Scope), opcodeInt(s.Array.Index))
 
 		c.breaks = append(c.breaks, nil) // nil tells BreakStmt it's a for..in loop
 		c.continues = append(c.continues, []int{})

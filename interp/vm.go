@@ -575,62 +575,28 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			// Return special errExit value "caught" by top-level executor
 			return errExit
 
-		case compiler.ForInGlobal:
-			// TODO: can we reduce the copy-pasta here and below?
-			varIndex := code[i]
-			arrayScope := code[i+1]
-			arrayIndex := code[i+2]
-			offset := code[i+3]
-			i += 4
+		case compiler.ForIn:
+			varScope := code[i]
+			varIndex := code[i+1]
+			arrayScope := code[i+2]
+			arrayIndex := code[i+3]
+			offset := code[i+4]
+			i += 5
 			array := p.getArray(ast.VarScope(arrayScope), int(arrayIndex))
 			loopCode := code[i : i+int(offset)]
 			for index := range array {
-				p.globals[varIndex] = str(index)
+				switch ast.VarScope(varScope) {
+				case ast.ScopeGlobal:
+					p.globals[varIndex] = str(index)
+				case ast.ScopeLocal:
+					p.frame[varIndex] = str(index)
+				default: // ScopeSpecial
+					err := p.setSpecial(int(varIndex), str(index))
+					if err != nil {
+						return err
+					}
+				}
 				err := p.execute(compiled, loopCode)
-				if err == errBreak {
-					break
-				}
-				if err != nil {
-					return err
-				}
-			}
-			i += int(offset)
-
-		case compiler.ForInLocal:
-			varIndex := code[i]
-			arrayScope := code[i+1]
-			arrayIndex := code[i+2]
-			offset := code[i+3]
-			i += 4
-			array := p.getArray(ast.VarScope(arrayScope), int(arrayIndex))
-			loopCode := code[i : i+int(offset)]
-			for index := range array {
-				p.frame[varIndex] = str(index)
-				err := p.execute(compiled, loopCode)
-				if err == errBreak {
-					break
-				}
-				if err != nil {
-					return err
-				}
-			}
-			i += int(offset)
-
-		case compiler.ForInSpecial:
-			varIndex := code[i]
-			arrayScope := code[i+1]
-			arrayIndex := code[i+2]
-			offset := code[i+3]
-			i += 4
-			array := p.getArray(ast.VarScope(arrayScope), int(arrayIndex))
-			loopCode := code[i : i+int(offset)]
-			for index := range array {
-				err := p.setSpecial(int(varIndex), str(index))
-				if err != nil {
-					return err
-				}
-				p.frame[varIndex] = str(index)
-				err = p.execute(compiled, loopCode)
 				if err == errBreak {
 					break
 				}

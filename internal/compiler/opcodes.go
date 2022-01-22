@@ -1,6 +1,6 @@
 package compiler
 
-//go:generate go run golang.org/x/tools/cmd/stringer@v0.1.8 -type=Opcode -type=AugOp
+//go:generate go run golang.org/x/tools/cmd/stringer@v0.1.8 -type=Opcode,AugOp
 
 type Opcode int32
 
@@ -95,10 +95,8 @@ const (
 	Next
 	Exit
 
-	// "for (k in a)" combinations
-	ForInGlobal  // varIndex arrayScope arrayIndex offset
-	ForInLocal   // varIndex arrayScope arrayIndex offset
-	ForInSpecial // varIndex arrayScope arrayIndex offset
+	// "for (k in a)" loops
+	ForIn // varScope varIndex arrayScope arrayIndex offset
 	BreakForIn
 
 	// Builtin functions
