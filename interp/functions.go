@@ -261,7 +261,7 @@ func (p *interp) split(s string, scope ast.VarScope, index int, fs string) (int,
 	for i, part := range parts {
 		array[strconv.Itoa(i+1)] = numStr(part)
 	}
-	p.arrays[p.getArrayIndex(scope, index)] = array
+	p.arrays[p.arrayIndex(scope, index)] = array
 	return len(array), nil
 }
 

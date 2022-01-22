@@ -404,7 +404,7 @@ func (p *interp) nextLine() (string, error) {
 				// not present
 				index := strconv.Itoa(p.filenameIndex)
 				argvIndex := p.program.Arrays["ARGV"]
-				argvArray := p.getArray(ast.ScopeGlobal, argvIndex)
+				argvArray := p.array(ast.ScopeGlobal, argvIndex)
 				filename := p.toString(argvArray[index])
 				p.filenameIndex++
 

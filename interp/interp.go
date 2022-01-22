@@ -578,7 +578,7 @@ func (p *interp) setSpecial(index int, v value) error {
 // Determine the index of given array into the p.arrays slice. Global
 // arrays are just at p.arrays[index], local arrays have to be looked
 // up indirectly.
-func (p *interp) getArrayIndex(scope ast.VarScope, index int) int {
+func (p *interp) arrayIndex(scope ast.VarScope, index int) int {
 	if scope == ast.ScopeGlobal {
 		return index
 	} else {
@@ -587,13 +587,18 @@ func (p *interp) getArrayIndex(scope ast.VarScope, index int) int {
 }
 
 // Return array with given scope and index.
-func (p *interp) getArray(scope ast.VarScope, index int) map[string]value {
-	return p.arrays[p.getArrayIndex(scope, index)]
+func (p *interp) array(scope ast.VarScope, index int) map[string]value {
+	return p.arrays[p.arrayIndex(scope, index)]
+}
+
+// Return local array with given index.
+func (p *interp) localArray(index int) map[string]value {
+	return p.arrays[p.localArrays[len(p.localArrays)-1][index]]
 }
 
 // Set a value in given array by key (index)
 func (p *interp) setArrayValue(scope ast.VarScope, arrayIndex int, index string, v value) {
-	array := p.getArray(scope, arrayIndex)
+	array := p.array(scope, arrayIndex)
 	array[index] = v
 }
 

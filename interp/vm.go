@@ -14,6 +14,7 @@ import (
 	"github.com/benhoyt/goawk/lexer"
 )
 
+// Execute a block of virtual machine instructions.
 func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) error {
 	for i := 0; i < len(code); {
 		op := code[i]
@@ -78,27 +79,15 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			i++
 			array := p.arrays[arrayIndex]
 			index := p.toString(p.peekTop())
-			v, ok := array[index]
-			if !ok {
-				// Strangely, per the POSIX spec, "Any other reference to a
-				// nonexistent array element [apart from "in" expressions]
-				// shall automatically create it."
-				array[index] = v
-			}
+			v := arrayGet(array, index)
 			p.replaceTop(v)
 
 		case compiler.ArrayLocal:
 			arrayIndex := code[i]
 			i++
-			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
+			array := p.localArray(int(arrayIndex))
 			index := p.toString(p.peekTop())
-			v, ok := array[index]
-			if !ok {
-				// Strangely, per the POSIX spec, "Any other reference to a
-				// nonexistent array element [apart from "in" expressions]
-				// shall automatically create it."
-				array[index] = v
-			}
+			v := arrayGet(array, index)
 			p.replaceTop(v)
 
 		case compiler.InGlobal:
@@ -112,7 +101,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 		case compiler.InLocal:
 			arrayIndex := code[i]
 			i++
-			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
+			array := p.localArray(int(arrayIndex))
 			index := p.toString(p.peekTop())
 			_, ok := array[index]
 			p.replaceTop(boolean(ok))
@@ -152,7 +141,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 		case compiler.AssignArrayLocal:
 			arrayIndex := code[i]
 			i++
-			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
+			array := p.localArray(int(arrayIndex))
 			v, index := p.popTwo()
 			array[p.toString(index)] = v
 
@@ -160,7 +149,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			arrayScope := code[i]
 			arrayIndex := code[i+1]
 			i += 2
-			array := p.getArray(ast.VarScope(arrayScope), int(arrayIndex))
+			array := p.array(ast.VarScope(arrayScope), int(arrayIndex))
 			index := p.toString(p.pop())
 			delete(array, index)
 
@@ -168,7 +157,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			arrayScope := code[i]
 			arrayIndex := code[i+1]
 			i += 2
-			array := p.getArray(ast.VarScope(arrayScope), int(arrayIndex))
+			array := p.array(ast.VarScope(arrayScope), int(arrayIndex))
 			for k := range array {
 				delete(array, k)
 			}
@@ -220,7 +209,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			amount := code[i]
 			arrayIndex := code[i+1]
 			i += 2
-			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
+			array := p.localArray(int(arrayIndex))
 			index := p.toString(p.pop())
 			array[index] = num(array[index].num() + float64(amount))
 
@@ -291,7 +280,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			operation := compiler.AugOp(code[i])
 			arrayIndex := code[i+1]
 			i += 2
-			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
+			array := p.localArray(int(arrayIndex))
 			right, indexVal := p.popTwo()
 			index := p.toString(indexVal)
 			v, err := p.evalForAugAssign(operation, array[index], right)
@@ -582,7 +571,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			arrayIndex := code[i+3]
 			offset := code[i+4]
 			i += 5
-			array := p.getArray(ast.VarScope(arrayScope), int(arrayIndex))
+			array := p.array(ast.VarScope(arrayScope), int(arrayIndex))
 			loopCode := code[i : i+int(offset)]
 			for index := range array {
 				switch ast.VarScope(varScope) {
@@ -629,7 +618,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 				arrayScope := ast.VarScope(code[i])
 				arrayIndex := int(code[i+1])
 				i += 2
-				arrays = append(arrays, p.getArrayIndex(arrayScope, arrayIndex))
+				arrays = append(arrays, p.arrayIndex(arrayScope, arrayIndex))
 			}
 			oldArraysLen := len(p.arrays)
 			for j := numArrayArgs; j < f.NumArrays; j++ {
@@ -1137,13 +1126,25 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			}
 			index := p.toString(p.peekTop())
 			if ret == 1 {
-				array := p.getArray(ast.VarScope(arrayScope), int(arrayIndex))
+				array := p.array(ast.VarScope(arrayScope), int(arrayIndex))
 				array[index] = numStr(line)
 			}
 			p.replaceTop(num(ret))
 		}
 	}
 	return nil
+}
+
+// Fetch the value at the given index from array. This handles the strange
+// POSIX behavior of creating a null entry for non-existent array elements.
+// Per the POSIX spec, "Any other reference to a nonexistent array element
+// [apart from "in" expressions] shall automatically create it."
+func arrayGet(array map[string]value, index string) value {
+	v, ok := array[index]
+	if !ok {
+		array[index] = v
+	}
+	return v
 }
 
 // Stack operations follow. These should be inlined. Instead of just push and
