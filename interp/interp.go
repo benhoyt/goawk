@@ -453,41 +453,46 @@ func (p *interp) getVar(scope ast.VarScope, index int) value {
 	case ast.ScopeLocal:
 		return p.frame[index]
 	default: // ScopeSpecial
-		switch index {
-		case ast.V_NF:
-			p.ensureFields()
-			return num(float64(p.numFields))
-		case ast.V_NR:
-			return num(float64(p.lineNum))
-		case ast.V_RLENGTH:
-			return num(float64(p.matchLength))
-		case ast.V_RSTART:
-			return num(float64(p.matchStart))
-		case ast.V_FNR:
-			return num(float64(p.fileLineNum))
-		case ast.V_ARGC:
-			return num(float64(p.argc))
-		case ast.V_CONVFMT:
-			return str(p.convertFormat)
-		case ast.V_FILENAME:
-			return p.filename
-		case ast.V_FS:
-			return str(p.fieldSep)
-		case ast.V_OFMT:
-			return str(p.outputFormat)
-		case ast.V_OFS:
-			return str(p.outputFieldSep)
-		case ast.V_ORS:
-			return str(p.outputRecordSep)
-		case ast.V_RS:
-			return str(p.recordSep)
-		case ast.V_RT:
-			return str(p.recordTerminator)
-		case ast.V_SUBSEP:
-			return str(p.subscriptSep)
-		default:
-			panic(fmt.Sprintf("unexpected special variable index: %d", index))
-		}
+		return p.getSpecial(index)
+	}
+}
+
+// Get a special variable by index
+func (p *interp) getSpecial(index int) value {
+	switch index {
+	case ast.V_NF:
+		p.ensureFields()
+		return num(float64(p.numFields))
+	case ast.V_NR:
+		return num(float64(p.lineNum))
+	case ast.V_RLENGTH:
+		return num(float64(p.matchLength))
+	case ast.V_RSTART:
+		return num(float64(p.matchStart))
+	case ast.V_FNR:
+		return num(float64(p.fileLineNum))
+	case ast.V_ARGC:
+		return num(float64(p.argc))
+	case ast.V_CONVFMT:
+		return str(p.convertFormat)
+	case ast.V_FILENAME:
+		return p.filename
+	case ast.V_FS:
+		return str(p.fieldSep)
+	case ast.V_OFMT:
+		return str(p.outputFormat)
+	case ast.V_OFS:
+		return str(p.outputFieldSep)
+	case ast.V_ORS:
+		return str(p.outputRecordSep)
+	case ast.V_RS:
+		return str(p.recordSep)
+	case ast.V_RT:
+		return str(p.recordTerminator)
+	case ast.V_SUBSEP:
+		return str(p.subscriptSep)
+	default:
+		panic(fmt.Sprintf("unexpected special variable index: %d", index))
 	}
 }
 
@@ -495,101 +500,93 @@ func (p *interp) getVar(scope ast.VarScope, index int) value {
 func (p *interp) setVarByName(name, value string) error {
 	index := ast.SpecialVarIndex(name)
 	if index > 0 {
-		return p.setVar(ast.ScopeSpecial, index, numStr(value))
+		return p.setSpecial(index, numStr(value))
 	}
 	index, ok := p.program.Scalars[name]
 	if ok {
-		return p.setVar(ast.ScopeGlobal, index, numStr(value))
+		p.globals[index] = numStr(value)
+		return nil
 	}
 	// Ignore variables that aren't defined in program
 	return nil
 }
 
-// Set a variable by index in given scope to given value
-func (p *interp) setVar(scope ast.VarScope, index int, v value) error {
-	switch scope {
-	case ast.ScopeGlobal:
-		p.globals[index] = v
-		return nil
-	case ast.ScopeLocal:
-		p.frame[index] = v
-		return nil
-	default: // ScopeSpecial
-		switch index {
-		case ast.V_NF:
-			numFields := int(v.num())
-			if numFields < 0 {
-				return newError("NF set to negative value: %d", numFields)
-			}
-			if numFields > maxFieldIndex {
-				return newError("NF set too large: %d", numFields)
-			}
-			p.ensureFields()
-			p.numFields = numFields
-			if p.numFields < len(p.fields) {
-				p.fields = p.fields[:p.numFields]
-				p.fieldsIsTrueStr = p.fieldsIsTrueStr[:p.numFields]
-			}
-			for i := len(p.fields); i < p.numFields; i++ {
-				p.fields = append(p.fields, "")
-				p.fieldsIsTrueStr = append(p.fieldsIsTrueStr, false)
-			}
-			p.line = strings.Join(p.fields, p.outputFieldSep)
-			p.lineIsTrueStr = true
-		case ast.V_NR:
-			p.lineNum = int(v.num())
-		case ast.V_RLENGTH:
-			p.matchLength = int(v.num())
-		case ast.V_RSTART:
-			p.matchStart = int(v.num())
-		case ast.V_FNR:
-			p.fileLineNum = int(v.num())
-		case ast.V_ARGC:
-			p.argc = int(v.num())
-		case ast.V_CONVFMT:
-			p.convertFormat = p.toString(v)
-		case ast.V_FILENAME:
-			p.filename = v
-		case ast.V_FS:
-			p.fieldSep = p.toString(v)
-			if utf8.RuneCountInString(p.fieldSep) > 1 { // compare to interp.ensureFields
-				re, err := regexp.Compile(p.fieldSep)
-				if err != nil {
-					return newError("invalid regex %q: %s", p.fieldSep, err)
-				}
-				p.fieldSepRegex = re
-			}
-		case ast.V_OFMT:
-			p.outputFormat = p.toString(v)
-		case ast.V_OFS:
-			p.outputFieldSep = p.toString(v)
-		case ast.V_ORS:
-			p.outputRecordSep = p.toString(v)
-		case ast.V_RS:
-			p.recordSep = p.toString(v)
-			switch { // compare to interp.newScanner
-			case len(p.recordSep) <= 1:
-				// Simple cases use specialized splitters, not regex
-			case utf8.RuneCountInString(p.recordSep) == 1:
-				// Multi-byte unicode char falls back to regex splitter
-				sep := regexp.QuoteMeta(p.recordSep) // not strictly necessary as no multi-byte chars are regex meta chars
-				p.recordSepRegex = regexp.MustCompile(sep)
-			default:
-				re, err := regexp.Compile(p.recordSep)
-				if err != nil {
-					return newError("invalid regex %q: %s", p.recordSep, err)
-				}
-				p.recordSepRegex = re
-			}
-		case ast.V_RT:
-			p.recordTerminator = p.toString(v)
-		case ast.V_SUBSEP:
-			p.subscriptSep = p.toString(v)
-		default:
-			panic(fmt.Sprintf("unexpected special variable index: %d", index))
+// Set special variable by index to given value
+func (p *interp) setSpecial(index int, v value) error {
+	switch index {
+	case ast.V_NF:
+		numFields := int(v.num())
+		if numFields < 0 {
+			return newError("NF set to negative value: %d", numFields)
 		}
-		return nil
+		if numFields > maxFieldIndex {
+			return newError("NF set too large: %d", numFields)
+		}
+		p.ensureFields()
+		p.numFields = numFields
+		if p.numFields < len(p.fields) {
+			p.fields = p.fields[:p.numFields]
+			p.fieldsIsTrueStr = p.fieldsIsTrueStr[:p.numFields]
+		}
+		for i := len(p.fields); i < p.numFields; i++ {
+			p.fields = append(p.fields, "")
+			p.fieldsIsTrueStr = append(p.fieldsIsTrueStr, false)
+		}
+		p.line = strings.Join(p.fields, p.outputFieldSep)
+		p.lineIsTrueStr = true
+	case ast.V_NR:
+		p.lineNum = int(v.num())
+	case ast.V_RLENGTH:
+		p.matchLength = int(v.num())
+	case ast.V_RSTART:
+		p.matchStart = int(v.num())
+	case ast.V_FNR:
+		p.fileLineNum = int(v.num())
+	case ast.V_ARGC:
+		p.argc = int(v.num())
+	case ast.V_CONVFMT:
+		p.convertFormat = p.toString(v)
+	case ast.V_FILENAME:
+		p.filename = v
+	case ast.V_FS:
+		p.fieldSep = p.toString(v)
+		if utf8.RuneCountInString(p.fieldSep) > 1 { // compare to interp.ensureFields
+			re, err := regexp.Compile(p.fieldSep)
+			if err != nil {
+				return newError("invalid regex %q: %s", p.fieldSep, err)
+			}
+			p.fieldSepRegex = re
+		}
+	case ast.V_OFMT:
+		p.outputFormat = p.toString(v)
+	case ast.V_OFS:
+		p.outputFieldSep = p.toString(v)
+	case ast.V_ORS:
+		p.outputRecordSep = p.toString(v)
+	case ast.V_RS:
+		p.recordSep = p.toString(v)
+		switch { // compare to interp.newScanner
+		case len(p.recordSep) <= 1:
+			// Simple cases use specialized splitters, not regex
+		case utf8.RuneCountInString(p.recordSep) == 1:
+			// Multi-byte unicode char falls back to regex splitter
+			sep := regexp.QuoteMeta(p.recordSep) // not strictly necessary as no multi-byte chars are regex meta chars
+			p.recordSepRegex = regexp.MustCompile(sep)
+		default:
+			re, err := regexp.Compile(p.recordSep)
+			if err != nil {
+				return newError("invalid regex %q: %s", p.recordSep, err)
+			}
+			p.recordSepRegex = re
+		}
+	case ast.V_RT:
+		p.recordTerminator = p.toString(v)
+	case ast.V_SUBSEP:
+		p.subscriptSep = p.toString(v)
+	default:
+		panic(fmt.Sprintf("unexpected special variable index: %d", index))
 	}
+	return nil
 }
 
 // Determine the index of given array into the p.arrays slice. Global

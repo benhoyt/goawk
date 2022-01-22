@@ -71,7 +71,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 		case compiler.Special:
 			index := code[i]
 			i++
-			p.push(p.getVar(ast.ScopeSpecial, int(index))) // TODO: extract getVar to getSpecial function
+			p.push(p.getSpecial(int(index)))
 
 		case compiler.ArrayGlobal:
 			arrayIndex := code[i]
@@ -137,7 +137,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 		case compiler.AssignSpecial:
 			index := code[i]
 			i++
-			err := p.setVar(ast.ScopeSpecial, int(index), p.pop()) // TODO: extract setVar to setSpecial function
+			err := p.setSpecial(int(index), p.pop())
 			if err != nil {
 				return err
 			}
@@ -202,8 +202,8 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			amount := code[i]
 			index := int(code[i+1])
 			i += 2
-			v := p.getVar(ast.ScopeSpecial, index)
-			err := p.setVar(ast.ScopeSpecial, index, num(v.num()+float64(amount)))
+			v := p.getSpecial(index)
+			err := p.setSpecial(index, num(v.num()+float64(amount)))
 			if err != nil {
 				return err
 			}
@@ -266,11 +266,11 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			operation := lexer.Token(code[i])
 			index := int(code[i+1])
 			i += 2
-			v, err := p.evalBinary(operation, p.getVar(ast.ScopeSpecial, index), p.pop())
+			v, err := p.evalBinary(operation, p.getSpecial(index), p.pop())
 			if err != nil {
 				return err
 			}
-			err = p.setVar(ast.ScopeSpecial, index, v)
+			err = p.setSpecial(index, v)
 			if err != nil {
 				return err
 			}
@@ -625,7 +625,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			array := p.arrays[p.getArrayIndex(ast.VarScope(arrayScope), int(arrayIndex))]
 			loopCode := code[i : i+int(offset)]
 			for index := range array {
-				err := p.setVar(ast.ScopeSpecial, int(varIndex), str(index))
+				err := p.setSpecial(int(varIndex), str(index))
 				if err != nil {
 					return err
 				}
@@ -1154,7 +1154,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 				return err
 			}
 			if ret == 1 {
-				err := p.setVar(ast.ScopeSpecial, int(index), numStr(line))
+				err := p.setSpecial(int(index), numStr(line))
 				if err != nil {
 					return err
 				}
