@@ -1,4 +1,4 @@
-// Evaluate builtin and user-defined function calls
+// Call native Go functions; helpers for some builtin function calls.
 
 package interp
 
