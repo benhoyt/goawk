@@ -114,13 +114,14 @@ type interp struct {
 	matchStart       int
 
 	// Misc pieces of state
-	program     *parser.Program
-	random      *rand.Rand
-	randSeed    float64
-	exitStatus  int
-	regexCache  map[string]*regexp.Regexp
-	formatCache map[string]cachedFormat
-	bytes       bool
+	program      *parser.Program
+	compiledProg *compiler.Program
+	random       *rand.Rand
+	randSeed     float64
+	exitStatus   int
+	regexCache   map[string]*regexp.Regexp
+	formatCache  map[string]cachedFormat
+	bytes        bool
 
 	// Virtual machine stack
 	vmStack []value // TODO: rename to "stack" and "sp"
@@ -224,7 +225,7 @@ func execInit(program *parser.Program, config *Config) (*interp, error) {
 		return nil, newError("length of config.Environ must be a multiple of 2, not %d", len(config.Environ))
 	}
 
-	p := &interp{program: program}
+	p := &interp{program: program, compiledProg: program.Compiled}
 
 	// Allocate memory for variables and virtual machine stack
 	p.globals = make([]value, len(program.Scalars))
@@ -331,7 +332,7 @@ func ExecProgram(program *parser.Program, config *Config) (int, error) {
 	defer p.closeAll()
 
 	// Execute the program! BEGIN, then pattern/actions, then END
-	err = p.execute(program.Compiled, program.Compiled.Begin)
+	err = p.execute(program.Compiled.Begin)
 	if err != nil && err != errExit {
 		return 0, err
 	}
@@ -339,12 +340,12 @@ func ExecProgram(program *parser.Program, config *Config) (int, error) {
 		return p.exitStatus, nil
 	}
 	if err != errExit {
-		err = p.execActions(program.Compiled, program.Compiled.Actions)
+		err = p.execActions(program.Compiled.Actions)
 		if err != nil && err != errExit {
 			return 0, err
 		}
 	}
-	err = p.execute(program.Compiled, program.Compiled.End)
+	err = p.execute(program.Compiled.End)
 	if err != nil && err != errExit {
 		return 0, err
 	}
@@ -371,7 +372,7 @@ func Exec(source, fieldSep string, input io.Reader, output io.Writer) error {
 }
 
 // Execute pattern-action blocks (may be multiple)
-func (p *interp) execActions(compiled *compiler.Program, actions []compiler.Action) error {
+func (p *interp) execActions(actions []compiler.Action) error {
 	inRange := make([]bool, len(actions))
 lineLoop:
 	for {
@@ -395,7 +396,7 @@ lineLoop:
 				matched = true
 			case 1:
 				// Single boolean pattern
-				err := p.execute(compiled, action.Pattern[0])
+				err := p.execute(action.Pattern[0])
 				if err != nil {
 					return err
 				}
@@ -403,7 +404,7 @@ lineLoop:
 			case 2:
 				// Range pattern (matches between start and stop lines)
 				if !inRange[i] {
-					err := p.execute(compiled, action.Pattern[0])
+					err := p.execute(action.Pattern[0])
 					if err != nil {
 						return err
 					}
@@ -411,7 +412,7 @@ lineLoop:
 				}
 				matched = inRange[i]
 				if inRange[i] {
-					err := p.execute(compiled, action.Pattern[1])
+					err := p.execute(action.Pattern[1])
 					if err != nil {
 						return err
 					}
@@ -432,7 +433,7 @@ lineLoop:
 			}
 
 			// Execute the body statements
-			err := p.execute(compiled, action.Body)
+			err := p.execute(action.Body)
 			if err == errNext {
 				// "next" statement skips straight to next line
 				continue lineLoop

@@ -2,19 +2,143 @@ package interp
 
 import (
 	"io"
-	"math"
 	"os"
-	"os/exec"
 	"strings"
-	"time"
-	"unicode/utf8"
 
-	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/internal/compiler"
 	"github.com/benhoyt/goawk/lexer"
 )
 
-func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) error {
+func (p *interp) execute(code []compiler.Opcode) error {
+	for i := 0; i < len(code); {
+		op := code[i]
+		i++
+		i += funcs[op](p, code, i)
+	}
+	return nil
+}
+
+type opFunc func(p *interp, code []compiler.Opcode, i int) int
+
+func opNum(p *interp, code []compiler.Opcode, i int) int {
+	index := code[i]
+	p.push(num(p.compiledProg.Nums[index]))
+	return 1
+}
+
+func opGlobal(p *interp, code []compiler.Opcode, i int) int {
+	index := code[i]
+	p.push(p.globals[index])
+	return 1
+}
+
+func opJumpGreaterOrEqual(p *interp, code []compiler.Opcode, i int) int {
+	offset := code[i]
+	l, r := p.popTwo()
+	ln, lIsStr := l.isTrueStr()
+	rn, rIsStr := r.isTrueStr()
+	var b bool
+	if lIsStr || rIsStr {
+		b = p.toString(l) >= p.toString(r)
+	} else {
+		b = ln >= rn
+	}
+	if b {
+		return 1 + int(offset)
+	} else {
+		return 1
+	}
+}
+
+func opAugAssignGlobal(p *interp, code []compiler.Opcode, i int) int {
+	operation := lexer.Token(code[i])
+	index := code[i+1]
+	v, err := p.evalBinary(operation, p.globals[index], p.pop())
+	if err != nil {
+		panic(err)
+	}
+	p.globals[index] = v
+	return 2
+}
+
+func opIncrGlobal(p *interp, code []compiler.Opcode, i int) int {
+	amount := code[i]
+	index := code[i+1]
+	p.globals[index] = num(p.globals[index].num() + float64(amount))
+	return 2
+}
+
+func opJumpLess(p *interp, code []compiler.Opcode, i int) int {
+	offset := code[i]
+	l, r := p.popTwo()
+	ln, lIsStr := l.isTrueStr()
+	rn, rIsStr := r.isTrueStr()
+	var b bool
+	if lIsStr || rIsStr {
+		b = p.toString(l) < p.toString(r)
+	} else {
+		b = ln < rn
+	}
+	if b {
+		return 1 + int(offset)
+	} else {
+		return 1
+	}
+}
+
+func opPrint(p *interp, code []compiler.Opcode, i int) int {
+	numArgs := code[i]
+	redirect := lexer.Token(code[i+1])
+
+	// Print OFS-separated args followed by ORS (usually newline)
+	var line string
+	if numArgs > 0 {
+		args := p.popSlice(int(numArgs))
+		strs := make([]string, len(args))
+		for i, a := range args {
+			strs[i] = a.str(p.outputFormat)
+		}
+		line = strings.Join(strs, p.outputFieldSep)
+	} else {
+		// "print" with no args is equivalent to "print $0"
+		line = p.line
+	}
+
+	output := p.output
+	if redirect != lexer.ILLEGAL {
+		var err error
+		dest := p.pop()
+		output, err = p.getOutputStream(redirect, dest)
+		if err != nil {
+			panic(err)
+		}
+	}
+	err := p.printLine(output, line)
+	if err != nil {
+		panic(err)
+	}
+	return 2
+}
+
+func opAdd(p *interp, code []compiler.Opcode, i int) int {
+	l, r := p.peekPop()
+	p.replaceTop(num(l.num() + r.num()))
+	return 0
+}
+
+var funcs = [compiler.EndOpcode]opFunc{
+	compiler.Num:                opNum,
+	compiler.Global:             opGlobal,
+	compiler.JumpGreaterOrEqual: opJumpGreaterOrEqual,
+	compiler.AugAssignGlobal:    opAugAssignGlobal,
+	compiler.IncrGlobal:         opIncrGlobal,
+	compiler.JumpLess:           opJumpLess,
+	compiler.Print:              opPrint,
+	compiler.Add:                opAdd,
+}
+
+/*
+func (p *interp) executeOld(compiled *compiler.Program, code []compiler.Opcode) error {
 	for i := 0; i < len(code); {
 		op := code[i]
 		i++
@@ -1181,6 +1305,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 	}
 	return nil
 }
+*/
 
 func (p *interp) push(v value) {
 	if p.vmSp >= len(p.vmStack) {
