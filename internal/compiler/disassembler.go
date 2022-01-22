@@ -230,31 +230,31 @@ func (d *disassembler) disassemble(prefix string) error {
 			d.writeOpf("IncrArrayLocal %d %s", amount, d.localArrayName(arrayIndex))
 
 		case AugAssignField:
-			operation := lexer.Token(d.fetch())
+			operation := AugOp(d.fetch())
 			d.writeOpf("AugAssignField %s", operation)
 
 		case AugAssignGlobal:
-			operation := lexer.Token(d.fetch())
+			operation := AugOp(d.fetch())
 			index := d.fetch()
 			d.writeOpf("AugAssignGlobal %s %s", operation, d.program.scalarNames[index])
 
 		case AugAssignLocal:
-			operation := lexer.Token(d.fetch())
+			operation := AugOp(d.fetch())
 			index := int(d.fetch())
 			d.writeOpf("AugAssignLocal %s %s", operation, d.localName(index))
 
 		case AugAssignSpecial:
-			operation := lexer.Token(d.fetch())
+			operation := AugOp(d.fetch())
 			index := d.fetch()
 			d.writeOpf("AugAssignSpecial %s %d", operation, ast.SpecialVarName(int(index)))
 
 		case AugAssignArrayGlobal:
-			operation := lexer.Token(d.fetch())
+			operation := AugOp(d.fetch())
 			arrayIndex := d.fetch()
 			d.writeOpf("AugAssignArrayGlobal %s %s", operation, d.program.arrayNames[arrayIndex])
 
 		case AugAssignArrayLocal:
-			operation := lexer.Token(d.fetch())
+			operation := AugOp(d.fetch())
 			arrayIndex := int(d.fetch())
 			d.writeOpf("AugAssignArrayLocal %s %s", operation, d.localArrayName(arrayIndex))
 

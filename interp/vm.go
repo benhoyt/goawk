@@ -225,7 +225,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			array[index] = num(array[index].num() + float64(amount))
 
 		case compiler.AugAssignField:
-			operation := lexer.Token(code[i])
+			operation := compiler.AugOp(code[i])
 			i++
 			right, indexVal := p.popTwo()
 			index := int(indexVal.num())
@@ -233,7 +233,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			if err != nil {
 				return err
 			}
-			v, err := p.evalBinary(operation, field, right)
+			v, err := p.evalForAugAssign(operation, field, right)
 			if err != nil {
 				return err
 			}
@@ -243,30 +243,30 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			}
 
 		case compiler.AugAssignGlobal:
-			operation := lexer.Token(code[i])
+			operation := compiler.AugOp(code[i])
 			index := code[i+1]
 			i += 2
-			v, err := p.evalBinary(operation, p.globals[index], p.pop())
+			v, err := p.evalForAugAssign(operation, p.globals[index], p.pop())
 			if err != nil {
 				return err
 			}
 			p.globals[index] = v
 
 		case compiler.AugAssignLocal:
-			operation := lexer.Token(code[i])
+			operation := compiler.AugOp(code[i])
 			index := code[i+1]
 			i += 2
-			v, err := p.evalBinary(operation, p.frame[index], p.pop())
+			v, err := p.evalForAugAssign(operation, p.frame[index], p.pop())
 			if err != nil {
 				return err
 			}
 			p.frame[index] = v
 
 		case compiler.AugAssignSpecial:
-			operation := lexer.Token(code[i])
+			operation := compiler.AugOp(code[i])
 			index := int(code[i+1])
 			i += 2
-			v, err := p.evalBinary(operation, p.getSpecial(index), p.pop())
+			v, err := p.evalForAugAssign(operation, p.getSpecial(index), p.pop())
 			if err != nil {
 				return err
 			}
@@ -276,25 +276,25 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			}
 
 		case compiler.AugAssignArrayGlobal:
-			operation := lexer.Token(code[i])
+			operation := compiler.AugOp(code[i])
 			arrayIndex := code[i+1]
 			i += 2
 			array := p.arrays[arrayIndex]
 			index := p.toString(p.pop())
-			v, err := p.evalBinary(operation, array[index], p.pop())
+			v, err := p.evalForAugAssign(operation, array[index], p.pop())
 			if err != nil {
 				return err
 			}
 			array[index] = v
 
 		case compiler.AugAssignArrayLocal:
-			operation := lexer.Token(code[i])
+			operation := compiler.AugOp(code[i])
 			arrayIndex := code[i+1]
 			i += 2
 			array := p.arrays[p.localArrays[len(p.localArrays)-1][arrayIndex]]
 			right, indexVal := p.popTwo()
 			index := p.toString(indexVal)
-			v, err := p.evalBinary(operation, array[index], right)
+			v, err := p.evalForAugAssign(operation, array[index], right)
 			if err != nil {
 				return err
 			}

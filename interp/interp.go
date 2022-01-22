@@ -25,7 +25,6 @@ import (
 
 	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/internal/compiler"
-	. "github.com/benhoyt/goawk/lexer"
 	"github.com/benhoyt/goawk/parser"
 )
 
@@ -681,98 +680,28 @@ func (p *interp) compileRegex(regex string) (*regexp.Regexp, error) {
 	return re, nil
 }
 
-// Evaluate simple binary expression and return result
-// TODO: hmm, only a subset of these cases are needed now, for AugAssign opcodes
-func (p *interp) evalBinary(op Token, l, r value) (value, error) {
-	// Note: cases are ordered (very roughly) in order of frequency
-	// of occurrence for performance reasons. Benchmark on common code
-	// before changing the order.
+// Evaluate binary expression for augmented assignment and return result
+func (p *interp) evalForAugAssign(op compiler.AugOp, l, r value) (value, error) {
 	switch op {
-	case ADD:
+	case compiler.AugOpAdd:
 		return num(l.num() + r.num()), nil
-	case SUB:
+	case compiler.AugOpSub:
 		return num(l.num() - r.num()), nil
-	case EQUALS:
-		ln, lIsStr := l.isTrueStr()
-		rn, rIsStr := r.isTrueStr()
-		if lIsStr || rIsStr {
-			return boolean(p.toString(l) == p.toString(r)), nil
-		} else {
-			return boolean(ln == rn), nil
-		}
-	case LESS:
-		ln, lIsStr := l.isTrueStr()
-		rn, rIsStr := r.isTrueStr()
-		if lIsStr || rIsStr {
-			return boolean(p.toString(l) < p.toString(r)), nil
-		} else {
-			return boolean(ln < rn), nil
-		}
-	case LTE:
-		ln, lIsStr := l.isTrueStr()
-		rn, rIsStr := r.isTrueStr()
-		if lIsStr || rIsStr {
-			return boolean(p.toString(l) <= p.toString(r)), nil
-		} else {
-			return boolean(ln <= rn), nil
-		}
-	case CONCAT:
-		return str(p.toString(l) + p.toString(r)), nil
-	case MUL:
+	case compiler.AugOpMul:
 		return num(l.num() * r.num()), nil
-	case DIV:
+	case compiler.AugOpDiv:
 		rf := r.num()
 		if rf == 0.0 {
 			return null(), newError("division by zero")
 		}
 		return num(l.num() / rf), nil
-	case GREATER:
-		ln, lIsStr := l.isTrueStr()
-		rn, rIsStr := r.isTrueStr()
-		if lIsStr || rIsStr {
-			return boolean(p.toString(l) > p.toString(r)), nil
-		} else {
-			return boolean(ln > rn), nil
-		}
-	case GTE:
-		ln, lIsStr := l.isTrueStr()
-		rn, rIsStr := r.isTrueStr()
-		if lIsStr || rIsStr {
-			return boolean(p.toString(l) >= p.toString(r)), nil
-		} else {
-			return boolean(ln >= rn), nil
-		}
-	case NOT_EQUALS:
-		ln, lIsStr := l.isTrueStr()
-		rn, rIsStr := r.isTrueStr()
-		if lIsStr || rIsStr {
-			return boolean(p.toString(l) != p.toString(r)), nil
-		} else {
-			return boolean(ln != rn), nil
-		}
-	case MATCH:
-		re, err := p.compileRegex(p.toString(r))
-		if err != nil {
-			return null(), err
-		}
-		matched := re.MatchString(p.toString(l))
-		return boolean(matched), nil
-	case NOT_MATCH:
-		re, err := p.compileRegex(p.toString(r))
-		if err != nil {
-			return null(), err
-		}
-		matched := re.MatchString(p.toString(l))
-		return boolean(!matched), nil
-	case POW:
+	case compiler.AugOpPow:
 		return num(math.Pow(l.num(), r.num())), nil
-	case MOD:
+	default: // AugOpMod
 		rf := r.num()
 		if rf == 0.0 {
 			return null(), newError("division by zero in mod")
 		}
 		return num(math.Mod(l.num(), rf)), nil
-	default:
-		panic(fmt.Sprintf("unexpected binary operation: %s", op))
 	}
 }

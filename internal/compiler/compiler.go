@@ -231,26 +231,43 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 
 		case *ast.AugAssignExpr:
 			c.expr(expr.Right)
+
+			var augOp AugOp
+			switch expr.Op {
+			case lexer.ADD:
+				augOp = AugOpAdd
+			case lexer.SUB:
+				augOp = AugOpSub
+			case lexer.MUL:
+				augOp = AugOpMul
+			case lexer.DIV:
+				augOp = AugOpDiv
+			case lexer.POW:
+				augOp = AugOpPow
+			default: // MOD
+				augOp = AugOpMod
+			}
+
 			switch target := expr.Left.(type) {
 			case *ast.VarExpr:
 				switch target.Scope {
 				case ast.ScopeGlobal:
-					c.add(AugAssignGlobal, Opcode(expr.Op), opcodeInt(target.Index))
+					c.add(AugAssignGlobal, Opcode(augOp), opcodeInt(target.Index))
 				case ast.ScopeLocal:
-					c.add(AugAssignLocal, Opcode(expr.Op), opcodeInt(target.Index))
+					c.add(AugAssignLocal, Opcode(augOp), opcodeInt(target.Index))
 				default: // ScopeSpecial
-					c.add(AugAssignSpecial, Opcode(expr.Op), opcodeInt(target.Index))
+					c.add(AugAssignSpecial, Opcode(augOp), opcodeInt(target.Index))
 				}
 			case *ast.FieldExpr:
 				c.expr(target.Index)
-				c.add(AugAssignField, Opcode(expr.Op))
+				c.add(AugAssignField, Opcode(augOp))
 			case *ast.IndexExpr:
 				c.index(target.Index)
 				switch target.Array.Scope {
 				case ast.ScopeGlobal:
-					c.add(AugAssignArrayGlobal, Opcode(expr.Op), opcodeInt(target.Array.Index))
+					c.add(AugAssignArrayGlobal, Opcode(augOp), opcodeInt(target.Array.Index))
 				default: // ScopeLocal
-					c.add(AugAssignArrayLocal, Opcode(expr.Op), opcodeInt(target.Array.Index))
+					c.add(AugAssignArrayLocal, Opcode(augOp), opcodeInt(target.Array.Index))
 				}
 			}
 			return

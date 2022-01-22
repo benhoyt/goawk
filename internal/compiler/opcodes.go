@@ -1,6 +1,7 @@
 package compiler
 
-//go:generate go run golang.org/x/tools/cmd/stringer@v0.1.8 -type=Opcode
+//go:generate go run golang.org/x/tools/cmd/stringer@v0.1.8 -type=Opcode -type=AugOp
+
 type Opcode int32
 
 const (
@@ -147,4 +148,15 @@ const (
 	GetlineArray   // redirect arrayScope arrayIndex
 
 	EndOpcode
+)
+
+type AugOp int32
+
+const (
+	AugOpAdd AugOp = iota
+	AugOpSub
+	AugOpMul
+	AugOpDiv
+	AugOpPow
+	AugOpMod
 )
