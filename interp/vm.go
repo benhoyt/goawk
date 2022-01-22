@@ -15,7 +15,7 @@ import (
 )
 
 // Execute a block of virtual machine instructions.
-func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) error {
+func (p *interp) execute(code []compiler.Opcode) error {
 	for i := 0; i < len(code); {
 		op := code[i]
 		i++
@@ -24,12 +24,12 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 		case compiler.Num:
 			index := code[i]
 			i++
-			p.push(num(compiled.Nums[index]))
+			p.push(num(p.nums[index]))
 
 		case compiler.Str:
 			index := code[i]
 			i++
-			p.push(str(compiled.Strs[index]))
+			p.push(str(p.strs[index]))
 
 		case compiler.Dupe:
 			v := p.peekTop()
@@ -293,7 +293,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 			// Stand-alone /regex/ is equivalent to: $0 ~ /regex/
 			index := code[i]
 			i++
-			re := compiled.Regexes[index]
+			re := p.regexes[index]
 			p.push(boolean(re.MatchString(p.line)))
 
 		case compiler.MultiIndex:
@@ -577,7 +577,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 						return err
 					}
 				}
-				err := p.execute(compiled, loopCode)
+				err := p.execute(loopCode)
 				if err == errBreak {
 					break
 				}
@@ -621,7 +621,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 
 			// Execute the function!
 			p.callDepth++
-			err := p.execute(compiled, f.Body)
+			err := p.execute(f.Body)
 			p.callDepth--
 
 			// Pop the locals off the stack
