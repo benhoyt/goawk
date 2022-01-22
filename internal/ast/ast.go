@@ -184,7 +184,11 @@ type NumExpr struct {
 }
 
 func (e *NumExpr) String() string {
-	return fmt.Sprintf("%.6g", e.Value)
+	if e.Value == float64(int(e.Value)) {
+		return strconv.Itoa(int(e.Value))
+	} else {
+		return fmt.Sprintf("%.6g", e.Value)
+	}
 }
 
 // StrExpr is a literal string like "foo".
