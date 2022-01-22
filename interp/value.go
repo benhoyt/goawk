@@ -120,6 +120,7 @@ func (v value) str(floatFormat string) string {
 		case v.n == float64(int(v.n)):
 			return strconv.Itoa(int(v.n))
 		default:
+			// TODO: can this use strconv.FormatFloat?
 			return fmt.Sprintf(floatFormat, v.n)
 		}
 	}
