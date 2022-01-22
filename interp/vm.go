@@ -713,9 +713,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 		case compiler.Nulls:
 			numNulls := int(code[i])
 			i++
-			for n := 0; n < numNulls; n++ {
-				p.push(null()) // TODO: optimize?
-			}
+			p.pushNulls(numNulls)
 
 		case compiler.CallAtan2:
 			y, x := p.peekPop()
@@ -1183,11 +1181,25 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 }
 
 func (p *interp) push(v value) {
-	if p.vmSp >= len(p.vmStack) {
+	sp := p.vmSp
+	if sp >= len(p.vmStack) {
 		p.vmStack = append(p.vmStack, null())
 	}
-	p.vmStack[p.vmSp] = v
-	p.vmSp++
+	p.vmStack[sp] = v
+	sp++
+	p.vmSp = sp
+}
+
+func (p *interp) pushNulls(num int) {
+	sp := p.vmSp
+	for p.vmSp+num-1 >= len(p.vmStack) {
+		p.vmStack = append(p.vmStack, null())
+	}
+	for i := 0; i < num; i++ {
+		p.vmStack[sp] = null()
+		sp++
+	}
+	p.vmSp = sp
 }
 
 func (p *interp) pop() value {
