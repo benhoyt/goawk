@@ -438,24 +438,23 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 
 		case compiler.JumpFalse:
 			offset := code[i]
+			i++
 			v := p.pop()
 			if !v.boolean() {
-				i += 1 + int(offset)
-			} else {
-				i++
+				i += int(offset)
 			}
 
 		case compiler.JumpTrue:
 			offset := code[i]
+			i++
 			v := p.pop()
 			if v.boolean() {
-				i += 1 + int(offset)
-			} else {
-				i++
+				i += int(offset)
 			}
 
 		case compiler.JumpEquals:
 			offset := code[i]
+			i++
 			l, r := p.popTwo()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
@@ -466,13 +465,12 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 				b = ln == rn
 			}
 			if b {
-				i += 1 + int(offset)
-			} else {
-				i++
+				i += int(offset)
 			}
 
 		case compiler.JumpNotEquals:
 			offset := code[i]
+			i++
 			l, r := p.popTwo()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
@@ -483,13 +481,12 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 				b = ln != rn
 			}
 			if b {
-				i += 1 + int(offset)
-			} else {
-				i++
+				i += int(offset)
 			}
 
 		case compiler.JumpLess:
 			offset := code[i]
+			i++
 			l, r := p.popTwo()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
@@ -500,13 +497,12 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 				b = ln < rn
 			}
 			if b {
-				i += 1 + int(offset)
-			} else {
-				i++
+				i += int(offset)
 			}
 
 		case compiler.JumpGreater:
 			offset := code[i]
+			i++
 			l, r := p.popTwo()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
@@ -517,13 +513,12 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 				b = ln > rn
 			}
 			if b {
-				i += 1 + int(offset)
-			} else {
-				i++
+				i += int(offset)
 			}
 
 		case compiler.JumpLessOrEqual:
 			offset := code[i]
+			i++
 			l, r := p.popTwo()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
@@ -534,13 +529,12 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 				b = ln <= rn
 			}
 			if b {
-				i += 1 + int(offset)
-			} else {
-				i++
+				i += int(offset)
 			}
 
 		case compiler.JumpGreaterOrEqual:
 			offset := code[i]
+			i++
 			l, r := p.popTwo()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
@@ -551,9 +545,7 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 				b = ln >= rn
 			}
 			if b {
-				i += 1 + int(offset)
-			} else {
-				i++
+				i += int(offset)
 			}
 
 		case compiler.Next:
