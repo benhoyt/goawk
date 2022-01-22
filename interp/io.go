@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
@@ -110,6 +111,15 @@ func (p *interp) getOutputStream(redirect Token, destValue value) (io.Writer, er
 		// Should never happen
 		panic(fmt.Sprintf("unexpected redirect type %s", redirect))
 	}
+}
+
+// Executes code using configured system shell
+func (p *interp) execShell(code string) *exec.Cmd {
+	executable := p.shellCommand[0]
+	args := p.shellCommand[1:]
+	args = append(args, code)
+	cmd := exec.Command(executable, args...)
+	return cmd
 }
 
 // Get input Scanner to use for "getline" based on file name

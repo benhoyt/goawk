@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"os/exec"
 	"reflect"
 	"sort"
 	"strconv"
@@ -16,16 +15,6 @@ import (
 	"github.com/benhoyt/goawk/internal/ast"
 	. "github.com/benhoyt/goawk/lexer"
 )
-
-// Executes code using configured system shell
-// TODO: move to io.go?
-func (p *interp) execShell(code string) *exec.Cmd {
-	executable := p.shellCommand[0]
-	args := p.shellCommand[1:]
-	args = append(args, code)
-	cmd := exec.Command(executable, args...)
-	return cmd
-}
 
 // Call native-defined function with given name and arguments, return
 // its return value (or null value if it doesn't return anything).

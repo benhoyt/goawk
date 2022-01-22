@@ -1180,6 +1180,10 @@ func (p *interp) execute(compiled *compiler.Program, code []compiler.Opcode) err
 	return nil
 }
 
+// Stack operations follow. These should be inlined. Instead of just push and
+// pop, for efficiency we have custom operations for when we're replacing the
+// top of stack without changing the stack pointer. Primarily this avoids the
+// check for append in push.
 func (p *interp) push(v value) {
 	sp := p.vmSp
 	if sp >= len(p.vmStack) {
@@ -1248,6 +1252,9 @@ func (p *interp) peekSlice(n int) []value {
 	return p.vmStack[p.vmSp-n:]
 }
 
+// Helper for getline operations. This performs the (possibly redirected) read
+// of a line, and returns the result. If the result is 1 (success in AWK), the
+// caller will set the target to the returned string.
 func (p *interp) getline(redirect lexer.Token) (float64, string, error) {
 	switch redirect {
 	case lexer.PIPE: // redirect from command
