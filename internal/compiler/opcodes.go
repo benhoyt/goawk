@@ -1,6 +1,6 @@
 package compiler
 
-//go:generate go run golang.org/x/tools/cmd/stringer@v0.1.8 -type=Opcode,AugOp
+//go:generate go run golang.org/x/tools/cmd/stringer@v0.1.8 -type=Opcode,AugOp,BuiltinOp
 
 // Opcode represents a single virtual machine instruction (or argument). The
 // comments beside each opcode show any arguments that instruction consumes.
@@ -52,12 +52,12 @@ const (
 	IncrArrayLocal  // amount arrayIndex
 
 	// Augmented assignment (also used for pre-increment and pre-decrement)
-	AugAssignField       // operation
-	AugAssignGlobal      // operation index
-	AugAssignLocal       // operation index
-	AugAssignSpecial     // operation index
-	AugAssignArrayGlobal // operation arrayIndex
-	AugAssignArrayLocal  // operation arrayIndex
+	AugAssignField       // augOp
+	AugAssignGlobal      // augOp index
+	AugAssignLocal       // augOp index
+	AugAssignSpecial     // augOp index
+	AugAssignArrayGlobal // augOp arrayIndex
+	AugAssignArrayLocal  // augOp arrayIndex
 
 	// Stand-alone regex expression /foo/
 	Regex // regexIndex
@@ -104,33 +104,10 @@ const (
 	BreakForIn
 
 	// Builtin functions
-	CallAtan2
-	CallClose
-	CallCos
-	CallExp
-	CallFflush
-	CallFflushAll
-	CallGsub
-	CallIndex
-	CallInt
-	CallLength
-	CallLengthArg
-	CallLog
-	CallMatch
-	CallRand
-	CallSin
+	CallBuiltin  // builtinOp
 	CallSplit    // arrayScope arrayIndex
 	CallSplitSep // arrayScope arrayIndex
 	CallSprintf  // numArgs
-	CallSqrt
-	CallSrand
-	CallSrandSeed
-	CallSub
-	CallSubstr
-	CallSubstrLength
-	CallSystem
-	CallTolower
-	CallToupper
 
 	// User and native functions
 	CallUser   // funcIndex numArrayArgs [arrayScope1 arrayIndex1 ...]
@@ -162,4 +139,34 @@ const (
 	AugOpDiv
 	AugOpPow
 	AugOpMod
+)
+
+// BuiltinOp represents a builtin function call.
+type BuiltinOp int32
+
+const (
+	BuiltinAtan2 BuiltinOp = iota
+	BuiltinClose
+	BuiltinCos
+	BuiltinExp
+	BuiltinFflush
+	BuiltinFflushAll
+	BuiltinGsub
+	BuiltinIndex
+	BuiltinInt
+	BuiltinLength
+	BuiltinLengthArg
+	BuiltinLog
+	BuiltinMatch
+	BuiltinRand
+	BuiltinSin
+	BuiltinSqrt
+	BuiltinSrand
+	BuiltinSrandSeed
+	BuiltinSub
+	BuiltinSubstr
+	BuiltinSubstrLength
+	BuiltinSystem
+	BuiltinTolower
+	BuiltinToupper
 )

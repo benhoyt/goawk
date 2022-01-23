@@ -716,9 +716,9 @@ func (c *compiler) expr(expr ast.Expr) {
 			}
 			return
 		case lexer.F_SUB, lexer.F_GSUB:
-			op := CallSub
+			op := BuiltinSub
 			if e.Func == lexer.F_GSUB {
-				op = CallGsub
+				op = BuiltinGsub
 			}
 			var target ast.Expr = &ast.FieldExpr{&ast.NumExpr{0}} // default value and target is $0
 			if len(e.Args) == 3 {
@@ -727,7 +727,7 @@ func (c *compiler) expr(expr ast.Expr) {
 			c.expr(e.Args[0])
 			c.expr(e.Args[1])
 			c.expr(target)
-			c.add(op)
+			c.add(CallBuiltin, Opcode(op))
 			c.assign(target)
 			return
 		}
@@ -737,59 +737,59 @@ func (c *compiler) expr(expr ast.Expr) {
 		}
 		switch e.Func {
 		case lexer.F_ATAN2:
-			c.add(CallAtan2)
+			c.add(CallBuiltin, Opcode(BuiltinAtan2))
 		case lexer.F_CLOSE:
-			c.add(CallClose)
+			c.add(CallBuiltin, Opcode(BuiltinClose))
 		case lexer.F_COS:
-			c.add(CallCos)
+			c.add(CallBuiltin, Opcode(BuiltinCos))
 		case lexer.F_EXP:
-			c.add(CallExp)
+			c.add(CallBuiltin, Opcode(BuiltinExp))
 		case lexer.F_FFLUSH:
 			if len(e.Args) > 0 {
-				c.add(CallFflush)
+				c.add(CallBuiltin, Opcode(BuiltinFflush))
 			} else {
-				c.add(CallFflushAll)
+				c.add(CallBuiltin, Opcode(BuiltinFflushAll))
 			}
 		case lexer.F_INDEX:
-			c.add(CallIndex)
+			c.add(CallBuiltin, Opcode(BuiltinIndex))
 		case lexer.F_INT:
-			c.add(CallInt)
+			c.add(CallBuiltin, Opcode(BuiltinInt))
 		case lexer.F_LENGTH:
 			if len(e.Args) > 0 {
-				c.add(CallLengthArg)
+				c.add(CallBuiltin, Opcode(BuiltinLengthArg))
 			} else {
-				c.add(CallLength)
+				c.add(CallBuiltin, Opcode(BuiltinLength))
 			}
 		case lexer.F_LOG:
-			c.add(CallLog)
+			c.add(CallBuiltin, Opcode(BuiltinLog))
 		case lexer.F_MATCH:
-			c.add(CallMatch)
+			c.add(CallBuiltin, Opcode(BuiltinMatch))
 		case lexer.F_RAND:
-			c.add(CallRand)
+			c.add(CallBuiltin, Opcode(BuiltinRand))
 		case lexer.F_SIN:
-			c.add(CallSin)
+			c.add(CallBuiltin, Opcode(BuiltinSin))
 		case lexer.F_SPRINTF:
 			c.add(CallSprintf, opcodeInt(len(e.Args)))
 		case lexer.F_SQRT:
-			c.add(CallSqrt)
+			c.add(CallBuiltin, Opcode(BuiltinSqrt))
 		case lexer.F_SRAND:
 			if len(e.Args) > 0 {
-				c.add(CallSrandSeed)
+				c.add(CallBuiltin, Opcode(BuiltinSrandSeed))
 			} else {
-				c.add(CallSrand)
+				c.add(CallBuiltin, Opcode(BuiltinSrand))
 			}
 		case lexer.F_SUBSTR:
 			if len(e.Args) > 2 {
-				c.add(CallSubstrLength)
+				c.add(CallBuiltin, Opcode(BuiltinSubstrLength))
 			} else {
-				c.add(CallSubstr)
+				c.add(CallBuiltin, Opcode(BuiltinSubstr))
 			}
 		case lexer.F_SYSTEM:
-			c.add(CallSystem)
+			c.add(CallBuiltin, Opcode(BuiltinSystem))
 		case lexer.F_TOLOWER:
-			c.add(CallTolower)
+			c.add(CallBuiltin, Opcode(BuiltinTolower))
 		case lexer.F_TOUPPER:
-			c.add(CallToupper)
+			c.add(CallBuiltin, Opcode(BuiltinToupper))
 		default:
 			panic(fmt.Sprintf("unexpected function: %s", e.Func))
 		}

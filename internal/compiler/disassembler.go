@@ -315,6 +315,10 @@ func (d *disassembler) disassemble(prefix string) error {
 			offset := d.fetch()
 			d.writeOpf("ForIn %s %s 0x%04x", d.varName(varScope, varIndex), d.arrayName(arrayScope, arrayIndex), d.ip+int(offset))
 
+		case CallBuiltin:
+			builtinOp := BuiltinOp(d.fetch())
+			d.writeOpf("CallBuiltin %s", builtinOp)
+
 		case CallSplit:
 			arrayScope := ast.VarScope(d.fetch())
 			arrayIndex := int(d.fetch())

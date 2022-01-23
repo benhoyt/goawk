@@ -590,6 +590,46 @@ func (p *interp) execute(code []compiler.Opcode) error {
 		case compiler.BreakForIn:
 			return errBreak
 
+		case compiler.CallBuiltin:
+			builtinOp := compiler.BuiltinOp(code[i])
+			i++
+			err := p.callBuiltin(builtinOp)
+			if err != nil {
+				return err
+			}
+
+		case compiler.CallSplit:
+			arrayScope := code[i]
+			arrayIndex := code[i+1]
+			i += 2
+			s := p.toString(p.peekTop())
+			n, err := p.split(s, ast.VarScope(arrayScope), int(arrayIndex), p.fieldSep)
+			if err != nil {
+				return err
+			}
+			p.replaceTop(num(float64(n)))
+
+		case compiler.CallSplitSep:
+			arrayScope := code[i]
+			arrayIndex := code[i+1]
+			i += 2
+			s, fieldSep := p.peekPop()
+			n, err := p.split(p.toString(s), ast.VarScope(arrayScope), int(arrayIndex), p.toString(fieldSep))
+			if err != nil {
+				return err
+			}
+			p.replaceTop(num(float64(n)))
+
+		case compiler.CallSprintf:
+			numArgs := code[i]
+			i++
+			args := p.popSlice(int(numArgs))
+			s, err := p.sprintf(p.toString(args[0]), args[1:])
+			if err != nil {
+				return err
+			}
+			p.push(str(s))
+
 		case compiler.CallUser:
 			funcIndex := code[i]
 			numArrayArgs := int(code[i+1])
@@ -661,319 +701,6 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			numNulls := int(code[i])
 			i++
 			p.pushNulls(numNulls)
-
-		case compiler.CallAtan2:
-			y, x := p.peekPop()
-			p.replaceTop(num(math.Atan2(y.num(), x.num())))
-
-		case compiler.CallClose:
-			name := p.toString(p.peekTop())
-			var c io.Closer = p.inputStreams[name]
-			if c != nil {
-				// Close input stream
-				delete(p.inputStreams, name)
-				err := c.Close()
-				if err != nil {
-					p.replaceTop(num(-1))
-				} else {
-					p.replaceTop(num(0))
-				}
-			} else {
-				c = p.outputStreams[name]
-				if c != nil {
-					// Close output stream
-					delete(p.outputStreams, name)
-					err := c.Close()
-					if err != nil {
-						p.replaceTop(num(-1))
-					} else {
-						p.replaceTop(num(0))
-					}
-				} else {
-					// Nothing to close
-					p.replaceTop(num(-1))
-				}
-			}
-
-		case compiler.CallCos:
-			p.replaceTop(num(math.Cos(p.peekTop().num())))
-
-		case compiler.CallExp:
-			p.replaceTop(num(math.Exp(p.peekTop().num())))
-
-		case compiler.CallFflush:
-			name := p.toString(p.peekTop())
-			var ok bool
-			if name != "" {
-				// Flush a single, named output stream
-				ok = p.flushStream(name)
-			} else {
-				// fflush() or fflush("") flushes all output streams
-				ok = p.flushAll()
-			}
-			if !ok {
-				p.replaceTop(num(-1))
-			} else {
-				p.replaceTop(num(0))
-			}
-
-		case compiler.CallFflushAll:
-			ok := p.flushAll()
-			if !ok {
-				p.push(num(-1))
-			} else {
-				p.push(num(0))
-			}
-
-		case compiler.CallGsub:
-			regex, repl, in := p.peekPeekPop()
-			out, n, err := p.sub(p.toString(regex), p.toString(repl), p.toString(in), true)
-			if err != nil {
-				return err
-			}
-			p.replaceTwo(num(float64(n)), str(out))
-
-		case compiler.CallIndex:
-			sValue, substr := p.peekPop()
-			s := p.toString(sValue)
-			index := strings.Index(s, p.toString(substr))
-			if p.bytes {
-				p.replaceTop(num(float64(index + 1)))
-			} else {
-				if index < 0 {
-					p.replaceTop(num(float64(0)))
-				} else {
-					index = utf8.RuneCountInString(s[:index])
-					p.replaceTop(num(float64(index + 1)))
-				}
-			}
-
-		case compiler.CallInt:
-			p.replaceTop(num(float64(int(p.peekTop().num()))))
-
-		case compiler.CallLength:
-			s := p.line
-			var n int
-			if p.bytes {
-				n = len(s)
-			} else {
-				n = utf8.RuneCountInString(s)
-			}
-			p.push(num(float64(n)))
-
-		case compiler.CallLengthArg:
-			s := p.toString(p.peekTop())
-			var n int
-			if p.bytes {
-				n = len(s)
-			} else {
-				n = utf8.RuneCountInString(s)
-			}
-			p.replaceTop(num(float64(n)))
-
-		case compiler.CallLog:
-			p.replaceTop(num(math.Log(p.peekTop().num())))
-
-		case compiler.CallMatch:
-			sValue, regex := p.peekPop()
-			s := p.toString(sValue)
-			re, err := p.compileRegex(p.toString(regex))
-			if err != nil {
-				return err
-			}
-			loc := re.FindStringIndex(s)
-			if loc == nil {
-				p.matchStart = 0
-				p.matchLength = -1
-				p.replaceTop(num(0))
-			} else {
-				if p.bytes {
-					p.matchStart = loc[0] + 1
-					p.matchLength = loc[1] - loc[0]
-				} else {
-					p.matchStart = utf8.RuneCountInString(s[:loc[0]]) + 1
-					p.matchLength = utf8.RuneCountInString(s[loc[0]:loc[1]])
-				}
-				p.replaceTop(num(float64(p.matchStart)))
-			}
-
-		case compiler.CallRand:
-			p.push(num(p.random.Float64()))
-
-		case compiler.CallSin:
-			p.replaceTop(num(math.Sin(p.peekTop().num())))
-
-		case compiler.CallSplit:
-			arrayScope := code[i]
-			arrayIndex := code[i+1]
-			i += 2
-			s := p.toString(p.peekTop())
-			n, err := p.split(s, ast.VarScope(arrayScope), int(arrayIndex), p.fieldSep)
-			if err != nil {
-				return err
-			}
-			p.replaceTop(num(float64(n)))
-
-		case compiler.CallSplitSep:
-			arrayScope := code[i]
-			arrayIndex := code[i+1]
-			i += 2
-			s, fieldSep := p.peekPop()
-			n, err := p.split(p.toString(s), ast.VarScope(arrayScope), int(arrayIndex), p.toString(fieldSep))
-			if err != nil {
-				return err
-			}
-			p.replaceTop(num(float64(n)))
-
-		case compiler.CallSprintf:
-			numArgs := code[i]
-			i++
-			args := p.popSlice(int(numArgs))
-			s, err := p.sprintf(p.toString(args[0]), args[1:])
-			if err != nil {
-				return err
-			}
-			p.push(str(s))
-
-		case compiler.CallSqrt:
-			p.replaceTop(num(math.Sqrt(p.peekTop().num())))
-
-		case compiler.CallSrand:
-			prevSeed := p.randSeed
-			p.random.Seed(time.Now().UnixNano())
-			p.push(num(prevSeed))
-
-		case compiler.CallSrandSeed:
-			prevSeed := p.randSeed
-			p.randSeed = p.peekTop().num()
-			p.random.Seed(int64(math.Float64bits(p.randSeed)))
-			p.replaceTop(num(prevSeed))
-
-		case compiler.CallSub:
-			regex, repl, in := p.peekPeekPop()
-			out, n, err := p.sub(p.toString(regex), p.toString(repl), p.toString(in), false)
-			if err != nil {
-				return err
-			}
-			p.replaceTwo(num(float64(n)), str(out))
-
-		case compiler.CallSubstr:
-			sValue, posValue := p.peekPop()
-			pos := int(posValue.num())
-			s := p.toString(sValue)
-			if p.bytes {
-				if pos > len(s) {
-					pos = len(s) + 1
-				}
-				if pos < 1 {
-					pos = 1
-				}
-				length := len(s) - pos + 1
-				p.replaceTop(str(s[pos-1 : pos-1+length]))
-			} else {
-				// Count characters till we get to pos.
-				chars := 1
-				start := 0
-				for start = range s {
-					chars++
-					if chars > pos {
-						break
-					}
-				}
-				if pos >= chars {
-					start = len(s)
-				}
-
-				// Count characters from start till we reach length.
-				end := len(s)
-				p.replaceTop(str(s[start:end]))
-			}
-
-		case compiler.CallSubstrLength:
-			posValue, lengthValue := p.popTwo()
-			length := int(lengthValue.num())
-			pos := int(posValue.num())
-			s := p.toString(p.peekTop())
-			if p.bytes {
-				if pos > len(s) {
-					pos = len(s) + 1
-				}
-				if pos < 1 {
-					pos = 1
-				}
-				maxLength := len(s) - pos + 1
-				if length < 0 {
-					length = 0
-				}
-				if length > maxLength {
-					length = maxLength
-				}
-				p.replaceTop(str(s[pos-1 : pos-1+length]))
-			} else {
-				// Count characters till we get to pos.
-				chars := 1
-				start := 0
-				for start = range s {
-					chars++
-					if chars > pos {
-						break
-					}
-				}
-				if pos >= chars {
-					start = len(s)
-				}
-
-				// Count characters from start till we reach length.
-				var end int
-				chars = 0
-				for end = range s[start:] {
-					chars++
-					if chars > length {
-						break
-					}
-				}
-				if length >= chars {
-					end = len(s)
-				} else {
-					end += start
-				}
-				p.replaceTop(str(s[start:end]))
-			}
-
-		case compiler.CallSystem:
-			if p.noExec {
-				return newError("can't call system() due to NoExec")
-			}
-			cmdline := p.toString(p.peekTop())
-			cmd := p.execShell(cmdline)
-			cmd.Stdout = p.output
-			cmd.Stderr = p.errorOutput
-			_ = p.flushAll() // ensure synchronization
-			err := cmd.Start()
-			var ret float64
-			if err != nil {
-				p.printErrorf("%s\n", err)
-				ret = -1
-			} else {
-				err = cmd.Wait()
-				if err != nil {
-					if exitErr, ok := err.(*exec.ExitError); ok {
-						ret = float64(exitErr.ProcessState.ExitCode())
-					} else {
-						p.printErrorf("unexpected error running command %q: %v\n", cmdline, err)
-						ret = -1
-					}
-				} else {
-					ret = 0
-				}
-			}
-			p.replaceTop(num(ret))
-
-		case compiler.CallTolower:
-			p.replaceTop(str(strings.ToLower(p.toString(p.peekTop()))))
-
-		case compiler.CallToupper:
-			p.replaceTop(str(strings.ToUpper(p.toString(p.peekTop()))))
 
 		case compiler.Print:
 			numArgs := code[i]
@@ -1124,6 +851,293 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			p.replaceTop(num(ret))
 		}
 	}
+	return nil
+}
+
+func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
+	switch builtinOp {
+	case compiler.BuiltinAtan2:
+		y, x := p.peekPop()
+		p.replaceTop(num(math.Atan2(y.num(), x.num())))
+
+	case compiler.BuiltinClose:
+		name := p.toString(p.peekTop())
+		var c io.Closer = p.inputStreams[name]
+		if c != nil {
+			// Close input stream
+			delete(p.inputStreams, name)
+			err := c.Close()
+			if err != nil {
+				p.replaceTop(num(-1))
+			} else {
+				p.replaceTop(num(0))
+			}
+		} else {
+			c = p.outputStreams[name]
+			if c != nil {
+				// Close output stream
+				delete(p.outputStreams, name)
+				err := c.Close()
+				if err != nil {
+					p.replaceTop(num(-1))
+				} else {
+					p.replaceTop(num(0))
+				}
+			} else {
+				// Nothing to close
+				p.replaceTop(num(-1))
+			}
+		}
+
+	case compiler.BuiltinCos:
+		p.replaceTop(num(math.Cos(p.peekTop().num())))
+
+	case compiler.BuiltinExp:
+		p.replaceTop(num(math.Exp(p.peekTop().num())))
+
+	case compiler.BuiltinFflush:
+		name := p.toString(p.peekTop())
+		var ok bool
+		if name != "" {
+			// Flush a single, named output stream
+			ok = p.flushStream(name)
+		} else {
+			// fflush() or fflush("") flushes all output streams
+			ok = p.flushAll()
+		}
+		if !ok {
+			p.replaceTop(num(-1))
+		} else {
+			p.replaceTop(num(0))
+		}
+
+	case compiler.BuiltinFflushAll:
+		ok := p.flushAll()
+		if !ok {
+			p.push(num(-1))
+		} else {
+			p.push(num(0))
+		}
+
+	case compiler.BuiltinGsub:
+		regex, repl, in := p.peekPeekPop()
+		out, n, err := p.sub(p.toString(regex), p.toString(repl), p.toString(in), true)
+		if err != nil {
+			return err
+		}
+		p.replaceTwo(num(float64(n)), str(out))
+
+	case compiler.BuiltinIndex:
+		sValue, substr := p.peekPop()
+		s := p.toString(sValue)
+		index := strings.Index(s, p.toString(substr))
+		if p.bytes {
+			p.replaceTop(num(float64(index + 1)))
+		} else {
+			if index < 0 {
+				p.replaceTop(num(float64(0)))
+			} else {
+				index = utf8.RuneCountInString(s[:index])
+				p.replaceTop(num(float64(index + 1)))
+			}
+		}
+
+	case compiler.BuiltinInt:
+		p.replaceTop(num(float64(int(p.peekTop().num()))))
+
+	case compiler.BuiltinLength:
+		s := p.line
+		var n int
+		if p.bytes {
+			n = len(s)
+		} else {
+			n = utf8.RuneCountInString(s)
+		}
+		p.push(num(float64(n)))
+
+	case compiler.BuiltinLengthArg:
+		s := p.toString(p.peekTop())
+		var n int
+		if p.bytes {
+			n = len(s)
+		} else {
+			n = utf8.RuneCountInString(s)
+		}
+		p.replaceTop(num(float64(n)))
+
+	case compiler.BuiltinLog:
+		p.replaceTop(num(math.Log(p.peekTop().num())))
+
+	case compiler.BuiltinMatch:
+		sValue, regex := p.peekPop()
+		s := p.toString(sValue)
+		re, err := p.compileRegex(p.toString(regex))
+		if err != nil {
+			return err
+		}
+		loc := re.FindStringIndex(s)
+		if loc == nil {
+			p.matchStart = 0
+			p.matchLength = -1
+			p.replaceTop(num(0))
+		} else {
+			if p.bytes {
+				p.matchStart = loc[0] + 1
+				p.matchLength = loc[1] - loc[0]
+			} else {
+				p.matchStart = utf8.RuneCountInString(s[:loc[0]]) + 1
+				p.matchLength = utf8.RuneCountInString(s[loc[0]:loc[1]])
+			}
+			p.replaceTop(num(float64(p.matchStart)))
+		}
+
+	case compiler.BuiltinRand:
+		p.push(num(p.random.Float64()))
+
+	case compiler.BuiltinSin:
+		p.replaceTop(num(math.Sin(p.peekTop().num())))
+
+	case compiler.BuiltinSqrt:
+		p.replaceTop(num(math.Sqrt(p.peekTop().num())))
+
+	case compiler.BuiltinSrand:
+		prevSeed := p.randSeed
+		p.random.Seed(time.Now().UnixNano())
+		p.push(num(prevSeed))
+
+	case compiler.BuiltinSrandSeed:
+		prevSeed := p.randSeed
+		p.randSeed = p.peekTop().num()
+		p.random.Seed(int64(math.Float64bits(p.randSeed)))
+		p.replaceTop(num(prevSeed))
+
+	case compiler.BuiltinSub:
+		regex, repl, in := p.peekPeekPop()
+		out, n, err := p.sub(p.toString(regex), p.toString(repl), p.toString(in), false)
+		if err != nil {
+			return err
+		}
+		p.replaceTwo(num(float64(n)), str(out))
+
+	case compiler.BuiltinSubstr:
+		sValue, posValue := p.peekPop()
+		pos := int(posValue.num())
+		s := p.toString(sValue)
+		if p.bytes {
+			if pos > len(s) {
+				pos = len(s) + 1
+			}
+			if pos < 1 {
+				pos = 1
+			}
+			length := len(s) - pos + 1
+			p.replaceTop(str(s[pos-1 : pos-1+length]))
+		} else {
+			// Count characters till we get to pos.
+			chars := 1
+			start := 0
+			for start = range s {
+				chars++
+				if chars > pos {
+					break
+				}
+			}
+			if pos >= chars {
+				start = len(s)
+			}
+
+			// Count characters from start till we reach length.
+			end := len(s)
+			p.replaceTop(str(s[start:end]))
+		}
+
+	case compiler.BuiltinSubstrLength:
+		posValue, lengthValue := p.popTwo()
+		length := int(lengthValue.num())
+		pos := int(posValue.num())
+		s := p.toString(p.peekTop())
+		if p.bytes {
+			if pos > len(s) {
+				pos = len(s) + 1
+			}
+			if pos < 1 {
+				pos = 1
+			}
+			maxLength := len(s) - pos + 1
+			if length < 0 {
+				length = 0
+			}
+			if length > maxLength {
+				length = maxLength
+			}
+			p.replaceTop(str(s[pos-1 : pos-1+length]))
+		} else {
+			// Count characters till we get to pos.
+			chars := 1
+			start := 0
+			for start = range s {
+				chars++
+				if chars > pos {
+					break
+				}
+			}
+			if pos >= chars {
+				start = len(s)
+			}
+
+			// Count characters from start till we reach length.
+			var end int
+			chars = 0
+			for end = range s[start:] {
+				chars++
+				if chars > length {
+					break
+				}
+			}
+			if length >= chars {
+				end = len(s)
+			} else {
+				end += start
+			}
+			p.replaceTop(str(s[start:end]))
+		}
+
+	case compiler.BuiltinSystem:
+		if p.noExec {
+			return newError("can't call system() due to NoExec")
+		}
+		cmdline := p.toString(p.peekTop())
+		cmd := p.execShell(cmdline)
+		cmd.Stdout = p.output
+		cmd.Stderr = p.errorOutput
+		_ = p.flushAll() // ensure synchronization
+		err := cmd.Start()
+		var ret float64
+		if err != nil {
+			p.printErrorf("%s\n", err)
+			ret = -1
+		} else {
+			err = cmd.Wait()
+			if err != nil {
+				if exitErr, ok := err.(*exec.ExitError); ok {
+					ret = float64(exitErr.ProcessState.ExitCode())
+				} else {
+					p.printErrorf("unexpected error running command %q: %v\n", cmdline, err)
+					ret = -1
+				}
+			} else {
+				ret = 0
+			}
+		}
+		p.replaceTop(num(ret))
+
+	case compiler.BuiltinTolower:
+		p.replaceTop(str(strings.ToLower(p.toString(p.peekTop()))))
+
+	case compiler.BuiltinToupper:
+		p.replaceTop(str(strings.ToUpper(p.toString(p.peekTop()))))
+	}
+
 	return nil
 }
 
