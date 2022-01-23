@@ -10,23 +10,6 @@ import (
 	"github.com/benhoyt/goawk/lexer"
 )
 
-/*
-TODO:
-- look at code coverage and get closer to 100%
-  + more coverage for: substr(), close(), system()
-  + use the following to see how much of the internal/compiler package is covered:
-    $ go test -coverpkg=./... ./interp -awk="" -coverprofile=cover.out
-    $ go tool cover -html cover.out
-- optimize! probably on new branch
-  + the append check in push() slows things (eg: BinaryOperators benchmark) down quite a bit -- can we avoid somehow?
-  + any super-instructions to add?
-  + any instructions to remove?
-  + specializations
-  + better performance to replace JumpLess with JumpLessNum and so on with indexed number constant?
-  + optimize CONCAT(a,CONCAT(b,c)) etc to CONCAT(a, b, c) to avoid allocs/copying
-- fuzz testing
-*/
-
 // Program holds an entire compiled program.
 type Program struct {
 	Begin     []Opcode
