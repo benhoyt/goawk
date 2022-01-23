@@ -313,7 +313,9 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		c.continues = append(c.continues, []int{})
 
 		// Optimization: include condition once before loop and at the end.
-		// This idea was stolen from an optimization CPython did recently.
+		// This avoids one jump (a conditional jump at the top and an
+		// unconditional one at the end). This idea was stolen from an
+		// optimization CPython did recently in its "while" loop.
 		var mark int
 		if s.Cond != nil {
 			jumpOp := c.condition(s.Cond, true)
@@ -338,6 +340,11 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		c.patchBreaks()
 
 	case *ast.ForInStmt:
+		// ForIn is handled a bit differently from the other loops, because we
+		// want to use Go's "for range" construct directly in the interpreter.
+		// Otherwise we'd need to build a slice of all keys rather than
+		// iterating, or write our own hash table that has a more flexible
+		// iterator.
 		mark := c.jumpForward(ForIn, opcodeInt(int(s.Var.Scope)), opcodeInt(s.Var.Index),
 			Opcode(s.Array.Scope), opcodeInt(s.Array.Index))
 
@@ -362,6 +369,8 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		c.breaks = append(c.breaks, []int{})
 		c.continues = append(c.continues, []int{})
 
+		// Optimization: include condition once before loop and at the end.
+		// See ForStmt for more details.
 		jumpOp := c.condition(s.Cond, true)
 		mark := c.jumpForward(jumpOp)
 
@@ -391,7 +400,7 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 	case *ast.BreakStmt:
 		i := len(c.breaks) - 1
 		if c.breaks[i] == nil {
-			// break in for-in loop is executed differently, use errBreak to exit
+			// Break in for-in loop is executed differently, use errBreak to exit
 			c.add(BreakForIn)
 		} else {
 			mark := c.jumpForward(Jump)
@@ -520,8 +529,23 @@ func (c *compiler) jumpBackward(label int, jumpOp Opcode, args ...Opcode) {
 	c.add(opcodeInt(offset))
 }
 
+func opIfElse(cond bool, trueOp, falseOp Opcode) Opcode {
+	if cond {
+		return trueOp
+	} else {
+		return falseOp
+	}
+}
+
 // Generate opcodes for a boolean condition.
 func (c *compiler) condition(expr ast.Expr, invert bool) Opcode {
+	jumpOp := func(normal, inverted Opcode) Opcode {
+		if invert {
+			return inverted
+		}
+		return normal
+	}
+
 	switch cond := expr.(type) {
 	case *ast.BinaryExpr:
 		// Optimize binary comparison expressions like "x < 10" into just
@@ -530,67 +554,39 @@ func (c *compiler) condition(expr ast.Expr, invert bool) Opcode {
 		case lexer.EQUALS:
 			c.expr(cond.Left)
 			c.expr(cond.Right)
-			if invert {
-				return JumpNotEquals
-			} else {
-				return JumpEquals
-			}
+			return jumpOp(JumpEquals, JumpNotEquals)
 
 		case lexer.NOT_EQUALS:
 			c.expr(cond.Left)
 			c.expr(cond.Right)
-			if invert {
-				return JumpEquals
-			} else {
-				return JumpNotEquals
-			}
+			return jumpOp(JumpNotEquals, JumpEquals)
 
 		case lexer.LESS:
 			c.expr(cond.Left)
 			c.expr(cond.Right)
-			if invert {
-				return JumpGreaterOrEqual
-			} else {
-				return JumpLess
-			}
+			return jumpOp(JumpLess, JumpGreaterOrEqual)
 
 		case lexer.LTE:
 			c.expr(cond.Left)
 			c.expr(cond.Right)
-			if invert {
-				return JumpGreater
-			} else {
-				return JumpLessOrEqual
-			}
+			return jumpOp(JumpLessOrEqual, JumpGreater)
 
 		case lexer.GREATER:
 			c.expr(cond.Left)
 			c.expr(cond.Right)
-			if invert {
-				return JumpLessOrEqual
-			} else {
-				return JumpGreater
-			}
+			return jumpOp(JumpGreater, JumpLessOrEqual)
 
 		case lexer.GTE:
 			c.expr(cond.Left)
 			c.expr(cond.Right)
-			if invert {
-				return JumpLess
-			} else {
-				return JumpGreaterOrEqual
-			}
+			return jumpOp(JumpGreaterOrEqual, JumpLess)
 		}
 	}
 
 	// Fall back to evaluating the expression normally, followed by JumpTrue
 	// or JumpFalse.
 	c.expr(expr)
-	if invert {
-		return JumpFalse
-	} else {
-		return JumpTrue
-	}
+	return jumpOp(JumpTrue, JumpFalse)
 }
 
 func (c *compiler) expr(expr ast.Expr) {
@@ -689,8 +685,8 @@ func (c *compiler) expr(expr ast.Expr) {
 		c.assign(e.Left)
 
 	case *ast.CondExpr:
-		jumpOp := c.condition(e.Cond, true)
-		ifMark := c.jumpForward(jumpOp)
+		jump := c.condition(e.Cond, true)
+		ifMark := c.jumpForward(jump)
 		c.expr(e.True)
 		elseMark := c.jumpForward(Jump)
 		c.patchForward(ifMark)
