@@ -247,7 +247,7 @@ func (p *interp) split(s string, scope ast.VarScope, index int, fs string) (int,
 	if fs == " " {
 		parts = strings.Fields(s)
 	} else if s == "" {
-		// NF should be 0 on empty line
+		// Leave parts 0 length on empty string
 	} else if utf8.RuneCountInString(fs) <= 1 {
 		parts = strings.Split(s, fs)
 	} else {
@@ -389,7 +389,7 @@ func (p *interp) sprintf(format string, args []value) (string, error) {
 		case 'f':
 			v = a.num()
 		case 'u':
-			v = uint32(a.num())
+			v = uint(a.num())
 		case 'c':
 			var c []byte
 			n, isStr := a.isTrueStr()

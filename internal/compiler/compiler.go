@@ -12,11 +12,10 @@ import (
 
 /*
 TODO:
-- use funcslice instead of big switch: https://github.com/benhoyt/goawk/pull/89
 - look at code coverage and get closer to 100%
-  + add decrement tests under "Incr/decr expressions", for example
+  + more coverage for: substr(), close(), system()
   + use the following to see how much of the internal/compiler package is covered:
-    $ go test -coverpkg=./... ./interp -v -awk="" -coverprofile=cover.out
+    $ go test -coverpkg=./... ./interp -awk="" -coverprofile=cover.out
     $ go tool cover -html cover.out
 - optimize! probably on new branch
   + the append check in push() slows things (eg: BinaryOperators benchmark) down quite a bit -- can we avoid somehow?
