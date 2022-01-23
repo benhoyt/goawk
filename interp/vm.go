@@ -1,3 +1,5 @@
+// Virtual machine: interpret GoAWK compiled opcodes
+
 package interp
 
 import (
@@ -15,6 +17,17 @@ import (
 )
 
 // Execute a block of virtual machine instructions.
+//
+// A big switch seems to be the best way of doing this for now. I also tried
+// an array of functions (https://github.com/benhoyt/goawk/commit/8e04b069b621ff9b9456de57a35ff2fe335cf201)
+// and it was ever so slightly faster, but the code was harder to work with
+// and it won't be improved when Go gets faster switches via jump tables
+// (https://go-review.googlesource.com/c/go/+/357330/).
+//
+// Additionally, I've made this version faster since the above test by
+// reducing the number of opcodes (replacing a couple dozen Call* opcodes with
+// a single CallBuiltin -- that probably pushed it below a switch binary tree
+// branch threshold).
 func (p *interp) execute(code []compiler.Opcode) error {
 	for i := 0; i < len(code); {
 		op := code[i]
