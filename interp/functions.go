@@ -98,98 +98,49 @@ func (p *interp) callBuiltin(op Token, argExprs []ast.Expr) (value, error) {
 	// Then switch on the function for the ordinary functions
 	switch op {
 	case F_LENGTH:
-		var s string
-		if len(args) > 0 {
-			s = p.toString(args[0])
-		} else {
-			s = p.line
+		switch len(args) {
+		case 0:
+			return num(float64(len(p.line))), nil
+		default:
+			return num(float64(len(p.toString(args[0])))), nil
 		}
-		var n int
-		if p.bytes {
-			n = len(s)
-		} else {
-			n = utf8.RuneCountInString(s)
-		}
-		return num(float64(n)), nil
 
 	case F_MATCH:
 		re, err := p.compileRegex(p.toString(args[1]))
 		if err != nil {
 			return null(), err
 		}
-		s := p.toString(args[0])
-		loc := re.FindStringIndex(s)
+		loc := re.FindStringIndex(p.toString(args[0]))
 		if loc == nil {
 			p.matchStart = 0
 			p.matchLength = -1
 			return num(0), nil
 		}
-		if p.bytes {
-			p.matchStart = loc[0] + 1
-			p.matchLength = loc[1] - loc[0]
-		} else {
-			p.matchStart = utf8.RuneCountInString(s[:loc[0]]) + 1
-			p.matchLength = utf8.RuneCountInString(s[loc[0]:loc[1]])
-		}
+		p.matchStart = loc[0] + 1
+		p.matchLength = loc[1] - loc[0]
 		return num(float64(p.matchStart)), nil
 
 	case F_SUBSTR:
 		s := p.toString(args[0])
 		pos := int(args[1].num())
-		if p.bytes {
-			if pos > len(s) {
-				pos = len(s) + 1
-			}
-			if pos < 1 {
-				pos = 1
-			}
-			maxLength := len(s) - pos + 1
-			length := maxLength
-			if len(args) == 3 {
-				length = int(args[2].num())
-				if length < 0 {
-					length = 0
-				}
-				if length > maxLength {
-					length = maxLength
-				}
-			}
-			return str(s[pos-1 : pos-1+length]), nil
-		} else {
-			// Count characters till we get to pos.
-			chars := 1
-			start := 0
-			for start = range s {
-				chars++
-				if chars > pos {
-					break
-				}
-			}
-			if pos >= chars {
-				start = len(s)
-			}
-
-			// Count characters from start till we reach length.
-			var end int
-			if len(args) == 3 {
-				length := int(args[2].num())
-				chars = 0
-				for end = range s[start:] {
-					chars++
-					if chars > length {
-						break
-					}
-				}
-				if length >= chars {
-					end = len(s)
-				} else {
-					end += start
-				}
-			} else {
-				end = len(s)
-			}
-			return str(s[start:end]), nil
+		if pos > len(s) {
+			pos = len(s) + 1
 		}
+		if pos < 1 {
+			pos = 1
+		}
+		maxLength := len(s) - pos + 1
+		length := maxLength
+		if len(args) == 3 {
+			length = int(args[2].num())
+			if length < 0 {
+				length = 0
+			}
+			if length > maxLength {
+				length = maxLength
+			}
+		}
+		return str(s[pos-1 : pos-1+length]), nil
 
 	case F_SPRINTF:
 		s, err := p.sprintf(p.toString(args[0]), args[1:])
@@ -201,16 +152,7 @@ func (p *interp) callBuiltin(op Token, argExprs []ast.Expr) (value, error) {
 	case F_INDEX:
 		s := p.toString(args[0])
 		substr := p.toString(args[1])
-		index := strings.Index(s, substr)
-		if p.bytes {
-			return num(float64(index + 1)), nil
-		} else {
-			if index < 0 {
-				return num(float64(0)), nil
-			}
-			index = utf8.RuneCountInString(s[:index])
-			return num(float64(index + 1)), nil
-		}
+		return num(float64(strings.Index(s, substr) + 1)), nil
 
 	case F_TOLOWER:
 		return str(strings.ToLower(p.toString(args[0]))), nil

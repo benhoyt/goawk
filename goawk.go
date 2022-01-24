@@ -44,7 +44,7 @@ import (
 )
 
 const (
-	version    = "v1.13.0"
+	version    = "v1.14.0"
 	copyright  = "GoAWK " + version + " - Copyright (c) 2021 Ben Hoyt"
 	shortUsage = "usage: goawk [-F fs] [-v var=value] [-f progfile | 'prog'] [file ...]"
 	longUsage  = `Standard AWK arguments:
@@ -56,7 +56,6 @@ const (
         load AWK source from progfile (multiple allowed)
 
 Additional GoAWK arguments:
-  -b    use byte indexes for index(), length(), match(), and substr()
   -cpuprofile file
         write CPU profile to file
   -d    debug mode (print parsed AST to stderr)
@@ -78,7 +77,6 @@ func main() {
 	debug := false
 	debugTypes := false
 	memprofile := ""
-	useBytes := false
 
 	var i int
 	for i = 1; i < len(os.Args); i++ {
@@ -111,8 +109,6 @@ func main() {
 			}
 			i++
 			vars = append(vars, os.Args[i])
-		case "-b":
-			useBytes = true
 		case "-cpuprofile":
 			if i+1 >= len(os.Args) {
 				errorExitf("flag needs an argument: -cpuprofile")
@@ -216,7 +212,6 @@ func main() {
 	config := &interp.Config{
 		Argv0: filepath.Base(os.Args[0]),
 		Args:  expandWildcardsOnWindows(args),
-		Bytes: useBytes,
 		Vars:  []string{"FS", fieldSep},
 	}
 	for _, v := range vars {

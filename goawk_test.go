@@ -352,10 +352,6 @@ func TestCommandLine(t *testing.T) {
 		{[]string{"-v", "RS=;", `$0`}, "a b;c\nd;e", "a b\nc\nd\ne\n", ""},
 		{[]string{"-vRS=;", `$0`}, "a b;c\nd;e", "a b\nc\nd\ne\n", ""},
 
-		// Byte index vs character index mode
-		{[]string{`{ print length }  # !windows-gawk`}, "絵\n", "1\n", ""},
-		{[]string{"-b", `{ print length }`}, "絵\n", "3\n", ""},
-
 		// ARGV/ARGC handling
 		{[]string{`
 			BEGIN {
@@ -445,11 +441,6 @@ func runGoAWK(args []string, stdin string) (stdout, stderr string, err error) {
 }
 
 func runAWKs(t *testing.T, testArgs []string, testStdin, testOutput, testError string) {
-	for _, arg := range testArgs {
-		if strings.Contains(arg, "!"+runtime.GOOS+"-"+awkExe) {
-			t.Skipf("skipping on %s under %s", runtime.GOOS, awkExe)
-		}
-	}
 	cmd := exec.Command(awkExe, testArgs...)
 	if testStdin != "" {
 		cmd.Stdin = bytes.NewReader([]byte(testStdin))
