@@ -126,7 +126,6 @@ type interp struct {
 	exitStatus  int
 	regexCache  map[string]*regexp.Regexp
 	formatCache map[string]cachedFormat
-	bytes       bool
 }
 
 // Various const configuration. Could make these part of Config if
@@ -210,11 +209,6 @@ type Config struct {
 	// array, for example []string{"USER", "bob", "HOME", "/home/bob"}.
 	// If nil (the default), values from os.Environ() are used.
 	Environ []string
-
-	// Set to true to use byte indexes instead of character indexes for
-	// the index, length, match, and substr functions. Note: the default
-	// was changed from bytes to characters in GoAWK version 1.11.
-	Bytes bool
 }
 
 // ExecProgram executes the parsed program using the given interpreter
@@ -261,7 +255,6 @@ func ExecProgram(program *parser.Program, config *Config) (int, error) {
 	p.noExec = config.NoExec
 	p.noFileWrites = config.NoFileWrites
 	p.noFileReads = config.NoFileReads
-	p.bytes = config.Bytes
 	err := p.initNativeFuncs(config.Funcs)
 	if err != nil {
 		return 0, err
