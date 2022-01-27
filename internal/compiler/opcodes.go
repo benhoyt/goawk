@@ -25,7 +25,7 @@ const (
 
 	// Fetch a field, variable, or array item
 	Field
-	FieldNum    // index
+	FieldInt    // index
 	Global      // index
 	Local       // index
 	Special     // index

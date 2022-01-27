@@ -62,7 +62,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			}
 			p.replaceTop(v)
 
-		case compiler.FieldNum:
+		case compiler.FieldInt:
 			index := code[i]
 			i++
 			v, err := p.getField(int(index))

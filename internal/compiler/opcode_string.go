@@ -15,7 +15,7 @@ func _() {
 	_ = x[Drop-4]
 	_ = x[Swap-5]
 	_ = x[Field-6]
-	_ = x[FieldNum-7]
+	_ = x[FieldInt-7]
 	_ = x[Global-8]
 	_ = x[Local-9]
 	_ = x[Special-10]
@@ -97,7 +97,7 @@ func _() {
 	_ = x[EndOpcode-86]
 }
 
-const _Opcode_name = "NopNumStrDupeDropSwapFieldFieldNumGlobalLocalSpecialArrayGlobalArrayLocalInGlobalInLocalAssignFieldAssignGlobalAssignLocalAssignSpecialAssignArrayGlobalAssignArrayLocalDeleteDeleteAllIncrFieldIncrGlobalIncrLocalIncrSpecialIncrArrayGlobalIncrArrayLocalAugAssignFieldAugAssignGlobalAugAssignLocalAugAssignSpecialAugAssignArrayGlobalAugAssignArrayLocalRegexMultiIndexAddSubtractMultiplyDividePowerModuloEqualsNotEqualsLessGreaterLessOrEqualGreaterOrEqualConcatMatchNotMatchNotUnaryMinusUnaryPlusBooleanJumpJumpFalseJumpTrueJumpEqualsJumpNotEqualsJumpLessJumpGreaterJumpLessOrEqualJumpGreaterOrEqualNextExitForInBreakForInCallBuiltinCallSplitCallSplitSepCallSprintfCallUserCallNativeReturnReturnNullNullsPrintPrintfGetlineGetlineFieldGetlineGlobalGetlineLocalGetlineSpecialGetlineArrayEndOpcode"
+const _Opcode_name = "NopNumStrDupeDropSwapFieldFieldIntGlobalLocalSpecialArrayGlobalArrayLocalInGlobalInLocalAssignFieldAssignGlobalAssignLocalAssignSpecialAssignArrayGlobalAssignArrayLocalDeleteDeleteAllIncrFieldIncrGlobalIncrLocalIncrSpecialIncrArrayGlobalIncrArrayLocalAugAssignFieldAugAssignGlobalAugAssignLocalAugAssignSpecialAugAssignArrayGlobalAugAssignArrayLocalRegexMultiIndexAddSubtractMultiplyDividePowerModuloEqualsNotEqualsLessGreaterLessOrEqualGreaterOrEqualConcatMatchNotMatchNotUnaryMinusUnaryPlusBooleanJumpJumpFalseJumpTrueJumpEqualsJumpNotEqualsJumpLessJumpGreaterJumpLessOrEqualJumpGreaterOrEqualNextExitForInBreakForInCallBuiltinCallSplitCallSplitSepCallSprintfCallUserCallNativeReturnReturnNullNullsPrintPrintfGetlineGetlineFieldGetlineGlobalGetlineLocalGetlineSpecialGetlineArrayEndOpcode"
 
 var _Opcode_index = [...]uint16{0, 3, 6, 9, 13, 17, 21, 26, 34, 40, 45, 52, 63, 73, 81, 88, 99, 111, 122, 135, 152, 168, 174, 183, 192, 202, 211, 222, 237, 251, 265, 280, 294, 310, 330, 349, 354, 364, 367, 375, 383, 389, 394, 400, 406, 415, 419, 426, 437, 451, 457, 462, 470, 473, 483, 492, 499, 503, 512, 520, 530, 543, 551, 562, 577, 595, 599, 603, 608, 618, 629, 638, 650, 661, 669, 679, 685, 695, 700, 705, 711, 718, 730, 743, 755, 769, 781, 790}
 
