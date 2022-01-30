@@ -3,11 +3,13 @@
 package interp
 
 import (
+	"fmt"
 	"io"
 	"math"
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/benhoyt/goawk/internal/ast"
@@ -1055,7 +1057,12 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 			err = cmd.Wait()
 			if err != nil {
 				if exitErr, ok := err.(*exec.ExitError); ok {
-					ret = float64(exitErr.ProcessState.ExitCode())
+					if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
+						ret = float64(status.ExitStatus())
+					} else {
+						fmt.Fprintf(p.errorOutput, "couldn't get exit status for %q: %v\n", cmdline, err)
+						ret = -1
+					}
 				} else {
 					p.printErrorf("unexpected error running command %q: %v\n", cmdline, err)
 					ret = -1
