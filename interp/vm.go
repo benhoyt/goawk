@@ -28,19 +28,19 @@ import (
 // a single CallBuiltin -- that probably pushed it below a switch binary tree
 // branch threshold).
 func (p *interp) execute(code []compiler.Opcode) error {
-	for i := 0; i < len(code); {
-		op := code[i]
-		i++
+	for ip := 0; ip < len(code); {
+		op := code[ip]
+		ip++
 
 		switch op {
 		case compiler.Num:
-			index := code[i]
-			i++
+			index := code[ip]
+			ip++
 			p.push(num(p.nums[index]))
 
 		case compiler.Str:
-			index := code[i]
-			i++
+			index := code[ip]
+			ip++
 			p.push(str(p.strs[index]))
 
 		case compiler.Dupe:
@@ -63,8 +63,8 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			p.replaceTop(v)
 
 		case compiler.FieldInt:
-			index := code[i]
-			i++
+			index := code[ip]
+			ip++
 			v, err := p.getField(int(index))
 			if err != nil {
 				return err
@@ -72,47 +72,47 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			p.push(v)
 
 		case compiler.Global:
-			index := code[i]
-			i++
+			index := code[ip]
+			ip++
 			p.push(p.globals[index])
 
 		case compiler.Local:
-			index := code[i]
-			i++
+			index := code[ip]
+			ip++
 			p.push(p.frame[index])
 
 		case compiler.Special:
-			index := code[i]
-			i++
+			index := code[ip]
+			ip++
 			p.push(p.getSpecial(int(index)))
 
 		case compiler.ArrayGlobal:
-			arrayIndex := code[i]
-			i++
+			arrayIndex := code[ip]
+			ip++
 			array := p.arrays[arrayIndex]
 			index := p.toString(p.peekTop())
 			v := arrayGet(array, index)
 			p.replaceTop(v)
 
 		case compiler.ArrayLocal:
-			arrayIndex := code[i]
-			i++
+			arrayIndex := code[ip]
+			ip++
 			array := p.localArray(int(arrayIndex))
 			index := p.toString(p.peekTop())
 			v := arrayGet(array, index)
 			p.replaceTop(v)
 
 		case compiler.InGlobal:
-			arrayIndex := code[i]
-			i++
+			arrayIndex := code[ip]
+			ip++
 			array := p.arrays[arrayIndex]
 			index := p.toString(p.peekTop())
 			_, ok := array[index]
 			p.replaceTop(boolean(ok))
 
 		case compiler.InLocal:
-			arrayIndex := code[i]
-			i++
+			arrayIndex := code[ip]
+			ip++
 			array := p.localArray(int(arrayIndex))
 			index := p.toString(p.peekTop())
 			_, ok := array[index]
@@ -126,57 +126,57 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			}
 
 		case compiler.AssignGlobal:
-			index := code[i]
-			i++
+			index := code[ip]
+			ip++
 			p.globals[index] = p.pop()
 
 		case compiler.AssignLocal:
-			index := code[i]
-			i++
+			index := code[ip]
+			ip++
 			p.frame[index] = p.pop()
 
 		case compiler.AssignSpecial:
-			index := code[i]
-			i++
+			index := code[ip]
+			ip++
 			err := p.setSpecial(int(index), p.pop())
 			if err != nil {
 				return err
 			}
 
 		case compiler.AssignArrayGlobal:
-			arrayIndex := code[i]
-			i++
+			arrayIndex := code[ip]
+			ip++
 			array := p.arrays[arrayIndex]
 			v, index := p.popTwo()
 			array[p.toString(index)] = v
 
 		case compiler.AssignArrayLocal:
-			arrayIndex := code[i]
-			i++
+			arrayIndex := code[ip]
+			ip++
 			array := p.localArray(int(arrayIndex))
 			v, index := p.popTwo()
 			array[p.toString(index)] = v
 
 		case compiler.Delete:
-			arrayScope := code[i]
-			arrayIndex := code[i+1]
-			i += 2
+			arrayScope := code[ip]
+			arrayIndex := code[ip+1]
+			ip += 2
 			array := p.array(ast.VarScope(arrayScope), int(arrayIndex))
 			index := p.toString(p.pop())
 			delete(array, index)
 
 		case compiler.DeleteAll:
-			arrayScope := code[i]
-			arrayIndex := code[i+1]
-			i += 2
+			arrayScope := code[ip]
+			arrayIndex := code[ip+1]
+			ip += 2
 			array := p.array(ast.VarScope(arrayScope), int(arrayIndex))
 			for k := range array {
 				delete(array, k)
 			}
 
 		case compiler.IncrField:
-			amount := code[i]
-			i++
+			amount := code[ip]
+			ip++
 			index := int(p.pop().num())
 			v, err := p.getField(index)
 			if err != nil {
@@ -188,21 +188,21 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			}
 
 		case compiler.IncrGlobal:
-			amount := code[i]
-			index := code[i+1]
-			i += 2
+			amount := code[ip]
+			index := code[ip+1]
+			ip += 2
 			p.globals[index] = num(p.globals[index].num() + float64(amount))
 
 		case compiler.IncrLocal:
-			amount := code[i]
-			index := code[i+1]
-			i += 2
+			amount := code[ip]
+			index := code[ip+1]
+			ip += 2
 			p.frame[index] = num(p.frame[index].num() + float64(amount))
 
 		case compiler.IncrSpecial:
-			amount := code[i]
-			index := int(code[i+1])
-			i += 2
+			amount := code[ip]
+			index := int(code[ip+1])
+			ip += 2
 			v := p.getSpecial(index)
 			err := p.setSpecial(index, num(v.num()+float64(amount)))
 			if err != nil {
@@ -210,24 +210,24 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			}
 
 		case compiler.IncrArrayGlobal:
-			amount := code[i]
-			arrayIndex := code[i+1]
-			i += 2
+			amount := code[ip]
+			arrayIndex := code[ip+1]
+			ip += 2
 			array := p.arrays[arrayIndex]
 			index := p.toString(p.pop())
 			array[index] = num(array[index].num() + float64(amount))
 
 		case compiler.IncrArrayLocal:
-			amount := code[i]
-			arrayIndex := code[i+1]
-			i += 2
+			amount := code[ip]
+			arrayIndex := code[ip+1]
+			ip += 2
 			array := p.localArray(int(arrayIndex))
 			index := p.toString(p.pop())
 			array[index] = num(array[index].num() + float64(amount))
 
 		case compiler.AugAssignField:
-			operation := compiler.AugOp(code[i])
-			i++
+			operation := compiler.AugOp(code[ip])
+			ip++
 			right, indexVal := p.popTwo()
 			index := int(indexVal.num())
 			field, err := p.getField(index)
@@ -244,9 +244,9 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			}
 
 		case compiler.AugAssignGlobal:
-			operation := compiler.AugOp(code[i])
-			index := code[i+1]
-			i += 2
+			operation := compiler.AugOp(code[ip])
+			index := code[ip+1]
+			ip += 2
 			v, err := p.augAssignOp(operation, p.globals[index], p.pop())
 			if err != nil {
 				return err
@@ -254,9 +254,9 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			p.globals[index] = v
 
 		case compiler.AugAssignLocal:
-			operation := compiler.AugOp(code[i])
-			index := code[i+1]
-			i += 2
+			operation := compiler.AugOp(code[ip])
+			index := code[ip+1]
+			ip += 2
 			v, err := p.augAssignOp(operation, p.frame[index], p.pop())
 			if err != nil {
 				return err
@@ -264,9 +264,9 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			p.frame[index] = v
 
 		case compiler.AugAssignSpecial:
-			operation := compiler.AugOp(code[i])
-			index := int(code[i+1])
-			i += 2
+			operation := compiler.AugOp(code[ip])
+			index := int(code[ip+1])
+			ip += 2
 			v, err := p.augAssignOp(operation, p.getSpecial(index), p.pop())
 			if err != nil {
 				return err
@@ -277,9 +277,9 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			}
 
 		case compiler.AugAssignArrayGlobal:
-			operation := compiler.AugOp(code[i])
-			arrayIndex := code[i+1]
-			i += 2
+			operation := compiler.AugOp(code[ip])
+			arrayIndex := code[ip+1]
+			ip += 2
 			array := p.arrays[arrayIndex]
 			index := p.toString(p.pop())
 			v, err := p.augAssignOp(operation, array[index], p.pop())
@@ -289,9 +289,9 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			array[index] = v
 
 		case compiler.AugAssignArrayLocal:
-			operation := compiler.AugOp(code[i])
-			arrayIndex := code[i+1]
-			i += 2
+			operation := compiler.AugOp(code[ip])
+			arrayIndex := code[ip+1]
+			ip += 2
 			array := p.localArray(int(arrayIndex))
 			right, indexVal := p.popTwo()
 			index := p.toString(indexVal)
@@ -303,14 +303,14 @@ func (p *interp) execute(code []compiler.Opcode) error {
 
 		case compiler.Regex:
 			// Stand-alone /regex/ is equivalent to: $0 ~ /regex/
-			index := code[i]
-			i++
+			index := code[ip]
+			ip++
 			re := p.regexes[index]
 			p.push(boolean(re.MatchString(p.line)))
 
 		case compiler.MultiIndex:
-			numValues := int(code[i])
-			i++
+			numValues := int(code[ip])
+			ip++
 			values := p.popSlice(numValues)
 			indices := make([]string, 0, 3) // up to 3-dimensional indices won't require heap allocation
 			for _, v := range values {
@@ -445,28 +445,28 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			p.replaceTop(boolean(p.peekTop().boolean()))
 
 		case compiler.Jump:
-			offset := code[i]
-			i += 1 + int(offset)
+			offset := code[ip]
+			ip += 1 + int(offset)
 
 		case compiler.JumpFalse:
-			offset := code[i]
-			i++
+			offset := code[ip]
+			ip++
 			v := p.pop()
 			if !v.boolean() {
-				i += int(offset)
+				ip += int(offset)
 			}
 
 		case compiler.JumpTrue:
-			offset := code[i]
-			i++
+			offset := code[ip]
+			ip++
 			v := p.pop()
 			if v.boolean() {
-				i += int(offset)
+				ip += int(offset)
 			}
 
 		case compiler.JumpEquals:
-			offset := code[i]
-			i++
+			offset := code[ip]
+			ip++
 			l, r := p.popTwo()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
@@ -477,12 +477,12 @@ func (p *interp) execute(code []compiler.Opcode) error {
 				b = ln == rn
 			}
 			if b {
-				i += int(offset)
+				ip += int(offset)
 			}
 
 		case compiler.JumpNotEquals:
-			offset := code[i]
-			i++
+			offset := code[ip]
+			ip++
 			l, r := p.popTwo()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
@@ -493,12 +493,12 @@ func (p *interp) execute(code []compiler.Opcode) error {
 				b = ln != rn
 			}
 			if b {
-				i += int(offset)
+				ip += int(offset)
 			}
 
 		case compiler.JumpLess:
-			offset := code[i]
-			i++
+			offset := code[ip]
+			ip++
 			l, r := p.popTwo()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
@@ -509,12 +509,12 @@ func (p *interp) execute(code []compiler.Opcode) error {
 				b = ln < rn
 			}
 			if b {
-				i += int(offset)
+				ip += int(offset)
 			}
 
 		case compiler.JumpGreater:
-			offset := code[i]
-			i++
+			offset := code[ip]
+			ip++
 			l, r := p.popTwo()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
@@ -525,12 +525,12 @@ func (p *interp) execute(code []compiler.Opcode) error {
 				b = ln > rn
 			}
 			if b {
-				i += int(offset)
+				ip += int(offset)
 			}
 
 		case compiler.JumpLessOrEqual:
-			offset := code[i]
-			i++
+			offset := code[ip]
+			ip++
 			l, r := p.popTwo()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
@@ -541,12 +541,12 @@ func (p *interp) execute(code []compiler.Opcode) error {
 				b = ln <= rn
 			}
 			if b {
-				i += int(offset)
+				ip += int(offset)
 			}
 
 		case compiler.JumpGreaterOrEqual:
-			offset := code[i]
-			i++
+			offset := code[ip]
+			ip++
 			l, r := p.popTwo()
 			ln, lIsStr := l.isTrueStr()
 			rn, rIsStr := r.isTrueStr()
@@ -557,7 +557,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 				b = ln >= rn
 			}
 			if b {
-				i += int(offset)
+				ip += int(offset)
 			}
 
 		case compiler.Next:
@@ -569,14 +569,14 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			return errExit
 
 		case compiler.ForIn:
-			varScope := code[i]
-			varIndex := code[i+1]
-			arrayScope := code[i+2]
-			arrayIndex := code[i+3]
-			offset := code[i+4]
-			i += 5
+			varScope := code[ip]
+			varIndex := code[ip+1]
+			arrayScope := code[ip+2]
+			arrayIndex := code[ip+3]
+			offset := code[ip+4]
+			ip += 5
 			array := p.array(ast.VarScope(arrayScope), int(arrayIndex))
-			loopCode := code[i : i+int(offset)]
+			loopCode := code[ip : ip+int(offset)]
 			for index := range array {
 				switch ast.VarScope(varScope) {
 				case ast.ScopeGlobal:
@@ -597,23 +597,23 @@ func (p *interp) execute(code []compiler.Opcode) error {
 					return err
 				}
 			}
-			i += int(offset)
+			ip += int(offset)
 
 		case compiler.BreakForIn:
 			return errBreak
 
 		case compiler.CallBuiltin:
-			builtinOp := compiler.BuiltinOp(code[i])
-			i++
+			builtinOp := compiler.BuiltinOp(code[ip])
+			ip++
 			err := p.callBuiltin(builtinOp)
 			if err != nil {
 				return err
 			}
 
 		case compiler.CallSplit:
-			arrayScope := code[i]
-			arrayIndex := code[i+1]
-			i += 2
+			arrayScope := code[ip]
+			arrayIndex := code[ip+1]
+			ip += 2
 			s := p.toString(p.peekTop())
 			n, err := p.split(s, ast.VarScope(arrayScope), int(arrayIndex), p.fieldSep)
 			if err != nil {
@@ -622,9 +622,9 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			p.replaceTop(num(float64(n)))
 
 		case compiler.CallSplitSep:
-			arrayScope := code[i]
-			arrayIndex := code[i+1]
-			i += 2
+			arrayScope := code[ip]
+			arrayIndex := code[ip+1]
+			ip += 2
 			s, fieldSep := p.peekPop()
 			n, err := p.split(p.toString(s), ast.VarScope(arrayScope), int(arrayIndex), p.toString(fieldSep))
 			if err != nil {
@@ -633,8 +633,8 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			p.replaceTop(num(float64(n)))
 
 		case compiler.CallSprintf:
-			numArgs := code[i]
-			i++
+			numArgs := code[ip]
+			ip++
 			args := p.popSlice(int(numArgs))
 			s, err := p.sprintf(p.toString(args[0]), args[1:])
 			if err != nil {
@@ -643,9 +643,9 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			p.push(str(s))
 
 		case compiler.CallUser:
-			funcIndex := code[i]
-			numArrayArgs := int(code[i+1])
-			i += 2
+			funcIndex := code[ip]
+			numArrayArgs := int(code[ip+1])
+			ip += 2
 
 			f := p.program.Compiled.Functions[funcIndex]
 			if p.callDepth >= maxCallDepth {
@@ -659,9 +659,9 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			// Handle array arguments
 			var arrays []int
 			for j := 0; j < numArrayArgs; j++ {
-				arrayScope := ast.VarScope(code[i])
-				arrayIndex := int(code[i+1])
-				i += 2
+				arrayScope := ast.VarScope(code[ip])
+				arrayIndex := int(code[ip+1])
+				ip += 2
 				arrays = append(arrays, p.arrayIndex(arrayScope, arrayIndex))
 			}
 			oldArraysLen := len(p.arrays)
@@ -691,9 +691,9 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			}
 
 		case compiler.CallNative:
-			funcIndex := int(code[i])
-			numArgs := int(code[i+1])
-			i += 2
+			funcIndex := int(code[ip])
+			numArgs := int(code[ip+1])
+			ip += 2
 
 			args := p.popSlice(numArgs)
 			r, err := p.callNative(funcIndex, args)
@@ -710,14 +710,14 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			return returnValue{null()}
 
 		case compiler.Nulls:
-			numNulls := int(code[i])
-			i++
+			numNulls := int(code[ip])
+			ip++
 			p.pushNulls(numNulls)
 
 		case compiler.Print:
-			numArgs := code[i]
-			redirect := lexer.Token(code[i+1])
-			i += 2
+			numArgs := code[ip]
+			redirect := lexer.Token(code[ip+1])
+			ip += 2
 
 			// Print OFS-separated args followed by ORS (usually newline)
 			var line string
@@ -748,9 +748,9 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			}
 
 		case compiler.Printf:
-			numArgs := code[i]
-			redirect := lexer.Token(code[i+1])
-			i += 2
+			numArgs := code[ip]
+			redirect := lexer.Token(code[ip+1])
+			ip += 2
 
 			args := p.popSlice(int(numArgs))
 			s, err := p.sprintf(p.toString(args[0]), args[1:])
@@ -772,8 +772,8 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			}
 
 		case compiler.Getline:
-			redirect := lexer.Token(code[i])
-			i++
+			redirect := lexer.Token(code[ip])
+			ip++
 
 			ret, line, err := p.getline(redirect)
 			if err != nil {
@@ -785,8 +785,8 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			p.push(num(ret))
 
 		case compiler.GetlineField:
-			redirect := lexer.Token(code[i])
-			i++
+			redirect := lexer.Token(code[ip])
+			ip++
 
 			ret, line, err := p.getline(redirect)
 			if err != nil {
@@ -801,9 +801,9 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			p.push(num(ret))
 
 		case compiler.GetlineGlobal:
-			redirect := lexer.Token(code[i])
-			index := code[i+1]
-			i += 2
+			redirect := lexer.Token(code[ip])
+			index := code[ip+1]
+			ip += 2
 
 			ret, line, err := p.getline(redirect)
 			if err != nil {
@@ -815,9 +815,9 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			p.push(num(ret))
 
 		case compiler.GetlineLocal:
-			redirect := lexer.Token(code[i])
-			index := code[i+1]
-			i += 2
+			redirect := lexer.Token(code[ip])
+			index := code[ip+1]
+			ip += 2
 
 			ret, line, err := p.getline(redirect)
 			if err != nil {
@@ -829,9 +829,9 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			p.push(num(ret))
 
 		case compiler.GetlineSpecial:
-			redirect := lexer.Token(code[i])
-			index := code[i+1]
-			i += 2
+			redirect := lexer.Token(code[ip])
+			index := code[ip+1]
+			ip += 2
 
 			ret, line, err := p.getline(redirect)
 			if err != nil {
@@ -846,10 +846,10 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			p.push(num(ret))
 
 		case compiler.GetlineArray:
-			redirect := lexer.Token(code[i])
-			arrayScope := code[i+1]
-			arrayIndex := code[i+2]
-			i += 3
+			redirect := lexer.Token(code[ip])
+			arrayScope := code[ip+1]
+			arrayIndex := code[ip+2]
+			ip += 3
 
 			ret, line, err := p.getline(redirect)
 			if err != nil {
