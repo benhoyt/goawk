@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
@@ -49,16 +50,7 @@ func (wc *bufferedWriteCloser) Close() error {
 
 // Determine the output stream for given redirect token and
 // destination (file or pipe name)
-func (p *interp) getOutputStream(redirect Token, dest ast.Expr) (io.Writer, error) {
-	if redirect == ILLEGAL {
-		// Token "ILLEGAL" means send to standard output
-		return p.output, nil
-	}
-
-	destValue, err := p.eval(dest)
-	if err != nil {
-		return nil, err
-	}
+func (p *interp) getOutputStream(redirect Token, destValue value) (io.Writer, error) {
 	name := p.toString(destValue)
 	if _, ok := p.inputStreams[name]; ok {
 		return nil, newError("can't write to reader stream")
@@ -119,6 +111,15 @@ func (p *interp) getOutputStream(redirect Token, dest ast.Expr) (io.Writer, erro
 		// Should never happen
 		panic(fmt.Sprintf("unexpected redirect type %s", redirect))
 	}
+}
+
+// Executes code using configured system shell
+func (p *interp) execShell(code string) *exec.Cmd {
+	executable := p.shellCommand[0]
+	args := p.shellCommand[1:]
+	args = append(args, code)
+	cmd := exec.Command(executable, args...)
+	return cmd
 }
 
 // Get input Scanner to use for "getline" based on file name
@@ -403,7 +404,7 @@ func (p *interp) nextLine() (string, error) {
 				// not present
 				index := strconv.Itoa(p.filenameIndex)
 				argvIndex := p.program.Arrays["ARGV"]
-				argvArray := p.arrays[p.getArrayIndex(ast.ScopeGlobal, argvIndex)]
+				argvArray := p.array(ast.ScopeGlobal, argvIndex)
 				filename := p.toString(argvArray[index])
 				p.filenameIndex++
 

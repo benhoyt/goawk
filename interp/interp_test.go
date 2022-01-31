@@ -56,6 +56,7 @@ var interpTests = []interpTest{
 	{`$1==42`, "foo\n42\nbar", "42\n", "", ""},
 	{`$1=="42"`, "foo\n42\nbar", "42\n", "", ""},
 	{`/foo/`, "foo\nx\nfood\nxfooz\nbar", "foo\nfood\nxfooz\n", "", ""},
+	{`/foo/ { print NR }  /foo/`, "foo\nx\nfood\n", "1\nfoo\n3\nfood\n", "", ""},
 	{`NR==2, NR==4`, "1\n2\n3\n4\n5\n6\n", "2\n3\n4\n", "", ""},
 	{`
 NR==2, NR==4 { print $0 }
@@ -97,9 +98,13 @@ NR==3, NR==5 { print NR }
 	{`BEGIN { for (i=5; ; ) { printf "%d ", i; i++; if (i>8) break; } }`, "", "5 6 7 8 ", "", ""},
 	{`BEGIN { for (i=5; ; i++) { printf "%d ", i; if (i>8) break; } }`, "", "5 6 7 8 9 ", "", ""},
 	{`BEGIN { for (i=5; i<8; i++) { printf "%d ", i } }`, "", "5 6 7 ", "", ""},
+	{`BEGIN { for (i=3; i>0; i--) { printf "%d ", i } }`, "", "3 2 1 ", "", ""},
+	{`BEGIN { for (i=3; i>=0; i--) { printf "%d ", i } }`, "", "3 2 1 0 ", "", ""},
 	{`BEGIN { for (i=0; i<10; i++) { if (i < 5) continue; printf "%d ", i } }`, "", "5 6 7 8 9 ", "", ""},
 	{`BEGIN { a[1]=1; a[2]=1; for (k in a) { s++; break } print s }`, "", "1\n", "", ""},
 	{`BEGIN { a[1]=1; a[2]=1; a[3]=1; for (k in a) { if (k==2) continue; s++ } print s }`, "", "2\n", "", ""},
+	{`function alen(a, k, n) { n=0; for (k in a) n++; return n }  BEGIN { a[1]=1; a[2]=1; print alen(a) }`, "", "2\n", "", ""},
+	{`BEGIN { a["x"]=1; for (SUBSEP in a) print SUBSEP, a[SUBSEP] }`, "", "x 1\n", "", ""},
 	{`BEGIN { while (i<3) { i++; s++; break } print s }`, "", "1\n", "", ""},
 	{`BEGIN { while (i<3) { i++; if (i==2) continue; s++ } print s }`, "", "2\n", "", ""},
 	{`BEGIN { do { i++; s++; break } while (i<3); print s }`, "", "1\n", "", ""},
@@ -108,6 +113,9 @@ NR==3, NR==5 { print NR }
 	{`BEGIN { while (i < 5) { print i; i++ } }`, "", "\n1\n2\n3\n4\n", "", ""},
 	{`BEGIN { do { print i; i++ } while (i < 5) }`, "", "\n1\n2\n3\n4\n", "", ""},
 	{`BEGIN { for (i=0; i<10; i++); printf "x" }`, "", "x", "", ""},
+	{`BEGIN { s="x"; while (s=="x") { print s; s="y" } }`, "", "x\n", "", ""},
+	{`BEGIN { s="x"; while (s!="") { print s; s="" } }`, "", "x\n", "", ""},
+	{`BEGIN { s="x"; while (s) { print s; s="" } }`, "", "x\n", "", ""},
 	// regression tests for break and continue with nested loops
 	{`
 BEGIN {
@@ -144,6 +152,7 @@ BEGIN {
 	{`BEGIN { a[] }`, "", "", "parse error at 1:11: expected expression instead of ]", "syntax error"},
 	{`BEGIN { delete a[] }`, "", "", "parse error at 1:18: expected expression instead of ]", "syntax error"},
 	{`BEGIN { a["x"] = 3; a["y"] = 4; delete a; for (k in a) print k, a[k] }`, "", "", "", ""},
+	{`function f(a) { print "x" in a, "y" in a }  BEGIN { b["x"] = 3; f(b) }`, "", "1 0\n", "", ""},
 
 	// Unary expressions: ! + -
 	{`BEGIN { print !42, !1, !0, !!42, !!1, !!0 }`, "", "0 0 1 1 1 0\n", "", ""},
@@ -180,7 +189,7 @@ BEGIN {
 
 	// Short-circuit && and || operators
 	{`
-function t() { print "t"; return 1 }
+function t() { print "t"; return 2 }
 function f() { print "f"; return 0 }
 BEGIN {
 	print f() && f()
@@ -190,7 +199,7 @@ BEGIN {
 }
 `, "", "f\n0\nf\n0\nt\nf\n0\nt\nt\n1\n", "", ""},
 	{`
-function t() { print "t"; return 1 }
+function t() { print "t"; return 2 }
 function f() { print "f"; return 0 }
 BEGIN {
 	print f() || f()
@@ -199,6 +208,8 @@ BEGIN {
 	print t() || t()
 }
 `, "", "f\nf\n0\nf\nt\n1\nt\n1\nt\n1\n", "", ""},
+	{`BEGIN { print 0&&0, 0&&2, 2&&0, 2&&2 }`, "", "0 0 0 1\n", "", ""},
+	{`BEGIN { print 0||0, 0||2, 2||0, 2||2 }`, "", "0 1 1 1\n", "", ""},
 
 	// Other binary expressions: + - * ^ / % CONCAT ~ !~
 	{`BEGIN { print 1+2, 1+2+3, 1+-2, -1+2, "1"+"2", 3+.14 }`, "", "3 6 -1 1 3 3.14\n", "", ""},
@@ -211,6 +222,10 @@ BEGIN {
 	{`BEGIN { print "food"~/oo/, "food"~/[oO]+d/, "food"~"f", "food"~"F", "food"~0 }`, "", "1 1 1 0 0\n", "", ""},
 	{`BEGIN { print "food"!~/oo/, "food"!~/[oO]+d/, "food"!~"f", "food"!~"F", "food"!~0 }`, "", "0 0 0 1 1\n", "", ""},
 	{`BEGIN { print 1+2*3/4^5%6 7, (1+2)*3/4^5%6 "7" }`, "", "1.005867 0.008789067\n", "", ""},
+	{`BEGIN { print 1/0 }`, "", "", "division by zero", "division by zero"},
+	{`BEGIN { print 1%0 }`, "", "", "division by zero in mod", "division by zero"},
+	{`BEGIN { x /= 0 }`, "", "", "division by zero", "division by zero"},
+	{`BEGIN { x %= 0 }`, "", "", "division by zero in mod", "division by zero"},
 
 	// Number, string, and regex expressions
 	{`BEGIN { print 1, 1., .1, 1e0, -1, 1e }`, "", "1 1 0.1 1 -1 1\n", "", ""},
@@ -306,7 +321,7 @@ Record = record 2 and RT = [ BBBB ]
 Record = record 3 and RT = [
 ]
 `, "", ""},
-	{`BEGIN { RS = "\n|( *[[:upper:]]+ *)" } { print "Record =", $0,"and RT = [" RT "]" }`, // from https://www.gnu.org/software/gawk/manual/html_node/gawk-split-records.html
+	{`BEGIN { RS = "\n|( *[[:upper:]]+ *)" } { print "Record =", $0,"and RT = [" RT "]" }`,
 		"record 1 AAAA record 2 BBBB record 3",
 		`Record = record 1 and RT = [ AAAA ]
 Record = record 2 and RT = [ BBBB ]
@@ -397,6 +412,10 @@ BEGIN {
 	{`BEGIN { x=2; x^=5; print x; x^=0.5; print x }`, "", "32\n5.65685\n", "", ""},
 	{`{ $2+=10; print; $3/=2; print }`, "1 2 3", "1 12 3\n1 12 1.5\n", "", ""},
 	{`BEGIN { a[2] += 1; a["2"] *= 3; print a[2] }`, "", "3\n", "", ""},
+	{`function inc(x, n) { x += n; return x }  BEGIN { print inc(3, 2) }`, "", "5\n", "", ""},
+	{`function inca(a, k, n) { a[k] += n }  BEGIN { b["x"]=7; inca(b, "x", 2); print b["x"] }`, "", "9\n", "", ""},
+	{`BEGIN { NF += 3; print NF }`, "", "3\n", "", ""},
+	{`BEGIN { x=1; x += x+=3; print x }`, "", "8\n", "", ""},
 
 	// Incr/decr expressions
 	{`BEGIN { print x++; print x }`, "", "0\n1\n", "", ""},
@@ -408,6 +427,9 @@ BEGIN {
 	{`BEGIN { x[y++] += 3; print y }`, "", "1\n", "", ""},
 	{`BEGIN { $(y++)++; print y }`, "", "1\n", "", ""},
 	{`BEGIN { print "s" ++n; print "s" --n }`, "", "s1\ns0\n", "", ""},
+	{`function inc(x) { x++; return x }  BEGIN { print inc(3) }`, "", "4\n", "", ""},
+	{`function inca(a, k) { a[k]++ }  BEGIN { b["x"]=7; inca(b, "x"); print b["x"] }`, "", "8\n", "", ""},
+	{`BEGIN { NF++; print NF }`, "", "1\n", "", ""},
 
 	// Builtin functions
 	{`BEGIN { print sin(0), sin(0.5), sin(1), sin(-1) }`, "", "0 0.479426 0.841471 -0.841471\n", "", ""},
@@ -430,6 +452,8 @@ BEGIN {
 	{`BEGIN { print sprintf("%d") }`, "", "", "format error: got 0 args, expected 1", "not enough arg"},
 	{`BEGIN { print sprintf("%d", 12, 34) }`, "", "12\n", "", ""},
 	{`BEGIN { print sprintf("% 5d", 42) }`, "", "   42\n", "", ""},
+	{`BEGIN { print sprintf("%u", -1) }`, "", "18446744073709551615\n", "", ""},
+	{`BEGIN { print sprintf("%*s %.*s", 5, "abc", 5, "abcdefghi") }`, "", "  abc abcde\n", "", ""},
 	{`BEGIN { print substr("food", 1) }`, "", "food\n", "", ""},
 	{`BEGIN { print substr("food", 1, 2) }`, "", "fo\n", "", ""},
 	{`BEGIN { print substr("food", 1, 4) }`, "", "food\n", "", ""},
@@ -442,11 +466,14 @@ BEGIN {
 	{`BEGIN { print substr("food", -1, 8) }`, "", "food\n", "", ""},
 	{`BEGIN { print substr("food", 5, 8) }`, "", "\n", "", ""},
 	{`BEGIN { print substr("food", 2, -3), substr("fööd", 2, -3) }`, "", " \n", "", ""},
+	{`BEGIN { n = split("", a); for (i=1; i<=n; i++) print a[i] }`, "", "", "", ""},
+	{`BEGIN { n = split("", a, "."); for (i=1; i<=n; i++) print a[i] }`, "", "", "", ""},
 	{`BEGIN { n = split("ab c d ", a); for (i=1; i<=n; i++) print a[i] }`, "", "ab\nc\nd\n", "", ""},
 	{`BEGIN { n = split("ab,c,d,", a, ","); for (i=1; i<=n; i++) print a[i] }`, "", "ab\nc\nd\n\n", "", ""},
 	{`BEGIN { n = split("ab,c.d,", a, /[,.]/); for (i=1; i<=n; i++) print a[i] }`, "", "ab\nc\nd\n\n", "", ""},
 	{`BEGIN { n = split("1 2", a); print (n, a[1], a[2], a[1]==1, a[2]==2) }`, "", "2 1 2 1 1\n", "", ""},
 	{`BEGIN { x = "1.2.3"; print sub(/\./, ",", x); print x }`, "", "1\n1,2.3\n", "", ""},
+	{`BEGIN { x = "1.2.3"; print sub(/\./, ",\\", x); print x }`, "", "1\n1,\\2.3\n", "", ""},
 	{`{ print sub(/\./, ","); print $0 }`, "1.2.3", "1\n1,2.3\n", "", ""},
 	{`BEGIN { x = "1.2.3"; print gsub(/\./, ",", x); print x }`, "", "2\n1,2,3\n", "", ""},
 	{`{ print gsub(/\./, ","); print $0 }`, "1.2.3", "2\n1,2,3\n", "", ""},
@@ -462,6 +489,7 @@ BEGIN {
 	{`BEGIN { print toupper("Foo BaR") }`, "", "FOO BAR\n", "", ""},
 	{`
 BEGIN {
+    srand()
 	srand(1)
 	a = rand(); b = rand(); c = rand()
 	srand(1)
@@ -518,6 +546,7 @@ BEGIN {
 function f(loc) {
 	glob += 1
 	loc += 1
+	loc = loc * 2
 	print glob, loc
 }
 BEGIN {
@@ -528,14 +557,12 @@ BEGIN {
 	f(4)
 	print loc
 }
-`, "", "2 4\n42\n3 5\n42\n", "", ""},
+`, "", "2 8\n42\n3 10\n42\n", "", ""},
 	{`
-function set(a, x, v) {
-	a[x] = v
-}
-function get(a, x) {
-	return a[x]
-}
+function set(a, x, v) { a[x] = v }
+function get(a, x) { return a[x] }
+function get2(x, a) { return a[x] }
+function get3(x, a, b) { b[0]; return a[x] }
 BEGIN {
 	a["x"] = 1
 	set(b, "y", 2)
@@ -544,8 +571,10 @@ BEGIN {
 	for (k in b) print k, b[k]
 	print "---"
 	print get(a, "x"), get(b, "y")
+	print get2("x", a), get2("y", b)
+	print get3("x", a), get2("y", b)
 }
-`, "", "x 1\n---\ny 2\n---\n1 2\n", "", ""},
+`, "", "x 1\n---\ny 2\n---\n1 2\n1 2\n1 2\n", "", ""},
 	{`
 function fib(n) {
 	return n < 3 ? 1 : fib(n-2) + fib(n-1)
@@ -607,6 +636,7 @@ function f2(x, y) { return x[y] }
 BEGIN { a[1]=2; f1(a); print f2(a, 1) }
 `, "", "2\n", "", ""},
 	{`BEGIN { arr[0]; f(arr) } function f(a) { print "x" }`, "", "x\n", "", ""},
+	{`function add(a, b) { return a+b }  BEGIN { print add(1, 2), add(1), add() }`, "", "3 1 0\n", "", ""},
 
 	// Type checking / resolver tests
 	{`BEGIN { a[x]; a=42 }`, "", "", `parse error at 1:15: can't use array "a" as scalar`, "array"},
@@ -633,6 +663,9 @@ BEGIN { foo(5); bar(10) }
 	{`function f(x) { print x, x(); }  BEGIN { f() }`, "", "", `parse error at 1:27: can't call local variable "x" as function`, "function"},
 
 	// Redirected I/O
+	{`BEGIN { getline x; print x }`, "foo", "foo\n", "", ""},
+	{`function f(x) { getline x; print x }  BEGIN { f(); print x }`, "foo", "foo\n\n", "", ""},
+	{`BEGIN { getline SUBSEP; print SUBSEP }`, "foo", "foo\n", "", ""},
 	{`BEGIN { getline a[1]; print a[1] }`, "foo", "foo\n", "", ""},
 	{`BEGIN { getline $1; print $1 }`, "foo", "foo\n", "", ""},
 	{`BEGIN { "echo foo" | getline a[1]; print a[1] }`, "", "foo\n", "", ""},
@@ -709,36 +742,38 @@ func TestInterp(t *testing.T) {
 		}
 
 		// Run it through external awk program first
-		t.Run("awk_"+testName, func(t *testing.T) {
-			if awkExe != "" && strings.Contains(test.src, "!"+awkExe) {
-				t.Skipf("skipping under %s", awkExe)
-			}
-			if strings.Contains(test.src, "!"+runtime.GOOS+"-"+awkExe) {
-				t.Skipf("skipping on %s under %s", runtime.GOOS, awkExe)
-			}
-			cmd := exec.Command(awkExe, test.src, "-")
-			if test.in != "" {
-				cmd.Stdin = strings.NewReader(test.in)
-			}
-			out, err := cmd.CombinedOutput()
-			if err != nil {
-				if test.awkErr != "" {
-					if strings.Contains(string(out), test.awkErr) {
-						return
-					}
-					t.Fatalf("expected error %q, got:\n%s", test.awkErr, out)
-				} else {
-					t.Fatalf("error running %s: %v:\n%s", awkExe, err, out)
+		if awkExe != "" {
+			t.Run("awk_"+testName, func(t *testing.T) {
+				if strings.Contains(test.src, "!"+awkExe) {
+					t.Skipf("skipping under %s", awkExe)
 				}
-			}
-			if test.awkErr != "" {
-				t.Fatalf(`expected error %q, got ""`, test.awkErr)
-			}
-			normalized := normalizeNewlines(string(out))
-			if normalized != test.out {
-				t.Fatalf("expected %q, got %q", test.out, normalized)
-			}
-		})
+				if strings.Contains(test.src, "!"+runtime.GOOS+"-"+awkExe) {
+					t.Skipf("skipping on %s under %s", runtime.GOOS, awkExe)
+				}
+				cmd := exec.Command(awkExe, test.src, "-")
+				if test.in != "" {
+					cmd.Stdin = strings.NewReader(test.in)
+				}
+				out, err := cmd.CombinedOutput()
+				if err != nil {
+					if test.awkErr != "" {
+						if strings.Contains(string(out), test.awkErr) {
+							return
+						}
+						t.Fatalf("expected error %q, got:\n%s", test.awkErr, out)
+					} else {
+						t.Fatalf("error running %s: %v:\n%s", awkExe, err, out)
+					}
+				}
+				if test.awkErr != "" {
+					t.Fatalf(`expected error %q, got ""`, test.awkErr)
+				}
+				normalized := normalizeNewlines(string(out))
+				if normalized != test.out {
+					t.Fatalf("expected %q, got %q", test.out, normalized)
+				}
+			})
+		}
 
 		// Then test it in GoAWK
 		t.Run(testName, func(t *testing.T) {
@@ -785,6 +820,13 @@ func testGoAWK(
 		}
 		t.Fatal(err)
 	}
+
+	// Test that disassembler at least doesn't panic or return an error.
+	err = prog.Disassemble(ioutil.Discard)
+	if err != nil {
+		t.Fatalf("disassembler returned an error: %v", err)
+	}
+
 	outBuf := &concurrentBuffer{}
 	config := &interp.Config{
 		Stdin:  strings.NewReader(in),
@@ -796,7 +838,7 @@ func testGoAWK(
 	if configure != nil {
 		configure(config)
 	}
-	_, err = interp.ExecProgram(prog, config)
+	status, err := interp.ExecProgram(prog, config)
 	if err != nil {
 		if errStr != "" {
 			if err.Error() == errStr {
@@ -812,6 +854,9 @@ func testGoAWK(
 	normalized := normalizeNewlines(outBuf.String())
 	if normalized != out {
 		t.Fatalf("expected %q, got %q", out, normalized)
+	}
+	if status != 0 {
+		t.Fatalf("expected status 0, got %d", status)
 	}
 }
 
@@ -1030,6 +1075,10 @@ BEGIN { x=4; y=5; print foo(x), bar(y) }
 			map[string]interface{}{
 				"add": func(a, b float64) float64 { return a + b },
 			}},
+		{`BEGIN { print add(1, add(2, 3)) }`, "", "6\n", "",
+			map[string]interface{}{
+				"add": func(a, b float32) float32 { return a + b },
+			}},
 		{`BEGIN { print foo(x) }`, "", "0\n", "",
 			map[string]interface{}{
 				"foo": func(i int) int { return i },
@@ -1237,6 +1286,45 @@ BEGIN {
 	testGoAWK(t, src, "", "", "length of config.Environ must be a multiple of 2, not 3", nil, func(config *interp.Config) {
 		config.Environ = []string{"b", "a", "d"}
 	})
+}
+
+func TestExit(t *testing.T) {
+	tests := []struct {
+		src    string
+		out    string
+		status int
+	}{
+		{`BEGIN { print "x"; exit; print "y" }  { print "a" }  END { print "z" }`, "x\nz\n", 0},
+		{`BEGIN { print "x"; exit 1+2; print "y" }  { print "a" }  END { print "z" }`, "x\nz\n", 3},
+		{`{ print "x"; exit; print "y" }  END { print "z" }`, "x\nz\n", 0},
+		{`{ print "x"; exit 1+2; print "y" }  END { print "z" }`, "x\nz\n", 3},
+		{`END { print "x"; exit; print "y" }`, "x\n", 0},
+		{`END { print "x"; exit 1+2; print "y" }`, "x\n", 3},
+	}
+	for _, test := range tests {
+		t.Run(test.src, func(t *testing.T) {
+			prog, err := parser.ParseProgram([]byte(test.src), nil)
+			if err != nil {
+				t.Fatalf("error parsing: %v", err)
+			}
+			outBuf := &bytes.Buffer{}
+			config := &interp.Config{
+				Stdin:  strings.NewReader("line\n"),
+				Output: outBuf,
+			}
+			status, err := interp.ExecProgram(prog, config)
+			if err != nil {
+				t.Fatalf("error interpreting: %v", err)
+			}
+			normalized := normalizeNewlines(outBuf.String())
+			if normalized != test.out {
+				t.Fatalf("expected %q, got %q", test.out, normalized)
+			}
+			if status != test.status {
+				t.Fatalf("expected status %d, got %d", test.status, status)
+			}
+		})
+	}
 }
 
 func benchmarkProgram(b *testing.B, funcs map[string]interface{},

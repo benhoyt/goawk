@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/benhoyt/goawk/internal/ast"
+	"github.com/benhoyt/goawk/internal/compiler"
 	. "github.com/benhoyt/goawk/lexer"
 )
 
@@ -68,10 +69,16 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	}
 	p.initResolve()
 	p.next() // initialize p.tok
-	return p.program(), nil
+
+	// Parse into abstract syntax tree
+	prog = p.program()
+
+	// Compile to virtual machine code
+	prog.Compiled, err = compiler.Compile(prog.toAST())
+	return prog, err
 }
 
-// Program is the abstract syntax tree for an entire AWK program.
+// Program is the parsed and compiled representation of an entire AWK program.
 type Program struct {
 	// These fields aren't intended to be used or modified directly,
 	// but are exported for the interpreter (Program itself needs to
@@ -83,25 +90,31 @@ type Program struct {
 	Functions []ast.Function
 	Scalars   map[string]int
 	Arrays    map[string]int
+	Compiled  *compiler.Program
 }
 
 // String returns an indented, pretty-printed version of the parsed
 // program.
 func (p *Program) String() string {
-	parts := []string{}
-	for _, ss := range p.Begin {
-		parts = append(parts, "BEGIN {\n"+ss.String()+"}")
+	return p.toAST().String()
+}
+
+// Disassemble writes a human-readable form of the program's virtual machine
+// instructions to writer.
+func (p *Program) Disassemble(writer io.Writer) error {
+	return p.Compiled.Disassemble(writer)
+}
+
+// toAST converts the *Program to an *ast.Program.
+func (p *Program) toAST() *ast.Program {
+	return &ast.Program{
+		Begin:     p.Begin,
+		Actions:   p.Actions,
+		End:       p.End,
+		Functions: p.Functions,
+		Scalars:   p.Scalars,
+		Arrays:    p.Arrays,
 	}
-	for _, a := range p.Actions {
-		parts = append(parts, a.String())
-	}
-	for _, ss := range p.End {
-		parts = append(parts, "END {\n"+ss.String()+"}")
-	}
-	for _, function := range p.Functions {
-		parts = append(parts, function.String())
-	}
-	return strings.Join(parts, "\n\n")
 }
 
 // Parser state

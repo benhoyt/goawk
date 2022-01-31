@@ -44,7 +44,7 @@ import (
 )
 
 const (
-	version    = "v1.14.0"
+	version    = "v1.15.0"
 	copyright  = "GoAWK " + version + " - Copyright (c) 2021 Ben Hoyt"
 	shortUsage = "usage: goawk [-F fs] [-v var=value] [-f progfile | 'prog'] [file ...]"
 	longUsage  = `Standard AWK arguments:
@@ -58,8 +58,9 @@ const (
 Additional GoAWK arguments:
   -cpuprofile file
         write CPU profile to file
-  -d    debug mode (print parsed AST to stderr)
-  -dt   show variable types debug info
+  -d    print parsed syntax tree to stderr (debug mode)
+  -da   print virtual machine assembly instructions to stderr
+  -dt   print variable type information to stderr
   -h    show this usage message
   -version
         show GoAWK version and exit
@@ -75,6 +76,7 @@ func main() {
 	fieldSep := " "
 	cpuprofile := ""
 	debug := false
+	debugAsm := false
 	debugTypes := false
 	memprofile := ""
 
@@ -117,6 +119,8 @@ func main() {
 			cpuprofile = os.Args[i]
 		case "-d":
 			debug = true
+		case "-da":
+			debugAsm = true
 		case "-dt":
 			debugTypes = true
 		case "-h", "--help":
@@ -206,9 +210,18 @@ func main() {
 		}
 		errorExitf("%s", err)
 	}
+
 	if debug {
 		fmt.Fprintln(os.Stderr, prog)
 	}
+
+	if debugAsm {
+		err := prog.Disassemble(os.Stderr)
+		if err != nil {
+			errorExitf("could not disassemble program: %v", err)
+		}
+	}
+
 	config := &interp.Config{
 		Argv0: filepath.Base(os.Args[0]),
 		Args:  expandWildcardsOnWindows(args),

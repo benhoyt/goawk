@@ -35,7 +35,7 @@ TESTS_TO_MEAN = [
     'tt.x2',
 ]
 MEAN_TESTS = []
-NUM_RUNS = 3
+NUM_RUNS = 6
 MIN_TIME = 0.5
 PROGRAM_GLOB = 'testdata/tt.*'
 
@@ -93,7 +93,8 @@ for program in programs:
             times.append(elapsed)
             if status != 0:
                 print('ERROR status {} from cmd: {}'.format(status, cmdline), file=sys.stderr)
-        awk_times.append(min(times))
+        min_time = min(sorted(times)[1:])
+        awk_times.append(min_time)
 
     # Normalize to One True AWK time = 1.0
     norm_time = awk_times[NORM_INDEX]
