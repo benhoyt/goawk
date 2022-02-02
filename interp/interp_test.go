@@ -713,6 +713,16 @@ BEGIN { foo(5); bar(10) }
 	print close("out")
 }`, "", "0\nfoo\n0\nfoo\n0\n-1\n", "", ""},
 	{`BEGIN { print close("nothing") }`, "", "-1\n", "", ""},
+	{`BEGIN {
+	print "foo">"out"
+	close("out")
+	print "bar">>"out"
+	close("out")
+	getline <"out"
+	print $0
+	getline <"out"
+	print $0
+}`, "", "foo\nbar\n", "", ""},
 
 	// Ensure data returned by getline (in various forms) is treated as numeric string
 	{`BEGIN { getline; print($0==0) }`, "0.0", "1\n", "", ""},
