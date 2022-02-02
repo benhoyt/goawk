@@ -687,6 +687,29 @@ BEGIN { foo(5); bar(10) }
 	//{`BEGIN { print("echo foo" | getline $0+1); print }`, "", "2\nfoo\n", "", ""},
 	//{`BEGIN { print("echo foo" | getline ($0+1)); print }`, "", "11\nfoo\n", "", ""},
 	//{`BEGIN { print("echo foo" | getline foo()); print } function foo() { print "z" }`, "", "z\n1\nfoo\n", "", ""},
+	{`BEGIN {
+	print "foo" >"out"
+	print close("out")
+	print "bar" >"out"
+	print close("out")
+	getline <"out"
+	print $0
+	print close("out")
+	print close("out")
+}`, "", "0\n0\nbar\n0\n-1\n", "", ""},
+	{`BEGIN {
+	print "foo" >"out"
+	print "bar" >"out"
+	print close("out")
+	getline <"out"
+	print $0
+	print close("out")
+	getline <"out"
+	print $0
+	print close("out")
+	print close("out")
+}`, "", "0\nfoo\n0\nfoo\n0\n-1\n", "", ""},
+	{`BEGIN { print close("nothing") }`, "", "-1\n", "", ""},
 
 	// Ensure data returned by getline (in various forms) is treated as numeric string
 	{`BEGIN { getline; print($0==0) }`, "0.0", "1\n", "", ""},
