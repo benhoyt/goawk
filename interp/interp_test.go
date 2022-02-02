@@ -468,6 +468,8 @@ BEGIN {
 	{`BEGIN { print substr("food", 2, 8) }`, "", "ood\n", "", ""},
 	{`BEGIN { print substr("food", 0, 8) }`, "", "food\n", "", ""},
 	{`BEGIN { print substr("food", -1, 8) }`, "", "food\n", "", ""},
+	{`BEGIN { print substr("food", 5) }`, "", "\n", "", ""},
+	{`BEGIN { print substr("food", -1) }`, "", "food\n", "", ""},
 	{`BEGIN { print substr("food", 5, 8) }`, "", "\n", "", ""},
 	{`BEGIN { print substr("food", 2, -3), substr("fööd", 2, -3) }`, "", " \n", "", ""},
 	{`BEGIN { n = split("", a); for (i=1; i<=n; i++) print a[i] }`, "", "", "", ""},
