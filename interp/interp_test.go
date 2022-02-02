@@ -545,6 +545,7 @@ BEGIN {
 		"", "foo\n0\nbar\n0\n", "", ""},
 	{`BEGIN { print system(">&2 echo error") }  # !fuzz`,
 		"", "error\n0\n", "", ""},
+	{`BEGIN { print system("exit 42") }  # !fuzz`, "", "42\n", "", ""},
 
 	// Test bytes/unicode handling (GoAWK currently has char==byte, unlike Gawk).
 	{`BEGIN { print match("food", "foo"), RSTART, RLENGTH }  !gawk`, "", "1 1 3\n", "", ""},
@@ -1263,12 +1264,23 @@ func TestShellCommand(t *testing.T) {
 	}
 }
 
-func TestSystemErrors(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		testGoAWK(t, `BEGIN { print system("foobar3982") }`, "", "sh: 1: foobar3982: not found\n127\n", "", nil, nil)
-	} else {
-		testGoAWK(t, `BEGIN { print system("foobar3982") }`, "", "/bin/sh: 1: foobar3982: not found\n127\n", "", nil, nil)
-		testGoAWK(t, `BEGIN { print system("exit 42") }`, "", "42\n", "", nil, nil)
+func TestSystemCommandNotFound(t *testing.T) {
+	prog, err := parser.ParseProgram([]byte(`BEGIN { print system("foobar3982") }`), nil)
+	if err != nil {
+		t.Fatalf("error parsing: %v", err)
+	}
+	outBuf := &concurrentBuffer{}
+	config := &interp.Config{
+		Output: outBuf,
+		Error:  outBuf,
+	}
+	_, err = interp.ExecProgram(prog, config)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	got := outBuf.buffer.String()
+	if !strings.Contains(got, "foobar3982") || !strings.Contains(got, "not found") {
+		t.Fatalf(`expected output to contain "foobar3982" and "not found", got %q`, got)
 	}
 }
 
