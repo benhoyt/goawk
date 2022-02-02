@@ -1217,6 +1217,19 @@ func TestShellCommand(t *testing.T) {
 			func(config *interp.Config) {
 				config.ShellCommand = []string{"/bin/cat"}
 			})
+		testGoAWK(t, `BEGIN { print system("echo hi") }`, "", "exec: \"foobar3982\": executable file not found in $PATH\n-1\n", "", nil,
+			func(config *interp.Config) {
+				config.ShellCommand = []string{"foobar3982"}
+			})
+	}
+}
+
+func TestSystemErrors(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		testGoAWK(t, `BEGIN { print system("foobar3982") }`, "", "sh: 1: foobar3982: not found\n127\n", "", nil, nil)
+	} else {
+		testGoAWK(t, `BEGIN { print system("foobar3982") }`, "", "/bin/sh: 1: foobar3982: not found\n127\n", "", nil, nil)
+		testGoAWK(t, `BEGIN { print system("exit 42") }`, "", "42\n", "", nil, nil)
 	}
 }
 
