@@ -436,18 +436,6 @@ lineLoop:
 	return nil
 }
 
-// Get a variable's value by index in given scope
-func (p *interp) getVar(scope ast.VarScope, index int) value {
-	switch scope {
-	case ast.ScopeGlobal:
-		return p.globals[index]
-	case ast.ScopeLocal:
-		return p.frame[index]
-	default: // ScopeSpecial
-		return p.getSpecial(index)
-	}
-}
-
 // Get a special variable by index
 func (p *interp) getSpecial(index int) value {
 	switch index {

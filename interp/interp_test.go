@@ -264,7 +264,7 @@ BEGIN {
 	{`BEGIN { print 0?1:0, 1?1:0, ""?1:0, "0"?1:0, "1"?1:0, x?1:0 }`, "", "0 1 0 1 1 0\n", "", ""},
 
 	// Built-in variables
-	// ARGC is tested in goawk_test.go
+	{`BEGIN { print ARGC; ARGC=42; print ARGC }  # !gawk`, "", "1\n42\n", "", ""}, // ARGC is properly tested in goawk_test.go
 	{`
 BEGIN {
 	print CONVFMT, 1.2345678 ""
@@ -331,6 +331,7 @@ Record = record 2 and RT = [ BBBB ]
 Record = record 3 and RT = []
 `, "", ""},
 	{`BEGIN { RS=".." } { print $0 RT }`, "foo bar bazz", "fo\no \nba\nr \nba\nzz\n", "", ""},
+	{`BEGIN { RT="foo"; print RT }`, "", "foo\n", "", ""},
 	{`
 BEGIN {
 	print SUBSEP
