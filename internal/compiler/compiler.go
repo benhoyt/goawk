@@ -529,14 +529,6 @@ func (c *compiler) jumpBackward(label int, jumpOp Opcode, args ...Opcode) {
 	c.add(opcodeInt(offset))
 }
 
-func opIfElse(cond bool, trueOp, falseOp Opcode) Opcode {
-	if cond {
-		return trueOp
-	} else {
-		return falseOp
-	}
-}
-
 // Generate opcodes for a boolean condition.
 func (c *compiler) condition(expr ast.Expr, invert bool) Opcode {
 	jumpOp := func(normal, inverted Opcode) Opcode {

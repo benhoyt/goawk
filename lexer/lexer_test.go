@@ -107,7 +107,6 @@ func TestRegex(t *testing.T) {
 		{`/a\/\zb/`, `1:1 regex "a/\\zb"`},
 		{`/a`, `1:3 <illegal> "didn't find end slash in regex"`},
 		{"/a\n", `1:3 <illegal> "can't have newline in regex"`},
-		{`foo/`, `1:4 <illegal> "unexpected name preceding regex"`},
 	}
 	for _, test := range tests {
 		t.Run(test.input, func(t *testing.T) {
@@ -120,6 +119,23 @@ func TestRegex(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestScanRegexInvalid(t *testing.T) {
+	defer func() {
+		r := recover()
+		if message, ok := r.(string); ok {
+			expected := "ScanRegex should only be called after DIV or DIV_ASSIGN token"
+			if message != expected {
+				t.Fatalf("expected %q, got %q", expected, message)
+			}
+		} else {
+			t.Fatalf("expected panic of string type")
+		}
+	}()
+	l := NewLexer([]byte("foo/"))
+	l.Scan() // Scan first token (NAME foo)
+	l.ScanRegex()
 }
 
 func TestHadSpace(t *testing.T) {

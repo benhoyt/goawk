@@ -211,13 +211,14 @@ BEGIN {
 	{`BEGIN { print 0&&0, 0&&2, 2&&0, 2&&2 }`, "", "0 0 0 1\n", "", ""},
 	{`BEGIN { print 0||0, 0||2, 2||0, 2||2 }`, "", "0 1 1 1\n", "", ""},
 
-	// Other binary expressions: + - * ^ / % CONCAT ~ !~
+	// Other binary expressions: + - * ^ ** / % CONCAT ~ !~
 	{`BEGIN { print 1+2, 1+2+3, 1+-2, -1+2, "1"+"2", 3+.14 }`, "", "3 6 -1 1 3 3.14\n", "", ""},
 	{`BEGIN { print 1-2, 1-2-3, 1-+2, -1-2, "1"-"2", 3-.14 }`, "", "-1 -4 -1 -3 -1 2.86\n", "", ""},
 	{`BEGIN { print 2*3, 2*3*4, 2*-3, -2*3, "2"*"3", 3*.14 }`, "", "6 24 -6 -6 6 0.42\n", "", ""},
 	{`BEGIN { print 2/3, 2/3/4, 2/-3, -2/3, "2"/"3", 3/.14 }`, "", "0.666667 0.166667 -0.666667 -0.666667 0.666667 21.4286\n", "", ""},
 	{`BEGIN { print 2%3, 2%3%4, 2%-3, -2%3, "2"%"3", 3%.14 }`, "", "2 2 2 -2 2 0.06\n", "", ""},
 	{`BEGIN { print 2^3, 2^3^3, 2^-3, -2^3, "2"^"3", 3^.14 }`, "", "8 134217728 0.125 -8 8 1.16626\n", "", ""},
+	{`BEGIN { print 2**3, 2**3**3, 2**-3, -2**3, "2"**"3", 3**.14 }`, "", "8 134217728 0.125 -8 8 1.16626\n", "", ""},
 	{`BEGIN { print 1 2, "x" "yz", 1+2 3+4 }`, "", "12 xyz 37\n", "", ""},
 	{`BEGIN { print "food"~/oo/, "food"~/[oO]+d/, "food"~"f", "food"~"F", "food"~0 }`, "", "1 1 1 0 0\n", "", ""},
 	{`BEGIN { print "food"!~/oo/, "food"!~/[oO]+d/, "food"!~"f", "food"!~"F", "food"!~0 }`, "", "0 0 0 1 1\n", "", ""},
@@ -230,8 +231,10 @@ BEGIN {
 	// Number, string, and regex expressions
 	{`BEGIN { print 1, 1., .1, 1e0, -1, 1e }`, "", "1 1 0.1 1 -1 1\n", "", ""},
 	{`BEGIN { print '\"' '\'' 'xy' "z" "'" '\"' }`, "", "\"'xyz'\"\n", "", "syntax error"}, // Check support for single-quoted strings
+	{`BEGIN { print "0\n1\t2\r3\a4\b5\f6\v7\x408\xf" }`, "", "0\n1\t2\r3\a4\b5\f6\v7@8\x0f\n", "", ""},
 	{`{ print /foo/ }`, "food\nfoo\nxfooz\nbar\n", "1\n1\n1\n0\n", "", ""},
 	{`/[a-/`, "foo", "", "parse error at 1:1: error parsing regexp: missing closing ]: `[a-`", "terminated"},
+	{`/=foo/`, "=foo", "=foo\n", "", ""},
 	{`BEGIN { print "-12"+0, "+12"+0, " \t\r\n7foo"+0, ".5"+0, "5."+0, "+."+0 }`, "", "-12 12 7 0.5 5 0\n", "", ""},
 	{`BEGIN { print "1e3"+0, "1.2e-1"+0, "1e+1"+0, "1e"+0, "1e+"+0 }`, "", "1000 0.12 10 1 1\n", "", ""},
 	{`BEGIN { print -(11102200000000000000000000000000000000 1040000) }  # !gawk - gawk supports big numbers`,
@@ -410,6 +413,7 @@ BEGIN {
 	{`BEGIN { x=6; x/=3; print x; x/=x; print x; x/=.6; print x }`, "", "2\n1\n1.66667\n", "", ""},
 	{`BEGIN { x=12; x%=5; print x }`, "", "2\n", "", ""},
 	{`BEGIN { x=2; x^=5; print x; x^=0.5; print x }`, "", "32\n5.65685\n", "", ""},
+	{`BEGIN { x=2; x**=5; print x; x**=0.5; print x }`, "", "32\n5.65685\n", "", ""},
 	{`{ $2+=10; print; $3/=2; print }`, "1 2 3", "1 12 3\n1 12 1.5\n", "", ""},
 	{`BEGIN { a[2] += 1; a["2"] *= 3; print a[2] }`, "", "3\n", "", ""},
 	{`function inc(x, n) { x += n; return x }  BEGIN { print inc(3, 2) }`, "", "5\n", "", ""},
@@ -720,12 +724,25 @@ BEGIN { foo(5); bar(10) }
 	{`BEGIN { if (1) printf "x"; else printf "y" }`, "", "x", "", ""},
 	{`BEGIN { printf "x"; { printf "y"; printf "z" } }`, "", "xyz", "", ""},
 
+	// Backslash line continuation
+	{"BEGIN { print 1,\\\n 2 }", "", "1 2\n", "", ""},
+	{"BEGIN { print 1,\\\r\n 2 }", "", "1 2\n", "", ""},
+
 	// Ensure syntax errors result in errors
 	{`{ $1 = substr($1, 1, 3) print $1 }`, "", "", "parse error at 1:25: expected ; or newline between statements", "syntax error"},
 	{`BEGIN { f() }`, "", "", `parse error at 1:9: undefined function "f"`, "defined"},
 	{`function f() {} function f() {} BEGIN { }`, "", "", `parse error at 1:26: function "f" already defined`, "define"},
 	{`BEGIN { print (1,2),(3,4) }`, "", "", "parse error at 1:15: unexpected comma-separated expression", "syntax"},
 	{`BEGIN { print (1,2,(3,4),(5,6)) }`, "", "", "parse error at 1:20: unexpected comma-separated expression", "syntax"},
+	{"BEGIN { print 1,\\2 }", "", "1 2\n", `parse error at 1:18: expected \n after \ line continuation`, "backslash not last character on line"},
+	{`BEGIN { print . }`, "", "", "parse error at 1:16: expected digits", "syntax"},
+	{`BEGIN { print "foo }`, "", "", "parse error at 1:21: didn't find end quote in string", "unterminated string"},
+	{"BEGIN { print \"foo\n\"}", "", "", "parse error at 1:19: can't have newline in string", "unterminated string"},
+	{`/foo`, "", "", "parse error at 1:5: didn't find end slash in regex", "unterminated regexp"},
+	{"/foo\n", "", "", "parse error at 1:5: can't have newline in regex", "unterminated regexp"},
+	{`BEGIN { print "\x" }  # !gawk`, "", "", "parse error at 1:18: 1 or 2 hex digits expected", ""},
+	{`BEGIN { print 1&*2 }`, "", "", "parse error at 1:17: unexpected char after '&'", "syntax"},
+	{`BEGIN { @ }`, "", "", "parse error at 1:9: unexpected char", "syntax"},
 }
 
 func TestInterp(t *testing.T) {

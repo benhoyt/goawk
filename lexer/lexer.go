@@ -8,10 +8,6 @@
 //
 package lexer
 
-import (
-	"fmt"
-)
-
 // Lexer tokenizes a byte string of AWK source code. Use NewLexer to
 // actually create a lexer, and Scan() or ScanRegex() to get tokens.
 type Lexer struct {
@@ -366,7 +362,7 @@ func (l *Lexer) scanRegex() (Position, Token, string) {
 		pos.Column -= 2
 		chars = append(chars, '=')
 	default:
-		return l.pos, ILLEGAL, fmt.Sprintf("unexpected %s preceding regex", l.lastTok)
+		panic("ScanRegex should only be called after DIV or DIV_ASSIGN token")
 	}
 	for l.ch != '/' {
 		c := l.ch
