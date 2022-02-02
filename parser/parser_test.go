@@ -3,6 +3,7 @@
 package parser_test
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 	"testing"
@@ -186,6 +187,24 @@ function set(a, k, v) {
 	progStr := prog.String()
 	if progStr != source {
 		t.Fatalf("expected first, got second:\n%s\n----------\n%s", source, progStr)
+	}
+}
+
+func TestResolveTooManyIterations(t *testing.T) {
+	var buf bytes.Buffer
+	var i int
+	for i = 0; i < 1200; i++ { // at least twice as big as maxResolveIterations in resolve.go
+		fmt.Fprintf(&buf, "function f%d(a) { return f%d(a) }\n", i, i+1)
+	}
+	fmt.Fprintf(&buf, "function f%d(a) { return a }\n", i)
+	fmt.Fprintf(&buf, "BEGIN { printf f%d(42) }\n", i)
+
+	_, err := parser.ParseProgram(buf.Bytes(), nil)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "too many iterations") {
+		t.Fatalf(`expected error to contain "too many iterations", got %q`, err.Error())
 	}
 }
 

@@ -233,8 +233,8 @@ func (p *parser) printVarTypes(prog *Program) {
 	}
 }
 
-// If we can't finish resolving after this many iterations, give up
-const maxResolveIterations = 10000
+// If we can't finish resolving after this many iterations, give up (500 takes about 100ms)
+const maxResolveIterations = 500
 
 // Resolve unknown variables types and generate variable indexes and
 // name-to-index mappings for interpreter
@@ -278,6 +278,7 @@ func (p *parser) resolveVars(prog *Program) {
 			break
 		}
 		if i >= maxResolveIterations {
+			// TODO: we should use topological sorting here to avoid O(N^2) behavior for inputs like those in TestResolveTooManyIterations
 			panic(p.errorf("too many iterations trying to resolve variable types"))
 		}
 	}
