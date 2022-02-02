@@ -133,7 +133,7 @@ const (
 )
 
 // AugOp represents an augmented assignment operation.
-type AugOp int32
+type AugOp Opcode
 
 const (
 	AugOpAdd AugOp = iota
@@ -145,7 +145,7 @@ const (
 )
 
 // BuiltinOp represents a builtin function call.
-type BuiltinOp int32
+type BuiltinOp Opcode
 
 const (
 	BuiltinAtan2 BuiltinOp = iota

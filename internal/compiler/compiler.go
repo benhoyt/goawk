@@ -600,7 +600,7 @@ func (c *compiler) expr(expr ast.Expr) {
 	case *ast.FieldExpr:
 		switch index := e.Index.(type) {
 		case *ast.NumExpr:
-			if index.Value == float64(int32(index.Value)) {
+			if index.Value == float64(Opcode(index.Value)) {
 				// Optimize $i to FieldInt opcode with integer argument
 				c.add(FieldInt, opcodeInt(int(index.Value)))
 				return
