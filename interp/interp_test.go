@@ -1896,6 +1896,19 @@ BEGIN {
 `, b.N)
 }
 
+func BenchmarkConcatTwo(b *testing.B) {
+	b.StopTimer()
+	benchmarkProgram(b, nil, "", "20", `
+BEGIN {
+  x = "0123456789"
+  for (i = 0; i < %d; i++) {
+    y = x x
+  }
+  print length(y)
+}
+`, b.N)
+}
+
 func BenchmarkConcatSmall(b *testing.B) {
 	b.StopTimer()
 	benchmarkProgram(b, nil, "", "100", `
