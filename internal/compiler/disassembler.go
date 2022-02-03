@@ -271,6 +271,10 @@ func (d *disassembler) disassemble(prefix string) error {
 			num := d.fetch()
 			d.writeOpf("MultiIndex %d", num)
 
+		case ConcatN:
+			num := d.fetch()
+			d.writeOpf("ConcatN %d", num)
+
 		case Jump:
 			offset := d.fetch()
 			d.writeOpf("Jump 0x%04x", d.ip+int(offset))
