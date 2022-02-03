@@ -633,6 +633,8 @@ func (c *compiler) expr(expr ast.Expr) {
 			c.expr(e.Right)
 			c.patchForward(mark)
 			c.add(Boolean)
+		case lexer.CONCAT:
+			c.concatOp(e)
 		default:
 			// All other binary expressions
 			c.expr(e.Left)
@@ -873,6 +875,35 @@ func (c *compiler) expr(expr ast.Expr) {
 		// Should never happen
 		panic(fmt.Sprintf("unexpected expr type: %T", expr))
 	}
+}
+
+// Generate a Concat opcode or, if possible compact multiple `Concat` into one `ConcatN`
+func (c *compiler) concatOp(e *ast.BinaryExpr) {
+	var parts []ast.Expr
+
+	for {
+		if be, ok := e.Left.(*ast.BinaryExpr); ok && be.Op == lexer.CONCAT {
+			parts = append(parts, e.Right)
+			e = be
+		} else {
+			parts = append(parts, e.Right)
+			parts = append(parts, e.Left)
+			break
+		}
+	}
+
+	if len(parts) == 2 {
+		c.expr(parts[1])
+		c.expr(parts[0])
+		c.add(Concat)
+		return
+	}
+
+	for i := len(parts) - 1; i >= 0; i-- {
+		c.expr(parts[i])
+	}
+
+	c.add(ConcatN, opcodeInt(len(parts)))
 }
 
 // Add (or reuse) a number constant and returns its index.

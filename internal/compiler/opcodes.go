@@ -68,6 +68,9 @@ const (
 	// Multi-index concatenation
 	MultiIndex // num
 
+	// Multi-value concatenation
+	ConcatN
+
 	// Binary operators
 	Add
 	Subtract

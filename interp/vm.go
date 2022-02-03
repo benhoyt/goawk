@@ -414,6 +414,16 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			l, r := p.peekPop()
 			p.replaceTop(str(p.toString(l) + p.toString(r)))
 
+		case compiler.ConcatN:
+			numValues := int(code[ip])
+			ip++
+			values := p.popSlice(numValues)
+			parts := make([]string, 0, numValues)
+			for _, v := range values {
+				parts = append(parts, p.toString(v))
+			}
+			p.push(str(strings.Join(parts, "")))
+
 		case compiler.Match:
 			l, r := p.peekPop()
 			re, err := p.compileRegex(p.toString(r))
