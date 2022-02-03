@@ -418,11 +418,12 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			numValues := int(code[ip])
 			ip++
 			values := p.popSlice(numValues)
-			parts := make([]string, 0, numValues)
+			var sb strings.Builder
+
 			for _, v := range values {
-				parts = append(parts, p.toString(v))
+				sb.WriteString(p.toString(v))
 			}
-			p.push(str(strings.Join(parts, "")))
+			p.push(str(sb.String()))
 
 		case compiler.Match:
 			l, r := p.peekPop()
