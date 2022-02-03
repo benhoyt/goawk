@@ -878,32 +878,33 @@ func (c *compiler) expr(expr ast.Expr) {
 }
 
 // Generate a Concat opcode or, if possible compact multiple `Concat` into one `ConcatN`
-func (c *compiler) concatOp(e *ast.BinaryExpr) {
-	var parts []ast.Expr
-
+func (c *compiler) concatOp(expr *ast.BinaryExpr) {
+	var values []ast.Expr
 	for {
-		if be, ok := e.Left.(*ast.BinaryExpr); ok && be.Op == lexer.CONCAT {
-			parts = append(parts, e.Right)
-			e = be
-		} else {
-			parts = append(parts, e.Right)
-			parts = append(parts, e.Left)
+		values = append(values, expr.Right)
+		left, isBinary := expr.Left.(*ast.BinaryExpr)
+		if !isBinary || left.Op != lexer.CONCAT {
 			break
 		}
+		expr = left
 	}
+	values = append(values, expr.Left)
 
-	if len(parts) == 2 {
-		c.expr(parts[1])
-		c.expr(parts[0])
+	// values are appended right to left
+	// but need to pushed left to right
+
+	if len(values) == 2 {
+		c.expr(values[1])
+		c.expr(values[0])
 		c.add(Concat)
 		return
 	}
 
-	for i := len(parts) - 1; i >= 0; i-- {
-		c.expr(parts[i])
+	for i := len(values) - 1; i >= 0; i-- {
+		c.expr(values[i])
 	}
 
-	c.add(ConcatN, opcodeInt(len(parts)))
+	c.add(ConcatN, opcodeInt(len(values)))
 }
 
 // Add (or reuse) a number constant and returns its index.
