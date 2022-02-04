@@ -267,9 +267,13 @@ func (d *disassembler) disassemble(prefix string) error {
 			regexIndex := d.fetch()
 			d.writeOpf("Regex %q (%d)", d.program.Regexes[regexIndex], regexIndex)
 
-		case MultiIndex:
+		case IndexMulti:
 			num := d.fetch()
-			d.writeOpf("MultiIndex %d", num)
+			d.writeOpf("IndexMulti %d", num)
+
+		case ConcatMulti:
+			num := d.fetch()
+			d.writeOpf("ConcatMulti %d", num)
 
 		case Jump:
 			offset := d.fetch()

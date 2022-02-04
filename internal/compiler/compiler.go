@@ -633,6 +633,8 @@ func (c *compiler) expr(expr ast.Expr) {
 			c.expr(e.Right)
 			c.patchForward(mark)
 			c.add(Boolean)
+		case lexer.CONCAT:
+			c.concatOp(e)
 		default:
 			// All other binary expressions
 			c.expr(e.Left)
@@ -875,6 +877,36 @@ func (c *compiler) expr(expr ast.Expr) {
 	}
 }
 
+// Generate a Concat2 opcode or, if possible compact multiple `Concat2` into one `ConcatMulti`
+func (c *compiler) concatOp(expr *ast.BinaryExpr) {
+	var values []ast.Expr
+	for {
+		values = append(values, expr.Right)
+		left, isBinary := expr.Left.(*ast.BinaryExpr)
+		if !isBinary || left.Op != lexer.CONCAT {
+			break
+		}
+		expr = left
+	}
+	values = append(values, expr.Left)
+
+	// values are appended right to left
+	// but need to pushed left to right
+
+	if len(values) == 2 {
+		c.expr(values[1])
+		c.expr(values[0])
+		c.add(Concat2)
+		return
+	}
+
+	for i := len(values) - 1; i >= 0; i-- {
+		c.expr(values[i])
+	}
+
+	c.add(ConcatMulti, opcodeInt(len(values)))
+}
+
 // Add (or reuse) a number constant and returns its index.
 func (c *compiler) numIndex(n float64) int {
 	if index, ok := c.indexes.nums[n]; ok {
@@ -922,7 +954,7 @@ func (c *compiler) binaryOp(op lexer.Token) {
 	case lexer.LTE:
 		opcode = LessOrEqual
 	case lexer.CONCAT:
-		opcode = Concat
+		opcode = Concat2
 	case lexer.MUL:
 		opcode = Multiply
 	case lexer.DIV:
@@ -953,6 +985,6 @@ func (c *compiler) index(index []ast.Expr) {
 		c.expr(expr)
 	}
 	if len(index) > 1 {
-		c.add(MultiIndex, opcodeInt(len(index)))
+		c.add(IndexMulti, opcodeInt(len(index)))
 	}
 }
