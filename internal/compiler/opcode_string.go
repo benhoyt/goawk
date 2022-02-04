@@ -58,7 +58,7 @@ func _() {
 	_ = x[Greater-47]
 	_ = x[LessOrEqual-48]
 	_ = x[GreaterOrEqual-49]
-	_ = x[Concat2-50]
+	_ = x[Concat-50]
 	_ = x[Match-51]
 	_ = x[NotMatch-52]
 	_ = x[Not-53]
@@ -98,9 +98,9 @@ func _() {
 	_ = x[EndOpcode-87]
 }
 
-const _Opcode_name = "NopNumStrDupeDropSwapFieldFieldIntGlobalLocalSpecialArrayGlobalArrayLocalInGlobalInLocalAssignFieldAssignGlobalAssignLocalAssignSpecialAssignArrayGlobalAssignArrayLocalDeleteDeleteAllIncrFieldIncrGlobalIncrLocalIncrSpecialIncrArrayGlobalIncrArrayLocalAugAssignFieldAugAssignGlobalAugAssignLocalAugAssignSpecialAugAssignArrayGlobalAugAssignArrayLocalRegexIndexMultiConcatMultiAddSubtractMultiplyDividePowerModuloEqualsNotEqualsLessGreaterLessOrEqualGreaterOrEqualConcat2MatchNotMatchNotUnaryMinusUnaryPlusBooleanJumpJumpFalseJumpTrueJumpEqualsJumpNotEqualsJumpLessJumpGreaterJumpLessOrEqualJumpGreaterOrEqualNextExitForInBreakForInCallBuiltinCallSplitCallSplitSepCallSprintfCallUserCallNativeReturnReturnNullNullsPrintPrintfGetlineGetlineFieldGetlineGlobalGetlineLocalGetlineSpecialGetlineArrayEndOpcode"
+const _Opcode_name = "NopNumStrDupeDropSwapFieldFieldIntGlobalLocalSpecialArrayGlobalArrayLocalInGlobalInLocalAssignFieldAssignGlobalAssignLocalAssignSpecialAssignArrayGlobalAssignArrayLocalDeleteDeleteAllIncrFieldIncrGlobalIncrLocalIncrSpecialIncrArrayGlobalIncrArrayLocalAugAssignFieldAugAssignGlobalAugAssignLocalAugAssignSpecialAugAssignArrayGlobalAugAssignArrayLocalRegexIndexMultiConcatMultiAddSubtractMultiplyDividePowerModuloEqualsNotEqualsLessGreaterLessOrEqualGreaterOrEqualConcatMatchNotMatchNotUnaryMinusUnaryPlusBooleanJumpJumpFalseJumpTrueJumpEqualsJumpNotEqualsJumpLessJumpGreaterJumpLessOrEqualJumpGreaterOrEqualNextExitForInBreakForInCallBuiltinCallSplitCallSplitSepCallSprintfCallUserCallNativeReturnReturnNullNullsPrintPrintfGetlineGetlineFieldGetlineGlobalGetlineLocalGetlineSpecialGetlineArrayEndOpcode"
 
-var _Opcode_index = [...]uint16{0, 3, 6, 9, 13, 17, 21, 26, 34, 40, 45, 52, 63, 73, 81, 88, 99, 111, 122, 135, 152, 168, 174, 183, 192, 202, 211, 222, 237, 251, 265, 280, 294, 310, 330, 349, 354, 364, 375, 378, 386, 394, 400, 405, 411, 417, 426, 430, 437, 448, 462, 469, 474, 482, 485, 495, 504, 511, 515, 524, 532, 542, 555, 563, 574, 589, 607, 611, 615, 620, 630, 641, 650, 662, 673, 681, 691, 697, 707, 712, 717, 723, 730, 742, 755, 767, 781, 793, 802}
+var _Opcode_index = [...]uint16{0, 3, 6, 9, 13, 17, 21, 26, 34, 40, 45, 52, 63, 73, 81, 88, 99, 111, 122, 135, 152, 168, 174, 183, 192, 202, 211, 222, 237, 251, 265, 280, 294, 310, 330, 349, 354, 364, 375, 378, 386, 394, 400, 405, 411, 417, 426, 430, 437, 448, 462, 468, 473, 481, 484, 494, 503, 510, 514, 523, 531, 541, 554, 562, 573, 588, 606, 610, 614, 619, 629, 640, 649, 661, 672, 680, 690, 696, 706, 711, 716, 722, 729, 741, 754, 766, 780, 792, 801}
 
 func (i Opcode) String() string {
 	if i < 0 || i >= Opcode(len(_Opcode_index)-1) {

@@ -410,7 +410,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 				p.replaceTop(boolean(ln >= rn))
 			}
 
-		case compiler.Concat2:
+		case compiler.Concat:
 			l, r := p.peekPop()
 			p.replaceTop(str(p.toString(l) + p.toString(r)))
 

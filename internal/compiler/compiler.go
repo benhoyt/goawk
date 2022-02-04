@@ -877,7 +877,8 @@ func (c *compiler) expr(expr ast.Expr) {
 	}
 }
 
-// Generate a Concat2 opcode or, if possible compact multiple `Concat2` into one `ConcatMulti`
+// Generate a Concat opcode or, if possible, compact multiple Concats into one
+// ConcatMulti opcode.
 func (c *compiler) concatOp(expr *ast.BinaryExpr) {
 	var values []ast.Expr
 	for {
@@ -896,7 +897,7 @@ func (c *compiler) concatOp(expr *ast.BinaryExpr) {
 	if len(values) == 2 {
 		c.expr(values[1])
 		c.expr(values[0])
-		c.add(Concat2)
+		c.add(Concat)
 		return
 	}
 
@@ -953,8 +954,6 @@ func (c *compiler) binaryOp(op lexer.Token) {
 		opcode = Less
 	case lexer.LTE:
 		opcode = LessOrEqual
-	case lexer.CONCAT:
-		opcode = Concat2
 	case lexer.MUL:
 		opcode = Multiply
 	case lexer.DIV:

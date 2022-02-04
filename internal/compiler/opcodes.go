@@ -69,7 +69,7 @@ const (
 	IndexMulti // num
 
 	// Multi-value concatenation
-	ConcatMulti
+	ConcatMulti // num
 
 	// Binary operators
 	Add
@@ -84,7 +84,7 @@ const (
 	Greater
 	LessOrEqual
 	GreaterOrEqual
-	Concat2
+	Concat
 	Match
 	NotMatch
 
