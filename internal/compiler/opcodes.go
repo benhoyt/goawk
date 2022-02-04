@@ -66,10 +66,10 @@ const (
 	Regex // regexIndex
 
 	// Multi-index concatenation
-	MultiIndex // num
+	IndexMulti // num
 
 	// Multi-value concatenation
-	ConcatN
+	ConcatMulti
 
 	// Binary operators
 	Add
@@ -84,7 +84,7 @@ const (
 	Greater
 	LessOrEqual
 	GreaterOrEqual
-	Concat
+	Concat2
 	Match
 	NotMatch
 

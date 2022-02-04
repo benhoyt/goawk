@@ -877,7 +877,7 @@ func (c *compiler) expr(expr ast.Expr) {
 	}
 }
 
-// Generate a Concat opcode or, if possible compact multiple `Concat` into one `ConcatN`
+// Generate a Concat2 opcode or, if possible compact multiple `Concat2` into one `ConcatMulti`
 func (c *compiler) concatOp(expr *ast.BinaryExpr) {
 	var values []ast.Expr
 	for {
@@ -896,7 +896,7 @@ func (c *compiler) concatOp(expr *ast.BinaryExpr) {
 	if len(values) == 2 {
 		c.expr(values[1])
 		c.expr(values[0])
-		c.add(Concat)
+		c.add(Concat2)
 		return
 	}
 
@@ -904,7 +904,7 @@ func (c *compiler) concatOp(expr *ast.BinaryExpr) {
 		c.expr(values[i])
 	}
 
-	c.add(ConcatN, opcodeInt(len(values)))
+	c.add(ConcatMulti, opcodeInt(len(values)))
 }
 
 // Add (or reuse) a number constant and returns its index.
@@ -954,7 +954,7 @@ func (c *compiler) binaryOp(op lexer.Token) {
 	case lexer.LTE:
 		opcode = LessOrEqual
 	case lexer.CONCAT:
-		opcode = Concat
+		opcode = Concat2
 	case lexer.MUL:
 		opcode = Multiply
 	case lexer.DIV:
@@ -985,6 +985,6 @@ func (c *compiler) index(index []ast.Expr) {
 		c.expr(expr)
 	}
 	if len(index) > 1 {
-		c.add(MultiIndex, opcodeInt(len(index)))
+		c.add(IndexMulti, opcodeInt(len(index)))
 	}
 }

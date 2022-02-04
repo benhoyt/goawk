@@ -308,7 +308,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			re := p.regexes[index]
 			p.push(boolean(re.MatchString(p.line)))
 
-		case compiler.MultiIndex:
+		case compiler.IndexMulti:
 			numValues := int(code[ip])
 			ip++
 			values := p.popSlice(numValues)
@@ -410,11 +410,11 @@ func (p *interp) execute(code []compiler.Opcode) error {
 				p.replaceTop(boolean(ln >= rn))
 			}
 
-		case compiler.Concat:
+		case compiler.Concat2:
 			l, r := p.peekPop()
 			p.replaceTop(str(p.toString(l) + p.toString(r)))
 
-		case compiler.ConcatN:
+		case compiler.ConcatMulti:
 			numValues := int(code[ip])
 			ip++
 			values := p.popSlice(numValues)

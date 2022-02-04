@@ -44,8 +44,8 @@ func _() {
 	_ = x[AugAssignArrayGlobal-33]
 	_ = x[AugAssignArrayLocal-34]
 	_ = x[Regex-35]
-	_ = x[MultiIndex-36]
-	_ = x[ConcatN-37]
+	_ = x[IndexMulti-36]
+	_ = x[ConcatMulti-37]
 	_ = x[Add-38]
 	_ = x[Subtract-39]
 	_ = x[Multiply-40]
@@ -58,7 +58,7 @@ func _() {
 	_ = x[Greater-47]
 	_ = x[LessOrEqual-48]
 	_ = x[GreaterOrEqual-49]
-	_ = x[Concat-50]
+	_ = x[Concat2-50]
 	_ = x[Match-51]
 	_ = x[NotMatch-52]
 	_ = x[Not-53]
@@ -98,9 +98,9 @@ func _() {
 	_ = x[EndOpcode-87]
 }
 
-const _Opcode_name = "NopNumStrDupeDropSwapFieldFieldIntGlobalLocalSpecialArrayGlobalArrayLocalInGlobalInLocalAssignFieldAssignGlobalAssignLocalAssignSpecialAssignArrayGlobalAssignArrayLocalDeleteDeleteAllIncrFieldIncrGlobalIncrLocalIncrSpecialIncrArrayGlobalIncrArrayLocalAugAssignFieldAugAssignGlobalAugAssignLocalAugAssignSpecialAugAssignArrayGlobalAugAssignArrayLocalRegexMultiIndexConcatNAddSubtractMultiplyDividePowerModuloEqualsNotEqualsLessGreaterLessOrEqualGreaterOrEqualConcatMatchNotMatchNotUnaryMinusUnaryPlusBooleanJumpJumpFalseJumpTrueJumpEqualsJumpNotEqualsJumpLessJumpGreaterJumpLessOrEqualJumpGreaterOrEqualNextExitForInBreakForInCallBuiltinCallSplitCallSplitSepCallSprintfCallUserCallNativeReturnReturnNullNullsPrintPrintfGetlineGetlineFieldGetlineGlobalGetlineLocalGetlineSpecialGetlineArrayEndOpcode"
+const _Opcode_name = "NopNumStrDupeDropSwapFieldFieldIntGlobalLocalSpecialArrayGlobalArrayLocalInGlobalInLocalAssignFieldAssignGlobalAssignLocalAssignSpecialAssignArrayGlobalAssignArrayLocalDeleteDeleteAllIncrFieldIncrGlobalIncrLocalIncrSpecialIncrArrayGlobalIncrArrayLocalAugAssignFieldAugAssignGlobalAugAssignLocalAugAssignSpecialAugAssignArrayGlobalAugAssignArrayLocalRegexIndexMultiConcatMultiAddSubtractMultiplyDividePowerModuloEqualsNotEqualsLessGreaterLessOrEqualGreaterOrEqualConcat2MatchNotMatchNotUnaryMinusUnaryPlusBooleanJumpJumpFalseJumpTrueJumpEqualsJumpNotEqualsJumpLessJumpGreaterJumpLessOrEqualJumpGreaterOrEqualNextExitForInBreakForInCallBuiltinCallSplitCallSplitSepCallSprintfCallUserCallNativeReturnReturnNullNullsPrintPrintfGetlineGetlineFieldGetlineGlobalGetlineLocalGetlineSpecialGetlineArrayEndOpcode"
 
-var _Opcode_index = [...]uint16{0, 3, 6, 9, 13, 17, 21, 26, 34, 40, 45, 52, 63, 73, 81, 88, 99, 111, 122, 135, 152, 168, 174, 183, 192, 202, 211, 222, 237, 251, 265, 280, 294, 310, 330, 349, 354, 364, 371, 374, 382, 390, 396, 401, 407, 413, 422, 426, 433, 444, 458, 464, 469, 477, 480, 490, 499, 506, 510, 519, 527, 537, 550, 558, 569, 584, 602, 606, 610, 615, 625, 636, 645, 657, 668, 676, 686, 692, 702, 707, 712, 718, 725, 737, 750, 762, 776, 788, 797}
+var _Opcode_index = [...]uint16{0, 3, 6, 9, 13, 17, 21, 26, 34, 40, 45, 52, 63, 73, 81, 88, 99, 111, 122, 135, 152, 168, 174, 183, 192, 202, 211, 222, 237, 251, 265, 280, 294, 310, 330, 349, 354, 364, 375, 378, 386, 394, 400, 405, 411, 417, 426, 430, 437, 448, 462, 469, 474, 482, 485, 495, 504, 511, 515, 524, 532, 542, 555, 563, 574, 589, 607, 611, 615, 620, 630, 641, 650, 662, 673, 681, 691, 697, 707, 712, 717, 723, 730, 742, 755, 767, 781, 793, 802}
 
 func (i Opcode) String() string {
 	if i < 0 || i >= Opcode(len(_Opcode_index)-1) {
