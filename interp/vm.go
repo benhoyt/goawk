@@ -734,7 +734,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			var line string
 			if numArgs > 0 {
 				args := p.popSlice(int(numArgs))
-				strs := make([]string, len(args))
+				strs := make([]string, len(args)) // TODO: reuse allocations?
 				for i, a := range args {
 					strs[i] = a.str(p.outputFormat)
 				}

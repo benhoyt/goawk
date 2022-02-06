@@ -2042,6 +2042,62 @@ func BenchmarkRepeatNew(b *testing.B) {
 	}
 }
 
+func BenchmarkRepeatIOExecProgram(b *testing.B) {
+	prog, err := parser.ParseProgram([]byte(`{ for (i=1; i<=NF; i++) print $i }`), nil)
+	if err != nil {
+		b.Fatalf("parse error: %v", err)
+	}
+	var output bytes.Buffer
+	config := interp.Config{
+		Output:  &output,
+		Environ: []string{},
+	}
+	input := "foo bar\nbazz\n"
+	expected := "foo\nbar\nbazz\n"
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		output.Reset()
+		config.Stdin = strings.NewReader(input)
+		_, err := interp.ExecProgram(prog, &config)
+		if err != nil {
+			b.Fatalf("execute error: %v", err)
+		}
+		if output.String() != expected {
+			b.Fatalf("expected %q, got %q", expected, output.String())
+		}
+	}
+}
+
+func BenchmarkRepeatIONew(b *testing.B) {
+	prog, err := parser.ParseProgram([]byte(`{ for (i=1; i<=NF; i++) print $i }`), nil)
+	if err != nil {
+		b.Fatalf("parse error: %v", err)
+	}
+	p, err := interp.New(prog, &interp.NewConfig{})
+	if err != nil {
+		b.Fatalf("interp.New error: %v", err)
+	}
+	var output bytes.Buffer
+	executeConfig := interp.ExecuteConfig{
+		Output:  &output,
+		Environ: []string{},
+	}
+	input := "foo bar\nbazz\n"
+	expected := "foo\nbar\nbazz\n"
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		output.Reset()
+		executeConfig.Stdin = strings.NewReader(input)
+		_, err := p.Execute(&executeConfig)
+		if err != nil {
+			b.Fatalf("execute error: %v", err)
+		}
+		if output.String() != expected {
+			b.Fatalf("expected %q, got %q", expected, output.String())
+		}
+	}
+}
+
 func normalizeNewlines(s string) string {
 	return strings.Replace(s, "\r\n", "\n", -1)
 }

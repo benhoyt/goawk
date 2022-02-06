@@ -507,7 +507,7 @@ func Exec(source, fieldSep string, input io.Reader, output io.Writer) error {
 
 // Execute pattern-action blocks (may be multiple)
 func (p *interp) execActions(actions []compiler.Action) error {
-	inRange := make([]bool, len(actions))
+	inRange := make([]bool, len(actions)) // TODO: eliminate allocations
 lineLoop:
 	for {
 		// Read and setup next line of input

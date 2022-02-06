@@ -201,7 +201,7 @@ func (p *interp) newScanner(input io.Reader) *bufio.Scanner {
 		splitter := regexSplitter{p.recordSepRegex, &p.recordTerminator}
 		scanner.Split(splitter.scan)
 	}
-	buffer := make([]byte, inputBufSize) // TODO: reuse this across Interp.Execute calls
+	buffer := make([]byte, inputBufSize) // TODO: pool of these to reuse them?
 	scanner.Buffer(buffer, maxRecordLength)
 	return scanner
 }
