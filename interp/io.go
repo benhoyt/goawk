@@ -201,7 +201,7 @@ func (p *interp) newScanner(input io.Reader) *bufio.Scanner {
 		splitter := regexSplitter{p.recordSepRegex, &p.recordTerminator}
 		scanner.Split(splitter.scan)
 	}
-	buffer := make([]byte, inputBufSize)
+	buffer := make([]byte, inputBufSize) // TODO: reuse this across Interp.Execute calls
 	scanner.Buffer(buffer, maxRecordLength)
 	return scanner
 }
@@ -375,7 +375,7 @@ func (p *interp) ensureFields() {
 		p.fields = fields
 	}
 
-	p.fieldsIsTrueStr = make([]bool, len(p.fields))
+	p.fieldsIsTrueStr = make([]bool, len(p.fields)) // TODO: reuse previous slice?
 	p.numFields = len(p.fields)
 }
 

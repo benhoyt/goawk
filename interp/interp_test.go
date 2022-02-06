@@ -2002,6 +2002,46 @@ BEGIN {
 `, b.N)
 }
 
+func BenchmarkRepeatExecProgram(b *testing.B) {
+	prog, err := parser.ParseProgram([]byte(`BEGIN {}`), nil)
+	if err != nil {
+		b.Fatalf("parse error: %v", err)
+	}
+	config := interp.Config{
+		Output:  ioutil.Discard,
+		Environ: []string{},
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := interp.ExecProgram(prog, &config)
+		if err != nil {
+			b.Fatalf("execute error: %v", err)
+		}
+	}
+}
+
+func BenchmarkRepeatNew(b *testing.B) {
+	prog, err := parser.ParseProgram([]byte(`BEGIN {}`), nil)
+	if err != nil {
+		b.Fatalf("parse error: %v", err)
+	}
+	p, err := interp.New(prog, &interp.NewConfig{})
+	if err != nil {
+		b.Fatalf("interp.New error: %v", err)
+	}
+	executeConfig := interp.ExecuteConfig{
+		Output:  ioutil.Discard,
+		Environ: []string{},
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := p.Execute(&executeConfig)
+		if err != nil {
+			b.Fatalf("execute error: %v", err)
+		}
+	}
+}
+
 func normalizeNewlines(s string) string {
 	return strings.Replace(s, "\r\n", "\n", -1)
 }

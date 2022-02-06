@@ -211,57 +211,122 @@ type Config struct {
 	Environ []string
 }
 
-// ExecProgram executes the parsed program using the given interpreter
-// config, returning the exit status code of the program. Error is nil
-// on successful execution of the program, even if the program returns
-// a non-zero status code.
-func ExecProgram(program *parser.Program, config *Config) (int, error) {
-	if len(config.Vars)%2 != 0 {
-		return 0, newError("length of config.Vars must be a multiple of 2, not %d", len(config.Vars))
-	}
-	if len(config.Environ)%2 != 0 {
-		return 0, newError("length of config.Environ must be a multiple of 2, not %d", len(config.Environ))
-	}
+type Interp struct {
+	p       *interp
+	noReset bool
+}
 
-	p := &interp{
-		program:   program,
-		functions: program.Compiled.Functions,
-		nums:      program.Compiled.Nums,
-		strs:      program.Compiled.Strs,
-		regexes:   program.Compiled.Regexes,
-	}
+type NewConfig struct {
+	Funcs        map[string]interface{}
+	NoExec       bool
+	NoFileWrites bool
+	NoFileReads  bool
+	ShellCommand []string
+}
 
-	// Allocate memory for variables and virtual machine stack
-	p.globals = make([]value, len(program.Scalars))
-	p.stack = make([]value, initialStackSize)
-	p.arrays = make([]map[string]value, len(program.Arrays), len(program.Arrays)+initialStackSize)
-	for i := 0; i < len(program.Arrays); i++ {
-		p.arrays[i] = make(map[string]value)
+func New(program *parser.Program, config *NewConfig) (*Interp, error) {
+	p, err := newInterp(program, config)
+	if err != nil {
+		return nil, err
 	}
+	return &Interp{p: p, noReset: true}, nil
+}
 
-	// Initialize defaults
-	p.regexCache = make(map[string]*regexp.Regexp, 10)
-	p.formatCache = make(map[string]cachedFormat, 10)
-	p.randSeed = 1.0
-	seed := math.Float64bits(p.randSeed)
-	p.random = rand.New(rand.NewSource(int64(seed)))
-	p.convertFormat = "%.6g"
-	p.outputFormat = "%.6g"
-	p.fieldSep = " "
-	p.recordSep = "\n"
-	p.outputFieldSep = " "
-	p.outputRecordSep = "\n"
-	p.subscriptSep = "\x1c"
-	p.noExec = config.NoExec
-	p.noFileWrites = config.NoFileWrites
-	p.noFileReads = config.NoFileReads
-	err := p.initNativeFuncs(config.Funcs)
+type ExecuteConfig struct {
+	Stdin   io.Reader
+	Output  io.Writer
+	Error   io.Writer
+	Argv0   string
+	Args    []string
+	Vars    []string
+	Environ []string
+}
+
+func (p *Interp) Execute(config *ExecuteConfig) (int, error) {
+	if !p.noReset {
+		p.p.reset()
+	}
+	p.noReset = false
+
+	err := p.p.setExecuteConfig(config)
 	if err != nil {
 		return 0, err
 	}
 
+	return p.p.executeAll()
+}
+
+func (p *Interp) ResetRand(seed float64) {
+	p.p.resetRand(seed)
+}
+
+func (p *interp) reset() {
+	p.scanner = nil
+	for k := range p.scanners {
+		delete(p.scanners, k)
+	}
+	for k := range p.inputStreams {
+		delete(p.inputStreams, k)
+	}
+	for k := range p.outputStreams {
+		delete(p.outputStreams, k)
+	}
+	for k := range p.commands {
+		delete(p.commands, k)
+	}
+
+	for i := range p.globals {
+		p.globals[i] = null()
+	}
+	p.sp = 0
+	for _, array := range p.arrays {
+		for k := range array {
+			delete(array, k)
+		}
+	}
+	p.localArrays = p.localArrays[:0]
+
+	p.filename = null()
+	p.line = ""
+	p.lineIsTrueStr = false
+	p.lineNum = 0
+	p.fileLineNum = 0
+	p.fields = nil
+	p.fieldsIsTrueStr = nil
+	p.numFields = 0
+	p.haveFields = false
+
+	p.convertFormat = "%.6g"
+	p.outputFormat = "%.6g"
+	p.fieldSep = " "
+	p.fieldSepRegex = nil
+	p.recordSep = "\n"
+	p.recordSepRegex = nil
+	p.recordTerminator = ""
+	p.outputFieldSep = " "
+	p.outputRecordSep = "\n"
+	p.subscriptSep = "\x1c"
+	p.matchLength = 0
+	p.matchStart = 0
+
+	p.exitStatus = 0
+}
+
+func (p *interp) resetRand(seed float64) {
+	p.randSeed = seed
+	p.random = rand.New(rand.NewSource(int64(math.Float64bits(p.randSeed))))
+}
+
+func (p *interp) setExecuteConfig(config *ExecuteConfig) error {
+	if len(config.Vars)%2 != 0 {
+		return newError("length of config.Vars must be a multiple of 2, not %d", len(config.Vars))
+	}
+	if len(config.Environ)%2 != 0 {
+		return newError("length of config.Environ must be a multiple of 2, not %d", len(config.Environ))
+	}
+
 	// Setup ARGV and other variables from config
-	argvIndex := program.Arrays["ARGV"]
+	argvIndex := p.program.Arrays["ARGV"]
 	p.setArrayValue(ast.ScopeGlobal, argvIndex, "0", str(config.Argv0))
 	p.argc = len(config.Args) + 1
 	for i, arg := range config.Args {
@@ -272,12 +337,12 @@ func ExecProgram(program *parser.Program, config *Config) (int, error) {
 	for i := 0; i < len(config.Vars); i += 2 {
 		err := p.setVarByName(config.Vars[i], config.Vars[i+1])
 		if err != nil {
-			return 0, err
+			return err
 		}
 	}
 
 	// Setup ENVIRON from config or environment variables
-	environIndex := program.Arrays["ENVIRON"]
+	environIndex := p.program.Arrays["ENVIRON"]
 	if config.Environ != nil {
 		for i := 0; i < len(config.Environ); i += 2 {
 			p.setArrayValue(ast.ScopeGlobal, environIndex, config.Environ[i], numStr(config.Environ[i+1]))
@@ -289,17 +354,6 @@ func ExecProgram(program *parser.Program, config *Config) (int, error) {
 				p.setArrayValue(ast.ScopeGlobal, environIndex, kv[:eq], numStr(kv[eq+1:]))
 			}
 		}
-	}
-
-	// Setup system shell command
-	if len(config.ShellCommand) != 0 {
-		p.shellCommand = config.ShellCommand
-	} else {
-		executable := "/bin/sh"
-		if runtime.GOOS == "windows" {
-			executable = "sh"
-		}
-		p.shellCommand = []string{executable, "-c"}
 	}
 
 	// Setup I/O structures
@@ -315,27 +369,117 @@ func ExecProgram(program *parser.Program, config *Config) (int, error) {
 	if p.errorOutput == nil {
 		p.errorOutput = os.Stderr
 	}
+
+	return nil
+}
+
+// ExecProgram executes the parsed program using the given interpreter
+// config, returning the exit status code of the program. Error is nil
+// on successful execution of the program, even if the program returns
+// a non-zero status code.
+func ExecProgram(program *parser.Program, config *Config) (int, error) {
+	newConfig := NewConfig{
+		Funcs:        config.Funcs,
+		NoExec:       config.NoExec,
+		NoFileWrites: config.NoFileWrites,
+		NoFileReads:  config.NoFileReads,
+		ShellCommand: config.ShellCommand,
+	}
+	p, err := newInterp(program, &newConfig)
+	if err != nil {
+		return 0, err
+	}
+
+	executeConfig := ExecuteConfig{
+		Stdin:   config.Stdin,
+		Output:  config.Output,
+		Error:   config.Error,
+		Argv0:   config.Argv0,
+		Args:    config.Args,
+		Vars:    config.Vars,
+		Environ: config.Environ,
+	}
+	err = p.setExecuteConfig(&executeConfig)
+	if err != nil {
+		return 0, err
+	}
+
+	return p.executeAll()
+}
+
+func newInterp(program *parser.Program, config *NewConfig) (*interp, error) {
+	p := &interp{
+		program:   program,
+		functions: program.Compiled.Functions,
+		nums:      program.Compiled.Nums,
+		strs:      program.Compiled.Strs,
+		regexes:   program.Compiled.Regexes,
+	}
+
+	// Allocate memory for variables and virtual machine stack
+	p.globals = make([]value, len(program.Scalars))
+	p.stack = make([]value, initialStackSize)
+	p.arrays = make([]map[string]value, len(program.Arrays), len(program.Arrays)+initialStackSize)
+	for i := 0; i < len(program.Arrays); i++ {
+		p.arrays[i] = make(map[string]value) // TODO: consider adding size hint
+	}
+
+	// Initialize defaults
+	p.regexCache = make(map[string]*regexp.Regexp, 10)
+	p.formatCache = make(map[string]cachedFormat, 10)
+	p.resetRand(1.0)
+	p.convertFormat = "%.6g"
+	p.outputFormat = "%.6g"
+	p.fieldSep = " "
+	p.recordSep = "\n"
+	p.outputFieldSep = " "
+	p.outputRecordSep = "\n"
+	p.subscriptSep = "\x1c"
+	p.noExec = config.NoExec
+	p.noFileWrites = config.NoFileWrites
+	p.noFileReads = config.NoFileReads
+	err := p.initNativeFuncs(config.Funcs)
+	if err != nil {
+		return nil, err
+	}
+
+	// Setup system shell command
+	if len(config.ShellCommand) != 0 {
+		p.shellCommand = config.ShellCommand
+	} else {
+		executable := "/bin/sh"
+		if runtime.GOOS == "windows" {
+			executable = "sh"
+		}
+		p.shellCommand = []string{executable, "-c"}
+	}
+
 	p.inputStreams = make(map[string]io.ReadCloser)
 	p.outputStreams = make(map[string]io.WriteCloser)
 	p.commands = make(map[string]*exec.Cmd)
 	p.scanners = make(map[string]*bufio.Scanner)
+
+	return p, nil
+}
+
+func (p *interp) executeAll() (int, error) {
 	defer p.closeAll()
 
 	// Execute the program: BEGIN, then pattern/actions, then END
-	err = p.execute(program.Compiled.Begin)
+	err := p.execute(p.program.Compiled.Begin)
 	if err != nil && err != errExit {
 		return 0, err
 	}
-	if program.Actions == nil && program.End == nil {
+	if p.program.Actions == nil && p.program.End == nil {
 		return p.exitStatus, nil
 	}
 	if err != errExit {
-		err = p.execActions(program.Compiled.Actions)
+		err = p.execActions(p.program.Compiled.Actions)
 		if err != nil && err != errExit {
 			return 0, err
 		}
 	}
-	err = p.execute(program.Compiled.End)
+	err = p.execute(p.program.Compiled.End)
 	if err != nil && err != errExit {
 		return 0, err
 	}
