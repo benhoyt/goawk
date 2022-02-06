@@ -341,6 +341,7 @@ func (p *interp) setLine(line string, isTrueStr bool) {
 // Ensure that the current line is parsed into fields, splitting it
 // into fields if it hasn't been already
 func (p *interp) ensureFields() {
+	// TODO: can we reduce allocations in this function?
 	if p.haveFields {
 		return
 	}

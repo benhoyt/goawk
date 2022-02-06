@@ -2047,17 +2047,19 @@ func BenchmarkRepeatIOExecProgram(b *testing.B) {
 	if err != nil {
 		b.Fatalf("parse error: %v", err)
 	}
+	inputStr := "foo bar\nbazz\n"
+	input := strings.NewReader(inputStr)
 	var output bytes.Buffer
 	config := interp.Config{
+		Stdin:   input,
 		Output:  &output,
 		Environ: []string{},
 	}
-	input := "foo bar\nbazz\n"
 	expected := "foo\nbar\nbazz\n"
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		input.Reset(inputStr)
 		output.Reset()
-		config.Stdin = strings.NewReader(input)
 		_, err := interp.ExecProgram(prog, &config)
 		if err != nil {
 			b.Fatalf("execute error: %v", err)
@@ -2077,17 +2079,19 @@ func BenchmarkRepeatIONew(b *testing.B) {
 	if err != nil {
 		b.Fatalf("interp.New error: %v", err)
 	}
+	inputStr := "foo bar\nbazz\n"
+	input := strings.NewReader(inputStr)
 	var output bytes.Buffer
 	executeConfig := interp.ExecuteConfig{
+		Stdin:   input,
 		Output:  &output,
 		Environ: []string{},
 	}
-	input := "foo bar\nbazz\n"
 	expected := "foo\nbar\nbazz\n"
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		input.Reset(inputStr)
 		output.Reset()
-		executeConfig.Stdin = strings.NewReader(input)
 		_, err := p.Execute(&executeConfig)
 		if err != nil {
 			b.Fatalf("execute error: %v", err)
