@@ -212,110 +212,86 @@ type Config struct {
 	Environ []string
 }
 
-type Interp struct {
-	p       *interp
-	noReset bool
-}
-
-type NewConfig struct {
-	Funcs        map[string]interface{}
-	NoExec       bool
-	NoFileWrites bool
-	NoFileReads  bool
-	ShellCommand []string
-}
-
-func New(program *parser.Program, config *NewConfig) (*Interp, error) {
-	p, err := newInterp(program, config)
-	if err != nil {
-		return nil, err
+// ExecProgram executes the parsed program using the given interpreter
+// config, returning the exit status code of the program. Error is nil
+// on successful execution of the program, even if the program returns
+// a non-zero status code.
+//
+// As of GoAWK version v1.16.0, a nil config is valid and will use the
+// defaults (zero values). However, Exec may be simpler in that case.
+func ExecProgram(program *parser.Program, config *Config) (int, error) {
+	if config == nil {
+		config = &Config{}
 	}
-	return &Interp{p: p, noReset: true}, nil
-}
-
-type ExecuteConfig struct {
-	Stdin   io.Reader
-	Output  io.Writer
-	Error   io.Writer
-	Argv0   string
-	Args    []string
-	Vars    []string
-	Environ []string
-}
-
-func (p *Interp) Execute(config *ExecuteConfig) (int, error) {
-	if !p.noReset {
-		p.p.reset()
+	newConfig := NewConfig{
+		Funcs: config.Funcs,
 	}
-	p.noReset = false
-
-	err := p.p.setExecuteConfig(config)
+	p, err := newInterp(program, &newConfig)
 	if err != nil {
 		return 0, err
 	}
 
-	return p.p.executeAll()
+	executeConfig := ExecuteConfig{
+		Stdin:        config.Stdin,
+		Output:       config.Output,
+		Error:        config.Error,
+		Argv0:        config.Argv0,
+		Args:         config.Args,
+		Vars:         config.Vars,
+		NoExec:       config.NoExec,
+		NoFileWrites: config.NoFileWrites,
+		NoFileReads:  config.NoFileReads,
+		ShellCommand: config.ShellCommand,
+		Environ:      config.Environ,
+	}
+	err = p.setExecuteConfig(&executeConfig)
+	if err != nil {
+		return 0, err
+	}
+
+	return p.executeAll()
 }
 
-func (p *Interp) ResetRand(seed float64) {
-	p.p.resetRand(seed)
-}
-
-func (p *interp) reset() {
-	p.scanner = nil
-	for k := range p.scanners {
-		delete(p.scanners, k)
-	}
-	for k := range p.inputStreams {
-		delete(p.inputStreams, k)
-	}
-	for k := range p.outputStreams {
-		delete(p.outputStreams, k)
-	}
-	for k := range p.commands {
-		delete(p.commands, k)
+func newInterp(program *parser.Program, config *NewConfig) (*interp, error) {
+	p := &interp{
+		program:   program,
+		functions: program.Compiled.Functions,
+		nums:      program.Compiled.Nums,
+		strs:      program.Compiled.Strs,
+		regexes:   program.Compiled.Regexes,
 	}
 
-	for i := range p.globals {
-		p.globals[i] = null()
+	// Allocate memory for variables and virtual machine stack
+	p.globals = make([]value, len(program.Scalars))
+	p.stack = make([]value, initialStackSize)
+	p.arrays = make([]map[string]value, len(program.Arrays), len(program.Arrays)+initialStackSize)
+	for i := 0; i < len(program.Arrays); i++ {
+		p.arrays[i] = make(map[string]value) // TODO: consider adding size hint
 	}
-	p.sp = 0
-	for _, array := range p.arrays {
-		for k := range array {
-			delete(array, k)
-		}
-	}
-	p.localArrays = p.localArrays[:0]
 
-	p.filename = null()
-	p.line = ""
-	p.lineIsTrueStr = false
-	p.lineNum = 0
-	p.fileLineNum = 0
-	p.fields = nil
-	p.fieldsIsTrueStr = nil
-	p.numFields = 0
-	p.haveFields = false
-
+	// Initialize defaults
+	p.regexCache = make(map[string]*regexp.Regexp, 10)
+	p.formatCache = make(map[string]cachedFormat, 10)
+	p.randSeed = 1.0
+	p.random = rand.New(rand.NewSource(int64(math.Float64bits(p.randSeed))))
 	p.convertFormat = "%.6g"
 	p.outputFormat = "%.6g"
 	p.fieldSep = " "
-	p.fieldSepRegex = nil
 	p.recordSep = "\n"
-	p.recordSepRegex = nil
-	p.recordTerminator = ""
 	p.outputFieldSep = " "
 	p.outputRecordSep = "\n"
 	p.subscriptSep = "\x1c"
-	p.matchLength = 0
-	p.matchStart = 0
+	err := p.initNativeFuncs(config.Funcs)
+	if err != nil {
+		return nil, err
+	}
 
-	p.exitStatus = 0
-}
+	p.inputStreams = make(map[string]io.ReadCloser)
+	p.outputStreams = make(map[string]io.WriteCloser)
+	p.commands = make(map[string]*exec.Cmd)
+	p.scanners = make(map[string]*bufio.Scanner)
 
-func (p *interp) resetRand(seed float64) {
-	p.randSeed = seed
-	p.random = rand.New(rand.NewSource(int64(math.Float64bits(p.randSeed))))
+	return p, nil
 }
 
 func (p *interp) setExecuteConfig(config *ExecuteConfig) error {
@@ -357,7 +333,21 @@ func (p *interp) setExecuteConfig(config *ExecuteConfig) error {
 		}
 	}
 
+	// Setup system shell command
+	if len(config.ShellCommand) != 0 {
+		p.shellCommand = config.ShellCommand
+	} else {
+		executable := "/bin/sh"
+		if runtime.GOOS == "windows" {
+			executable = "sh"
+		}
+		p.shellCommand = []string{executable, "-c"}
+	}
+
 	// Setup I/O structures
+	p.noExec = config.NoExec
+	p.noFileWrites = config.NoFileWrites
+	p.noFileReads = config.NoFileReads
 	p.stdin = config.Stdin
 	if p.stdin == nil {
 		p.stdin = os.Stdin
@@ -372,95 +362,6 @@ func (p *interp) setExecuteConfig(config *ExecuteConfig) error {
 	}
 
 	return nil
-}
-
-// ExecProgram executes the parsed program using the given interpreter
-// config, returning the exit status code of the program. Error is nil
-// on successful execution of the program, even if the program returns
-// a non-zero status code.
-func ExecProgram(program *parser.Program, config *Config) (int, error) {
-	newConfig := NewConfig{
-		Funcs:        config.Funcs,
-		NoExec:       config.NoExec,
-		NoFileWrites: config.NoFileWrites,
-		NoFileReads:  config.NoFileReads,
-		ShellCommand: config.ShellCommand,
-	}
-	p, err := newInterp(program, &newConfig)
-	if err != nil {
-		return 0, err
-	}
-
-	executeConfig := ExecuteConfig{
-		Stdin:   config.Stdin,
-		Output:  config.Output,
-		Error:   config.Error,
-		Argv0:   config.Argv0,
-		Args:    config.Args,
-		Vars:    config.Vars,
-		Environ: config.Environ,
-	}
-	err = p.setExecuteConfig(&executeConfig)
-	if err != nil {
-		return 0, err
-	}
-
-	return p.executeAll()
-}
-
-func newInterp(program *parser.Program, config *NewConfig) (*interp, error) {
-	p := &interp{
-		program:   program,
-		functions: program.Compiled.Functions,
-		nums:      program.Compiled.Nums,
-		strs:      program.Compiled.Strs,
-		regexes:   program.Compiled.Regexes,
-	}
-
-	// Allocate memory for variables and virtual machine stack
-	p.globals = make([]value, len(program.Scalars))
-	p.stack = make([]value, initialStackSize)
-	p.arrays = make([]map[string]value, len(program.Arrays), len(program.Arrays)+initialStackSize)
-	for i := 0; i < len(program.Arrays); i++ {
-		p.arrays[i] = make(map[string]value) // TODO: consider adding size hint
-	}
-
-	// Initialize defaults
-	p.regexCache = make(map[string]*regexp.Regexp, 10)
-	p.formatCache = make(map[string]cachedFormat, 10)
-	p.resetRand(1.0)
-	p.convertFormat = "%.6g"
-	p.outputFormat = "%.6g"
-	p.fieldSep = " "
-	p.recordSep = "\n"
-	p.outputFieldSep = " "
-	p.outputRecordSep = "\n"
-	p.subscriptSep = "\x1c"
-	p.noExec = config.NoExec
-	p.noFileWrites = config.NoFileWrites
-	p.noFileReads = config.NoFileReads
-	err := p.initNativeFuncs(config.Funcs)
-	if err != nil {
-		return nil, err
-	}
-
-	// Setup system shell command
-	if len(config.ShellCommand) != 0 {
-		p.shellCommand = config.ShellCommand
-	} else {
-		executable := "/bin/sh"
-		if runtime.GOOS == "windows" {
-			executable = "sh"
-		}
-		p.shellCommand = []string{executable, "-c"}
-	}
-
-	p.inputStreams = make(map[string]io.ReadCloser)
-	p.outputStreams = make(map[string]io.WriteCloser)
-	p.commands = make(map[string]*exec.Cmd)
-	p.scanners = make(map[string]*bufio.Scanner)
-
-	return p, nil
 }
 
 func (p *interp) executeAll() (int, error) {
