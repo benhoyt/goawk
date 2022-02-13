@@ -99,20 +99,20 @@ func Example_new() {
 	// We'll execute this program multiple times on different inputs.
 	src := `{ print $1, $3 }`
 
-	// Parse and compile the program.
+	// Parse the program and set up the interpreter.
 	prog, err := parser.ParseProgram([]byte(src), nil)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	interpreter, err := interp.New(prog, nil)
+	interpreter, err := interp.New(prog)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
 	// Run it once on one input.
-	_, err = interpreter.Execute(&interp.ExecuteConfig{
+	_, err = interpreter.Execute(&interp.Config{
 		Stdin: strings.NewReader("one two three"),
 	})
 	if err != nil {
@@ -122,7 +122,7 @@ func Example_new() {
 
 	// Run it again efficiently on a different input (this could be from a
 	// completely different data source).
-	_, err = interpreter.Execute(&interp.ExecuteConfig{
+	_, err = interpreter.Execute(&interp.Config{
 		Stdin: strings.NewReader("1 2 3"),
 	})
 	if err != nil {

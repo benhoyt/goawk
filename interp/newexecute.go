@@ -3,14 +3,13 @@
 package interp
 
 import (
-	"io"
 	"math"
 
 	"github.com/benhoyt/goawk/parser"
 )
 
 // Interpreter is an interpreter for a specific program, allowing you to
-// efficiently Execute the same program over and over with different inputs.
+// efficiently execute the same program over and over with different inputs.
 // Use New to create an Interpreter.
 //
 // Most programs won't need reusable execution, and should use the simpler
@@ -20,42 +19,13 @@ type Interpreter struct {
 	noReset bool
 }
 
-// NewConfig is the subset of configuration that may not vary per execution.
-// For the meaning of the fields, see the Config struct.
-type NewConfig struct {
-	Funcs map[string]interface{}
-}
-
-// New creates a reusable interpreter for the given program. A nil config
-// is valid and will use the defaults (zero values).
+// New creates a reusable interpreter for the given program.
 //
 // Most programs won't need reusable execution, and should use the simpler
 // Exec or ExecProgram functions instead.
-func New(program *parser.Program, config *NewConfig) (*Interpreter, error) {
-	if config == nil {
-		config = &NewConfig{}
-	}
-	p, err := newInterp(program, config)
-	if err != nil {
-		return nil, err
-	}
+func New(program *parser.Program) (*Interpreter, error) {
+	p := newInterp(program)
 	return &Interpreter{interp: p, noReset: true}, nil
-}
-
-// ExecuteConfig is the subset of configuration that may vary per execution.
-// For the meaning of the fields, see the Config struct.
-type ExecuteConfig struct {
-	Stdin        io.Reader
-	Output       io.Writer
-	Error        io.Writer
-	Argv0        string
-	Args         []string
-	Vars         []string
-	NoExec       bool
-	NoFileWrites bool
-	NoFileReads  bool
-	ShellCommand []string
-	Environ      []string
 }
 
 // Execute runs this program with the given execution configuration (input,
@@ -67,15 +37,15 @@ type ExecuteConfig struct {
 // the ResetRand method if you need to reset that). Internal memory
 // allocations are reused, so calling Execute on the same interpreter is
 // significantly more efficient than calling ExecProgram multiple times.
-func (p *Interpreter) Execute(config *ExecuteConfig) (int, error) {
+//
+// Note that config.Funcs must be the same value provided to
+// parser.ParseProgram, and must not change between calls to Execute.
+func (p *Interpreter) Execute(config *Config) (int, error) {
 	if !p.noReset {
 		p.interp.reset()
 	}
 	p.noReset = false
 
-	if config == nil {
-		config = &ExecuteConfig{}
-	}
 	err := p.interp.setExecuteConfig(config)
 	if err != nil {
 		return 0, err

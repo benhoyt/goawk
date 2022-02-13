@@ -225,39 +225,15 @@ type Config struct {
 // defaults (zero values). However, it may be simpler to use Exec in that
 // case.
 func ExecProgram(program *parser.Program, config *Config) (int, error) {
-	if config == nil {
-		config = &Config{}
-	}
-	newConfig := NewConfig{
-		Funcs: config.Funcs,
-	}
-	p, err := newInterp(program, &newConfig)
+	p := newInterp(program)
+	err := p.setExecuteConfig(config)
 	if err != nil {
 		return 0, err
 	}
-
-	executeConfig := ExecuteConfig{
-		Stdin:        config.Stdin,
-		Output:       config.Output,
-		Error:        config.Error,
-		Argv0:        config.Argv0,
-		Args:         config.Args,
-		Vars:         config.Vars,
-		NoExec:       config.NoExec,
-		NoFileWrites: config.NoFileWrites,
-		NoFileReads:  config.NoFileReads,
-		ShellCommand: config.ShellCommand,
-		Environ:      config.Environ,
-	}
-	err = p.setExecuteConfig(&executeConfig)
-	if err != nil {
-		return 0, err
-	}
-
 	return p.executeAll()
 }
 
-func newInterp(program *parser.Program, config *NewConfig) (*interp, error) {
+func newInterp(program *parser.Program) *interp {
 	p := &interp{
 		program:   program,
 		functions: program.Compiled.Functions,
@@ -287,20 +263,19 @@ func newInterp(program *parser.Program, config *NewConfig) (*interp, error) {
 	p.outputFieldSep = " "
 	p.outputRecordSep = "\n"
 	p.subscriptSep = "\x1c"
-	err := p.initNativeFuncs(config.Funcs)
-	if err != nil {
-		return nil, err
-	}
 
 	p.inputStreams = make(map[string]io.ReadCloser)
 	p.outputStreams = make(map[string]io.WriteCloser)
 	p.commands = make(map[string]*exec.Cmd)
 	p.scanners = make(map[string]*bufio.Scanner)
 
-	return p, nil
+	return p
 }
 
-func (p *interp) setExecuteConfig(config *ExecuteConfig) error {
+func (p *interp) setExecuteConfig(config *Config) error {
+	if config == nil {
+		config = &Config{}
+	}
 	if len(config.Vars)%2 != 0 {
 		return newError("length of config.Vars must be a multiple of 2, not %d", len(config.Vars))
 	}
@@ -365,6 +340,14 @@ func (p *interp) setExecuteConfig(config *ExecuteConfig) error {
 	p.errorOutput = config.Error
 	if p.errorOutput == nil {
 		p.errorOutput = os.Stderr
+	}
+
+	// Initialize native Go functions
+	if p.nativeFuncs == nil {
+		err := p.initNativeFuncs(config.Funcs)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
