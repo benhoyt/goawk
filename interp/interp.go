@@ -266,14 +266,15 @@ func newInterp(program *parser.Program, config *NewConfig) (*interp, error) {
 	p.stack = make([]value, initialStackSize)
 	p.arrays = make([]map[string]value, len(program.Arrays), len(program.Arrays)+initialStackSize)
 	for i := 0; i < len(program.Arrays); i++ {
-		p.arrays[i] = make(map[string]value) // TODO: consider adding size hint
+		p.arrays[i] = make(map[string]value)
 	}
 
 	// Initialize defaults
 	p.regexCache = make(map[string]*regexp.Regexp, 10)
 	p.formatCache = make(map[string]cachedFormat, 10)
 	p.randSeed = 1.0
-	p.random = rand.New(rand.NewSource(int64(math.Float64bits(p.randSeed))))
+	seed := math.Float64bits(p.randSeed)
+	p.random = rand.New(rand.NewSource(int64(seed)))
 	p.convertFormat = "%.6g"
 	p.outputFormat = "%.6g"
 	p.fieldSep = " "
@@ -409,7 +410,7 @@ func Exec(source, fieldSep string, input io.Reader, output io.Writer) error {
 
 // Execute pattern-action blocks (may be multiple)
 func (p *interp) execActions(actions []compiler.Action) error {
-	inRange := make([]bool, len(actions)) // TODO: eliminate allocations
+	inRange := make([]bool, len(actions))
 lineLoop:
 	for {
 		// Read and setup next line of input
