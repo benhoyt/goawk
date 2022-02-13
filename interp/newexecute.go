@@ -29,8 +29,8 @@ func New(program *parser.Program) (*Interpreter, error) {
 }
 
 // Execute runs this program with the given execution configuration (input,
-// output, and variables). A nil config is valid and will use the defaults
-// (zero values).
+// output, and variables) and returns the exit status code of the program. A
+// nil config is valid and will use the defaults (zero values).
 //
 // Interpreter state is reset between each run, except for resetting the
 // random number generator seed, because that is an expensive operation (call
