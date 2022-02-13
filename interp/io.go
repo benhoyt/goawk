@@ -135,7 +135,7 @@ func (p *interp) getInputScannerFile(name string) (*bufio.Scanner, error) {
 		if scanner, ok := p.scanners["-"]; ok {
 			return scanner, nil
 		}
-		scanner := p.newScanner(p.stdin)
+		scanner := p.newScanner(p.stdin, make([]byte, inputBufSize))
 		p.scanners[name] = scanner
 		return scanner, nil
 	}
@@ -146,7 +146,7 @@ func (p *interp) getInputScannerFile(name string) (*bufio.Scanner, error) {
 	if err != nil {
 		return nil, err // *os.PathError is handled by caller (getline returns -1)
 	}
-	scanner := p.newScanner(r)
+	scanner := p.newScanner(r, make([]byte, inputBufSize))
 	p.scanners[name] = scanner
 	p.inputStreams[name] = r
 	return scanner, nil
@@ -176,7 +176,7 @@ func (p *interp) getInputScannerPipe(name string) (*bufio.Scanner, error) {
 		p.printErrorf("%s\n", err)
 		return bufio.NewScanner(strings.NewReader("")), nil
 	}
-	scanner := p.newScanner(r)
+	scanner := p.newScanner(r, make([]byte, inputBufSize))
 	p.commands[name] = cmd
 	p.inputStreams[name] = r
 	p.scanners[name] = scanner
@@ -184,7 +184,7 @@ func (p *interp) getInputScannerPipe(name string) (*bufio.Scanner, error) {
 }
 
 // Create a new buffered Scanner for reading input records
-func (p *interp) newScanner(input io.Reader) *bufio.Scanner {
+func (p *interp) newScanner(input io.Reader, buffer []byte) *bufio.Scanner {
 	scanner := bufio.NewScanner(input)
 	switch {
 	case p.recordSep == "\n":
@@ -201,7 +201,6 @@ func (p *interp) newScanner(input io.Reader) *bufio.Scanner {
 		splitter := regexSplitter{p.recordSepRegex, &p.recordTerminator}
 		scanner.Split(splitter.scan)
 	}
-	buffer := make([]byte, inputBufSize) // TODO: pool of these to reuse them?
 	scanner.Buffer(buffer, maxRecordLength)
 	return scanner
 }
@@ -440,7 +439,10 @@ func (p *interp) nextLine() (string, error) {
 					p.hadFiles = true
 				}
 			}
-			p.scanner = p.newScanner(p.input)
+			if p.inputBuffer == nil { // reuse buffer from last input file
+				p.inputBuffer = make([]byte, inputBufSize)
+			}
+			p.scanner = p.newScanner(p.input, p.inputBuffer)
 		}
 		p.recordTerminator = p.recordSep // will be overridden if RS is "" or multiple chars
 		if p.scanner.Scan() {

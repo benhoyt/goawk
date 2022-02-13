@@ -69,6 +69,7 @@ type interp struct {
 	filenameIndex int
 	hadFiles      bool
 	input         io.Reader
+	inputBuffer   []byte
 	inputStreams  map[string]io.ReadCloser
 	outputStreams map[string]io.WriteCloser
 	commands      map[string]*exec.Cmd
