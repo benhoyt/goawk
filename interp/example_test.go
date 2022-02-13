@@ -94,3 +94,43 @@ func Example_funcs() {
 	// Output:
 	// 0 1 9 xyzxyzxyz
 }
+
+func Example_new() {
+	// We'll execute this program multiple times on different inputs.
+	src := `{ print $1, $3 }`
+
+	// Parse and compile the program.
+	prog, err := parser.ParseProgram([]byte(src), nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	interpreter, err := interp.New(prog, nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// Run it once on one input.
+	_, err = interpreter.Execute(&interp.ExecuteConfig{
+		Stdin: strings.NewReader("one two three"),
+	})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// Run it again efficiently on a different input (this could be from a
+	// completely different data source).
+	_, err = interpreter.Execute(&interp.ExecuteConfig{
+		Stdin: strings.NewReader("1 2 3"),
+	})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// Output:
+	// one three
+	// 1 3
+}

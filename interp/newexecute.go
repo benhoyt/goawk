@@ -21,8 +21,7 @@ type Interpreter struct {
 }
 
 // NewConfig is the subset of configuration that may not vary per execution.
-// For the meaning of the fields, see the field with the same name in the
-// documentation of the Config struct.
+// For the meaning of the fields, see the Config struct.
 type NewConfig struct {
 	Funcs map[string]interface{}
 }
@@ -44,8 +43,7 @@ func New(program *parser.Program, config *NewConfig) (*Interpreter, error) {
 }
 
 // ExecuteConfig is the subset of configuration that may vary per execution.
-// For the meaning of the fields, see the field with the same name in the
-// documentation of the Config struct.
+// For the meaning of the fields, see the Config struct.
 type ExecuteConfig struct {
 	Stdin        io.Reader
 	Output       io.Writer
@@ -65,7 +63,7 @@ type ExecuteConfig struct {
 // (zero values).
 //
 // Interpreter state is reset between each run, except for resetting the
-// random number generator seed, as that's a fairly expensive operation (call
+// random number generator seed, because that is an expensive operation (call
 // the ResetRand method if you need to reset that). Internal memory
 // allocations are reused, so calling Execute on the same interpreter is
 // significantly more efficient than calling ExecProgram multiple times.

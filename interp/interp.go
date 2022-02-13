@@ -1,9 +1,13 @@
-// Package interp is the GoAWK interpreter (a simple tree-walker).
+// Package interp is the GoAWK interpreter.
 //
 // For basic usage, use the Exec function. For more complicated use
 // cases and configuration options, first use the parser package to
 // parse the AWK source, and then use ExecProgram to execute it with
 // a specific configuration.
+//
+// If you need to re-run the same parsed program repeatedly on different
+// inputs or with different variables, use New to instantiate an Interpreter
+// and then call the Interpreter.Execute method as many times as you need.
 //
 package interp
 
@@ -218,7 +222,8 @@ type Config struct {
 // a non-zero status code.
 //
 // As of GoAWK version v1.16.0, a nil config is valid and will use the
-// defaults (zero values). However, Exec may be simpler in that case.
+// defaults (zero values). However, it may be simpler to use Exec in that
+// case.
 func ExecProgram(program *parser.Program, config *Config) (int, error) {
 	if config == nil {
 		config = &Config{}
