@@ -39,6 +39,8 @@ var (
 
 	crlfNewline = runtime.GOOS == "windows"
 	varRegex    = regexp.MustCompile(`^([_a-zA-Z][_a-zA-Z0-9]*)=(.*)`)
+
+	defaultShellCommand = getDefaultShellCommand()
 )
 
 // Error (actually *Error) is returned by Exec and Eval functions on
@@ -318,11 +320,7 @@ func (p *interp) setExecuteConfig(config *Config) error {
 	if len(config.ShellCommand) != 0 {
 		p.shellCommand = config.ShellCommand
 	} else {
-		executable := "/bin/sh"
-		if runtime.GOOS == "windows" {
-			executable = "sh"
-		}
-		p.shellCommand = []string{executable, "-c"}
+		p.shellCommand = defaultShellCommand
 	}
 
 	// Setup I/O structures
@@ -698,4 +696,12 @@ func (p *interp) compileRegex(regex string) (*regexp.Regexp, error) {
 		p.regexCache[regex] = re
 	}
 	return re, nil
+}
+
+func getDefaultShellCommand() []string {
+	executable := "/bin/sh"
+	if runtime.GOOS == "windows" {
+		executable = "sh"
+	}
+	return []string{executable, "-c"}
 }
