@@ -47,8 +47,9 @@ func TestNewExecute(t *testing.T) {
 		if status != 0 {
 			t.Fatalf("%d: expected status 0, got %d", i, status)
 		}
-		if output.String() != test.output {
-			t.Fatalf("%d: expected %q, got %q", i, test.output, output.String())
+		normalized := normalizeNewlines(output.String())
+		if normalized != test.output {
+			t.Fatalf("%d: expected %q, got %q", i, test.output, normalized)
 		}
 	}
 }
