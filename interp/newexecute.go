@@ -59,6 +59,7 @@ func (p *interp) reset() {
 	for k := range p.scanners {
 		delete(p.scanners, k)
 	}
+	p.input = nil
 	for k := range p.inputStreams {
 		delete(p.inputStreams, k)
 	}
@@ -79,6 +80,7 @@ func (p *interp) reset() {
 		}
 	}
 	p.localArrays = p.localArrays[:0]
+	p.callDepth = 0
 
 	p.filename = null()
 	p.line = ""
