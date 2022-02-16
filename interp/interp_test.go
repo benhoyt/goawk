@@ -2002,6 +2002,40 @@ BEGIN {
 `, b.N)
 }
 
+func BenchmarkPrint(b *testing.B) {
+	b.StopTimer()
+	src := fmt.Sprintf(`
+BEGIN {
+  for (i = 0; i < %d; i++) {
+    print i, "foo", i, "bar"
+    print i, "foo", i, "bar"
+    print i, "foo", i, "bar"
+    print i, "foo", i, "bar"
+    print i, "foo", i, "bar"
+    print i, "foo", i, "bar"
+    print i, "foo", i, "bar"
+    print i, "foo", i, "bar"
+    print i, "foo", i, "bar"
+    print i, "foo", i, "bar"
+  }
+}
+`, b.N)
+
+	prog, err := parser.ParseProgram([]byte(src), nil)
+	if err != nil {
+		b.Fatalf("parse error: %v", err)
+	}
+	b.StartTimer()
+	_, err = interp.ExecProgram(prog, &interp.Config{
+		Output:  ioutil.Discard,
+		Environ: []string{},
+	})
+	b.StopTimer()
+	if err != nil {
+		b.Fatalf("execute error: %v", err)
+	}
+}
+
 func BenchmarkRepeatExecProgram(b *testing.B) {
 	prog, err := parser.ParseProgram([]byte(`BEGIN {}`), nil)
 	if err != nil {
