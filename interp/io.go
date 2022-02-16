@@ -374,7 +374,10 @@ func (p *interp) ensureFields() {
 		p.fields = fields
 	}
 
-	p.fieldsIsTrueStr = make([]bool, len(p.fields))
+	p.fieldsIsTrueStr = p.fieldsIsTrueStr[:0] // avoid allocation most of the time
+	for range p.fields {
+		p.fieldsIsTrueStr = append(p.fieldsIsTrueStr, false)
+	}
 	p.numFields = len(p.fields)
 }
 

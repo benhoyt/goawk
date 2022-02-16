@@ -400,7 +400,7 @@ func Exec(source, fieldSep string, input io.Reader, output io.Writer) error {
 
 // Execute pattern-action blocks (may be multiple)
 func (p *interp) execActions(actions []compiler.Action) error {
-	inRange := make([]bool, len(actions))
+	var inRange []bool
 lineLoop:
 	for {
 		// Read and setup next line of input
@@ -430,6 +430,9 @@ lineLoop:
 				matched = p.pop().boolean()
 			case 2:
 				// Range pattern (matches between start and stop lines)
+				if inRange == nil {
+					inRange = make([]bool, len(actions))
+				}
 				if !inRange[i] {
 					err := p.execute(action.Pattern[0])
 					if err != nil {

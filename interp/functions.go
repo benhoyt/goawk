@@ -377,7 +377,7 @@ func (p *interp) sprintf(format string, args []value) (string, error) {
 	if len(types) > len(args) {
 		return "", newError("format error: got %d args, expected %d", len(args), len(types))
 	}
-	converted := make([]interface{}, len(types))
+	converted := make([]interface{}, 0, 7) // up to 7 args won't require heap allocation
 	for i, t := range types {
 		a := args[i]
 		var v interface{}
@@ -407,7 +407,7 @@ func (p *interp) sprintf(format string, args []value) (string, error) {
 			}
 			v = c
 		}
-		converted[i] = v
+		converted = append(converted, v)
 	}
 	return fmt.Sprintf(format, converted...), nil
 }

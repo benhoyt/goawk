@@ -734,11 +734,15 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			var line string
 			if numArgs > 0 {
 				args := p.popSlice(int(numArgs))
-				strs := make([]string, len(args))
+				var builder strings.Builder
+				builder.Grow(10 * len(args)) // probably enough space, but it'll grow more if needed
 				for i, a := range args {
-					strs[i] = a.str(p.outputFormat)
+					if i > 0 {
+						builder.WriteString(p.outputFieldSep)
+					}
+					builder.WriteString(a.str(p.outputFormat))
 				}
-				line = strings.Join(strs, p.outputFieldSep)
+				line = builder.String()
 			} else {
 				// "print" with no args is equivalent to "print $0"
 				line = p.line
