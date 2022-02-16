@@ -6,7 +6,7 @@
 
 AWK is a fascinating text-processing language, and somehow after reading the delightfully-terse [*The AWK Programming Language*](https://ia802309.us.archive.org/25/items/pdfy-MgN0H1joIoDVoIC7/The_AWK_Programming_Language.pdf) I was inspired to write an interpreter for it in Go. So here it is, feature-complete and tested against "the one true AWK" test suite.
 
-[**Read more about how GoAWK works and performs here.**](https://benhoyt.com/writings/goawk/)
+Read the [**original article about how GoAWK works and performs**](https://benhoyt.com/writings/goawk/), or the follow-up article about how I converted the tree-walking interpreter to a [**bytecode compiler and virtual machine**](https://benhoyt.com/writings/goawk-compiler-vm/).
 
 ## Basic usage
 
@@ -67,6 +67,8 @@ if err != nil {
 // 3:abc
 ```
 
+If you need to repeat execution of the same program on different inputs, you can call [`interp.New`](https://pkg.go.dev/github.com/benhoyt/goawk/interp#New) once, and then call the returned object's `Execute` method as many times as you need.
+
 Read the [documentation](https://pkg.go.dev/github.com/benhoyt/goawk) for more details.
 
 ## Differences from AWK
@@ -81,7 +83,7 @@ Additional features GoAWK has over AWK:
 
 Things AWK has over GoAWK:
 
-* CPU-bound AWK scripts are slightly slower than `awk`, and about twice as slow as `gawk` and `mawk`.
+* CPU-bound AWK scripts are slightly slower than `awk`, somewhat slower than `gawk`, and significantly slower than `mawk`.
 * AWK is written by Brian Kernighan.
 
 ## Stability

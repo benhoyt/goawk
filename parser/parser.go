@@ -1,7 +1,7 @@
 // Package parser is an AWK parser and abstract syntax tree.
 //
-// Use the ParseProgram function to parse an AWK program, and then
-// give the result to one of the interp.Exec* functions to execute it.
+// Use the ParseProgram function to parse an AWK program, and then give the
+// result to interp.Exec, interp.ExecProgram, or interp.New to execute it.
 //
 package parser
 

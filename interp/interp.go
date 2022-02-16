@@ -1,9 +1,13 @@
-// Package interp is the GoAWK interpreter (a simple tree-walker).
+// Package interp is the GoAWK interpreter.
 //
 // For basic usage, use the Exec function. For more complicated use
 // cases and configuration options, first use the parser package to
 // parse the AWK source, and then use ExecProgram to execute it with
 // a specific configuration.
+//
+// If you need to re-run the same parsed program repeatedly on different
+// inputs or with different variables, use New to instantiate an Interpreter
+// and then call the Interpreter.Execute method as many times as you need.
 //
 package interp
 
@@ -35,6 +39,8 @@ var (
 
 	crlfNewline = runtime.GOOS == "windows"
 	varRegex    = regexp.MustCompile(`^([_a-zA-Z][_a-zA-Z0-9]*)=(.*)`)
+
+	defaultShellCommand = getDefaultShellCommand()
 )
 
 // Error (actually *Error) is returned by Exec and Eval functions on
@@ -69,6 +75,7 @@ type interp struct {
 	filenameIndex int
 	hadFiles      bool
 	input         io.Reader
+	inputBuffer   []byte
 	inputStreams  map[string]io.ReadCloser
 	outputStreams map[string]io.WriteCloser
 	commands      map[string]*exec.Cmd
@@ -146,8 +153,9 @@ type Config struct {
 	// Standard input reader (defaults to os.Stdin)
 	Stdin io.Reader
 
-	// Writer for normal output (defaults to a buffered version of
-	// os.Stdout)
+	// Writer for normal output (defaults to a buffered version of os.Stdout).
+	// If you need to write to stdout but want control over the buffer size or
+	// allocation, wrap os.Stdout yourself and set Output to that.
 	Output io.Writer
 
 	// Writer for non-fatal error messages (defaults to os.Stderr)
@@ -208,6 +216,9 @@ type Config struct {
 	// List of name-value pairs to be assigned to the ENVIRON special
 	// array, for example []string{"USER", "bob", "HOME", "/home/bob"}.
 	// If nil (the default), values from os.Environ() are used.
+	//
+	// If the script doesn't need environment variables, set Environ to a
+	// non-nil empty slice, []string{}.
 	Environ []string
 }
 
@@ -215,14 +226,20 @@ type Config struct {
 // config, returning the exit status code of the program. Error is nil
 // on successful execution of the program, even if the program returns
 // a non-zero status code.
+//
+// As of GoAWK version v1.16.0, a nil config is valid and will use the
+// defaults (zero values). However, it may be simpler to use Exec in that
+// case.
 func ExecProgram(program *parser.Program, config *Config) (int, error) {
-	if len(config.Vars)%2 != 0 {
-		return 0, newError("length of config.Vars must be a multiple of 2, not %d", len(config.Vars))
+	p := newInterp(program)
+	err := p.setExecuteConfig(config)
+	if err != nil {
+		return 0, err
 	}
-	if len(config.Environ)%2 != 0 {
-		return 0, newError("length of config.Environ must be a multiple of 2, not %d", len(config.Environ))
-	}
+	return p.executeAll()
+}
 
+func newInterp(program *parser.Program) *interp {
 	p := &interp{
 		program:   program,
 		functions: program.Compiled.Functions,
@@ -252,16 +269,28 @@ func ExecProgram(program *parser.Program, config *Config) (int, error) {
 	p.outputFieldSep = " "
 	p.outputRecordSep = "\n"
 	p.subscriptSep = "\x1c"
-	p.noExec = config.NoExec
-	p.noFileWrites = config.NoFileWrites
-	p.noFileReads = config.NoFileReads
-	err := p.initNativeFuncs(config.Funcs)
-	if err != nil {
-		return 0, err
+
+	p.inputStreams = make(map[string]io.ReadCloser)
+	p.outputStreams = make(map[string]io.WriteCloser)
+	p.commands = make(map[string]*exec.Cmd)
+	p.scanners = make(map[string]*bufio.Scanner)
+
+	return p
+}
+
+func (p *interp) setExecuteConfig(config *Config) error {
+	if config == nil {
+		config = &Config{}
+	}
+	if len(config.Vars)%2 != 0 {
+		return newError("length of config.Vars must be a multiple of 2, not %d", len(config.Vars))
+	}
+	if len(config.Environ)%2 != 0 {
+		return newError("length of config.Environ must be a multiple of 2, not %d", len(config.Environ))
 	}
 
 	// Setup ARGV and other variables from config
-	argvIndex := program.Arrays["ARGV"]
+	argvIndex := p.program.Arrays["ARGV"]
 	p.setArrayValue(ast.ScopeGlobal, argvIndex, "0", str(config.Argv0))
 	p.argc = len(config.Args) + 1
 	for i, arg := range config.Args {
@@ -272,12 +301,12 @@ func ExecProgram(program *parser.Program, config *Config) (int, error) {
 	for i := 0; i < len(config.Vars); i += 2 {
 		err := p.setVarByName(config.Vars[i], config.Vars[i+1])
 		if err != nil {
-			return 0, err
+			return err
 		}
 	}
 
 	// Setup ENVIRON from config or environment variables
-	environIndex := program.Arrays["ENVIRON"]
+	environIndex := p.program.Arrays["ENVIRON"]
 	if config.Environ != nil {
 		for i := 0; i < len(config.Environ); i += 2 {
 			p.setArrayValue(ast.ScopeGlobal, environIndex, config.Environ[i], numStr(config.Environ[i+1]))
@@ -295,14 +324,13 @@ func ExecProgram(program *parser.Program, config *Config) (int, error) {
 	if len(config.ShellCommand) != 0 {
 		p.shellCommand = config.ShellCommand
 	} else {
-		executable := "/bin/sh"
-		if runtime.GOOS == "windows" {
-			executable = "sh"
-		}
-		p.shellCommand = []string{executable, "-c"}
+		p.shellCommand = defaultShellCommand
 	}
 
 	// Setup I/O structures
+	p.noExec = config.NoExec
+	p.noFileWrites = config.NoFileWrites
+	p.noFileReads = config.NoFileReads
 	p.stdin = config.Stdin
 	if p.stdin == nil {
 		p.stdin = os.Stdin
@@ -315,27 +343,36 @@ func ExecProgram(program *parser.Program, config *Config) (int, error) {
 	if p.errorOutput == nil {
 		p.errorOutput = os.Stderr
 	}
-	p.inputStreams = make(map[string]io.ReadCloser)
-	p.outputStreams = make(map[string]io.WriteCloser)
-	p.commands = make(map[string]*exec.Cmd)
-	p.scanners = make(map[string]*bufio.Scanner)
+
+	// Initialize native Go functions
+	if p.nativeFuncs == nil {
+		err := p.initNativeFuncs(config.Funcs)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (p *interp) executeAll() (int, error) {
 	defer p.closeAll()
 
 	// Execute the program: BEGIN, then pattern/actions, then END
-	err = p.execute(program.Compiled.Begin)
+	err := p.execute(p.program.Compiled.Begin)
 	if err != nil && err != errExit {
 		return 0, err
 	}
-	if program.Actions == nil && program.End == nil {
+	if p.program.Actions == nil && p.program.End == nil {
 		return p.exitStatus, nil
 	}
 	if err != errExit {
-		err = p.execActions(program.Compiled.Actions)
+		err = p.execActions(p.program.Compiled.Actions)
 		if err != nil && err != errExit {
 			return 0, err
 		}
 	}
-	err = p.execute(program.Compiled.End)
+	err = p.execute(p.program.Compiled.End)
 	if err != nil && err != errExit {
 		return 0, err
 	}
@@ -663,4 +700,12 @@ func (p *interp) compileRegex(regex string) (*regexp.Regexp, error) {
 		p.regexCache[regex] = re
 	}
 	return re, nil
+}
+
+func getDefaultShellCommand() []string {
+	executable := "/bin/sh"
+	if runtime.GOOS == "windows" {
+		executable = "sh"
+	}
+	return []string{executable, "-c"}
 }
