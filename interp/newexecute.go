@@ -15,8 +15,7 @@ import (
 // Most programs won't need reusable execution, and should use the simpler
 // Exec or ExecProgram functions instead.
 type Interpreter struct {
-	interp  *interp
-	noReset bool
+	interp *interp
 }
 
 // New creates a reusable interpreter for the given program.
@@ -25,26 +24,24 @@ type Interpreter struct {
 // Exec or ExecProgram functions instead.
 func New(program *parser.Program) (*Interpreter, error) {
 	p := newInterp(program)
-	return &Interpreter{interp: p, noReset: true}, nil
+	return &Interpreter{interp: p}, nil
 }
 
 // Execute runs this program with the given execution configuration (input,
 // output, and variables) and returns the exit status code of the program. A
 // nil config is valid and will use the defaults (zero values).
 //
-// Interpreter state is reset between each run, except for resetting the
-// random number generator seed, because that is an expensive operation (call
-// the ResetRand method if you need to reset that). Internal memory
-// allocations are reused, so calling Execute on the same interpreter is
-// significantly more efficient than calling ExecProgram multiple times.
+// Internal memory allocations are reused, so calling Execute on the same
+// Interpreter instance is significantly more efficient than calling
+// ExecProgram multiple times.
+//
+// I/O state is reset between each run, but variables and the random number
+// generator seed are not; use ResetVars and ResetRand to reset those.
 //
 // Note that config.Funcs must be the same value provided to
 // parser.ParseProgram, and must not change between calls to Execute.
 func (p *Interpreter) Execute(config *Config) (int, error) {
-	if !p.noReset {
-		p.interp.reset()
-	}
-	p.noReset = false
+	p.interp.resetCore()
 
 	err := p.interp.setExecuteConfig(config)
 	if err != nil {
@@ -54,7 +51,7 @@ func (p *Interpreter) Execute(config *Config) (int, error) {
 	return p.interp.executeAll()
 }
 
-func (p *interp) reset() {
+func (p *interp) resetCore() {
 	p.scanner = nil
 	for k := range p.scanners {
 		delete(p.scanners, k)
@@ -70,15 +67,7 @@ func (p *interp) reset() {
 		delete(p.commands, k)
 	}
 
-	for i := range p.globals {
-		p.globals[i] = null()
-	}
 	p.sp = 0
-	for _, array := range p.arrays {
-		for k := range array {
-			delete(array, k)
-		}
-	}
 	p.localArrays = p.localArrays[:0]
 	p.callDepth = 0
 
@@ -92,6 +81,23 @@ func (p *interp) reset() {
 	p.numFields = 0
 	p.haveFields = false
 
+	p.exitStatus = 0
+}
+
+func (p *interp) resetVars() {
+	// Reset global scalars
+	for i := range p.globals {
+		p.globals[i] = null()
+	}
+
+	// Reset global arrays
+	for _, array := range p.arrays {
+		for k := range array {
+			delete(array, k)
+		}
+	}
+
+	// Reset special variables
 	p.convertFormat = "%.6g"
 	p.outputFormat = "%.6g"
 	p.fieldSep = " "
@@ -104,12 +110,18 @@ func (p *interp) reset() {
 	p.subscriptSep = "\x1c"
 	p.matchLength = 0
 	p.matchStart = 0
+}
 
-	p.exitStatus = 0
+// ResetVars resets this interpreter's variables, setting scalar variables to
+// null, clearing arrays, and resetting special variables such as FS and RS to
+// their defaults.
+func (p *Interpreter) ResetVars() {
+	p.interp.resetVars()
 }
 
 // ResetRand resets this interpreter's random number generator seed, so that
-// rand() produces the same sequence it would have after calling New.
+// rand() produces the same sequence it would have after calling New. This is
+// a relatively CPU-intensive operation.
 func (p *Interpreter) ResetRand() {
 	p.interp.randSeed = 1.0
 	p.interp.random.Seed(int64(math.Float64bits(p.interp.randSeed)))

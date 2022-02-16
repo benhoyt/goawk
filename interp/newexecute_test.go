@@ -13,44 +13,71 @@ import (
 
 // This definitely doesn't test that everything was reset, but it's a good start.
 func TestNewExecute(t *testing.T) {
-	source := `{ print NR, x, y, a["k"], $1, $3; x++; y++; a["k"]++ }`
+	source := `{ print NR, OFMT, x, y, a["k"], $1, $3; OFMT="%g"; x++; y++; a["k"]++ }`
 	program, err := parser.ParseProgram([]byte(source), nil)
 	if err != nil {
 		t.Fatalf("error parsing: %v", err)
 	}
-
 	interpreter, err := interp.New(program)
 	if err != nil {
 		t.Fatalf("error creating interpreter: %v", err)
 	}
-	var output bytes.Buffer
 
-	tests := []struct {
-		input  string
-		vars   []string
-		output string
-	}{
-		{"one two three\nfour five six\n", nil, "1    one three\n2 1 1 1 four six\n"},
-		{"ONE TWO THREE\nFOUR FIVE SIX\n", []string{"x", "10"}, "1 10   ONE THREE\n2 11 1 1 FOUR SIX\n"},
-		{"1 2 3\n4 5 6\n", []string{"x", "100"}, "1 100   1 3\n2 101 1 1 4 6\n"},
+	// First execution.
+	var output bytes.Buffer
+	status, err := interpreter.Execute(&interp.Config{
+		Stdin:  strings.NewReader("one two three\nfour five six\n"),
+		Output: &output,
+	})
+	if err != nil {
+		t.Fatalf("error executing: %v", err)
 	}
-	for i, test := range tests {
-		output.Reset()
-		status, err := interpreter.Execute(&interp.Config{
-			Stdin:  strings.NewReader(test.input),
-			Output: &output,
-			Vars:   test.vars,
-		})
-		if err != nil {
-			t.Fatalf("%d: error executing: %v", i, err)
-		}
-		if status != 0 {
-			t.Fatalf("%d: expected status 0, got %d", i, status)
-		}
-		normalized := normalizeNewlines(output.String())
-		if normalized != test.output {
-			t.Fatalf("%d: expected %q, got %q", i, test.output, normalized)
-		}
+	if status != 0 {
+		t.Fatalf("expected status 0, got %d", status)
+	}
+	normalized := normalizeNewlines(output.String())
+	expected := "1 %.6g    one three\n2 %g 1 1 1 four six\n"
+	if normalized != expected {
+		t.Fatalf("expected %q, got %q", expected, normalized)
+	}
+
+	// Second execution, with ResetVars.
+	output.Reset()
+	interpreter.ResetVars()
+	status, err = interpreter.Execute(&interp.Config{
+		Stdin:  strings.NewReader("ONE TWO THREE\nFOUR FIVE SIX\n"),
+		Output: &output,
+		Vars:   []string{"x", "10"},
+	})
+	if err != nil {
+		t.Fatalf("error executing: %v", err)
+	}
+	if status != 0 {
+		t.Fatalf("expected status 0, got %d", status)
+	}
+	normalized = normalizeNewlines(output.String())
+	expected = "1 %.6g 10   ONE THREE\n2 %g 11 1 1 FOUR SIX\n"
+	if normalized != expected {
+		t.Fatalf("expected %q, got %q", expected, normalized)
+	}
+
+	// Third execution, without ResetVars.
+	output.Reset()
+	status, err = interpreter.Execute(&interp.Config{
+		Stdin:  strings.NewReader("1 2 3\n4 5 6\n"),
+		Output: &output,
+		Vars:   []string{"x", "100"},
+	})
+	if err != nil {
+		t.Fatalf("error executing: %v", err)
+	}
+	if status != 0 {
+		t.Fatalf("expected status 0, got %d", status)
+	}
+	normalized = normalizeNewlines(output.String())
+	expected = "1 %g 100 2 2 1 3\n2 %g 101 3 3 4 6\n"
+	if normalized != expected {
+		t.Fatalf("expected %q, got %q", expected, normalized)
 	}
 }
 
