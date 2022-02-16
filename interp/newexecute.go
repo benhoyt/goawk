@@ -38,6 +38,11 @@ func New(program *parser.Program) (*Interpreter, error) {
 // I/O state is reset between each run, but variables and the random number
 // generator seed are not; use ResetVars and ResetRand to reset those.
 //
+// It's best to set config.Environ to a non-nil slice, otherwise Execute will
+// call the relatively inefficient os.Environ each time. Set config.Environ to
+// []string{} if the script doesn't need environment variables, or call
+// os.Environ once and set config.Environ to that value each execution.
+//
 // Note that config.Funcs must be the same value provided to
 // parser.ParseProgram, and must not change between calls to Execute.
 func (p *Interpreter) Execute(config *Config) (int, error) {

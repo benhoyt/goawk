@@ -113,7 +113,8 @@ func Example_new() {
 
 	// Run it once on one input.
 	_, err = interpreter.Execute(&interp.Config{
-		Stdin: strings.NewReader("one two three"),
+		Stdin:   strings.NewReader("one two three"),
+		Environ: []string{}, // avoid calling os.Environ each time
 	})
 	if err != nil {
 		fmt.Println(err)
@@ -124,7 +125,8 @@ func Example_new() {
 	// could be from a completely different data source).
 	interpreter.ResetVars()
 	_, err = interpreter.Execute(&interp.Config{
-		Stdin: strings.NewReader("a b c\nd e f\n"),
+		Stdin:   strings.NewReader("a b c\nd e f\n"),
+		Environ: []string{},
 	})
 	if err != nil {
 		fmt.Println(err)
@@ -133,7 +135,8 @@ func Example_new() {
 
 	// Run it on another input, this time without resetting variables.
 	_, err = interpreter.Execute(&interp.Config{
-		Stdin: strings.NewReader("x y z"),
+		Stdin:   strings.NewReader("x y z"),
+		Environ: []string{},
 	})
 	if err != nil {
 		fmt.Println(err)

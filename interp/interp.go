@@ -153,8 +153,9 @@ type Config struct {
 	// Standard input reader (defaults to os.Stdin)
 	Stdin io.Reader
 
-	// Writer for normal output (defaults to a buffered version of
-	// os.Stdout)
+	// Writer for normal output (defaults to a buffered version of os.Stdout).
+	// If you need to write to stdout but want control over the buffer size or
+	// allocation, wrap os.Stdout yourself and set Output to that.
 	Output io.Writer
 
 	// Writer for non-fatal error messages (defaults to os.Stderr)
@@ -215,6 +216,9 @@ type Config struct {
 	// List of name-value pairs to be assigned to the ENVIRON special
 	// array, for example []string{"USER", "bob", "HOME", "/home/bob"}.
 	// If nil (the default), values from os.Environ() are used.
+	//
+	// If the script doesn't need environment variables, set Environ to a
+	// non-nil empty slice, []string{}.
 	Environ []string
 }
 
