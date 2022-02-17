@@ -885,6 +885,12 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			p.replaceTop(num(ret))
 		}
 	}
+
+	err := p.checkContext()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
