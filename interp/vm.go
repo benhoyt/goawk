@@ -886,7 +886,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 		}
 	}
 
-	err := p.checkContext()
+	err := p.checkContextNow()
 	if err != nil {
 		return err
 	}

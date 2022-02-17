@@ -14,4 +14,8 @@ func (p *interp) checkContext() error {
 	return nil
 }
 
+func (p *interp) checkContextNow() error {
+	return nil
+}
+
 func (p *interp) resetContext() {}

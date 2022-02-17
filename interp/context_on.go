@@ -43,6 +43,10 @@ func (p *interp) checkContext() error {
 		return nil
 	}
 	p.ctxInfo.ops = 0
+	return p.checkContextNow()
+}
+
+func (p *interp) checkContextNow() error {
 	select {
 	case <-p.ctxInfo.ctx.Done():
 		return p.ctxInfo.ctx.Err()
