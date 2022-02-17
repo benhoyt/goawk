@@ -45,6 +45,9 @@ func New(program *parser.Program) (*Interpreter, error) {
 //
 // Note that config.Funcs must be the same value provided to
 // parser.ParseProgram, and must not change between calls to Execute.
+//
+// If you need support for timeout or cancellation, set the "goawk_context"
+// build tag and use ExecuteContext instead.
 func (p *Interpreter) Execute(config *Config) (int, error) {
 	p.interp.resetCore()
 
@@ -87,6 +90,8 @@ func (p *interp) resetCore() {
 	p.haveFields = false
 
 	p.exitStatus = 0
+
+	p.resetContext()
 }
 
 func (p *interp) resetVars() {

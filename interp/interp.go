@@ -133,6 +133,10 @@ type interp struct {
 	exitStatus  int
 	regexCache  map[string]*regexp.Regexp
 	formatCache map[string]cachedFormat
+
+	// For Interpreter.ExecuteContext (for efficiency reasons, this is only
+	// enable if the "goawk_context" build tag is set).
+	ctxInfo ctxInfo
 }
 
 // Various const configuration. Could make these part of Config if

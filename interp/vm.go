@@ -32,6 +32,13 @@ func (p *interp) execute(code []compiler.Opcode) error {
 		op := code[ip]
 		ip++
 
+		// This check will be optimized away unless ExecuteContext is enabled
+		// using the "goawk_context" build tag.
+		err := p.checkContext()
+		if err != nil {
+			return err
+		}
+
 		switch op {
 		case compiler.Num:
 			index := code[ip]
