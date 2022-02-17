@@ -129,6 +129,7 @@ NR==3, NR==5 { print NR }
 	{`BEGIN { for (i=3; i>0; i--) { printf "%d ", i } }`, "", "3 2 1 ", "", ""},
 	{`BEGIN { for (i=3; i>=0; i--) { printf "%d ", i } }`, "", "3 2 1 0 ", "", ""},
 	{`BEGIN { for (i=0; i<10; i++) { if (i < 5) continue; printf "%d ", i } }`, "", "5 6 7 8 9 ", "", ""},
+	{`BEGIN { for (i=0; i<100; i++) s+=i; print s }`, "", "4950\n", "", ""},
 	{`BEGIN { a[1]=1; a[2]=1; for (k in a) { s++; break } print s }`, "", "1\n", "", ""},
 	{`BEGIN { a[1]=1; a[2]=1; a[3]=1; for (k in a) { if (k==2) continue; s++ } print s }`, "", "2\n", "", ""},
 	{`function alen(a, k, n) { n=0; for (k in a) n++; return n }  BEGIN { a[1]=1; a[2]=1; print alen(a) }`, "", "2\n", "", ""},

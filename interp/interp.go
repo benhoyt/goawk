@@ -279,6 +279,8 @@ func newInterp(program *parser.Program) *interp {
 	p.commands = make(map[string]*exec.Cmd)
 	p.scanners = make(map[string]*bufio.Scanner)
 
+	p.resetContext()
+
 	return p
 }
 
