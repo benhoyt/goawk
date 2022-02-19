@@ -9,8 +9,7 @@ import (
 	"github.com/benhoyt/goawk/parser"
 )
 
-// TODO: this should probably be higher, but be careful about long-running instructions? check after those?
-const checkContextOps = 100 // for efficiency, only check context every few instructions
+const checkContextOps = 1000 // for efficiency, only check context every few instructions
 
 // Interpreter is an interpreter for a specific program, allowing you to
 // efficiently execute the same program over and over with different inputs.
