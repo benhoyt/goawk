@@ -29,7 +29,6 @@ jobs:
         gawk --version
         go build
         go test -race ./...
-        go test ./interp -race -tags=goawk_context -awk=""
 
   build-windows:
     runs-on: windows-latest
@@ -56,7 +55,6 @@ jobs:
         gawk --version
         go build
         go test -race ./...
-        go test ./interp -race -tags=goawk_context -awk=""
 
   build-macos:
     runs-on: macos-latest
@@ -83,4 +81,3 @@ jobs:
         gawk --version
         go build
         go test -race ./...
-        go test ./interp -race -tags=goawk_context -awk=""
