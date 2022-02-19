@@ -32,6 +32,13 @@ func (p *interp) execute(code []compiler.Opcode) error {
 		op := code[ip]
 		ip++
 
+		if p.checkCtx {
+			err := p.checkContext()
+			if err != nil {
+				return err
+			}
+		}
+
 		switch op {
 		case compiler.Num:
 			index := code[ip]
@@ -878,6 +885,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			p.replaceTop(num(ret))
 		}
 	}
+
 	return nil
 }
 

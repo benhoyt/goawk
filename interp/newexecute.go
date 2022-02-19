@@ -3,10 +3,13 @@
 package interp
 
 import (
+	"context"
 	"math"
 
 	"github.com/benhoyt/goawk/parser"
 )
+
+const checkContextOps = 1000 // for efficiency, only check context every N instructions
 
 // Interpreter is an interpreter for a specific program, allowing you to
 // efficiently execute the same program over and over with different inputs.
@@ -47,6 +50,7 @@ func New(program *parser.Program) (*Interpreter, error) {
 // parser.ParseProgram, and must not change between calls to Execute.
 func (p *Interpreter) Execute(config *Config) (int, error) {
 	p.interp.resetCore()
+	p.interp.checkCtx = false
 
 	err := p.interp.setExecuteConfig(config)
 	if err != nil {
@@ -130,4 +134,43 @@ func (p *Interpreter) ResetVars() {
 func (p *Interpreter) ResetRand() {
 	p.interp.randSeed = 1.0
 	p.interp.random.Seed(int64(math.Float64bits(p.interp.randSeed)))
+}
+
+// ExecuteContext is like Execute, but takes a context to allow the caller to
+// set an execution timeout or cancel the execution. For efficiency, the
+// context is only tested every 1000 virtual machine instructions.
+//
+// Context handling is not preemptive: currently long-running operations like
+// system() won't be interrupted.
+func (p *Interpreter) ExecuteContext(ctx context.Context, config *Config) (int, error) {
+	p.interp.resetCore()
+	p.interp.checkCtx = ctx != context.Background()
+	p.interp.ctx = ctx
+	p.interp.ctxDone = ctx.Done()
+	p.interp.ctxOps = 0
+
+	err := p.interp.setExecuteConfig(config)
+	if err != nil {
+		return 0, err
+	}
+
+	return p.interp.executeAll()
+}
+
+func (p *interp) checkContext() error {
+	p.ctxOps++
+	if p.ctxOps < checkContextOps {
+		return nil
+	}
+	p.ctxOps = 0
+	return p.checkContextNow()
+}
+
+func (p *interp) checkContextNow() error {
+	select {
+	case <-p.ctxDone:
+		return p.ctx.Err()
+	default:
+		return nil
+	}
 }

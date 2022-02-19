@@ -4,8 +4,11 @@ package interp_test
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/benhoyt/goawk/interp"
 	"github.com/benhoyt/goawk/parser"
@@ -14,14 +17,7 @@ import (
 // This definitely doesn't test that everything was reset, but it's a good start.
 func TestNewExecute(t *testing.T) {
 	source := `{ print NR, OFMT, x, y, a["k"], $1, $3; OFMT="%g"; x++; y++; a["k"]++ }`
-	program, err := parser.ParseProgram([]byte(source), nil)
-	if err != nil {
-		t.Fatalf("error parsing: %v", err)
-	}
-	interpreter, err := interp.New(program)
-	if err != nil {
-		t.Fatalf("error creating interpreter: %v", err)
-	}
+	interpreter := newInterp(t, source)
 
 	// First execution.
 	var output bytes.Buffer
@@ -83,18 +79,10 @@ func TestNewExecute(t *testing.T) {
 
 func TestResetRand(t *testing.T) {
 	source := `BEGIN { print rand(), rand(), rand() }`
-	program, err := parser.ParseProgram([]byte(source), nil)
-	if err != nil {
-		t.Fatalf("error parsing: %v", err)
-	}
-
-	interpreter, err := interp.New(program)
-	if err != nil {
-		t.Fatalf("error creating interpreter: %v", err)
-	}
+	interpreter := newInterp(t, source)
 	var output bytes.Buffer
 
-	_, err = interpreter.Execute(&interp.Config{Output: &output})
+	_, err := interpreter.Execute(&interp.Config{Output: &output})
 	if err != nil {
 		t.Fatalf("error executing: %v", err)
 	}
@@ -120,4 +108,45 @@ func TestResetRand(t *testing.T) {
 	if original != withResetRand {
 		t.Fatalf("expected same random numbers (%q) as original (%q)", withResetRand, original)
 	}
+}
+
+func TestExecuteContextNoError(t *testing.T) {
+	interpreter := newInterp(t, `BEGIN {}`)
+	_, err := interpreter.ExecuteContext(context.Background(), nil)
+	if err != nil {
+		t.Fatalf("execute error: %v", err)
+	}
+}
+
+func TestExecuteContextTimeout(t *testing.T) {
+	interpreter := newInterp(t, `BEGIN { for (i=0; i<100000000; i++) s+=i }`) // would take about 4s
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Millisecond)
+	defer cancel()
+	_, err := interpreter.ExecuteContext(ctx, nil)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("expected DeadlineExceeded error, got: %v", err)
+	}
+}
+
+func TestExecuteContextCancel(t *testing.T) {
+	interpreter := newInterp(t, `BEGIN { for (i=0; i<100000000; i++) s+=i }`) // would take about 4s
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cancel it right away
+	_, err := interpreter.ExecuteContext(ctx, nil)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("expected Canceled error, got: %v", err)
+	}
+}
+
+func newInterp(t *testing.T, src string) *interp.Interpreter {
+	t.Helper()
+	prog, err := parser.ParseProgram([]byte(src), nil)
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+	interpreter, err := interp.New(prog)
+	if err != nil {
+		t.Fatalf("interp.New error: %v", err)
+	}
+	return interpreter
 }

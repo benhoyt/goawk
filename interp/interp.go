@@ -13,6 +13,7 @@ package interp
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -126,6 +127,12 @@ type interp struct {
 	nums      []float64
 	strs      []string
 	regexes   []*regexp.Regexp
+
+	// Context support (for Interpreter.ExecuteContext)
+	checkCtx bool
+	ctx      context.Context
+	ctxDone  <-chan struct{}
+	ctxOps   int
 
 	// Misc pieces of state
 	random      *rand.Rand
@@ -361,19 +368,37 @@ func (p *interp) executeAll() (int, error) {
 	// Execute the program: BEGIN, then pattern/actions, then END
 	err := p.execute(p.program.Compiled.Begin)
 	if err != nil && err != errExit {
+		if p.checkCtx {
+			ctxErr := p.checkContextNow()
+			if ctxErr != nil {
+				return 0, ctxErr
+			}
+		}
 		return 0, err
 	}
 	if p.program.Actions == nil && p.program.End == nil {
-		return p.exitStatus, nil
+		return p.exitStatus, nil // only BEGIN specified, don't process input
 	}
 	if err != errExit {
 		err = p.execActions(p.program.Compiled.Actions)
 		if err != nil && err != errExit {
+			if p.checkCtx {
+				ctxErr := p.checkContextNow()
+				if ctxErr != nil {
+					return 0, ctxErr
+				}
+			}
 			return 0, err
 		}
 	}
 	err = p.execute(p.program.Compiled.End)
 	if err != nil && err != errExit {
+		if p.checkCtx {
+			ctxErr := p.checkContextNow()
+			if ctxErr != nil {
+				return 0, ctxErr
+			}
+		}
 		return 0, err
 	}
 	return p.exitStatus, nil
