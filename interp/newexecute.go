@@ -3,10 +3,14 @@
 package interp
 
 import (
+	"context"
 	"math"
 
 	"github.com/benhoyt/goawk/parser"
 )
+
+// TODO: this should probably be higher, but be careful about long-running instructions? check after those?
+const checkContextOps = 100 // for efficiency, only check context every few instructions
 
 // Interpreter is an interpreter for a specific program, allowing you to
 // efficiently execute the same program over and over with different inputs.
@@ -45,11 +49,9 @@ func New(program *parser.Program) (*Interpreter, error) {
 //
 // Note that config.Funcs must be the same value provided to
 // parser.ParseProgram, and must not change between calls to Execute.
-//
-// If you need support for timeout or cancellation, set the "goawk_context"
-// build tag and use ExecuteContext instead.
 func (p *Interpreter) Execute(config *Config) (int, error) {
 	p.interp.resetCore()
+	p.interp.checkCtx = false
 
 	err := p.interp.setExecuteConfig(config)
 	if err != nil {
@@ -90,8 +92,6 @@ func (p *interp) resetCore() {
 	p.haveFields = false
 
 	p.exitStatus = 0
-
-	p.resetContext()
 }
 
 func (p *interp) resetVars() {
@@ -135,4 +135,42 @@ func (p *Interpreter) ResetVars() {
 func (p *Interpreter) ResetRand() {
 	p.interp.randSeed = 1.0
 	p.interp.random.Seed(int64(math.Float64bits(p.interp.randSeed)))
+}
+
+// ExecuteContext is like Execute, but takes a context to allow the caller to
+// set an execution timeout or cancel the execution. For efficiency, the
+// context is only tested every few hundred instructions.
+//
+// Context handling is not preemptive: currently long-running operations like
+// system() won't be interrupted.
+func (p *Interpreter) ExecuteContext(ctx context.Context, config *Config) (int, error) {
+	p.interp.resetCore()
+	p.interp.checkCtx = ctx != context.Background()
+	p.interp.ctx = ctx
+	p.interp.ctxDone = ctx.Done()
+
+	err := p.interp.setExecuteConfig(config)
+	if err != nil {
+		return 0, err
+	}
+
+	return p.interp.executeAll()
+}
+
+func (p *interp) checkContext() error {
+	p.ctxOps++
+	if p.ctxOps < checkContextOps {
+		return nil
+	}
+	p.ctxOps = 0
+	return p.checkContextNow()
+}
+
+func (p *interp) checkContextNow() error {
+	select {
+	case <-p.ctxDone:
+		return p.ctx.Err()
+	default:
+		return nil
+	}
 }

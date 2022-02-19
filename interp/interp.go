@@ -13,6 +13,7 @@ package interp
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -127,16 +128,18 @@ type interp struct {
 	strs      []string
 	regexes   []*regexp.Regexp
 
+	// Context support (for Interpreter.ExecuteContext)
+	checkCtx bool
+	ctx      context.Context
+	ctxDone  <-chan struct{}
+	ctxOps   int
+
 	// Misc pieces of state
 	random      *rand.Rand
 	randSeed    float64
 	exitStatus  int
 	regexCache  map[string]*regexp.Regexp
 	formatCache map[string]cachedFormat
-
-	// For Interpreter.ExecuteContext (for efficiency reasons, this is only
-	// enable if the "goawk_context" build tag is set).
-	ctxInfo ctxInfo
 }
 
 // Various const configuration. Could make these part of Config if
@@ -279,8 +282,6 @@ func newInterp(program *parser.Program) *interp {
 	p.commands = make(map[string]*exec.Cmd)
 	p.scanners = make(map[string]*bufio.Scanner)
 
-	p.resetContext()
-
 	return p
 }
 
@@ -367,19 +368,37 @@ func (p *interp) executeAll() (int, error) {
 	// Execute the program: BEGIN, then pattern/actions, then END
 	err := p.execute(p.program.Compiled.Begin)
 	if err != nil && err != errExit {
+		if p.checkCtx {
+			ctxErr := p.checkContextNow()
+			if ctxErr != nil {
+				return 0, ctxErr
+			}
+		}
 		return 0, err
 	}
 	if p.program.Actions == nil && p.program.End == nil {
-		return p.exitStatus, nil
+		return p.exitStatus, nil // only BEGIN specified, don't process input
 	}
 	if err != errExit {
 		err = p.execActions(p.program.Compiled.Actions)
 		if err != nil && err != errExit {
+			if p.checkCtx {
+				ctxErr := p.checkContextNow()
+				if ctxErr != nil {
+					return 0, ctxErr
+				}
+			}
 			return 0, err
 		}
 	}
 	err = p.execute(p.program.Compiled.End)
 	if err != nil && err != errExit {
+		if p.checkCtx {
+			ctxErr := p.checkContextNow()
+			if ctxErr != nil {
+				return 0, ctxErr
+			}
+		}
 		return 0, err
 	}
 	return p.exitStatus, nil

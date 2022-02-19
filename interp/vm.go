@@ -32,11 +32,11 @@ func (p *interp) execute(code []compiler.Opcode) error {
 		op := code[ip]
 		ip++
 
-		// This check will be optimized away unless ExecuteContext is enabled
-		// using the "goawk_context" build tag.
-		err := p.checkContext()
-		if err != nil {
-			return err
+		if p.checkCtx {
+			err := p.checkContext()
+			if err != nil {
+				return err
+			}
 		}
 
 		switch op {
@@ -884,11 +884,6 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			}
 			p.replaceTop(num(ret))
 		}
-	}
-
-	err := p.checkContextNow()
-	if err != nil {
-		return err
 	}
 
 	return nil

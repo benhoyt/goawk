@@ -1,2 +1,2 @@
 #!/bin/sh
-go1.18beta2 test ./interp -tags=goawk_context -run=^$ -fuzz=Source -parallel=4
+go1.18rc1 test ./interp -run=^$ -fuzz=Source -parallel=4

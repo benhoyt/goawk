@@ -1,7 +1,7 @@
 // Fuzz tests for use with the Go 1.18 fuzzer.
 
-//go:build go1.18 && goawk_context
-// +build go1.18,goawk_context
+//go:build go1.18
+// +build go1.18
 
 package interp_test
 
