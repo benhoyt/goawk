@@ -30,7 +30,7 @@ foo 42
 To use it in your Go programs, you can call `interp.Exec()` directly for simple needs:
 
 ```go
-input := bytes.NewReader([]byte("foo bar\n\nbaz buz"))
+input := strings.NewReader("foo bar\n\nbaz buz")
 err := interp.Exec("$0 { print $1 }", " ", input, nil)
 if err != nil {
     fmt.Println(err)
@@ -53,7 +53,7 @@ if err != nil {
     return
 }
 config := &interp.Config{
-    Stdin: bytes.NewReader([]byte(input)),
+    Stdin: strings.NewReader(input),
     Vars:  []string{"OFS", ":"},
 }
 _, err = interp.ExecProgram(prog, config)

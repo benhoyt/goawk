@@ -430,7 +430,7 @@ func TestDevStdout(t *testing.T) {
 func runGoAWK(args []string, stdin string) (stdout, stderr string, err error) {
 	cmd := exec.Command(goAWKExe, args...)
 	if stdin != "" {
-		cmd.Stdin = bytes.NewReader([]byte(stdin))
+		cmd.Stdin = strings.NewReader(stdin)
 	}
 	errBuf := &bytes.Buffer{}
 	cmd.Stderr = errBuf
@@ -443,7 +443,7 @@ func runGoAWK(args []string, stdin string) (stdout, stderr string, err error) {
 func runAWKs(t *testing.T, testArgs []string, testStdin, testOutput, testError string) {
 	cmd := exec.Command(awkExe, testArgs...)
 	if testStdin != "" {
-		cmd.Stdin = bytes.NewReader([]byte(testStdin))
+		cmd.Stdin = strings.NewReader(testStdin)
 	}
 	errBuf := &bytes.Buffer{}
 	cmd.Stderr = errBuf

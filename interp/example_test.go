@@ -6,7 +6,6 @@
 package interp_test
 
 import (
-	"bytes"
 	"fmt"
 	"strings"
 
@@ -15,7 +14,7 @@ import (
 )
 
 func Example() {
-	input := bytes.NewReader([]byte("foo bar\n\nbaz buz"))
+	input := strings.NewReader("foo bar\n\nbaz buz")
 	err := interp.Exec("$0 { print $1 }", " ", input, nil)
 	if err != nil {
 		fmt.Println(err)
@@ -28,7 +27,7 @@ func Example() {
 
 func Example_fieldsep() {
 	// Use ',' as the field separator
-	input := bytes.NewReader([]byte("1,2\n3,4"))
+	input := strings.NewReader("1,2\n3,4")
 	err := interp.Exec("{ print $1, $2 }", ",", input, nil)
 	if err != nil {
 		fmt.Println(err)
@@ -49,7 +48,7 @@ func Example_program() {
 		return
 	}
 	config := &interp.Config{
-		Stdin: bytes.NewReader([]byte(input)),
+		Stdin: strings.NewReader(input),
 		Vars:  []string{"OFS", ":"},
 	}
 	_, err = interp.ExecProgram(prog, config)
