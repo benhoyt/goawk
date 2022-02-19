@@ -9,7 +9,7 @@ import (
 	"github.com/benhoyt/goawk/parser"
 )
 
-const checkContextOps = 1000 // for efficiency, only check context every few instructions
+const checkContextOps = 1000 // for efficiency, only check context every N instructions
 
 // Interpreter is an interpreter for a specific program, allowing you to
 // efficiently execute the same program over and over with different inputs.
@@ -138,7 +138,7 @@ func (p *Interpreter) ResetRand() {
 
 // ExecuteContext is like Execute, but takes a context to allow the caller to
 // set an execution timeout or cancel the execution. For efficiency, the
-// context is only tested every few hundred instructions.
+// context is only tested every 1000 virtual machine instructions.
 //
 // Context handling is not preemptive: currently long-running operations like
 // system() won't be interrupted.
@@ -147,6 +147,7 @@ func (p *Interpreter) ExecuteContext(ctx context.Context, config *Config) (int, 
 	p.interp.checkCtx = ctx != context.Background()
 	p.interp.ctx = ctx
 	p.interp.ctxDone = ctx.Done()
+	p.interp.ctxOps = 0
 
 	err := p.interp.setExecuteConfig(config)
 	if err != nil {
