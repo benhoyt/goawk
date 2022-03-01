@@ -401,7 +401,7 @@ func TestCommandLine(t *testing.T) {
 		{[]string{`BEGIN { print "1"; "echo 2" | getline x; print x }`}, "", "1\n2\n", ""},
 
 		// Parse error formatting
-		{[]string{"@"}, "", "", "<cmdline>:1:1: unexpected char\n@\n^"},
+		{[]string{"`"}, "", "", "<cmdline>:1:1: unexpected char\n`\n^"},
 		{[]string{"BEGIN {\n\tx*;\n}"}, "", "", "<cmdline>:2:4: expected expression instead of ;\n    x*;\n      ^"},
 		{[]string{"BEGIN {\n\tx*\r\n}"}, "", "", "<cmdline>:2:4: expected expression instead of <newline>\n    x*\n      ^"},
 		{[]string{"-f", "-"}, "\n ++", "", "<stdin>:2:4: expected expression instead of <newline>\n ++\n   ^"},
@@ -410,7 +410,7 @@ func TestCommandLine(t *testing.T) {
 		{[]string{"-f", "testdata/parseerror/bad.awk", "-f", "testdata/parseerror/good.awk"},
 			"", "", "testdata/parseerror/bad.awk:2:3: expected expression instead of <newline>\nx*\n  ^"},
 		{[]string{"-f", "testdata/parseerror/good.awk", "-f", "-", "-f", "testdata/parseerror/bad.awk"},
-			"@", "", "<stdin>:1:1: unexpected char\n@\n^"},
+			"`", "", "<stdin>:1:1: unexpected char\n`\n^"},
 	}
 	for _, test := range tests {
 		testName := strings.Join(test.args, " ")

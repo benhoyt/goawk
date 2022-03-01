@@ -601,6 +601,10 @@ func (c *compiler) expr(expr ast.Expr) {
 		c.expr(e.Index)
 		c.add(Field)
 
+	case *ast.AtExpr:
+		c.expr(e.Field)
+		c.add(At)
+
 	case *ast.VarExpr:
 		switch e.Scope {
 		case ast.ScopeGlobal:

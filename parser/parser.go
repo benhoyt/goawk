@@ -641,7 +641,7 @@ func (p *parser) _compare(ops ...Token) ast.Expr {
 
 func (p *parser) concat() ast.Expr {
 	expr := p.add()
-	for p.matches(DOLLAR, NOT, NAME, NUMBER, STRING, LPAREN, INCR, DECR) ||
+	for p.matches(DOLLAR, AT, NOT, NAME, NUMBER, STRING, LPAREN, INCR, DECR) ||
 		(p.tok >= FIRST_FUNC && p.tok <= LAST_FUNC) {
 		right := p.add()
 		expr = &ast.BinaryExpr{expr, CONCAT, right}
@@ -712,6 +712,9 @@ func (p *parser) primary() ast.Expr {
 	case DOLLAR:
 		p.next()
 		return &ast.FieldExpr{p.primary()}
+	case AT:
+		p.next()
+		return &ast.AtExpr{p.primary()}
 	case NOT, ADD, SUB:
 		op := p.tok
 		p.next()

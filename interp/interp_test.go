@@ -808,7 +808,7 @@ BEGIN { foo(5); bar(10) }
 	{"/foo\n", "", "", "parse error at 1:5: can't have newline in regex", "unterminated regexp"},
 	{`BEGIN { print "\x" }  # !gawk`, "", "", "parse error at 1:18: 1 or 2 hex digits expected", ""},
 	{`BEGIN { print 1&*2 }`, "", "", "parse error at 1:17: unexpected char after '&'", "syntax"},
-	{`BEGIN { @ }`, "", "", "parse error at 1:9: unexpected char", "syntax"},
+	{"BEGIN { ` }", "", "", "parse error at 1:9: unexpected char", "syntax"},
 }
 
 func TestInterp(t *testing.T) {

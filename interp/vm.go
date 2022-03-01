@@ -61,6 +61,10 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			l, r := p.peekTwo()
 			p.replaceTwo(r, l)
 
+		case compiler.At:
+			index := p.peekTop()
+			p.replaceTop(str("TODO" + p.toString(index)))
+
 		case compiler.Field:
 			index := p.peekTop()
 			v, err := p.getField(int(index.num()))

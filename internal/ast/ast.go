@@ -82,6 +82,7 @@ type Expr interface {
 }
 
 // All these types implement the Expr interface.
+func (e *AtExpr) expr()        {}
 func (e *FieldExpr) expr()     {}
 func (e *UnaryExpr) expr()     {}
 func (e *BinaryExpr) expr()    {}
@@ -100,6 +101,15 @@ func (e *CallExpr) expr()      {}
 func (e *UserCallExpr) expr()  {}
 func (e *MultiExpr) expr()     {}
 func (e *GetlineExpr) expr()   {}
+
+// AtExpr is an expression like @"name".
+type AtExpr struct {
+	Field Expr
+}
+
+func (e *AtExpr) String() string {
+	return "@" + e.Field.String()
+}
 
 // FieldExpr is an expression like $0.
 type FieldExpr struct {
