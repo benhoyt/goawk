@@ -61,6 +61,10 @@ Additional GoAWK arguments:
   -d    print parsed syntax tree to stderr (debug mode)
   -da   print virtual machine assembly instructions to stderr
   -dt   print variable type information to stderr
+  -i mode    # 'csv|tsv [separator=<char>] [comment=<char>] [noheader]'
+        use CSV or TSV input parsing (ignore FS and RS)
+  -o mode    # 'csv|tsv [separator=<char>]'
+        use CSV or TSV output for print (ignore OFS and ORS)
   -h    show this usage message
   -version
         show GoAWK version and exit
@@ -79,6 +83,8 @@ func main() {
 	debugAsm := false
 	debugTypes := false
 	memprofile := ""
+	inputMode := ""
+	outputMode := ""
 
 	var i int
 	for i = 1; i < len(os.Args); i++ {
@@ -126,12 +132,24 @@ func main() {
 		case "-h", "--help":
 			fmt.Printf("%s\n\n%s\n\n%s", copyright, shortUsage, longUsage)
 			os.Exit(0)
+		case "-i":
+			if i+1 >= len(os.Args) {
+				errorExitf("flag needs an argument: -i")
+			}
+			i++
+			inputMode = os.Args[i]
 		case "-memprofile":
 			if i+1 >= len(os.Args) {
 				errorExitf("flag needs an argument: -memprofile")
 			}
 			i++
 			memprofile = os.Args[i]
+		case "-o":
+			if i+1 >= len(os.Args) {
+				errorExitf("flag needs an argument: -o")
+			}
+			i++
+			outputMode = os.Args[i]
 		case "-version", "--version":
 			fmt.Println(version)
 			os.Exit(0)
@@ -141,6 +159,10 @@ func main() {
 				fieldSep = arg[2:]
 			case strings.HasPrefix(arg, "-f"):
 				progFiles = append(progFiles, arg[2:])
+			case strings.HasPrefix(arg, "-i"):
+				inputMode = arg[2:]
+			case strings.HasPrefix(arg, "-o"):
+				outputMode = arg[2:]
 			case strings.HasPrefix(arg, "-v"):
 				vars = append(vars, arg[2:])
 			case strings.HasPrefix(arg, "-cpuprofile="):
@@ -225,7 +247,11 @@ func main() {
 	config := &interp.Config{
 		Argv0: filepath.Base(os.Args[0]),
 		Args:  expandWildcardsOnWindows(args),
-		Vars:  []string{"FS", fieldSep},
+		Vars: []string{
+			"FS", fieldSep,
+			"INPUTMODE", inputMode,
+			"OUTPUTMODE", outputMode,
+		},
 	}
 	for _, v := range vars {
 		parts := strings.SplitN(v, "=", 2)

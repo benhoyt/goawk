@@ -378,6 +378,40 @@ func (p *interp) setExecuteConfig(config *Config) error {
 		return newError("length of config.Environ must be a multiple of 2, not %d", len(config.Environ))
 	}
 
+	// Set up I/O mode config (Vars will override)
+	p.inputMode = config.InputMode
+	p.csvInputConfig = config.CSVInput
+	switch p.inputMode {
+	case CSVMode:
+		if p.csvInputConfig.Separator == 0 {
+			p.csvInputConfig.Separator = ','
+		}
+	case TSVMode:
+		if p.csvInputConfig.Separator == 0 {
+			p.csvInputConfig.Separator = '\t'
+		}
+	case DefaultMode:
+		if p.csvInputConfig != (CSVInputConfig{}) {
+			return newError("input mode configuration not valid in default input mode")
+		}
+	}
+	p.outputMode = config.OutputMode
+	p.csvOutputConfig = config.CSVOutput
+	switch p.outputMode {
+	case CSVMode:
+		if p.csvOutputConfig.Separator == 0 {
+			p.csvOutputConfig.Separator = ','
+		}
+	case TSVMode:
+		if p.csvOutputConfig.Separator == 0 {
+			p.csvOutputConfig.Separator = '\t'
+		}
+	case DefaultMode:
+		if p.csvOutputConfig != (CSVOutputConfig{}) {
+			return newError("output mode configuration not valid in default output mode")
+		}
+	}
+
 	// Set up ARGV and other variables from config
 	argvIndex := p.program.Arrays["ARGV"]
 	p.setArrayValue(ast.ScopeGlobal, argvIndex, "0", str(config.Argv0))
@@ -431,40 +465,6 @@ func (p *interp) setExecuteConfig(config *Config) error {
 	p.errorOutput = config.Error
 	if p.errorOutput == nil {
 		p.errorOutput = os.Stderr
-	}
-
-	// Set up I/O mode config
-	p.inputMode = config.InputMode
-	p.csvInputConfig = config.CSVInput
-	switch p.inputMode {
-	case CSVMode:
-		if p.csvInputConfig.Separator == 0 {
-			p.csvInputConfig.Separator = ','
-		}
-	case TSVMode:
-		if p.csvInputConfig.Separator == 0 {
-			p.csvInputConfig.Separator = '\t'
-		}
-	case DefaultMode:
-		if p.csvInputConfig != (CSVInputConfig{}) {
-			return newError("input mode configuration not valid in default input mode")
-		}
-	}
-	p.outputMode = config.OutputMode
-	p.csvOutputConfig = config.CSVOutput
-	switch p.outputMode {
-	case CSVMode:
-		if p.csvOutputConfig.Separator == 0 {
-			p.csvOutputConfig.Separator = ','
-		}
-	case TSVMode:
-		if p.csvOutputConfig.Separator == 0 {
-			p.csvOutputConfig.Separator = '\t'
-		}
-	case DefaultMode:
-		if p.csvOutputConfig != (CSVOutputConfig{}) {
-			return newError("output mode configuration not valid in default output mode")
-		}
 	}
 
 	// Initialize native Go functions
@@ -696,7 +696,7 @@ func (p *interp) setSpecial(index int, v value) error {
 			p.fields = append(p.fields, "")
 			p.fieldsIsTrueStr = append(p.fieldsIsTrueStr, false)
 		}
-		p.line = strings.Join(p.fields, p.outputFieldSep)
+		p.line = strings.Join(p.fields, p.outputFieldSep) // TODO: update to handle CSVMode/TSVMode
 		p.lineIsTrueStr = true
 	case ast.V_NR:
 		p.lineNum = int(v.num())
@@ -838,7 +838,7 @@ func (p *interp) setField(index int, value string) error {
 	p.fields[index-1] = value
 	p.fieldsIsTrueStr[index-1] = true
 	p.numFields = len(p.fields)
-	p.line = strings.Join(p.fields, p.outputFieldSep)
+	p.line = strings.Join(p.fields, p.outputFieldSep) // TODO: handle CSVMode/TSVMode
 	p.lineIsTrueStr = true
 	return nil
 }
