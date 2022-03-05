@@ -120,6 +120,10 @@ type interp struct {
 	subscriptSep     string
 	matchLength      int
 	matchStart       int
+	inputMode        IOMode
+	csvInputConfig   CSVInputConfig
+	outputMode       IOMode
+	csvOutputConfig  CSVOutputConfig
 
 	// Parsed program, compiled functions and constants
 	program   *parser.Program
@@ -227,6 +231,84 @@ type Config struct {
 	// If the script doesn't need environment variables, set Environ to a
 	// non-nil empty slice, []string{}.
 	Environ []string
+
+	// Mode for parsing input fields and record: default is to use normal FS
+	// and RS behaviour. If set to CSVMode or TSVMode, FS and RS are ignored,
+	// and input records are parsed as comma-separated values or tab-separated
+	// values, respectively. Parsing is done as per RFC 4180 and the
+	// "encoding/csv" package.
+	//
+	// You can also enable CSV or TSV input mode by setting INPUTMODE to "csv"
+	// or "tsv" in the BEGIN block.
+	InputMode IOMode
+
+	// Additional options if InputMode is CSVMode or TSVMode. The zero value
+	// is valid, specifying typical defaults.
+	//
+	// You can also specify these options by setting INPUTMODE in the BEGIN
+	// block, for example, to use '|' as the field separator, '#' as the
+	// comment character, and disable header row parsing:
+	//
+	//     BEGIN { INPUTMODE="csv separator=| comment=# noheader" }
+	CSVInput CSVInputConfig
+
+	// Mode for print output: default is to use normal OFS and ORS
+	// behaviour. If set to CSVMode or TSVMode, print fields are separated
+	// with comma or tab, respectively. Output is written as per RFC 4180 and
+	// the "encoding/csv" package.
+	//
+	// You can also enable CSV or TSV output mode by setting OUTPUTMODE to
+	// "csv" or "tsv" in the BEGIN block.
+	OutputMode IOMode
+
+	// Additional options if OutputMode is CSVMode or TSVMode. The zero value
+	// is valid, specifying typical defaults.
+	//
+	// You can also specify these options by setting OUTPUTMODE in the BEGIN
+	// block, for example, to use '|' as the output field separator:
+	//
+	//     BEGIN { OUTPUTMODE="csv separator=|" }
+	CSVOutput CSVOutputConfig
+}
+
+// IOMode specifies the input parsing or print output writing mode.
+type IOMode int
+
+const (
+	// DefaultMode uses normal AWK field and record separators: FS and RS for
+	// input, OFS and ORS for print output.
+	DefaultMode IOMode = iota
+
+	// CSVMode uses comma-separated value mode for input or output.
+	CSVMode
+
+	// TSVMode uses tab-separated value mode for input or output.
+	TSVMode
+)
+
+// CSVInputConfig holds additional configuration for when InputMode is CSVMode
+// or TSVMode.
+type CSVInputConfig struct {
+	// Input field separator character. If this is zero, it defaults to ','
+	// when InputMode is CSVMode and '\t' when InputMode is TSVMode.
+	Separator rune
+
+	// If nonzero, specifies that lines beginning with this character should
+	// be ignored as comments.
+	Comment rune
+
+	// If true, do not parse the first row in each input file as a header row
+	// (that is, a list of field names). If set to true, it's an error to use
+	// the @"field" syntax to get a field by name.
+	NoHeader bool
+}
+
+// CSVOutputConfig holds additional configuration for when OutputMode is
+// CSVMode or TSVMode.
+type CSVOutputConfig struct {
+	// Output field separator character. If this is zero, it defaults to ','
+	// when OutputMode is CSVMode and '\t' when OutputMode is TSVMode.
+	Separator rune
 }
 
 // ExecProgram executes the parsed program using the given interpreter
@@ -296,7 +378,7 @@ func (p *interp) setExecuteConfig(config *Config) error {
 		return newError("length of config.Environ must be a multiple of 2, not %d", len(config.Environ))
 	}
 
-	// Setup ARGV and other variables from config
+	// Set up ARGV and other variables from config
 	argvIndex := p.program.Arrays["ARGV"]
 	p.setArrayValue(ast.ScopeGlobal, argvIndex, "0", str(config.Argv0))
 	p.argc = len(config.Args) + 1
@@ -312,7 +394,7 @@ func (p *interp) setExecuteConfig(config *Config) error {
 		}
 	}
 
-	// Setup ENVIRON from config or environment variables
+	// Set up ENVIRON from config or environment variables
 	environIndex := p.program.Arrays["ENVIRON"]
 	if config.Environ != nil {
 		for i := 0; i < len(config.Environ); i += 2 {
@@ -327,14 +409,14 @@ func (p *interp) setExecuteConfig(config *Config) error {
 		}
 	}
 
-	// Setup system shell command
+	// Set up system shell command
 	if len(config.ShellCommand) != 0 {
 		p.shellCommand = config.ShellCommand
 	} else {
 		p.shellCommand = defaultShellCommand
 	}
 
-	// Setup I/O structures
+	// Set up I/O structures
 	p.noExec = config.NoExec
 	p.noFileWrites = config.NoFileWrites
 	p.noFileReads = config.NoFileReads
@@ -349,6 +431,40 @@ func (p *interp) setExecuteConfig(config *Config) error {
 	p.errorOutput = config.Error
 	if p.errorOutput == nil {
 		p.errorOutput = os.Stderr
+	}
+
+	// Set up I/O mode config
+	p.inputMode = config.InputMode
+	p.csvInputConfig = config.CSVInput
+	switch p.inputMode {
+	case CSVMode:
+		if p.csvInputConfig.Separator == 0 {
+			p.csvInputConfig.Separator = ','
+		}
+	case TSVMode:
+		if p.csvInputConfig.Separator == 0 {
+			p.csvInputConfig.Separator = '\t'
+		}
+	case DefaultMode:
+		if p.csvInputConfig != (CSVInputConfig{}) {
+			return newError("input mode configuration not valid in default input mode")
+		}
+	}
+	p.outputMode = config.OutputMode
+	p.csvOutputConfig = config.CSVOutput
+	switch p.outputMode {
+	case CSVMode:
+		if p.csvOutputConfig.Separator == 0 {
+			p.csvOutputConfig.Separator = ','
+		}
+	case TSVMode:
+		if p.csvOutputConfig.Separator == 0 {
+			p.csvOutputConfig.Separator = '\t'
+		}
+	case DefaultMode:
+		if p.csvOutputConfig != (CSVOutputConfig{}) {
+			return newError("output mode configuration not valid in default output mode")
+		}
 	}
 
 	// Initialize native Go functions
@@ -535,6 +651,10 @@ func (p *interp) getSpecial(index int) value {
 		return str(p.recordTerminator)
 	case ast.V_SUBSEP:
 		return str(p.subscriptSep)
+	case ast.V_INPUTMODE:
+		return str(inputModeString(p.inputMode, p.csvInputConfig))
+	case ast.V_OUTPUTMODE:
+		return str(outputModeString(p.outputMode, p.csvOutputConfig))
 	default:
 		panic(fmt.Sprintf("unexpected special variable index: %d", index))
 	}
@@ -627,6 +747,20 @@ func (p *interp) setSpecial(index int, v value) error {
 		p.recordTerminator = p.toString(v)
 	case ast.V_SUBSEP:
 		p.subscriptSep = p.toString(v)
+	case ast.V_INPUTMODE:
+		// TODO: error if done after BEGIN
+		var err error
+		p.inputMode, p.csvInputConfig, err = parseInputMode(p.toString(v))
+		if err != nil {
+			return err
+		}
+	case ast.V_OUTPUTMODE:
+		// TODO: error if done after BEGIN
+		var err error
+		p.outputMode, p.csvOutputConfig, err = parseOutputMode(p.toString(v))
+		if err != nil {
+			return err
+		}
 	default:
 		panic(fmt.Sprintf("unexpected special variable index: %d", index))
 	}
@@ -736,4 +870,133 @@ func getDefaultShellCommand() []string {
 		executable = "sh"
 	}
 	return []string{executable, "-c"}
+}
+
+func inputModeString(mode IOMode, csvConfig CSVInputConfig) string {
+	var s string
+	var defaultSep rune
+	switch mode {
+	case CSVMode:
+		s = "csv"
+		defaultSep = ','
+	case TSVMode:
+		s = "tsv"
+		defaultSep = '\t'
+	case DefaultMode:
+		return ""
+	}
+	if csvConfig.Separator != defaultSep {
+		s += " separator=" + string([]rune{csvConfig.Separator})
+	}
+	if csvConfig.Comment != 0 {
+		s += " comment=" + string([]rune{csvConfig.Comment})
+	}
+	if csvConfig.NoHeader {
+		s += " noheader"
+	}
+	return s
+}
+
+func parseInputMode(s string) (mode IOMode, csvConfig CSVInputConfig, err error) {
+	fields := strings.Fields(s)
+	if len(fields) == 0 {
+		return DefaultMode, CSVInputConfig{}, nil
+	}
+	switch fields[0] {
+	case "csv":
+		mode = CSVMode
+		csvConfig.Separator = ','
+	case "tsv":
+		mode = TSVMode
+		csvConfig.Separator = '\t'
+	default:
+		return DefaultMode, CSVInputConfig{}, newError("invalid input mode %q", fields[0])
+	}
+	for _, field := range fields[1:] {
+		key := field
+		val := ""
+		equals := strings.IndexByte(field, '=')
+		if equals >= 0 {
+			key = field[:equals]
+			val = field[equals+1:]
+		}
+		switch key {
+		case "separator":
+			r, n := utf8.DecodeRuneInString(val)
+			if n == 0 || n < len(val) {
+				return DefaultMode, CSVInputConfig{}, newError("invalid CSV/TSV separator %q", val)
+			}
+			csvConfig.Separator = r
+		case "comment":
+			r, n := utf8.DecodeRuneInString(val)
+			if n == 0 || n < len(val) {
+				return DefaultMode, CSVInputConfig{}, newError("invalid CSV/TSV comment %q", val)
+			}
+			csvConfig.Comment = r
+		case "noheader":
+			if val != "" && val != "true" && val != "false" {
+				return DefaultMode, CSVInputConfig{}, newError("invalid noheader value %q", val)
+			}
+			csvConfig.NoHeader = val == "" || val == "true"
+		default:
+			return DefaultMode, CSVInputConfig{}, newError("invalid input mode key %q", key)
+		}
+	}
+	return mode, csvConfig, nil
+}
+
+func outputModeString(mode IOMode, csvConfig CSVOutputConfig) string {
+	var s string
+	var defaultSep rune
+	switch mode {
+	case CSVMode:
+		s = "csv"
+		defaultSep = ','
+	case TSVMode:
+		s = "tsv"
+		defaultSep = '\t'
+	case DefaultMode:
+		return ""
+	}
+	if csvConfig.Separator != defaultSep {
+		s += " separator=" + string([]rune{csvConfig.Separator})
+	}
+	return s
+}
+
+func parseOutputMode(s string) (mode IOMode, csvConfig CSVOutputConfig, err error) {
+	fields := strings.Fields(s)
+	if len(fields) == 0 {
+		return DefaultMode, CSVOutputConfig{}, nil
+	}
+	switch fields[0] {
+	case "csv":
+		mode = CSVMode
+		csvConfig.Separator = ','
+	case "tsv":
+		mode = TSVMode
+		csvConfig.Separator = '\t'
+	default:
+		return DefaultMode, CSVOutputConfig{}, newError("invalid output mode %q", fields[0])
+	}
+	for _, field := range fields[1:] {
+		key := field
+		val := ""
+		equals := strings.IndexByte(field, '=')
+		if equals >= 0 {
+			key = field[:equals]
+			val = field[equals+1:]
+		}
+		switch key {
+		case "separator":
+			r, n := utf8.DecodeRuneInString(val)
+			if n == 0 || n < len(val) {
+				return DefaultMode, CSVOutputConfig{}, newError("invalid CSV/TSV separator %q", val)
+			}
+			csvConfig.Separator = r
+		default:
+			return DefaultMode, CSVOutputConfig{}, newError("invalid output mode key %q", key)
+		}
+	}
+	return mode, csvConfig, nil
 }
