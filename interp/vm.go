@@ -737,19 +737,14 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			redirect := lexer.Token(code[ip+1])
 			ip += 2
 
+			// TODO: probably better to write directly to output rather
+			//       than going via string (output is already buffered).
+
 			// Print OFS-separated args followed by ORS (usually newline)
 			var line string
 			if numArgs > 0 {
 				args := p.popSlice(int(numArgs))
-				var builder strings.Builder
-				builder.Grow(10 * len(args)) // probably enough space, but it'll grow more if needed
-				for i, a := range args {
-					if i > 0 {
-						builder.WriteString(p.outputFieldSep)
-					}
-					builder.WriteString(a.str(p.outputFormat))
-				}
-				line = builder.String()
+				line = p.printArgs(args)
 			} else {
 				// "print" with no args is equivalent to "print $0"
 				line = p.line
@@ -764,9 +759,17 @@ func (p *interp) execute(code []compiler.Opcode) error {
 					return err
 				}
 			}
-			err := p.printLine(output, line)
-			if err != nil {
-				return err
+			if p.outputMode != DefaultMode {
+				// TODO: should merge this with printArgs -- bad factoring
+				_, err := io.WriteString(output, line)
+				if err != nil {
+					return err
+				}
+			} else {
+				err := p.printLine(output, line)
+				if err != nil {
+					return err
+				}
 			}
 
 		case compiler.Printf:

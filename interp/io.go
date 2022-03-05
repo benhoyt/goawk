@@ -187,6 +187,8 @@ func (p *interp) getInputScannerPipe(name string) (*bufio.Scanner, error) {
 func (p *interp) newScanner(input io.Reader, buffer []byte) *bufio.Scanner {
 	scanner := bufio.NewScanner(input)
 	switch {
+	case p.inputMode != DefaultMode:
+		// TODO: proper CSV splitter!
 	case p.recordSep == "\n":
 		// Scanner default is to split on newlines
 	case p.recordSep == "":
@@ -346,6 +348,9 @@ func (p *interp) ensureFields() {
 	p.haveFields = true
 
 	switch {
+	case p.inputMode != DefaultMode:
+		// TODO: proper parsing!
+		p.fields = strings.Split(p.line, string([]rune{p.csvInputConfig.Separator}))
 	case p.fieldSep == " ":
 		// FS space (default) means split fields on any whitespace
 		p.fields = strings.Fields(p.line)
@@ -563,5 +568,26 @@ func (p *interp) printErrorf(format string, args ...interface{}) {
 	fmt.Fprintf(p.errorOutput, format, args...)
 	if flusher, ok := p.errorOutput.(flusher); ok {
 		_ = flusher.Flush()
+	}
+}
+
+func (p *interp) printArgs(args []value) string {
+	if p.outputMode != DefaultMode {
+		fields := make([]string, len(args))
+		for i, arg := range args {
+			fields[i] = p.toString(arg)
+		}
+		return formatCSV(p.csvOutputConfig.Separator, fields)
+	} else {
+		var builder strings.Builder
+		builder.Reset()
+		builder.Grow(10 * len(args)) // probably enough space, but it'll grow more if needed
+		for i, a := range args {
+			if i > 0 {
+				builder.WriteString(p.outputFieldSep)
+			}
+			builder.WriteString(a.str(p.outputFormat))
+		}
+		return builder.String()
 	}
 }
