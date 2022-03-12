@@ -17,10 +17,13 @@ func (p *interp) writeCSV(output io.Writer, fields []string) error {
 	_, isBuffered := output.(*bufio.Writer)
 	if !isBuffered {
 		// Otherwise create a new buffered writer and flush after writing.
-		// TODO: could attach to interp and reuse this with bw.Reset
-		bw := bufio.NewWriterSize(output, 4096)
-		output = bw
-		flush = bw.Flush
+		if p.csvBufWriter == nil {
+			p.csvBufWriter = bufio.NewWriterSize(output, 4096)
+		} else {
+			p.csvBufWriter.Reset(output)
+		}
+		output = p.csvBufWriter
+		flush = p.csvBufWriter.Flush
 	}
 
 	// Given the above, creating a new one of these is cheap.

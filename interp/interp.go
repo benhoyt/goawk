@@ -84,6 +84,7 @@ type interp struct {
 	noFileWrites  bool
 	noFileReads   bool
 	shellCommand  []string
+	csvBufWriter  *bufio.Writer
 
 	// Scalars, arrays, and function state
 	globals     []value
