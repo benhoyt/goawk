@@ -28,6 +28,40 @@ func (p *interp) printLine(writer io.Writer, line string) error {
 	return writeOutput(writer, p.outputRecordSep)
 }
 
+// Print given arguments followed by a newline (for "print" statement).
+func (p *interp) printArgs(writer io.Writer, args []value) error {
+	switch p.outputMode {
+	case CSVMode, TSVMode:
+		fields := make([]string, len(args)) // TODO: reuse buffer?
+		for i, arg := range args {
+			fields[i] = arg.str(p.outputFormat)
+		}
+		err := p.writeCSV(writer, fields)
+		if err != nil {
+			return err
+		}
+	default:
+		// Print OFS-separated args followed by ORS (usually newline).
+		for i, arg := range args {
+			if i > 0 {
+				err := writeOutput(writer, p.outputFieldSep)
+				if err != nil {
+					return err
+				}
+			}
+			err := writeOutput(writer, arg.str(p.outputFormat))
+			if err != nil {
+				return err
+			}
+		}
+		err := writeOutput(writer, p.outputRecordSep)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Implement a buffered version of WriteCloser so output is buffered
 // when redirecting to a file (eg: print >"out")
 type bufferedWriteCloser struct {
@@ -568,26 +602,5 @@ func (p *interp) printErrorf(format string, args ...interface{}) {
 	fmt.Fprintf(p.errorOutput, format, args...)
 	if flusher, ok := p.errorOutput.(flusher); ok {
 		_ = flusher.Flush()
-	}
-}
-
-func (p *interp) printArgs(args []value) string {
-	if p.outputMode != DefaultMode {
-		fields := make([]string, len(args))
-		for i, arg := range args {
-			fields[i] = p.toString(arg)
-		}
-		return formatCSV(p.csvOutputConfig.Separator, fields)
-	} else {
-		var builder strings.Builder
-		builder.Reset()
-		builder.Grow(10 * len(args)) // probably enough space, but it'll grow more if needed
-		for i, a := range args {
-			if i > 0 {
-				builder.WriteString(p.outputFieldSep)
-			}
-			builder.WriteString(a.str(p.outputFormat))
-		}
-		return builder.String()
 	}
 }

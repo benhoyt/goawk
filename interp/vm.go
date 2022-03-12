@@ -741,19 +741,9 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			redirect := lexer.Token(code[ip+1])
 			ip += 2
 
-			// TODO: probably better to write directly to output rather
-			//       than going via string (output is already buffered).
+			args := p.popSlice(int(numArgs))
 
-			// Print OFS-separated args followed by ORS (usually newline)
-			var line string
-			if numArgs > 0 {
-				args := p.popSlice(int(numArgs))
-				line = p.printArgs(args)
-			} else {
-				// "print" with no args is equivalent to "print $0"
-				line = p.line
-			}
-
+			// Determine what output stream to write to.
 			output := p.output
 			if redirect != lexer.ILLEGAL {
 				var err error
@@ -763,14 +753,16 @@ func (p *interp) execute(code []compiler.Opcode) error {
 					return err
 				}
 			}
-			if p.outputMode != DefaultMode {
-				// TODO: should merge this with printArgs -- bad factoring
-				_, err := io.WriteString(output, line)
+
+			if numArgs > 0 {
+				err := p.printArgs(output, args)
 				if err != nil {
 					return err
 				}
 			} else {
-				err := p.printLine(output, line)
+				// "print" with no args is equivalent to "print $0",
+				// regardless of output mode.
+				err := p.printLine(output, p.line)
 				if err != nil {
 					return err
 				}
