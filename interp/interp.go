@@ -84,8 +84,6 @@ type interp struct {
 	noFileWrites  bool
 	noFileReads   bool
 	shellCommand  []string
-	csvFields     []string
-	csvFieldNames []string
 	csvOutput     *bufio.Writer
 
 	// Scalars, arrays, and function state
@@ -108,6 +106,8 @@ type interp struct {
 	fieldsIsTrueStr []bool
 	numFields       int
 	haveFields      bool
+	fieldNames      []string // TODO: what to do if field names of next file are different?
+	fieldIndexes    map[string]int
 
 	// Built-in variables
 	argc             int
@@ -818,6 +818,23 @@ func (p *interp) getField(index int) (value, error) {
 	} else {
 		return numStr(p.fields[index-1]), nil
 	}
+}
+
+// Get the value of a field by name (for CSV/TSV mode), as in @"name".
+func (p *interp) getFieldByName(name string) value {
+	if p.fieldIndexes == nil {
+		// Lazily create map of field names to indexes.
+		p.fieldIndexes = make(map[string]int, len(p.fieldNames))
+		for i, n := range p.fieldNames {
+			p.fieldIndexes[n] = i + 1
+		}
+	}
+	index := p.fieldIndexes[name]
+	if index == 0 {
+		return str("")
+	}
+	field, _ := p.getField(index)
+	return field
 }
 
 // Sets a single field, equivalent to "$index = value"

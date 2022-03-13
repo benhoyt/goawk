@@ -226,8 +226,8 @@ func (p *interp) newScanner(input io.Reader, buffer []byte) *bufio.Scanner {
 			separator:  p.csvInputConfig.Separator,
 			comment:    p.csvInputConfig.Comment,
 			noHeader:   p.csvInputConfig.NoHeader,
-			fields:     &p.csvFields,
-			fieldNames: &p.csvFieldNames,
+			fields:     &p.fields,
+			fieldNames: &p.fieldNames,
 		}
 		scanner.Split(splitter.scan)
 	case p.recordSep == "\n":
@@ -391,7 +391,6 @@ func (p *interp) ensureFields() {
 	switch {
 	case p.inputMode == CSVMode || p.inputMode == TSVMode:
 		// Fields have already been parsed by csvSplitter
-		p.fields = p.csvFields
 	case p.fieldSep == " ":
 		// FS space (default) means split fields on any whitespace
 		p.fields = strings.Fields(p.line)
