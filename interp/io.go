@@ -221,20 +221,27 @@ func (p *interp) getInputScannerPipe(name string) (*bufio.Scanner, error) {
 func (p *interp) newScanner(input io.Reader, buffer []byte) *bufio.Scanner {
 	scanner := bufio.NewScanner(input)
 	switch {
-	case p.inputMode != DefaultMode:
-		// TODO: proper CSV splitter!
+	case p.inputMode == CSVMode || p.inputMode == TSVMode:
+		splitter := csvSplitter{
+			separator:  p.csvInputConfig.Separator,
+			comment:    p.csvInputConfig.Comment,
+			noHeader:   p.csvInputConfig.NoHeader,
+			fields:     &p.csvFields,
+			fieldNames: &p.csvFieldNames,
+		}
+		scanner.Split(splitter.scan)
 	case p.recordSep == "\n":
 		// Scanner default is to split on newlines
 	case p.recordSep == "":
 		// Empty string for RS means split on \n\n (blank lines)
-		splitter := blankLineSplitter{&p.recordTerminator}
+		splitter := blankLineSplitter{terminator: &p.recordTerminator}
 		scanner.Split(splitter.scan)
 	case len(p.recordSep) == 1:
-		splitter := byteSplitter{p.recordSep[0]}
+		splitter := byteSplitter{sep: p.recordSep[0]}
 		scanner.Split(splitter.scan)
 	case utf8.RuneCountInString(p.recordSep) >= 1:
 		// Multi-byte and single char but multi-byte RS use regex
-		splitter := regexSplitter{p.recordSepRegex, &p.recordTerminator}
+		splitter := regexSplitter{re: p.recordSepRegex, terminator: &p.recordTerminator}
 		scanner.Split(splitter.scan)
 	}
 	scanner.Buffer(buffer, maxRecordLength)
@@ -382,9 +389,9 @@ func (p *interp) ensureFields() {
 	p.haveFields = true
 
 	switch {
-	case p.inputMode != DefaultMode:
-		// TODO: proper parsing!
-		p.fields = strings.Split(p.line, string([]rune{p.csvInputConfig.Separator}))
+	case p.inputMode == CSVMode || p.inputMode == TSVMode:
+		// Fields have already been parsed by csvSplitter
+		p.fields = p.csvFields
 	case p.fieldSep == " ":
 		// FS space (default) means split fields on any whitespace
 		p.fields = strings.Fields(p.line)
@@ -401,7 +408,7 @@ func (p *interp) ensureFields() {
 	// Special case for when RS=="" and FS is single character,
 	// split on newline in addition to FS. See more here:
 	// https://www.gnu.org/software/gawk/manual/html_node/Multiple-Line.html
-	if p.recordSep == "" && utf8.RuneCountInString(p.fieldSep) == 1 {
+	if p.inputMode == DefaultMode && p.recordSep == "" && utf8.RuneCountInString(p.fieldSep) == 1 {
 		fields := make([]string, 0, len(p.fields))
 		for _, field := range p.fields {
 			lines := strings.Split(field, "\n")
