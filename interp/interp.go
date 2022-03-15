@@ -661,28 +661,28 @@ func (p *interp) setArrayValue(scope ast.VarScope, arrayIndex int, index string,
 }
 
 // Get the value of given numbered field, equivalent to "$index"
-func (p *interp) getField(index int) (value, error) {
+func (p *interp) getField(index int) value {
 	if index == 0 {
 		if p.lineIsTrueStr {
-			return str(p.line), nil
+			return str(p.line)
 		} else {
-			return numStr(p.line), nil
+			return numStr(p.line)
 		}
 	}
 	p.ensureFields()
 	if index < 1 {
 		index = len(p.fields) + 1 + index
 		if index < 1 {
-			return str(""), nil
+			return str("")
 		}
 	}
 	if index > len(p.fields) {
-		return str(""), nil
+		return str("")
 	}
 	if p.fieldsIsTrueStr[index-1] {
-		return str(p.fields[index-1]), nil
+		return str(p.fields[index-1])
 	} else {
-		return numStr(p.fields[index-1]), nil
+		return numStr(p.fields[index-1])
 	}
 }
 
