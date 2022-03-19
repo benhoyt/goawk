@@ -836,8 +836,7 @@ func (p *interp) getFieldByName(name string) value {
 	if index == 0 {
 		return str("")
 	}
-	field, _ := p.getField(index)
-	return field
+	return p.getField(index)
 }
 
 // Sets a single field, equivalent to "$index = value"
