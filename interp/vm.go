@@ -63,19 +63,13 @@ func (p *interp) execute(code []compiler.Opcode) error {
 
 		case compiler.Field:
 			index := p.peekTop()
-			v, err := p.getField(int(index.num()))
-			if err != nil {
-				return err
-			}
+			v := p.getField(int(index.num()))
 			p.replaceTop(v)
 
 		case compiler.FieldInt:
 			index := code[ip]
 			ip++
-			v, err := p.getField(int(index))
-			if err != nil {
-				return err
-			}
+			v := p.getField(int(index))
 			p.push(v)
 
 		case compiler.Global:
@@ -185,11 +179,8 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			amount := code[ip]
 			ip++
 			index := int(p.pop().num())
-			v, err := p.getField(index)
-			if err != nil {
-				return err
-			}
-			err = p.setField(index, p.toString(num(v.num()+float64(amount))))
+			v := p.getField(index)
+			err := p.setField(index, p.toString(num(v.num()+float64(amount))))
 			if err != nil {
 				return err
 			}
@@ -237,10 +228,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			ip++
 			right, indexVal := p.popTwo()
 			index := int(indexVal.num())
-			field, err := p.getField(index)
-			if err != nil {
-				return err
-			}
+			field := p.getField(index)
 			v, err := p.augAssignOp(operation, field, right)
 			if err != nil {
 				return err

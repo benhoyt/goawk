@@ -79,6 +79,7 @@ Additional features GoAWK has over AWK:
 
 * It's embeddable in your Go programs! You can even call custom Go functions from your AWK scripts.
 * I/O-bound AWK scripts (which is most of them) are significantly faster than `awk`, and on a par with `gawk` and `mawk`.
+* It supports negative field indexes to access fields from the right, for example, `$-1` refers to the last field.
 * The parser supports `'single-quoted strings'` in addition to `"double-quoted strings"`, primarily to make Windows one-liners easier (the Windows `cmd.exe` shell uses `"` as the quote character).
 
 Things AWK has over GoAWK:
