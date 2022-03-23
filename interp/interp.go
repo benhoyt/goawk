@@ -431,6 +431,16 @@ func (p *interp) setExecuteConfig(config *Config) error {
 		}
 	}
 
+	// After Vars has been handled, validate CSV configuration.
+	err := validateCSVInputConfig(p.inputMode, p.csvInputConfig)
+	if err != nil {
+		return err
+	}
+	err = validateCSVOutputConfig(p.outputMode, p.csvOutputConfig)
+	if err != nil {
+		return err
+	}
+
 	// Set up ENVIRON from config or environment variables
 	environIndex := p.program.Arrays["ENVIRON"]
 	if config.Environ != nil {
@@ -757,10 +767,18 @@ func (p *interp) setSpecial(index int, v value) error {
 		if err != nil {
 			return err
 		}
+		err = validateCSVInputConfig(p.inputMode, p.csvInputConfig)
+		if err != nil {
+			return err
+		}
 	case ast.V_OUTPUTMODE:
 		// TODO: error if done after BEGIN
 		var err error
 		p.outputMode, p.csvOutputConfig, err = parseOutputMode(p.toString(v))
+		if err != nil {
+			return err
+		}
+		err = validateCSVOutputConfig(p.outputMode, p.csvOutputConfig)
 		if err != nil {
 			return err
 		}
@@ -897,6 +915,7 @@ func getDefaultShellCommand() []string {
 	return []string{executable, "-c"}
 }
 
+// TODO: should these move to io.go? csv.go?
 func inputModeString(mode IOMode, csvConfig CSVInputConfig) string {
 	var s string
 	var defaultSep rune
