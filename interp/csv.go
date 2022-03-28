@@ -92,6 +92,10 @@ func (s *csvSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, 
 		return 0, nil, nil
 	}
 
+	if bytes.ContainsRune(data, '\r') { // TODO: see panic below
+		return 0, nil, errors.New("TODO: \\r\\n not yet supported")
+	}
+
 	// TODO: explicit args? pull out to method?
 	readLine := func() []byte {
 		newline := bytes.IndexByte(data, '\n')
@@ -119,7 +123,7 @@ func (s *csvSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, 
 
 		// Normalize \r\n to \n on all input lines.
 		if n := len(line); n >= 2 && line[n-2] == '\r' && line[n-1] == '\n' {
-			panic("TODO: \\r\\n not yet supported")
+			panic("TODO")
 			// TODO: hmm, we're changing the contents here, is that okay for $0? and the rest of this func?
 			//line[n-2] = '\n'
 			//line = line[:n-1]
@@ -132,7 +136,7 @@ func (s *csvSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, 
 	var line []byte
 	for {
 		line = readLine()
-		if line == nil {
+		if len(line) == 0 {
 			return advance, nil, nil // Request more data
 		}
 		if s.comment != 0 && nextRune(line) == s.comment {
