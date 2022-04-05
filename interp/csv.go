@@ -76,6 +76,8 @@ type csvSplitter struct {
 	comment   rune
 	noHeader  bool
 
+	inQuote      bool
+	resetBuffer  bool
 	recordBuffer []byte
 	fieldIndexes []int
 
@@ -90,10 +92,6 @@ func (s *csvSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, 
 	if atEOF && len(data) == 0 {
 		// No more data, tell Scanner to stop.
 		return 0, nil, nil
-	}
-
-	if bytes.ContainsRune(data, '\r') { // TODO: see panic below
-		return 0, nil, errors.New("TODO: \\r\\n not yet supported")
 	}
 
 	// TODO: explicit args? pull out to method?
@@ -114,19 +112,10 @@ func (s *csvSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, 
 			return nil
 		}
 
-		advance += len(line)
-
 		// For backwards compatibility, drop trailing \r before EOF.
 		if len(line) > 0 && atEOF && line[len(line)-1] == '\r' {
 			line = line[:len(line)-1]
-		}
-
-		// Normalize \r\n to \n on all input lines.
-		if n := len(line); n >= 2 && line[n-2] == '\r' && line[n-1] == '\n' {
-			panic("TODO")
-			// TODO: hmm, we're changing the contents here, is that okay for $0? and the rest of this func?
-			//line[n-2] = '\n'
-			//line = line[:n-1]
+			advance++
 		}
 
 		return line
@@ -140,9 +129,11 @@ func (s *csvSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, 
 			return advance, nil, nil // Request more data
 		}
 		if s.comment != 0 && nextRune(line) == s.comment {
+			advance += len(line)
 			continue // Skip comment lines
 		}
 		if len(line) == lengthNL(line) {
+			advance += len(line)
 			continue // Skip empty lines
 		}
 		break
@@ -150,12 +141,14 @@ func (s *csvSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, 
 
 	// Parse each field in the record.
 	const quoteLen = len(`"`)
-	commaLen := utf8.RuneLen(s.separator)
-	s.recordBuffer = s.recordBuffer[:0]
-	s.fieldIndexes = s.fieldIndexes[:0]
+	sepLen := utf8.RuneLen(s.separator) // TODO: could cache this
+	if s.resetBuffer {
+		s.recordBuffer = s.recordBuffer[:0]
+		s.fieldIndexes = s.fieldIndexes[:0]
+	}
 parseField:
 	for {
-		if len(line) == 0 || line[0] != '"' {
+		if !s.inQuote && (len(line) == 0 || line[0] != '"') {
 			// Non-quoted string field
 			i := bytes.IndexRune(line, s.separator)
 			field := line
@@ -167,32 +160,43 @@ parseField:
 			s.recordBuffer = append(s.recordBuffer, field...)
 			s.fieldIndexes = append(s.fieldIndexes, len(s.recordBuffer))
 			if i >= 0 {
-				line = line[i+commaLen:]
+				line = line[i+sepLen:]
+				advance += i + sepLen
 				continue parseField
 			}
+			advance += len(field)
 			break parseField
 		} else {
 			// Quoted string field
-			line = line[quoteLen:]
+			if !s.inQuote {
+				line = line[quoteLen:]
+				advance += quoteLen
+			}
+			s.inQuote = true
 			for {
 				i := bytes.IndexByte(line, '"')
 				if i >= 0 {
 					// Hit next quote.
 					s.recordBuffer = append(s.recordBuffer, line[:i]...)
 					line = line[i+quoteLen:]
+					advance += i + quoteLen
 					switch rn := nextRune(line); {
 					case rn == '"':
 						// `""` sequence (append quote).
 						s.recordBuffer = append(s.recordBuffer, '"')
 						line = line[quoteLen:]
+						advance += quoteLen
 					case rn == s.separator:
 						// `",` sequence (end of field).
-						line = line[commaLen:]
+						line = line[sepLen:]
 						s.fieldIndexes = append(s.fieldIndexes, len(s.recordBuffer))
+						advance += sepLen
+						s.inQuote = false
 						continue parseField
 					case lengthNL(line) == len(line):
 						// `"\n` sequence (end of line).
 						s.fieldIndexes = append(s.fieldIndexes, len(s.recordBuffer))
+						advance += len(line)
 						break parseField
 					default:
 						// `"` sequence (bare quote).
@@ -200,7 +204,14 @@ parseField:
 					}
 				} else if len(line) > 0 {
 					// Hit end of line (copy all data so far).
-					s.recordBuffer = append(s.recordBuffer, line...)
+					advance += len(line)
+					newlineLen := lengthNL(line)
+					if newlineLen == 2 {
+						s.recordBuffer = append(s.recordBuffer, line[:len(line)-2]...)
+						s.recordBuffer = append(s.recordBuffer, '\n')
+					} else {
+						s.recordBuffer = append(s.recordBuffer, line...)
+					}
 					line = readLine()
 					if line == nil {
 						return advance, nil, nil // Request more data
@@ -208,11 +219,15 @@ parseField:
 				} else {
 					// Abrupt end of file.
 					s.fieldIndexes = append(s.fieldIndexes, len(s.recordBuffer))
+					advance += len(line)
 					break parseField
 				}
 			}
 		}
 	}
+
+	s.inQuote = false
+	s.resetBuffer = true
 
 	// Create a single string and create slices out of it.
 	// This pins the memory of the fields together, but allocates once.
@@ -245,6 +260,9 @@ parseField:
 
 // lengthNL reports the number of bytes for the trailing \n.
 func lengthNL(b []byte) int {
+	if len(b) > 1 && b[len(b)-2] == '\r' && b[len(b)-1] == '\n' {
+		return 2
+	}
 	if len(b) > 0 && b[len(b)-1] == '\n' {
 		return 1
 	}
