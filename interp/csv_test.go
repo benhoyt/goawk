@@ -14,20 +14,14 @@ import (
 )
 
 type readTest struct {
-	Name      string
-	Input     string
-	Output    [][]string
-	Positions [][][2]int
-	Error     string
+	Name   string
+	Input  string
+	Output [][]string
+	Error  string
 
 	// These fields are copied into the Reader
-	Comma              rune
-	Comment            rune
-	UseFieldsPerRecord bool // false (default) means FieldsPerRecord is -1
-	FieldsPerRecord    int
-	LazyQuotes         bool
-	TrimLeadingSpace   bool
-	ReuseRecord        bool
+	Comma   rune
+	Comment rune
 }
 
 // In these tests, the §, ¶ and ∑ characters in readTest.Input are used to denote
@@ -61,8 +55,6 @@ b",§"ccc"
 		{"a,a", `b"bb`, "ccc"},
 		{"zzz", "yyy", "xxx"},
 	},
-	UseFieldsPerRecord: true,
-	FieldsPerRecord:    0,
 }, {
 	Name:   "NoEOLTest",
 	Input:  "§a,§b,§c",
@@ -93,13 +85,6 @@ field"`,
 		{"a", "b", "c"},
 		{"d", "e", "f"},
 	},
-	UseFieldsPerRecord: true,
-	FieldsPerRecord:    0,
-	//}, {
-	//	Name:             "TrimSpace",
-	//	Input:            " §a,  §b,   §c\n",
-	//	Output:           [][]string{{"a", "b", "c"}},
-	//	TrimLeadingSpace: true,
 }, {
 	Name:   "LeadingSpace",
 	Input:  "§ a,§  b,§   c\n",
@@ -114,62 +99,22 @@ field"`,
 	Input:  "§#1,§2,§3\n¶§a,§b,§c",
 	Output: [][]string{{"#1", "2", "3"}, {"a", "b", "c"}},
 }, {
-	Name:       "LazyQuotes",
-	Input:      `§a "word",§"1"2",§a",§"b`,
-	Output:     [][]string{{`a "word"`, `1"2`, `a"`, `b`}},
-	LazyQuotes: true,
+	Name:   "LazyQuotes",
+	Input:  `§a "word",§"1"2",§a",§"b`,
+	Output: [][]string{{`a "word"`, `1"2`, `a"`, `b`}},
 }, {
-	Name:       "BareQuotes",
-	Input:      `§a "word",§"1"2",§a"`,
-	Output:     [][]string{{`a "word"`, `1"2`, `a"`}},
-	LazyQuotes: true,
+	Name:   "BareQuotes",
+	Input:  `§a "word",§"1"2",§a"`,
+	Output: [][]string{{`a "word"`, `1"2`, `a"`}},
 }, {
-	Name:       "BareDoubleQuotes",
-	Input:      `§a""b,§c`,
-	Output:     [][]string{{`a""b`, `c`}},
-	LazyQuotes: true,
+	Name:   "BareDoubleQuotes",
+	Input:  `§a""b,§c`,
+	Output: [][]string{{`a""b`, `c`}},
 }, {
-	//	Name:   "BadDoubleQuotes",
-	//	Input:  `§a∑""b,c`,
-	//	Errors: []error{&ParseError{Err: ErrBareQuote}},
-	//}, {
 	Name:   "TrimQuote",
 	Input:  `§"a",§" b",§c`,
 	Output: [][]string{{"a", " b", "c"}},
 }, {
-	//	Name:   "BadBareQuote",
-	//	Input:  `§a ∑"word","b"`,
-	//	Errors: []error{&ParseError{Err: ErrBareQuote}},
-	//}, {
-	//	Name:   "BadTrailingQuote",
-	//	Input:  `§"a word",b∑"`,
-	//	Errors: []error{&ParseError{Err: ErrBareQuote}},
-	//}, {
-	//	Name:   "ExtraneousQuote",
-	//	Input:  `§"a ∑"word","b"`,
-	//	Errors: []error{&ParseError{Err: ErrQuote}},
-	//}, {
-	//	Name:               "BadFieldCount",
-	//	Input:              "§a,§b,§c\n¶∑§d,§e",
-	//	Errors:             []error{nil, &ParseError{Err: ErrFieldCount}},
-	//	Output:             [][]string{{"a", "b", "c"}, {"d", "e"}},
-	//	UseFieldsPerRecord: true,
-	//	FieldsPerRecord:    0,
-	//}, {
-	//	Name:               "BadFieldCountMultiple",
-	//	Input:              "§a,§b,§c\n¶∑§d,§e\n¶∑§f",
-	//	Errors:             []error{nil, &ParseError{Err: ErrFieldCount}, &ParseError{Err: ErrFieldCount}},
-	//	Output:             [][]string{{"a", "b", "c"}, {"d", "e"}, {"f"}},
-	//	UseFieldsPerRecord: true,
-	//	FieldsPerRecord:    0,
-	//}, {
-	//	Name:               "BadFieldCount1",
-	//	Input:              `§∑a,§b,§c`,
-	//	Errors:             []error{&ParseError{Err: ErrFieldCount}},
-	//	Output:             [][]string{{"a", "b", "c"}},
-	//	UseFieldsPerRecord: true,
-	//	FieldsPerRecord:    2,
-	//}, {
 	Name:   "FieldCount",
 	Input:  "§a,§b,§c\n¶§d,§e",
 	Output: [][]string{{"a", "b", "c"}, {"d", "e"}},
@@ -185,17 +130,14 @@ field"`,
 	Name:   "TrailingCommaSpaceEOF",
 	Input:  "§a,§b,§c, §",
 	Output: [][]string{{"a", "b", "c", " "}},
-	//TrimLeadingSpace: true,
 }, {
 	Name:   "TrailingCommaSpaceEOL",
 	Input:  "§a,§b,§c, §\n",
 	Output: [][]string{{"a", "b", "c", " "}},
-	//TrimLeadingSpace: true,
 }, {
-	Name:             "TrailingCommaLine3",
-	Input:            "§a,§b,§c\n¶§d,§e,§f\n¶§g,§hi,§",
-	Output:           [][]string{{"a", "b", "c"}, {"d", "e", "f"}, {"g", "hi", ""}},
-	TrimLeadingSpace: true,
+	Name:   "TrailingCommaLine3",
+	Input:  "§a,§b,§c\n¶§d,§e,§f\n¶§g,§hi,§",
+	Output: [][]string{{"a", "b", "c"}, {"d", "e", "f"}, {"g", "hi", ""}},
 }, {
 	Name:   "NotTrailingComma3",
 	Input:  "§a,§b,§c,§ \n",
@@ -232,7 +174,6 @@ field"`,
 		{"a", "b", ""},
 		{"c", "d", "e"},
 	},
-	TrimLeadingSpace: true,
 }, {
 	Name:  "ReadAllReuseRecord",
 	Input: "§a,§b\n¶§c,§d",
@@ -240,16 +181,6 @@ field"`,
 		{"a", "b"},
 		{"c", "d"},
 	},
-	ReuseRecord: true,
-	//}, {
-	//	Name:   "StartLine1", // Issue 19019
-	//	Input:  "§a,\"b\nc∑\"d,e",
-	//	Errors: []error{&ParseError{Err: ErrQuote}},
-	//}, {
-	//	Name:   "StartLine2",
-	//	Input:  "§a,§b\n¶§\"d\n\n,e∑",
-	//	Errors: []error{nil, &ParseError{Err: ErrQuote}},
-	//	Output: [][]string{{"a", "b"}},
 }, {
 	Name:  "CRLFInQuotedField", // Issue 21201
 	Input: "§A,§\"Hello\r\nHi\",§B\r\n",
@@ -268,10 +199,6 @@ field"`,
 	Name:   "QuotedTrailingCR",
 	Input:  "§\"field\"\r",
 	Output: [][]string{{"field"}},
-	//}, {
-	//	Name:   "QuotedTrailingCRCR",
-	//	Input:  "§\"field∑\"\r\r",
-	//	Errors: []error{&ParseError{Err: ErrQuote}},
 }, {
 	Name:   "FieldCR",
 	Input:  "§field\rfield\r",
@@ -301,10 +228,9 @@ field"`,
 		{"\r\r", ""},
 	},
 }, {
-	Name:   "NonASCIICommaAndComment",
-	Input:  "§a£§b,c£ \t§d,e\n€ comment\n",
-	Output: [][]string{{"a", "b,c", " \td,e"}},
-	//TrimLeadingSpace: true,
+	Name:    "NonASCIICommaAndComment",
+	Input:   "§a£§b,c£ \t§d,e\n€ comment\n",
+	Output:  [][]string{{"a", "b,c", " \td,e"}},
 	Comma:   '£',
 	Comment: '€',
 }, {
@@ -340,15 +266,10 @@ field"`,
 	Input:   strings.Repeat("#ignore\n", 10000) + "§" + strings.Repeat("@", 5000) + ",§" + strings.Repeat("*", 5000),
 	Output:  [][]string{{strings.Repeat("@", 5000), strings.Repeat("*", 5000)}},
 	Comment: '#',
-	//}, {
-	//	Name:   "QuoteWithTrailingCRLF",
-	//	Input:  "§\"foo∑\"bar\"\r\n",
-	//	Errors: []error{&ParseError{Err: ErrQuote}},
 }, {
-	Name:       "LazyQuoteWithTrailingCRLF",
-	Input:      "§\"foo\"bar\"\r\n",
-	Output:     [][]string{{`foo"bar`}},
-	LazyQuotes: true,
+	Name:   "LazyQuoteWithTrailingCRLF",
+	Input:  "§\"foo\"bar\"\r\n",
+	Output: [][]string{{`foo"bar`}},
 }, {
 	Name:   "DoubleQuoteWithTrailingCRLF",
 	Input:  "§\"foo\"\"bar\"\r\n",
@@ -357,15 +278,10 @@ field"`,
 	Name:   "EvenQuotes",
 	Input:  `§""""""""`,
 	Output: [][]string{{`"""`}},
-	//}, {
-	//	Name:   "OddQuotes",
-	//	Input:  `§"""""""∑`,
-	//	Errors: []error{&ParseError{Err: ErrQuote}},
 }, {
-	Name:       "LazyOddQuotes",
-	Input:      `§"""""""`,
-	Output:     [][]string{{`"""`}},
-	LazyQuotes: true,
+	Name:   "LazyOddQuotes",
+	Input:  `§"""""""`,
+	Output: [][]string{{`"""`}},
 }, {
 	Name:  "BadComma1",
 	Comma: '\n',
@@ -401,26 +317,7 @@ field"`,
 	Error:   "invalid CSV field separator or comment delimiter",
 }}
 
-func TestCSVInput(t *testing.T) {
-	//newReader := func(tt readTest) (*Reader, [][][2]int, map[int][2]int) {
-	//	positions, errPositions, input := makePositions(tt.Input)
-	//	r := NewReader(strings.NewReader(input))
-	//
-	//	if tt.Comma != 0 {
-	//		r.Comma = tt.Comma
-	//	}
-	//	r.Comment = tt.Comment
-	//	if tt.UseFieldsPerRecord {
-	//		r.FieldsPerRecord = tt.FieldsPerRecord
-	//	} else {
-	//		r.FieldsPerRecord = -1
-	//	}
-	//	r.LazyQuotes = tt.LazyQuotes
-	//	r.TrimLeadingSpace = tt.TrimLeadingSpace
-	//	r.ReuseRecord = tt.ReuseRecord
-	//	return r, positions, errPositions
-	//}
-
+func TestCSVReader(t *testing.T) {
 	for _, tt := range readTests {
 		t.Run(tt.Name, func(t *testing.T) {
 			_, _, input := makePositions(tt.Input)
@@ -474,45 +371,11 @@ func TestCSVInput(t *testing.T) {
 					t.Fatalf("output mismatch:\ngot  %q\nwant %q", out, tt.Output)
 				}
 			}
-
-			//// Check field and error positions.
-			//r, _, _ = newReader(tt)
-			//for recNum := 0; ; recNum++ {
-			//	rec, err := r.Read()
-			//	var wantErr error
-			//	if recNum < len(tt.Errors) && tt.Errors[recNum] != nil {
-			//		wantErr = errorWithPosition(tt.Errors[recNum], recNum, positions, errPositions)
-			//	} else if recNum >= len(tt.Output) {
-			//		wantErr = io.EOF
-			//	}
-			//	if !reflect.DeepEqual(err, wantErr) {
-			//		t.Fatalf("Read() error at record %d:\ngot %v (%#v)\nwant %v (%#v)", recNum, err, err, wantErr, wantErr)
-			//	}
-			//	// ErrFieldCount is explicitly non-fatal.
-			//	if err != nil && !errors.Is(err, ErrFieldCount) {
-			//		if recNum < len(tt.Output) {
-			//			t.Fatalf("need more records; got %d want %d", recNum, len(tt.Output))
-			//		}
-			//		break
-			//	}
-			//	if got, want := rec, tt.Output[recNum]; !reflect.DeepEqual(got, want) {
-			//		t.Errorf("Read vs ReadAll mismatch;\ngot %q\nwant %q", got, want)
-			//	}
-			//	pos := positions[recNum]
-			//	if len(pos) != len(rec) {
-			//		t.Fatalf("mismatched position length at record %d", recNum)
-			//	}
-			//	for i := range rec {
-			//		line, col := r.FieldPos(i)
-			//		if got, want := [2]int{line, col}, pos[i]; got != want {
-			//			t.Errorf("position mismatch at record %d, field %d;\ngot %v\nwant %v", recNum, i, got, want)
-			//		}
-			//	}
-			//}
 		})
 	}
 }
 
+// TODO: get rid of this
 // makePositions returns the expected field positions of all
 // the fields in text, the positions of any errors, and the text with the position markers
 // removed.
