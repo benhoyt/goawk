@@ -89,6 +89,7 @@ type csvSplitter struct {
 // Much of this code is taken from the stdlib encoding/csv reader code (which
 // is licensed under a compatible BSD-style license).
 func (s *csvSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	origData := data
 	if atEOF && len(data) == 0 {
 		// No more data, tell Scanner to stop.
 		return 0, nil, nil
@@ -255,7 +256,7 @@ parseField:
 	// Normal row, set fields and return a line (token).
 	s.row++
 	*s.fields = dst
-	return advance, data[:advance], nil
+	return advance, origData[:advance], nil
 }
 
 // lengthNL reports the number of bytes for the trailing \n.
