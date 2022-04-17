@@ -155,18 +155,18 @@ parseField:
 			i := bytes.IndexRune(line, s.separator)
 			field := line
 			if i >= 0 {
+				advance += i + sepLen
 				field = field[:i]
 			} else {
+				advance += len(field)
 				field = field[:len(field)-lengthNL(field)]
 			}
 			s.recordBuffer = append(s.recordBuffer, field...)
 			s.fieldIndexes = append(s.fieldIndexes, len(s.recordBuffer))
 			if i >= 0 {
 				line = line[i+sepLen:]
-				advance += i + sepLen
 				continue parseField
 			}
-			advance += len(field)
 			break parseField
 		} else {
 			// Quoted string field
@@ -257,7 +257,9 @@ parseField:
 	// Normal row, set fields and return a line (token).
 	s.row++
 	*s.fields = dst
-	return advance, origData[:advance], nil
+	token = origData[:advance]
+	token = token[:len(token)-lengthNL(token)]
+	return advance, token, nil
 }
 
 // lengthNL reports the number of bytes for the trailing \n.
