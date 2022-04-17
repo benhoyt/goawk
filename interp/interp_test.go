@@ -1439,6 +1439,59 @@ func TestExit(t *testing.T) {
 	}
 }
 
+var csvTests = []interpTest{
+	// Basic INPUTMODE combinations
+	{`BEGIN { INPUTMODE="" } { print $1, $3 }`, "name,email\nBob C. Smith,bob@smith.com\nJane X. Brown,jane@brown.com", "name,email \nBob Smith,bob@smith.com\nJane Brown,jane@brown.com\n", "", ""},
+	{`BEGIN { INPUTMODE="csv" } { print $1, $3 }`, "name,email,age\nBob\tSmith,bob@smith.com,42\n\nJane,jane@brown.com,37\n# not a comment", "Bob\tSmith 42\nJane 37\n# not a comment \n", "", ""},
+	{`BEGIN { INPUTMODE="csv separator=|" } { print $1, $3 }`, "name|email|age\nBob,Smith|bob@smith.com|42\nJane|jane@brown.com|37", "Bob,Smith 42\nJane 37\n", "", ""},
+	{`BEGIN { INPUTMODE="csv comment=#" } { print $1, $3 }`, "name,email,age\n# this is a comment\nBob\tSmith,bob@smith.com,42\nJane,jane@brown.com,37", "Bob\tSmith 42\nJane 37\n", "", ""},
+	{`BEGIN { INPUTMODE="csv noheader" } { print $1, $3 }`, "name,email,age\nBob,bob@smith.com,42\nJane,jane@brown.com,37", "name age\nBob 42\nJane 37\n", "", ""},
+	{`BEGIN { INPUTMODE="csv" } { print @"age", @"name" }`, "name,email,age\nBob,bob@smith.com,42\nJane,jane@brown.com,37", "42 Bob\n37 Jane\n", "", ""},
+	{`BEGIN { INPUTMODE="csv noheader" } { print @"age", @"name" }`, "name,email,age\nBob,bob@smith.com,42\nJane,jane@brown.com,37", " \n \n \n", "", ""},
+	{`BEGIN { INPUTMODE="tsv" } { print $1, $3 }`, "name\temail\tage\nBob,Smith\tbob@smith.com\t42\nJane\tjane@brown.com\t37", "Bob,Smith 42\nJane 37\n", "", ""},
+
+	// Basic OUTPUTMODE combinations
+	{`BEGIN { OUTPUTMODE="csv" } { print $2, $1 }`, "a\"b c\nd e", "c,\"a\"\"b\"\ne,d\n", "", ""},
+	{`BEGIN { OUTPUTMODE="tsv" } { print $2, $1 }`, "a\"b c\nd e", "c\t\"a\"\"b\"\ne\td\n", "", ""},
+	{`BEGIN { OUTPUTMODE="csv separator=|" } { print $2, $1 }`, "a\"b c\nd e", "c|\"a\"\"b\"\ne|d\n", "", ""},
+
+	// Both input and output in CSV mode
+	{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { print $2, $1 }`, "name,age\nBob,42\n\"J B\",37\n\"A\"\"B\",7", "42,Bob\n37,J B\n7,\"A\"\"B\"\n", "", ""},
+
+	// $0 still works as expected in CSV mode
+	{`BEGIN { INPUTMODE="csv" } { print }`, "name,age\nBob,42\nJane,37", "Bob,42\nJane,37\n", "", ""},
+	{`BEGIN { INPUTMODE="csv" } { print $0 }`, "name,age\nBob,42\nJane,37", "Bob,42\nJane,37\n", "", ""},
+	{`BEGIN { INPUTMODE="csv" } { print $0; $0=NR; print $0 }`, "name,age\nBob,42\nJane,37", "Bob,42\n1\nJane,37\n2\n", "", ""},
+
+	// Parsing and formatting of INPUTMODE and OUTPUTMODE special variables
+	{`BEGIN { INPUTMODE="csv separator=,"; print INPUTMODE }`, "", "csv\n", "", ""},
+	{`BEGIN { INPUTMODE="csv noheader=true comment=# separator=|"; print INPUTMODE }`, "", "csv separator=| comment=# noheader\n", "", ""},
+	{`BEGIN { OUTPUTMODE="csv separator=,"; printf "%s", OUTPUTMODE }`, "", "csv", "", ""},
+	{`BEGIN { OUTPUTMODE="csv separator=|"; printf "%s", OUTPUTMODE }`, "", "csv separator=|", "", ""},
+
+	// Error handling when parsing INPUTMODE and OUTPUTMODE
+	{`BEGIN { INPUTMODE="xyz" }`, "", "", `invalid input mode "xyz"`, ""},
+	{`BEGIN { INPUTMODE="csv separator=foo" }`, "", "", `invalid CSV/TSV separator "foo"`, ""},
+	{`BEGIN { INPUTMODE="csv comment=bar" }`, "", "", `invalid CSV/TSV comment character "bar"`, ""},
+	{`BEGIN { INPUTMODE="csv noheader=x" }`, "", "", `invalid noheader value "x"`, ""},
+	{`BEGIN { INPUTMODE="csv foo=bar" }`, "", "", `invalid input mode key "foo"`, ""},
+	{`BEGIN { OUTPUTMODE="xyz" }`, "", "", `invalid output mode "xyz"`, ""},
+	{`BEGIN { OUTPUTMODE="csv separator=foo" }`, "", "", `invalid CSV/TSV separator "foo"`, ""},
+	{`BEGIN { OUTPUTMODE="csv foo=bar" }`, "", "", `invalid output mode key "foo"`, ""},
+}
+
+func TestCSV(t *testing.T) {
+	for _, test := range csvTests {
+		testName := test.src
+		if len(testName) > 70 {
+			testName = testName[:70]
+		}
+		t.Run(testName, func(t *testing.T) {
+			testGoAWK(t, test.src, test.in, test.out, test.err, nil, nil)
+		})
+	}
+}
+
 func benchmarkProgram(b *testing.B, funcs map[string]interface{},
 	input, expected, srcFormat string, args ...interface{},
 ) {

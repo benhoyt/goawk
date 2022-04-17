@@ -974,7 +974,7 @@ func parseInputMode(s string) (mode IOMode, csvConfig CSVInputConfig, err error)
 		case "comment":
 			r, n := utf8.DecodeRuneInString(val)
 			if n == 0 || n < len(val) {
-				return DefaultMode, CSVInputConfig{}, newError("invalid CSV/TSV comment %q", val)
+				return DefaultMode, CSVInputConfig{}, newError("invalid CSV/TSV comment character %q", val)
 			}
 			csvConfig.Comment = r
 		case "noheader":
