@@ -223,11 +223,12 @@ func (p *interp) newScanner(input io.Reader, buffer []byte) *bufio.Scanner {
 	switch {
 	case p.inputMode == CSVMode || p.inputMode == TSVMode:
 		splitter := csvSplitter{
-			separator:  p.csvInputConfig.Separator,
-			comment:    p.csvInputConfig.Comment,
-			noHeader:   p.csvInputConfig.NoHeader,
-			fields:     &p.fields,
-			fieldNames: &p.fieldNames,
+			separator:   p.csvInputConfig.Separator,
+			comment:     p.csvInputConfig.Comment,
+			noHeader:    p.csvInputConfig.NoHeader,
+			fieldsArray: p.array(ast.ScopeGlobal, p.program.Arrays["FIELDS"]),
+			fields:      &p.fields,
+			fieldNames:  &p.fieldNames,
 		}
 		scanner.Split(splitter.scan)
 	case p.recordSep == "\n":

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io"
 	"runtime"
+	"strconv"
 	"unicode/utf8"
 )
 
@@ -82,9 +83,10 @@ type csvSplitter struct {
 	recordBuffer []byte
 	fieldIndexes []int
 
-	fields     *[]string
-	fieldNames *[]string
-	row        int
+	fieldsArray map[string]value
+	fields      *[]string
+	fieldNames  *[]string
+	row         int
 }
 
 // Much of this code is taken from the stdlib encoding/csv reader code (which
@@ -233,7 +235,7 @@ parseField:
 
 	// Create a single string and create slices out of it.
 	// This pins the memory of the fields together, but allocates once.
-	str := string(s.recordBuffer) // Convert to string once to batch allocations
+	strBuf := string(s.recordBuffer) // Convert to string once to batch allocations
 	dst := make([]string, len(s.fieldIndexes))
 	//TODO: reuse dst like so:
 	//dst = dst[:0]
@@ -243,7 +245,7 @@ parseField:
 	//dst = dst[:len(s.fieldIndexes)]
 	var preIdx int
 	for i, idx := range s.fieldIndexes {
-		dst[i] = str[preIdx:idx]
+		dst[i] = strBuf[preIdx:idx]
 		preIdx = idx
 	}
 
@@ -251,12 +253,22 @@ parseField:
 		// Set header field names and advance, but don't return a line (token).
 		s.row++
 		*s.fieldNames = dst
+
+		// Populate FIELDS array (mapping of field indexes to field names).
+		for k := range s.fieldsArray {
+			delete(s.fieldsArray, k)
+		}
+		for i, name := range dst {
+			s.fieldsArray[strconv.Itoa(i+1)] = str(name)
+		}
+
 		return advance, nil, nil
 	}
 
 	// Normal row, set fields and return a line (token).
 	s.row++
 	*s.fields = dst
+	// TODO: this won't return the right token if multiple scan()s were needed
 	token = origData[:advance]
 	token = token[:len(token)-lengthNL(token)]
 	return advance, token, nil

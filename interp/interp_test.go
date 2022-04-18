@@ -1481,6 +1481,10 @@ var csvTests = []interpTest{
 	//{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { $0 = "X,3"; print $1, $2 }`, "x,y\na,1\nb,2", "X,3\nX,3\n", "", ""},
 	{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { $0 = "X,3"; print }`, "x,y\na,1\nb,2", "X,3\nX,3\n", "", ""},
 
+	// FIELDS array
+	{`BEGIN { INPUTMODE="csv" } NR==1 { for (i=1; i in FIELDS; i++) print i, FIELDS[i] }`, "name,email,age\na,b,c", "1 name\n2 email\n3 age\n", "", ""},
+	{`BEGIN { INPUTMODE="csv noheader" } NR==1 { for (i=1; i in FIELDS; i++) print FIELDS[i] }`, "name,email,age\na,b,c", "", "", ""},
+
 	// Parsing and formatting of INPUTMODE and OUTPUTMODE special variables
 	{`BEGIN { INPUTMODE="csv separator=,"; print INPUTMODE }`, "", "csv\n", "", ""},
 	{`BEGIN { INPUTMODE="csv noheader=true comment=# separator=|"; print INPUTMODE }`, "", "csv separator=| comment=# noheader\n", "", ""},
