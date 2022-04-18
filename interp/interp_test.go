@@ -1440,7 +1440,7 @@ func TestExit(t *testing.T) {
 }
 
 var csvTests = []interpTest{
-	// Basic INPUTMODE combinations
+	// INPUTMODE combinations
 	{`BEGIN { INPUTMODE="" } { print $1, $3 }`, "name,email\nBob C. Smith,bob@smith.com\nJane X. Brown,jane@brown.com", "name,email \nBob Smith,bob@smith.com\nJane Brown,jane@brown.com\n", "", ""},
 	{`BEGIN { INPUTMODE="csv" } { print $1, $3 }`, "name,email,age\nBob\tSmith,bob@smith.com,42\n\nJane,jane@brown.com,37\n# not a comment", "Bob\tSmith 42\nJane 37\n# not a comment \n", "", ""},
 	{`BEGIN { INPUTMODE="csv separator=|" } { print $1, $3 }`, "name|email|age\nBob,Smith|bob@smith.com|42\nJane|jane@brown.com|37", "Bob,Smith 42\nJane 37\n", "", ""},
@@ -1450,18 +1450,36 @@ var csvTests = []interpTest{
 	{`BEGIN { INPUTMODE="csv noheader" } { print @"age", @"name" }`, "name,email,age\nBob,bob@smith.com,42\nJane,jane@brown.com,37", " \n \n \n", "", ""},
 	{`BEGIN { INPUTMODE="tsv" } { print $1, $3 }`, "name\temail\tage\nBob,Smith\tbob@smith.com\t42\nJane\tjane@brown.com\t37", "Bob,Smith 42\nJane 37\n", "", ""},
 
-	// Basic OUTPUTMODE combinations
+	// OUTPUTMODE combinations
 	{`BEGIN { OUTPUTMODE="csv" } { print $2, $1 }`, "a\"b c\nd e", "c,\"a\"\"b\"\ne,d\n", "", ""},
 	{`BEGIN { OUTPUTMODE="tsv" } { print $2, $1 }`, "a\"b c\nd e", "c\t\"a\"\"b\"\ne\td\n", "", ""},
 	{`BEGIN { OUTPUTMODE="csv separator=|" } { print $2, $1 }`, "a\"b c\nd e", "c|\"a\"\"b\"\ne|d\n", "", ""},
 
 	// Both input and output in CSV mode
-	{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { print $2, $1 }`, "name,age\nBob,42\n\"J B\",37\n\"A\"\"B\",7", "42,Bob\n37,J B\n7,\"A\"\"B\"\n", "", ""},
+	{`BEGIN { INPUTMODE=OUTPUTMODE="csv"; print "age", "name" } { print $2, $1 }`, "name,age\nBob,42\n\"J B\",37\n\"A\"\"B\",7", "age,name\n42,Bob\n37,J B\n7,\"A\"\"B\"\n", "", ""},
 
 	// $0 still works as expected in CSV mode
 	{`BEGIN { INPUTMODE="csv" } { print }`, "name,age\nBob,42\nJane,37", "Bob,42\nJane,37\n", "", ""},
 	{`BEGIN { INPUTMODE="csv" } { print $0 }`, "name,age\nBob,42\nJane,37", "Bob,42\nJane,37\n", "", ""},
 	{`BEGIN { INPUTMODE="csv" } { print $0; $0=NR; print $0 }`, "name,age\nBob,42\nJane,37", "Bob,42\n1\nJane,37\n2\n", "", ""},
+
+	// CSV filters
+	{`BEGIN { INPUTMODE="csv" } /foo/ { print $2 }`, "id,type\n1,food\n2,bar\n3,foo\n", "food\nfoo\n", "", ""},
+	{`BEGIN { INPUTMODE="csv" } $1==2 { print $2 }`, "id,type\n1,food\n2,bar\n3,foo\n", "bar\n", "", ""},
+	{`BEGIN { INPUTMODE="csv noheader" } { s += $-1 } END { print s }`, "a,1\nb,2\nc,3\n", "6\n", "", ""},
+
+	// Updating fields
+	{`BEGIN { INPUTMODE="csv" } { $1 = $1 $1; print $1, $2 }`, "x,y\na,1\nb,2", "aa 1\nbb 2\n", "", ""},
+	{`BEGIN { INPUTMODE="csv" } { $1 = $1 $1; print }`, "x,y\na,1\nb,2", "aa 1\nbb 2\n", "", ""},
+	// TODO: this should re-parse fields
+	//{`BEGIN { INPUTMODE="csv" } { $0 = "X,3"; print $1, $2 }`, "x,y\na,1\nb,2", "X 3\nX 3\n", "", ""},
+	{`BEGIN { INPUTMODE="csv" } { $0 = "X,3"; print }`, "x,y\na,1\nb,2", "X,3\nX,3\n", "", ""},
+	{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { $1 = $1 $1; print $1, $2 }`, "x,y\na,1\nb,2", "aa,1\nbb,2\n", "", ""},
+	// TODO: this should re-encode the fields (see TODO in setField)
+	//{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { $1 = $1 $1; print }`, "x,y\na,1\nb,2", "aa,1\nbb,2\n", "", ""},
+	// TODO: this should re-parse fields
+	//{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { $0 = "X,3"; print $1, $2 }`, "x,y\na,1\nb,2", "X,3\nX,3\n", "", ""},
+	{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { $0 = "X,3"; print }`, "x,y\na,1\nb,2", "X,3\nX,3\n", "", ""},
 
 	// Parsing and formatting of INPUTMODE and OUTPUTMODE special variables
 	{`BEGIN { INPUTMODE="csv separator=,"; print INPUTMODE }`, "", "csv\n", "", ""},
