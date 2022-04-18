@@ -13,6 +13,7 @@ package interp
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -881,7 +882,22 @@ func (p *interp) setField(index int, value string) error {
 	p.fields[index-1] = value
 	p.fieldsIsTrueStr[index-1] = true
 	p.numFields = len(p.fields)
-	p.line = strings.Join(p.fields, p.outputFieldSep) // TODO: handle CSVMode/TSVMode
+	switch p.outputMode {
+	case CSVMode, TSVMode:
+		// TODO: find a much better / more efficient way of doing this
+		var buf bytes.Buffer
+		err := p.writeCSV(&buf, p.fields)
+		if err != nil {
+			return err
+		}
+		p.line = buf.String()
+		p.line = p.line[:len(p.line)-1] // strip '\n'
+		if len(p.line) >= 1 && p.line[len(p.line)-1] == '\r' {
+			p.line = p.line[:len(p.line)-1] // strip '\r'
+		}
+	default:
+		p.line = strings.Join(p.fields, p.outputFieldSep)
+	}
 	p.lineIsTrueStr = true
 	return nil
 }

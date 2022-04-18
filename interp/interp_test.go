@@ -1475,8 +1475,7 @@ var csvTests = []interpTest{
 	//{`BEGIN { INPUTMODE="csv" } { $0 = "X,3"; print $1, $2 }`, "x,y\na,1\nb,2", "X 3\nX 3\n", "", ""},
 	{`BEGIN { INPUTMODE="csv" } { $0 = "X,3"; print }`, "x,y\na,1\nb,2", "X,3\nX,3\n", "", ""},
 	{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { $1 = $1 $1; print $1, $2 }`, "x,y\na,1\nb,2", "aa,1\nbb,2\n", "", ""},
-	// TODO: this should re-encode the fields (see TODO in setField)
-	//{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { $1 = $1 $1; print }`, "x,y\na,1\nb,2", "aa,1\nbb,2\n", "", ""},
+	{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { $1 = $1 $1; print }`, "x,y\na,1\nb,2", "aa,1\nbb,2\n", "", ""},
 	// TODO: this should re-parse fields
 	//{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { $0 = "X,3"; print $1, $2 }`, "x,y\na,1\nb,2", "X,3\nX,3\n", "", ""},
 	{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { $0 = "X,3"; print }`, "x,y\na,1\nb,2", "X,3\nX,3\n", "", ""},
