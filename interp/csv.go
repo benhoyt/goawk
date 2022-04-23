@@ -82,6 +82,7 @@ type csvSplitter struct {
 	resetBuffer  bool
 	recordBuffer []byte
 	fieldIndexes []int
+	token        string
 
 	fieldsArray map[string]value
 	fields      *[]string
@@ -221,6 +222,13 @@ parseField:
 					}
 					line = readLine()
 					if line == nil {
+						token = origData[skip:advance]
+						if lengthNL(token) == 2 {
+							s.token = string(token[:len(token)-2]) + "\n"
+						} else {
+							s.token = string(token)
+						}
+						s.resetBuffer = false
 						return advance, nil, nil // Request more data
 					}
 				} else {
@@ -271,8 +279,9 @@ parseField:
 	// Normal row, set fields and return a line (token).
 	s.row++
 	*s.fields = dst
-	// TODO: this won't return the right token if multiple scan()s were needed
-	token = origData[skip:advance]
+	token = []byte(s.token)
+	s.token = ""
+	token = append(token, origData[skip:advance]...)
 	token = token[:len(token)-lengthNL(token)]
 	return advance, token, nil
 }

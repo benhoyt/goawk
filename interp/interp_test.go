@@ -6,6 +6,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -1514,6 +1515,93 @@ func TestCSV(t *testing.T) {
 			testGoAWK(t, test.src, test.in, test.out, test.err, nil, nil)
 		})
 	}
+}
+
+func TestCSVMultiRead(t *testing.T) {
+	tests := []struct {
+		name  string
+		src   string
+		reads []string
+		out   string
+	}{{
+		name:  "Unquoted",
+		src:   `BEGIN { INPUTMODE="csv"; OFS="|" } { print $0, $1, $2 }`,
+		reads: []string{"name,age\n", "Bob", ",42\n", "", "Jill,", "37", ""},
+		out:   "Bob,42|Bob|42\nJill,37|Jill|37\n",
+	}, {
+		name:  "Quoted",
+		src:   `BEGIN { INPUTMODE="csv"; OFS="|" } { print $0, $1, $2 }`,
+		reads: []string{"name,age\n", "\"Bo", "b\"", ",42\n", "\"Ji\n", "ll\",", "37"},
+		out:   "\"Bob\",42|Bob|42\n\"Ji\nll\",37|Ji\nll|37\n",
+	}, {
+		name:  "QuotedCRLF",
+		src:   `BEGIN { INPUTMODE="csv"; OFS="|" } { print $0, $1, $2 }`,
+		reads: []string{"name,age\n", "\"Bo", "b\"", ",42\n", "\"Ji\r\n", "ll\",", "37"},
+		out:   "\"Bob\",42|Bob|42\n\"Ji\nll\",37|Ji\nll|37\n",
+	}, {
+		name:  "UnquotedNewline",
+		src:   `BEGIN { INPUTMODE="csv"; OFS="|" } { print $0, $1, $2 }`,
+		reads: []string{"name,age\n", "Bob", ",42\n", "Jill,", "37", "\n"},
+		out:   "Bob,42|Bob|42\nJill,37|Jill|37\n",
+	}, {
+		name:  "QuotedNewline",
+		src:   `BEGIN { INPUTMODE="csv"; OFS="|" } { print $0, $1, $2 }`,
+		reads: []string{"name,age\n", "\"Bo", "b\"", ",42\n", "\"Ji\n", "ll\",", "37\n"},
+		out:   "\"Bob\",42|Bob|42\n\"Ji\nll\",37|Ji\nll|37\n",
+	}, {
+		name:  "UnquotedNoHeader",
+		src:   `BEGIN { INPUTMODE="csv noheader"; OFS="|" } { print $0, $1, $2 }`,
+		reads: []string{"Bob", ",42\n", "", "Jill,", "37", ""},
+		out:   "Bob,42|Bob|42\nJill,37|Jill|37\n",
+	}, {
+		name:  "QuotedNoHeader",
+		src:   `BEGIN { INPUTMODE="csv noheader"; OFS="|" } { print $0, $1, $2 }`,
+		reads: []string{"\"Bo", "b\"", ",42\n", "\"Ji\n", "ll\",", "37\n"},
+		out:   "\"Bob\",42|Bob|42\n\"Ji\nll\",37|Ji\nll|37\n",
+	}}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			prog, err := parser.ParseProgram([]byte(test.src), nil)
+			if err != nil {
+				t.Fatalf("error parsing program: %v", err)
+			}
+			outBuf := &concurrentBuffer{}
+			config := &interp.Config{
+				Stdin:  &sliceReader{reads: test.reads},
+				Output: outBuf,
+				Error:  outBuf,
+			}
+			status, err := interp.ExecProgram(prog, config)
+			if err != nil {
+				t.Fatalf("error executing program: %v", err)
+			}
+			out := outBuf.String()
+			if out != test.out {
+				t.Fatalf("expected %q, got %q", test.out, out)
+			}
+			if status != 0 {
+				t.Fatalf("expected status 0, got %d", status)
+			}
+		})
+	}
+}
+
+type sliceReader struct {
+	reads []string
+}
+
+func (r *sliceReader) Read(buf []byte) (int, error) {
+	if len(r.reads) == 0 {
+		return 0, io.EOF
+	}
+	n := copy(buf, r.reads[0])
+	if n < len(r.reads[0]) {
+		r.reads[0] = r.reads[0][:len(buf)]
+	} else {
+		r.reads = r.reads[1:]
+	}
+	return n, nil
 }
 
 func benchmarkProgram(b *testing.B, funcs map[string]interface{},
