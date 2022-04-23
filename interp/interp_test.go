@@ -1462,6 +1462,9 @@ var csvTests = []interpTest{
 	{`BEGIN { INPUTMODE="csv" } { print }`, "name,age\nBob,42\nJane,37", "Bob,42\nJane,37\n", "", ""},
 	{`BEGIN { INPUTMODE="csv" } { print $0 }`, "name,age\nBob,42\nJane,37", "Bob,42\nJane,37\n", "", ""},
 	{`BEGIN { INPUTMODE="csv" } { print $0; $0=NR; print $0 }`, "name,age\nBob,42\nJane,37", "Bob,42\n1\nJane,37\n2\n", "", ""},
+	{`BEGIN { INPUTMODE="csv comment=#" } { print $0 } END { for (i=1; i in FIELDS; i++) print i, FIELDS[i] }`,
+		"# comment\n\nname,age\n# comment\n\nBob,42\n# comment\nJane,37\n\nFoo,5",
+		"Bob,42\nJane,37\nFoo,5\n1 name\n2 age\n", "", ""},
 
 	// CSV filters
 	{`BEGIN { INPUTMODE="csv" } /foo/ { print $2 }`, "id,type\n1,food\n2,bar\n3,foo\n", "food\nfoo\n", "", ""},

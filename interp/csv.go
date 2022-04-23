@@ -126,6 +126,7 @@ func (s *csvSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, 
 	}
 
 	// Read line (automatically skipping past empty lines and any comments).
+	skip := 0
 	var line []byte
 	for {
 		line = readLine()
@@ -134,10 +135,12 @@ func (s *csvSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, 
 		}
 		if s.comment != 0 && nextRune(line) == s.comment {
 			advance += len(line)
+			skip += len(line)
 			continue // Skip comment lines
 		}
 		if len(line) == lengthNL(line) {
 			advance += len(line)
+			skip += len(line)
 			continue // Skip empty lines
 		}
 		break
@@ -269,7 +272,7 @@ parseField:
 	s.row++
 	*s.fields = dst
 	// TODO: this won't return the right token if multiple scan()s were needed
-	token = origData[:advance]
+	token = origData[skip:advance]
 	token = token[:len(token)-lengthNL(token)]
 	return advance, token, nil
 }
