@@ -1519,10 +1519,11 @@ func TestCSV(t *testing.T) {
 
 func TestCSVMultiRead(t *testing.T) {
 	tests := []struct {
-		name  string
-		src   string
-		reads []string
-		out   string
+		name          string
+		src           string
+		reads         []string
+		skipNormalize bool
+		out           string
 	}{{
 		name:  "Unquoted",
 		src:   `BEGIN { INPUTMODE="csv"; OFS="|" } { print $0, $1, $2 }`,
@@ -1532,11 +1533,6 @@ func TestCSVMultiRead(t *testing.T) {
 		name:  "Quoted",
 		src:   `BEGIN { INPUTMODE="csv"; OFS="|" } { print $0, $1, $2 }`,
 		reads: []string{"name,age\n", "\"Bo", "b\"", ",42\n", "\"Ji\n", "ll\",", "37"},
-		out:   "\"Bob\",42|Bob|42\n\"Ji\nll\",37|Ji\nll|37\n",
-	}, {
-		name:  "QuotedCRLF",
-		src:   `BEGIN { INPUTMODE="csv"; OFS="|" } { print $0, $1, $2 }`,
-		reads: []string{"name,age\n", "\"Bo", "b\"", ",42\n", "\"Ji\r\n", "ll\",", "37"},
 		out:   "\"Bob\",42|Bob|42\n\"Ji\nll\",37|Ji\nll|37\n",
 	}, {
 		name:  "UnquotedNewline",
@@ -1558,6 +1554,12 @@ func TestCSVMultiRead(t *testing.T) {
 		src:   `BEGIN { INPUTMODE="csv noheader"; OFS="|" } { print $0, $1, $2 }`,
 		reads: []string{"\"Bo", "b\"", ",42\n", "\"Ji\n", "ll\",", "37\n"},
 		out:   "\"Bob\",42|Bob|42\n\"Ji\nll\",37|Ji\nll|37\n",
+	}, {
+		name:          "QuotedCRLF",
+		src:           `BEGIN { INPUTMODE="csv noheader" } { printf "%s|%s|%s", $0, $1, $2 }`,
+		reads:         []string{"\"Ji\r\n", "ll\",", "37"},
+		skipNormalize: true,
+		out:           "\"Ji\nll\",37|Ji\nll|37",
 	}}
 
 	for _, test := range tests {
@@ -1577,6 +1579,9 @@ func TestCSVMultiRead(t *testing.T) {
 				t.Fatalf("error executing program: %v", err)
 			}
 			out := outBuf.String()
+			if !test.skipNormalize {
+				out = normalizeNewlines(out)
+			}
 			if out != test.out {
 				t.Fatalf("expected %q, got %q", test.out, out)
 			}
