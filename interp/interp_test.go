@@ -1517,11 +1517,10 @@ func TestCSV(t *testing.T) {
 
 func TestCSVMultiRead(t *testing.T) {
 	tests := []struct {
-		name          string
-		src           string
-		reads         []string
-		skipNormalize bool
-		out           string
+		name  string
+		src   string
+		reads []string
+		out   string
 	}{{
 		name:  "Unquoted",
 		src:   `BEGIN { INPUTMODE="csv"; OFS="|" } { print $0, $1, $2 }`,
@@ -1553,11 +1552,10 @@ func TestCSVMultiRead(t *testing.T) {
 		reads: []string{"\"Bo", "b\"", ",42\n", "\"Ji\n", "ll\",", "37\n"},
 		out:   "\"Bob\",42|Bob|42\n\"Ji\nll\",37|Ji\nll|37\n",
 	}, {
-		name:          "QuotedCRLF",
-		src:           `BEGIN { INPUTMODE="csv noheader" } { printf "%s|%s|%s", $0, $1, $2 }`,
-		reads:         []string{"\"Ji\r\n", "ll\",", "37"},
-		skipNormalize: true,
-		out:           "\"Ji\nll\",37|Ji\nll|37",
+		name:  "QuotedCRLF",
+		src:   `BEGIN { INPUTMODE="csv noheader" } { printf "%s|%s|%s", $0, $1, $2 }`,
+		reads: []string{"\"Ji\r\n", "ll\",", "37"},
+		out:   "\"Ji\nll\",37|Ji\nll|37",
 	}}
 
 	for _, test := range tests {
@@ -1577,7 +1575,7 @@ func TestCSVMultiRead(t *testing.T) {
 				t.Fatalf("error executing program: %v", err)
 			}
 			out := outBuf.String()
-			if !test.skipNormalize {
+			if runtime.GOOS == "windows" {
 				out = normalizeNewlines(out)
 			}
 			if out != test.out {
