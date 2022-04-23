@@ -379,6 +379,7 @@ func (p *interp) setLine(line string, isTrueStr bool) {
 	p.line = line
 	p.lineIsTrueStr = isTrueStr
 	p.haveFields = false
+	p.reparseCSV = true
 }
 
 // Ensure that the current line is parsed into fields, splitting it
@@ -391,7 +392,22 @@ func (p *interp) ensureFields() {
 
 	switch {
 	case p.inputMode == CSVMode || p.inputMode == TSVMode:
-		// Fields have already been parsed by csvSplitter
+		if p.reparseCSV {
+			// TODO: more efficient way to do this?
+			scanner := bufio.NewScanner(strings.NewReader(p.line))
+			splitter := csvSplitter{
+				separator: p.csvInputConfig.Separator,
+				comment:   p.csvInputConfig.Comment,
+				noHeader:  true,
+				fields:    &p.fields,
+			}
+			scanner.Split(splitter.scan)
+			if !scanner.Scan() {
+				p.fields = nil
+			}
+		} else {
+			// Normally fields have already been parsed by csvSplitter
+		}
 	case p.fieldSep == " ":
 		// FS space (default) means split fields on any whitespace
 		p.fields = strings.Fields(p.line)

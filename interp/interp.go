@@ -109,6 +109,7 @@ type interp struct {
 	haveFields      bool
 	fieldNames      []string // TODO: what to do if field names of next file are different?
 	fieldIndexes    map[string]int
+	reparseCSV      bool
 
 	// Built-in variables
 	argc             int
@@ -567,6 +568,7 @@ lineLoop:
 			return err
 		}
 		p.setLine(line, false)
+		p.reparseCSV = false
 
 		// Execute all the pattern-action blocks for each line
 		for i, action := range actions {
