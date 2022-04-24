@@ -39,6 +39,8 @@ var (
 	errBreak = errors.New("break")
 	errNext  = errors.New("next")
 
+	errCSVSeparator = errors.New("invalid CSV field separator or comment delimiter")
+
 	crlfNewline = runtime.GOOS == "windows"
 	varRegex    = regexp.MustCompile(`^([_a-zA-Z][_a-zA-Z0-9]*)=(.*)`)
 
@@ -493,6 +495,31 @@ func (p *interp) setExecuteConfig(config *Config) error {
 	return nil
 }
 
+func validateCSVInputConfig(mode IOMode, config CSVInputConfig) error {
+	if mode != CSVMode && mode != TSVMode {
+		return nil
+	}
+	if config.Separator == config.Comment || !validCSVSeparator(config.Separator) ||
+		(config.Comment != 0 && !validCSVSeparator(config.Comment)) {
+		return errCSVSeparator
+	}
+	return nil
+}
+
+func validateCSVOutputConfig(mode IOMode, config CSVOutputConfig) error {
+	if mode != CSVMode && mode != TSVMode {
+		return nil
+	}
+	if !validCSVSeparator(config.Separator) {
+		return errCSVSeparator
+	}
+	return nil
+}
+
+func validCSVSeparator(r rune) bool {
+	return r != 0 && r != '"' && r != '\r' && r != '\n' && utf8.ValidRune(r) && r != utf8.RuneError
+}
+
 func (p *interp) executeAll() (int, error) {
 	defer p.closeAll()
 
@@ -933,7 +960,6 @@ func getDefaultShellCommand() []string {
 	return []string{executable, "-c"}
 }
 
-// TODO: should these move to io.go? csv.go?
 func inputModeString(mode IOMode, csvConfig CSVInputConfig) string {
 	var s string
 	var defaultSep rune
