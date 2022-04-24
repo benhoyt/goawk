@@ -10,6 +10,7 @@ package interp
 
 import (
 	"bufio"
+	"encoding/csv"
 	"reflect"
 	"strings"
 	"testing"
@@ -341,11 +342,29 @@ func TestCSVReader(t *testing.T) {
 				scanner.Split(splitter.scan)
 
 				for scanner.Scan() {
-					// TODO: can we at least test that the token parses to the same value as row?
-					_ = scanner.Text()
 					row := make([]string, len(fields))
 					copy(row, fields)
 					out = append(out, row)
+
+					// We don't explicitly check the returned token, but at
+					// least check it parses to the same row.
+					if strings.ContainsRune(tt.Input, '\r') {
+						// But FieldCRCRLF and similar tests don't round-trip
+						continue
+					}
+					token := scanner.Text()
+					reader := csv.NewReader(strings.NewReader(token))
+					reader.Comma = inputConfig.Separator
+					reader.Comment = inputConfig.Comment
+					reader.FieldsPerRecord = -1
+					reader.LazyQuotes = true
+					tokenRow, err := reader.Read()
+					if err != nil {
+						t.Fatalf("error reparsing token: %v", err)
+					}
+					if !reflect.DeepEqual(tokenRow, row) {
+						t.Fatalf("token mismatch:\ngot  %q\nwant %q", tokenRow, row)
+					}
 				}
 				err = scanner.Err()
 			}
