@@ -259,12 +259,11 @@ func (p *interp) newScanner(input io.Reader, buffer []byte) *bufio.Scanner {
 	switch {
 	case p.inputMode == CSVMode || p.inputMode == TSVMode:
 		splitter := csvSplitter{
-			separator:   p.csvInputConfig.Separator,
-			comment:     p.csvInputConfig.Comment,
-			noHeader:    p.csvInputConfig.NoHeader,
-			fieldsArray: p.array(ast.ScopeGlobal, p.program.Arrays["FIELDS"]),
-			fields:      &p.fields,
-			fieldNames:  &p.fieldNames,
+			separator:     p.csvInputConfig.Separator,
+			comment:       p.csvInputConfig.Comment,
+			noHeader:      p.csvInputConfig.NoHeader,
+			fields:        &p.fields,
+			setFieldNames: p.setFieldNames,
 		}
 		scanner.Split(splitter.scan)
 	case p.recordSep == "\n":
@@ -283,6 +282,20 @@ func (p *interp) newScanner(input io.Reader, buffer []byte) *bufio.Scanner {
 	}
 	scanner.Buffer(buffer, maxRecordLength)
 	return scanner
+}
+
+func (p *interp) setFieldNames(names []string) {
+	p.fieldNames = names
+	p.fieldIndexes = nil // clear name-to-index cache
+
+	// Populate FIELDS array (mapping of field indexes to field names).
+	fieldsArray := p.array(ast.ScopeGlobal, p.program.Arrays["FIELDS"])
+	for k := range fieldsArray {
+		delete(fieldsArray, k)
+	}
+	for i, name := range names {
+		fieldsArray[strconv.Itoa(i+1)] = str(name)
+	}
 }
 
 // Copied from bufio/scan.go in the stdlib: I guess it's a bit more
@@ -415,10 +428,9 @@ type csvSplitter struct {
 	fieldIndexes []int
 	token        string
 
-	fieldsArray map[string]value
-	fields      *[]string
-	fieldNames  *[]string
-	row         int
+	fields        *[]string
+	setFieldNames func(names []string)
+	row           int
 }
 
 // The structure of this code is taken from the stdlib encoding/csv Reader
@@ -594,16 +606,7 @@ parseField:
 	if s.row == 0 && !s.noHeader {
 		// Set header field names and advance, but don't return a line (token).
 		s.row++
-		*s.fieldNames = dst
-
-		// Populate FIELDS array (mapping of field indexes to field names).
-		for k := range s.fieldsArray {
-			delete(s.fieldsArray, k)
-		}
-		for i, name := range dst {
-			s.fieldsArray[strconv.Itoa(i+1)] = str(name)
-		}
-
+		s.setFieldNames(dst)
 		return advance, nil, nil
 	}
 

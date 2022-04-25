@@ -109,7 +109,7 @@ type interp struct {
 	fieldsIsTrueStr []bool
 	numFields       int
 	haveFields      bool
-	fieldNames      []string // TODO: what to do if field names of next file are different?
+	fieldNames      []string
 	fieldIndexes    map[string]int
 	reparseCSV      bool
 

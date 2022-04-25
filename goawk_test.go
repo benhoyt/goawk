@@ -552,3 +552,30 @@ BEGIN { FILENAME = 10; print(FILENAME, FILENAME<2) }
 func normalizeNewlines(b []byte) []byte {
 	return bytes.Replace(b, []byte("\r\n"), []byte{'\n'}, -1)
 }
+
+func TestMultipleCSVFiles(t *testing.T) {
+	// Ensure CSV handling works across multiple files with different headers (field names).
+	src := `
+{
+    for (i=1; i in FIELDS; i++) {
+        if (i>1)
+            printf ",";
+        printf "%s", FIELDS[i]
+    }
+    printf " "
+}
+{ print @"name", @"age" }
+`
+	stdout, stderr, err := runGoAWK([]string{"-icsv", src, "testdata/csv/1.csv", "testdata/csv/2.csv"}, "")
+	if err != nil {
+		t.Fatalf("expected no error, got %v (%q)", err, stderr)
+	}
+	expected := `
+name,age Bob 42
+name,age Jill 37
+age,email,name Sarah 25
+`[1:]
+	if stdout != expected {
+		t.Fatalf("expected %q, got %q", expected, stdout)
+	}
+}
