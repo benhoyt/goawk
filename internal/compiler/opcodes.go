@@ -27,13 +27,14 @@ const (
 	Field
 	FieldInt // index
 	FieldByName
-	Global      // index
-	Local       // index
-	Special     // index
-	ArrayGlobal // arrayIndex
-	ArrayLocal  // arrayIndex
-	InGlobal    // arrayIndex
-	InLocal     // arrayIndex
+	FieldByNameStr // strIndex
+	Global         // index
+	Local          // index
+	Special        // index
+	ArrayGlobal    // arrayIndex
+	ArrayLocal     // arrayIndex
+	InGlobal       // arrayIndex
+	InLocal        // arrayIndex
 
 	// Assign a field, variable, or array item
 	AssignField

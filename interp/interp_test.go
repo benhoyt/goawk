@@ -1448,6 +1448,7 @@ var csvTests = []interpTest{
 	{`BEGIN { INPUTMODE="csv comment=#" } { print $1, $3 }`, "name,email,age\n# this is a comment\nBob\tSmith,bob@smith.com,42\nJane,jane@brown.com,37", "Bob\tSmith 42\nJane 37\n", "", ""},
 	{`BEGIN { INPUTMODE="csv noheader" } { print $1, $3 }`, "name,email,age\nBob,bob@smith.com,42\nJane,jane@brown.com,37", "name age\nBob 42\nJane 37\n", "", ""},
 	{`BEGIN { INPUTMODE="csv" } { print @"age", @"name" }`, "name,email,age\nBob,bob@smith.com,42\nJane,jane@brown.com,37", "42 Bob\n37 Jane\n", "", ""},
+	{`BEGIN { INPUTMODE="csv" } { x="name"; print @"age", @x }`, "name,age\nBob,42", "42 Bob\n", "", ""},
 	{`BEGIN { INPUTMODE="csv noheader" } { print @"age", @"name" }`, "name,email,age\nBob,bob@smith.com,42\nJane,jane@brown.com,37", " \n \n \n", "", ""},
 	{`BEGIN { INPUTMODE="tsv" } { print $1, $3 }`, "name\temail\tage\nBob,Smith\tbob@smith.com\t42\nJane\tjane@brown.com\t37", "Bob,Smith 42\nJane 37\n", "", ""},
 

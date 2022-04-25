@@ -61,13 +61,6 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			l, r := p.peekTwo()
 			p.replaceTwo(r, l)
 
-		// TODO: consider also adding FieldByNameStr optimization
-		// TODO: need to handle @"name"=value assignment? (or disallow in parser for now)
-		case compiler.FieldByName:
-			fieldName := p.peekTop()
-			field := p.getFieldByName(p.toString(fieldName))
-			p.replaceTop(field)
-
 		case compiler.Field:
 			index := p.peekTop()
 			v := p.getField(int(index.num()))
@@ -78,6 +71,18 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			ip++
 			v := p.getField(int(index))
 			p.push(v)
+
+		// TODO: need to handle @"name"=value assignment? (or disallow in parser for now)
+		case compiler.FieldByName:
+			fieldName := p.peekTop()
+			field := p.getFieldByName(p.toString(fieldName))
+			p.replaceTop(field)
+
+		case compiler.FieldByNameStr:
+			index := code[ip]
+			fieldName := p.strs[index]
+			ip++
+			p.push(p.getFieldByName(fieldName))
 
 		case compiler.Global:
 			index := code[ip]
