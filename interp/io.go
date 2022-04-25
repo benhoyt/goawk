@@ -600,10 +600,10 @@ parseField:
 
 // lenNewline reports the number of bytes for the trailing \n.
 func lenNewline(b []byte) int {
-	if len(b) > 1 && b[len(b)-2] == '\r' && b[len(b)-1] == '\n' {
-		return 2
-	}
 	if len(b) > 0 && b[len(b)-1] == '\n' {
+		if len(b) > 1 && b[len(b)-2] == '\r' {
+			return 2
+		}
 		return 1
 	}
 	return 0
