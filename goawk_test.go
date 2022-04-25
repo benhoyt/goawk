@@ -553,6 +553,41 @@ func normalizeNewlines(b []byte) []byte {
 	return bytes.Replace(b, []byte("\r\n"), []byte{'\n'}, -1)
 }
 
+func TestInputOutputMode(t *testing.T) {
+	tests := []struct {
+		args   []string
+		input  string
+		output string
+		error  string
+	}{
+		{[]string{"-icsv", `{ print @"age", @"name" }`}, "name,age\nBob,42\nJane,37", "42 Bob\n37 Jane\n", ""},
+		{[]string{"-i", "csv", `{ print @"age", @"name" }`}, "name,age\nBob,42\nJane,37", "42 Bob\n37 Jane\n", ""},
+		{[]string{"-icsv noheader", `{ print $2, $1 }`}, "Bob,42\nJane,37", "42 Bob\n37 Jane\n", ""},
+		{[]string{"-i", "csv noheader", `{ print $2, $1 }`}, "Bob,42\nJane,37", "42 Bob\n37 Jane\n", ""},
+		{[]string{"-icsv", "-ocsv", `{ print @"age", @"name" }`}, "name,age\n\"Bo,ba\",42\nJane,37", "42,\"Bo,ba\"\n37,Jane\n", ""},
+		{[]string{"-o", "csv", `BEGIN { print "foo,bar", 3.14, "baz" }`}, "", "\"foo,bar\",3.14,baz\n", ""},
+		{[]string{"-iabc", `{}`}, "", "", "invalid input mode \"abc\"\n"},
+		{[]string{"-oxyz", `{}`}, "", "", "invalid output mode \"xyz\"\n"},
+	}
+
+	for _, test := range tests {
+		testName := strings.Join(test.args, " ")
+		t.Run(testName, func(t *testing.T) {
+			stdout, stderr, err := runGoAWK(test.args, test.input)
+			if err != nil {
+				if test.error == "" {
+					t.Fatalf("expected no error, got %v (%q)", err, stderr)
+				} else if stderr != test.error {
+					t.Fatalf("expected error message %q, got %q", test.error, stderr)
+				}
+			}
+			if stdout != test.output {
+				t.Fatalf("expected %q, got %q", test.output, stdout)
+			}
+		})
+	}
+}
+
 func TestMultipleCSVFiles(t *testing.T) {
 	// Ensure CSV handling works across multiple files with different headers (field names).
 	src := `
