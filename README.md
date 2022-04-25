@@ -8,6 +8,7 @@ AWK is a fascinating text-processing language, and somehow after reading the del
 
 Read the [**original article about how GoAWK works and performs**](https://benhoyt.com/writings/goawk/), or the follow-up article about how I converted the tree-walking interpreter to a [**bytecode compiler and virtual machine**](https://benhoyt.com/writings/goawk-compiler-vm/).
 
+
 ## Basic usage
 
 To use the command-line version, simply use `go install` to install it, and then run it using `goawk` (assuming `$GOPATH/bin` is in your `PATH`):
@@ -71,6 +72,14 @@ If you need to repeat execution of the same program on different inputs, you can
 
 Read the [documentation](https://pkg.go.dev/github.com/benhoyt/goawk) for more details.
 
+
+## CSV mode
+
+TODO: document
+
+TODO: mention sponsorship
+
+
 ## Differences from AWK
 
 The intention is for GoAWK to conform to `awk`'s behavior and to the [POSIX AWK spec](http://pubs.opengroup.org/onlinepubs/9699919799/utilities/awk.html), but this section describes some areas where it's different.
@@ -87,17 +96,21 @@ Things AWK has over GoAWK:
 * CPU-bound AWK scripts are slightly slower than `awk`, somewhat slower than `gawk`, and significantly slower than `mawk`.
 * AWK is written by Brian Kernighan.
 
+
 ## Stability
 
 This project has a good suite of tests, and I've used it a bunch personally, but it's certainly not battle-tested or heavily used, so please use at your own risk. I intend not to change the Go API in a breaking way.
+
 
 ## AWKGo
 
 The GoAWK repository also includes the creatively-named AWKGo, an AWK-to-Go compiler. This is experimental and is not subject to the stability requirements of GoAWK itself. You can [read more about AWKGo](https://benhoyt.com/writings/awkgo/) or [browse the AWKGo code](https://github.com/benhoyt/goawk/tree/master/awkgo).
 
+
 ## License
 
 GoAWK is licensed under an open source [MIT license](https://github.com/benhoyt/goawk/blob/master/LICENSE.txt).
+
 
 ## The end
 

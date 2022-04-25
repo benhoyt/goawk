@@ -1,2 +1,2 @@
 #!/bin/sh
-~/go/bin/benchstat -sort=delta -geomean benchmarks.txt benchmarks_new.txt
+~/go/bin/benchstat -sort=delta -geomean benchmarks_old.txt benchmarks_new.txt
