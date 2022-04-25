@@ -34,9 +34,9 @@ func (p *interp) printLine(writer io.Writer, line string) error {
 func (p *interp) printArgs(writer io.Writer, args []value) error {
 	switch p.outputMode {
 	case CSVMode, TSVMode:
-		fields := make([]string, len(args)) // TODO: reuse buffer?
-		for i, arg := range args {
-			fields[i] = arg.str(p.outputFormat)
+		fields := make([]string, 0, 7) // up to 7 args won't require a heap allocation
+		for _, arg := range args {
+			fields = append(fields, arg.str(p.outputFormat))
 		}
 		err := p.writeCSV(writer, fields)
 		if err != nil {
