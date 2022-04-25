@@ -429,7 +429,7 @@ type csvSplitter struct {
 
 	fields        *[]string
 	setFieldNames func(names []string)
-	row           int
+	rowNum        int
 }
 
 // The structure of this code is taken from the stdlib encoding/csv Reader
@@ -441,7 +441,6 @@ func (s *csvSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, 
 		return 0, nil, nil
 	}
 
-	// TODO: explicit args? pull out to method?
 	readLine := func() []byte {
 		newline := bytes.IndexByte(data, '\n')
 		var line []byte
@@ -574,29 +573,23 @@ parseField:
 	// Create a single string and create slices out of it.
 	// This pins the memory of the fields together, but allocates once.
 	strBuf := string(s.recordBuffer) // Convert to string once to batch allocations
-	dst := make([]string, len(s.fieldIndexes))
-	//TODO: reuse dst like so:
-	//dst = dst[:0]
-	//if cap(dst) < len(s.fieldIndexes) {
-	//	dst = make([]string, len(s.fieldIndexes))
-	//}
-	//dst = dst[:len(s.fieldIndexes)]
-	var preIdx int
+	fields := make([]string, len(s.fieldIndexes))
+	preIdx := 0
 	for i, idx := range s.fieldIndexes {
-		dst[i] = strBuf[preIdx:idx]
+		fields[i] = strBuf[preIdx:idx]
 		preIdx = idx
 	}
 
-	if s.row == 0 && !s.noHeader {
+	if s.rowNum == 0 && !s.noHeader {
 		// Set header field names and advance, but don't return a line (token).
-		s.row++
-		s.setFieldNames(dst)
+		s.rowNum++
+		s.setFieldNames(fields)
 		return advance, nil, nil
 	}
 
 	// Normal row, set fields and return a line (token).
-	s.row++
-	*s.fields = dst
+	s.rowNum++
+	*s.fields = fields
 	token = origData[skip:advance]
 	token = token[:len(token)-lenNewline(token)]
 	if tokenHasCR {
