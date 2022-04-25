@@ -340,6 +340,7 @@ func TestCSVReader(t *testing.T) {
 				}
 				scanner := bufio.NewScanner(strings.NewReader(tt.Input))
 				scanner.Split(splitter.scan)
+				scanner.Buffer(make([]byte, inputBufSize), maxRecordLength)
 
 				for scanner.Scan() {
 					row := make([]string, len(fields))

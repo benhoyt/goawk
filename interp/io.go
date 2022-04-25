@@ -422,11 +422,8 @@ type csvSplitter struct {
 	comment   rune
 	noHeader  bool
 
-	inQuote      bool
-	resetBuffer  bool
 	recordBuffer []byte
 	fieldIndexes []int
-	token        string
 
 	fields        *[]string
 	setFieldNames func(names []string)
@@ -475,7 +472,7 @@ func (s *csvSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, 
 	for {
 		line = readLine()
 		if len(line) == 0 {
-			return advance, nil, nil // Request more data
+			return 0, nil, nil // Request more data
 		}
 		if s.comment != 0 && nextRune(line) == s.comment {
 			advance += len(line)
@@ -493,13 +490,12 @@ func (s *csvSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, 
 	// Parse each field in the record.
 	const quoteLen = len(`"`)
 	sepLen := utf8.RuneLen(s.separator) // TODO: could cache this
-	if s.resetBuffer {
-		s.recordBuffer = s.recordBuffer[:0]
-		s.fieldIndexes = s.fieldIndexes[:0]
-	}
+	tokenHasCR := false
+	s.recordBuffer = s.recordBuffer[:0]
+	s.fieldIndexes = s.fieldIndexes[:0]
 parseField:
 	for {
-		if !s.inQuote && (len(line) == 0 || line[0] != '"') {
+		if len(line) == 0 || line[0] != '"' {
 			// Non-quoted string field
 			i := bytes.IndexRune(line, s.separator)
 			field := line
@@ -519,11 +515,8 @@ parseField:
 			break parseField
 		} else {
 			// Quoted string field
-			if !s.inQuote {
-				line = line[quoteLen:]
-				advance += quoteLen
-			}
-			s.inQuote = true
+			line = line[quoteLen:]
+			advance += quoteLen
 			for {
 				i := bytes.IndexByte(line, '"')
 				if i >= 0 {
@@ -542,7 +535,6 @@ parseField:
 						line = line[sepLen:]
 						s.fieldIndexes = append(s.fieldIndexes, len(s.recordBuffer))
 						advance += sepLen
-						s.inQuote = false
 						continue parseField
 					case lenNewline(line) == len(line):
 						// `"\n` sequence (end of line).
@@ -558,6 +550,7 @@ parseField:
 					advance += len(line)
 					newlineLen := lenNewline(line)
 					if newlineLen == 2 {
+						tokenHasCR = true
 						s.recordBuffer = append(s.recordBuffer, line[:len(line)-2]...)
 						s.recordBuffer = append(s.recordBuffer, '\n')
 					} else {
@@ -565,14 +558,7 @@ parseField:
 					}
 					line = readLine()
 					if line == nil {
-						token = origData[skip:advance]
-						if lenNewline(token) == 2 {
-							s.token = string(token[:len(token)-2]) + "\n"
-						} else {
-							s.token = string(token)
-						}
-						s.resetBuffer = false
-						return advance, nil, nil // Request more data
+						return 0, nil, nil // Request more data
 					}
 				} else {
 					// Abrupt end of file.
@@ -583,9 +569,6 @@ parseField:
 			}
 		}
 	}
-
-	s.inQuote = false
-	s.resetBuffer = true
 
 	// Create a single string and create slices out of it.
 	// This pins the memory of the fields together, but allocates once.
@@ -613,10 +596,11 @@ parseField:
 	// Normal row, set fields and return a line (token).
 	s.row++
 	*s.fields = dst
-	token = []byte(s.token)
-	s.token = ""
-	token = append(token, origData[skip:advance]...)
+	token = origData[skip:advance]
 	token = token[:len(token)-lenNewline(token)]
+	if tokenHasCR {
+		token = bytes.ReplaceAll(token, []byte{'\r'}, nil)
+	}
 	return advance, token, nil
 }
 
@@ -665,6 +649,7 @@ func (p *interp) ensureFields() {
 		if p.reparseCSV {
 			// TODO: more efficient way to do this?
 			scanner := bufio.NewScanner(strings.NewReader(p.line))
+			scanner.Buffer(nil, maxRecordLength)
 			splitter := csvSplitter{
 				separator: p.csvInputConfig.Separator,
 				comment:   p.csvInputConfig.Comment,
