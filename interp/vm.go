@@ -61,10 +61,9 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			l, r := p.peekTwo()
 			p.replaceTwo(r, l)
 
-		// TODO: consider also adding AtStr
-		// TODO: should this be called FieldByName / FieldByNameStr?
-		// TODO: need to handle @"name"=value assignment?
-		case compiler.At:
+		// TODO: consider also adding FieldByNameStr optimization
+		// TODO: need to handle @"name"=value assignment? (or disallow in parser for now)
+		case compiler.FieldByName:
 			fieldName := p.peekTop()
 			field := p.getFieldByName(p.toString(fieldName))
 			p.replaceTop(field)

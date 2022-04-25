@@ -791,7 +791,6 @@ func (p *interp) setSpecial(index int, v value) error {
 	case ast.V_SUBSEP:
 		p.subscriptSep = p.toString(v)
 	case ast.V_INPUTMODE:
-		// TODO: error if done after BEGIN
 		var err error
 		p.inputMode, p.csvInputConfig, err = parseInputMode(p.toString(v))
 		if err != nil {
@@ -802,7 +801,6 @@ func (p *interp) setSpecial(index int, v value) error {
 			return err
 		}
 	case ast.V_OUTPUTMODE:
-		// TODO: error if done after BEGIN
 		var err error
 		p.outputMode, p.csvOutputConfig, err = parseOutputMode(p.toString(v))
 		if err != nil {

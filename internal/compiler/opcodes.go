@@ -24,9 +24,9 @@ const (
 	Swap
 
 	// Fetch a field, variable, or array item
-	At
 	Field
-	FieldInt    // index
+	FieldInt // index
+	FieldByName
 	Global      // index
 	Local       // index
 	Special     // index

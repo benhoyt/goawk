@@ -603,7 +603,7 @@ func (c *compiler) expr(expr ast.Expr) {
 
 	case *ast.AtExpr:
 		c.expr(e.Field)
-		c.add(At)
+		c.add(FieldByName)
 
 	case *ast.VarExpr:
 		switch e.Scope {
