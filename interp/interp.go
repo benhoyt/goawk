@@ -739,7 +739,7 @@ func (p *interp) setSpecial(index int, v value) error {
 			p.fields = append(p.fields, "")
 			p.fieldsIsTrueStr = append(p.fieldsIsTrueStr, false)
 		}
-		p.line = strings.Join(p.fields, p.outputFieldSep) // TODO: update to handle CSVMode/TSVMode
+		p.line = p.joinFields(p.fields)
 		p.lineIsTrueStr = true
 	case ast.V_NR:
 		p.lineNum = int(v.num())
@@ -911,24 +911,26 @@ func (p *interp) setField(index int, value string) error {
 	p.fields[index-1] = value
 	p.fieldsIsTrueStr[index-1] = true
 	p.numFields = len(p.fields)
+	p.line = p.joinFields(p.fields)
+	p.lineIsTrueStr = true
+	return nil
+}
+
+func (p *interp) joinFields(fields []string) string {
 	switch p.outputMode {
 	case CSVMode, TSVMode:
 		// TODO: find a much better / more efficient way of doing this
 		var buf bytes.Buffer
-		err := p.writeCSV(&buf, p.fields)
-		if err != nil {
-			return err
+		_ = p.writeCSV(&buf, fields)
+		line := buf.String()
+		line = line[:len(line)-1] // strip '\n'
+		if len(line) >= 1 && line[len(line)-1] == '\r' {
+			line = line[:len(line)-1] // strip '\r'
 		}
-		p.line = buf.String()
-		p.line = p.line[:len(p.line)-1] // strip '\n'
-		if len(p.line) >= 1 && p.line[len(p.line)-1] == '\r' {
-			p.line = p.line[:len(p.line)-1] // strip '\r'
-		}
+		return line
 	default:
-		p.line = strings.Join(p.fields, p.outputFieldSep)
+		return strings.Join(fields, p.outputFieldSep)
 	}
-	p.lineIsTrueStr = true
-	return nil
 }
 
 // Convert value to string using current CONVFMT

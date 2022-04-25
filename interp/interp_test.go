@@ -1481,6 +1481,8 @@ var csvTests = []interpTest{
 	{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { $1 = $1 $1; print }`, "x,y\na,1\nb,2", "aa,1\nbb,2\n", "", ""},
 	{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { $0 = "X,3"; print $1, $2 }`, "x,y\na,1\nb,2", "X,3\nX,3\n", "", ""},
 	{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { $0 = "X,3"; print }`, "x,y\na,1\nb,2", "X,3\nX,3\n", "", ""},
+	{`BEGIN { OUTPUTMODE="csv"; $0 = "a b c"; printf "%s|%s %s %s\n", $0, $1, $2, $3; NF=2; printf "%s|%s %s\n", $0, $1, $2 }`, "", "a b c|a b c\na,b|a b\n", "", ""},
+	{`BEGIN { OUTPUTMODE="csv"; $0 = "a b c"; printf "%s|%s %s %s\n", $0, $1, $2, $3; NF=4; printf "%s|%s %s %s %s\n", $0, $1, $2, $3, $4 }`, "", "a b c|a b c\na,b,c,|a b c \n", "", ""},
 
 	// FIELDS array
 	{`BEGIN { INPUTMODE="csv" } NR==1 { for (i=1; i in FIELDS; i++) print i, FIELDS[i] }`, "name,email,age\na,b,c", "1 name\n2 email\n3 age\n", "", ""},
