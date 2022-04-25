@@ -306,7 +306,7 @@ type CSVInputConfig struct {
 	Comment rune
 
 	// If true, do not parse the first row in each input file as a header row
-	// (that is, a list of field names). If set to true, it's an error to use
+	// (that is, a list of field names). If set to true, it's not valid to use
 	// the @"field" syntax to get a field by name.
 	NoHeader bool
 }

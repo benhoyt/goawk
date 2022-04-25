@@ -284,6 +284,8 @@ func (p *interp) newScanner(input io.Reader, buffer []byte) *bufio.Scanner {
 	return scanner
 }
 
+// setFieldNames is called by csvSplitter.scan on the first row (unless the
+// "noheader" option is specified).
 func (p *interp) setFieldNames(names []string) {
 	p.fieldNames = names
 	p.fieldIndexes = nil // clear name-to-index cache
