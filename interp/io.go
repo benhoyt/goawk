@@ -260,6 +260,7 @@ func (p *interp) newScanner(input io.Reader, buffer []byte) *bufio.Scanner {
 	case p.inputMode == CSVMode || p.inputMode == TSVMode:
 		splitter := csvSplitter{
 			separator:     p.csvInputConfig.Separator,
+			sepLen:        utf8.RuneLen(p.csvInputConfig.Separator),
 			comment:       p.csvInputConfig.Comment,
 			noHeader:      p.csvInputConfig.NoHeader,
 			fields:        &p.fields,
@@ -419,6 +420,7 @@ func (s regexSplitter) scan(data []byte, atEOF bool) (advance int, token []byte,
 // Splitter that splits records in CSV or TSV format.
 type csvSplitter struct {
 	separator rune
+	sepLen    int
 	comment   rune
 	noHeader  bool
 
@@ -489,7 +491,6 @@ func (s *csvSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, 
 
 	// Parse each field in the record.
 	const quoteLen = len(`"`)
-	sepLen := utf8.RuneLen(s.separator) // TODO: could cache this
 	tokenHasCR := false
 	s.recordBuffer = s.recordBuffer[:0]
 	s.fieldIndexes = s.fieldIndexes[:0]
@@ -500,7 +501,7 @@ parseField:
 			i := bytes.IndexRune(line, s.separator)
 			field := line
 			if i >= 0 {
-				advance += i + sepLen
+				advance += i + s.sepLen
 				field = field[:i]
 			} else {
 				advance += len(field)
@@ -509,7 +510,7 @@ parseField:
 			s.recordBuffer = append(s.recordBuffer, field...)
 			s.fieldIndexes = append(s.fieldIndexes, len(s.recordBuffer))
 			if i >= 0 {
-				line = line[i+sepLen:]
+				line = line[i+s.sepLen:]
 				continue parseField
 			}
 			break parseField
@@ -532,9 +533,9 @@ parseField:
 						advance += quoteLen
 					case rn == s.separator:
 						// `",` sequence (end of field).
-						line = line[sepLen:]
+						line = line[s.sepLen:]
 						s.fieldIndexes = append(s.fieldIndexes, len(s.recordBuffer))
-						advance += sepLen
+						advance += s.sepLen
 						continue parseField
 					case lenNewline(line) == len(line):
 						// `"\n` sequence (end of line).
@@ -652,6 +653,7 @@ func (p *interp) ensureFields() {
 			scanner.Buffer(nil, maxRecordLength)
 			splitter := csvSplitter{
 				separator: p.csvInputConfig.Separator,
+				sepLen:    utf8.RuneLen(p.csvInputConfig.Separator),
 				comment:   p.csvInputConfig.Comment,
 				noHeader:  true,
 				fields:    &p.fields,

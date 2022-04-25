@@ -334,6 +334,7 @@ func TestCSVReader(t *testing.T) {
 				var fields []string
 				splitter := csvSplitter{
 					separator: inputConfig.Separator,
+					sepLen:    utf8.RuneLen(inputConfig.Separator),
 					comment:   inputConfig.Comment,
 					noHeader:  true,
 					fields:    &fields,
