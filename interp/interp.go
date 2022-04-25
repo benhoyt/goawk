@@ -146,11 +146,12 @@ type interp struct {
 	ctxOps   int
 
 	// Misc pieces of state
-	random      *rand.Rand
-	randSeed    float64
-	exitStatus  int
-	regexCache  map[string]*regexp.Regexp
-	formatCache map[string]cachedFormat
+	random           *rand.Rand
+	randSeed         float64
+	exitStatus       int
+	regexCache       map[string]*regexp.Regexp
+	formatCache      map[string]cachedFormat
+	csvJoinFieldsBuf bytes.Buffer
 }
 
 // Various const configuration. Could make these part of Config if
@@ -917,15 +918,11 @@ func (p *interp) setField(index int, value string) error {
 func (p *interp) joinFields(fields []string) string {
 	switch p.outputMode {
 	case CSVMode, TSVMode:
-		// TODO: find a much better / more efficient way of doing this
-		var buf bytes.Buffer
-		_ = p.writeCSV(&buf, fields)
-		line := buf.String()
-		line = line[:len(line)-1] // strip '\n'
-		if len(line) >= 1 && line[len(line)-1] == '\r' {
-			line = line[:len(line)-1] // strip '\r'
-		}
-		return line
+		p.csvJoinFieldsBuf.Reset()
+		_ = p.writeCSV(&p.csvJoinFieldsBuf, fields)
+		line := p.csvJoinFieldsBuf.Bytes()
+		line = line[:len(line)-lenNewline(line)]
+		return string(line)
 	default:
 		return strings.Join(fields, p.outputFieldSep)
 	}
