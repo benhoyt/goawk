@@ -1504,6 +1504,12 @@ var csvTests = []interpTest{
 	{`BEGIN { OUTPUTMODE="xyz" }`, "", "", `invalid output mode "xyz"`, ""},
 	{`BEGIN { OUTPUTMODE="csv separator=foo" }`, "", "", `invalid CSV/TSV separator "foo"`, ""},
 	{`BEGIN { OUTPUTMODE="csv foo=bar" }`, "", "", `invalid output mode key "foo"`, ""},
+
+	// Other errors
+	{`BEGIN { @"x" = "y" }`, "", "", "parse error at 1:14: assigning @ expression not supported", ""},
+	{`BEGIN { x="a"; @x = "y" }`, "", "", "parse error at 1:19: assigning @ expression not supported", ""},
+	{`BEGIN { @"x" += "y" }`, "", "", "parse error at 1:14: assigning @ expression not supported", ""},
+	{`BEGIN { x="a"; @x += "y" }`, "", "", "parse error at 1:19: assigning @ expression not supported", ""},
 }
 
 func TestCSV(t *testing.T) {

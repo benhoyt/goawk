@@ -524,8 +524,12 @@ func (p *parser) getLine() ast.Expr {
 //
 func (p *parser) _assign(higher func() ast.Expr) ast.Expr {
 	expr := higher()
-	if ast.IsLValue(expr) && p.matches(ASSIGN, ADD_ASSIGN, DIV_ASSIGN,
+	_, isAtExpr := expr.(*ast.AtExpr)
+	if (isAtExpr || ast.IsLValue(expr)) && p.matches(ASSIGN, ADD_ASSIGN, DIV_ASSIGN,
 		MOD_ASSIGN, MUL_ASSIGN, POW_ASSIGN, SUB_ASSIGN) {
+		if isAtExpr {
+			panic(p.errorf("assigning @ expression not supported"))
+		}
 		op := p.tok
 		p.next()
 		right := p._assign(higher)

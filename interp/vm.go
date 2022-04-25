@@ -72,7 +72,6 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			v := p.getField(int(index))
 			p.push(v)
 
-		// TODO: need to handle @"name"=value assignment? (or disallow in parser for now)
 		case compiler.FieldByName:
 			fieldName := p.peekTop()
 			field := p.getFieldByName(p.toString(fieldName))
