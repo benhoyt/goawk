@@ -48,26 +48,21 @@ const (
 	copyright  = "GoAWK " + version + " - Copyright (c) 2021 Ben Hoyt"
 	shortUsage = "usage: goawk [-F fs] [-v var=value] [-f progfile | 'prog'] [file ...]"
 	longUsage  = `Standard AWK arguments:
-  -F separator
-        field separator (default " ")
-  -v assignment
-        name=value variable assignment (multiple allowed)
-  -f progfile
-        load AWK source from progfile (multiple allowed)
+  -F separator      field separator (default " ")
+  -v assignment     name=value variable assignment (multiple allowed)
+  -f progfile       load AWK source from progfile (multiple allowed)
 
 Additional GoAWK arguments:
-  -cpuprofile file
-        write CPU profile to file
-  -d    print parsed syntax tree to stderr (debug mode)
-  -da   print virtual machine assembly instructions to stderr
-  -dt   print variable type information to stderr
-  -i mode    # 'csv|tsv [separator=<char>] [comment=<char>] [noheader]'
-        use CSV or TSV input parsing (ignore FS and RS)
-  -o mode    # 'csv|tsv [separator=<char>]'
-        use CSV or TSV output for print (ignore OFS and ORS)
-  -h    show this usage message
-  -version
-        show GoAWK version and exit
+  -cpuprofile file  write CPU profile to file
+  -d                print parsed syntax tree to stderr (debug mode)
+  -da               print virtual machine assembly instructions to stderr
+  -dt               print variable type information to stderr
+  -i mode           use CSV or TSV input parsing (ignore FS and RS)
+                    'csv|tsv [separator=<char>] [comment=<char>] [noheader]'
+  -o mode           use CSV or TSV output for print (ignore OFS and ORS)
+                    'csv|tsv [separator=<char>]'
+  -h                show this usage message
+  -version          show GoAWK version and exit
 `
 )
 
