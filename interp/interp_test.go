@@ -3,6 +3,7 @@ package interp_test
 
 import (
 	"bytes"
+	"encoding/csv"
 	"errors"
 	"flag"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 	"os/exec"
 	"reflect"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -2400,6 +2402,88 @@ func BenchmarkRepeatIONew(b *testing.B) {
 		if output.String() != expected {
 			b.Fatalf("expected %q, got %q", expected, output.String())
 		}
+	}
+}
+
+func BenchmarkCSVInputGoAWK(b *testing.B) {
+	b.StopTimer()
+	s := 0
+	var inputLines []string
+	for i := 0; i < b.N; i++ {
+		s += i
+		inputLines = append(inputLines, fmt.Sprintf(`%d,foo,Bob Smith,"foo,bar,baz",email@example.com`, i))
+	}
+	input := strings.Join(inputLines, "\n")
+	expected := fmt.Sprintf("%d", s)
+	src := `BEGIN { INPUTMODE="csv noheader" } { s += $1 } END { print s }`
+	benchmarkProgram(b, nil, input, expected, src)
+}
+
+func BenchmarkCSVInputReader(b *testing.B) {
+	b.StopTimer()
+	s := 0
+	var inputLines []string
+	for i := 0; i < b.N; i++ {
+		s += i
+		inputLines = append(inputLines, fmt.Sprintf(`%d,foo,Bob Smith,"foo,bar,baz",email@example.com`, i))
+	}
+	input := strings.Join(inputLines, "\n")
+	reader := csv.NewReader(strings.NewReader(input))
+	total := 0
+	b.StartTimer()
+	for {
+		record, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			b.Fatalf("read error: %v", err)
+		}
+		v, _ := strconv.Atoi(record[0])
+		total += v
+	}
+	if s != total {
+		b.Fatalf("expected %d, got %d", s, total)
+	}
+}
+
+func BenchmarkCSVOutputGoAWK(b *testing.B) {
+	b.StopTimer()
+	var expectedLines []string
+	for i := 0; i < b.N; i++ {
+		expectedLines = append(expectedLines, fmt.Sprintf(`%d,foo,Bob Smith,"foo,bar,baz",email@example.com`, i))
+	}
+	expected := strings.Join(expectedLines, "\n")
+	benchmarkProgram(b, nil, "", expected, `
+BEGIN {
+	OUTPUTMODE = "csv";
+	for (i=0; i<%d; i++)
+		print i, "foo", "Bob Smith", "foo,bar,baz", "email@example.com"
+}
+`, b.N)
+}
+
+func BenchmarkCSVOutputWriter(b *testing.B) {
+	b.StopTimer()
+	var expectedLines []string
+	for i := 0; i < b.N; i++ {
+		expectedLines = append(expectedLines, fmt.Sprintf(`%d,foo,Bob Smith,"foo,bar,baz",email@example.com`, i))
+	}
+	expected := strings.Join(expectedLines, "\n") + "\n"
+	var buf bytes.Buffer
+	writer := csv.NewWriter(&buf)
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		err := writer.Write([]string{strconv.Itoa(i), "foo", "Bob Smith", "foo,bar,baz", "email@example.com"})
+		if err != nil {
+			b.Fatalf("write error: %v", err)
+		}
+	}
+	writer.Flush()
+	b.StopTimer()
+	output := buf.String()
+	if output != expected {
+		b.Fatalf("expected %q, got %q\n", expected, output)
 	}
 }
 
