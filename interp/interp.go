@@ -248,6 +248,9 @@ type Config struct {
 	//
 	// You can also enable CSV or TSV input mode by setting INPUTMODE to "csv"
 	// or "tsv" in the BEGIN block.
+	//
+	// For further documentation about GoAWK's CSV support, see:
+	// https://github.com/benhoyt/goawk/blob/master/csv.md
 	InputMode IOMode
 
 	// Additional options if InputMode is CSVMode or TSVMode. The zero value

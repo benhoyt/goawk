@@ -1,3 +1,4 @@
+
 # GoAWK: an AWK interpreter written in Go
 
 [![Documentation](https://pkg.go.dev/badge/github.com/benhoyt/goawk)](https://pkg.go.dev/github.com/benhoyt/goawk)
@@ -6,19 +7,28 @@
 
 AWK is a fascinating text-processing language, and somehow after reading the delightfully-terse [*The AWK Programming Language*](https://ia802309.us.archive.org/25/items/pdfy-MgN0H1joIoDVoIC7/The_AWK_Programming_Language.pdf) I was inspired to write an interpreter for it in Go. So here it is, feature-complete and tested against "the one true AWK" test suite.
 
+GoAWK is a POSIX-compatible version of AWK, and additionally has a CSV mode for reading and writing CSV and TSV files. This feature was sponsored by the [library of the University of Antwerp](https://www.uantwerpen.be/en/library/), and is useful for "big data" processing. [Read the CSV documentation.](https://github.com/benhoyt/goawk/blob/master/csv.md)
+
 Read the [**original article about how GoAWK works and performs**](https://benhoyt.com/writings/goawk/), or the follow-up article about how I converted the tree-walking interpreter to a [**bytecode compiler and virtual machine**](https://benhoyt.com/writings/goawk-compiler-vm/).
 
 
 ## Basic usage
 
-To use the command-line version, simply use `go install` to install it, and then run it using `goawk` (assuming `$GOPATH/bin` is in your `PATH`):
+To use the command-line version, simply use `go install` to install it, and then run it using `goawk` (assuming `~/go/bin` is in your `PATH`):
 
 ```shell
 $ go install github.com/benhoyt/goawk@latest
+
 $ goawk 'BEGIN { print "foo", 42 }'
 foo 42
+
 $ echo 1 2 3 | goawk '{ print $1 + $3 }'
 4
+
+# Or use GoAWK's CSV and @"named-field" support:
+$ echo -e 'name,amount\nBob,17.50\nJill,20\n"Boba Fett",100.00' | \
+  goawk -i csv '{ total += @"amount" } END { print total }'
+137.5
 ```
 
 On Windows, `"` is the shell quoting character, so use `"` around the entire AWK program on the command line, and use `'` around AWK strings -- this is a non-POSIX extension to make GoAWK easier to use on Windows:
@@ -73,33 +83,27 @@ If you need to repeat execution of the same program on different inputs, you can
 Read the [documentation](https://pkg.go.dev/github.com/benhoyt/goawk) for more details.
 
 
-## CSV mode
-
-TODO: document
-
-TODO: mention sponsorship
-
-
 ## Differences from AWK
 
 The intention is for GoAWK to conform to `awk`'s behavior and to the [POSIX AWK spec](http://pubs.opengroup.org/onlinepubs/9699919799/utilities/awk.html), but this section describes some areas where it's different.
 
 Additional features GoAWK has over AWK:
 
+* It has proper support for CSV and TSV files ([read the documentation](https://github.com/benhoyt/goawk/blob/master/csv.md)).
+* It supports negative field indexes to access fields from the right, for example, `$-1` refers to the last field.
 * It's embeddable in your Go programs! You can even call custom Go functions from your AWK scripts.
 * I/O-bound AWK scripts (which is most of them) are significantly faster than `awk`, and on a par with `gawk` and `mawk`.
-* It supports negative field indexes to access fields from the right, for example, `$-1` refers to the last field.
 * The parser supports `'single-quoted strings'` in addition to `"double-quoted strings"`, primarily to make Windows one-liners easier (the Windows `cmd.exe` shell uses `"` as the quote character).
 
 Things AWK has over GoAWK:
 
-* CPU-bound AWK scripts are slightly slower than `awk`, somewhat slower than `gawk`, and significantly slower than `mawk`.
-* AWK is written by Brian Kernighan.
+* CPU-bound AWK scripts are often somewhat slower than `gawk` and `mawk`.
+* AWK is written by Alfred Aho, Peter Weinberger, and Brian Kernighan.
 
 
 ## Stability
 
-This project has a good suite of tests, and I've used it a bunch personally, but it's certainly not battle-tested or heavily used, so please use at your own risk. I intend not to change the Go API in a breaking way.
+This project has a good suite of tests, which include my own intepreter tests, the original AWK test suite, and the relevant tests from the Gawk test suite. I've used it a bunch personally, and it's used in the [Benthos](https://github.com/benthosdev/benthos) stream processor as well as by the software team at the library of the University of Antwerp. However, to `err == human`, so please use GoAWK at your own risk. I intend not to change the Go API in a breaking way in any v1.x.y version.
 
 
 ## AWKGo

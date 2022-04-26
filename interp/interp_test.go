@@ -1465,8 +1465,9 @@ var csvTests = []csvTest{
 	{`BEGIN { OUTPUTMODE="tsv" } { print $2, $1 }`, "a\"b c\nd e", "c\t\"a\"\"b\"\ne\td\n", "", nil},
 	{`BEGIN { OUTPUTMODE="csv separator=|" } { print $2, $1 }`, "a\"b c\nd e", "c|\"a\"\"b\"\ne|d\n", "", nil},
 
-	// Both input and output in CSV mode
+	// Both input and output in CSV (or TSV) mode
 	{`BEGIN { INPUTMODE=OUTPUTMODE="csv"; print "age", "name" } { print $2, $1 }`, "name,age\nBob,42\n\"J B\",37\n\"A\"\"B\",7", "age,name\n42,Bob\n37,J B\n7,\"A\"\"B\"\n", "", nil},
+	{`BEGIN { INPUTMODE="csv noheader"; OUTPUTMODE="tsv"; } { $1=$1; print }`, "name,age\nBob,42\n\"J B\",37\n\"A\"\"B\",7", "name\tage\nBob\t42\nJ B\t37\n\"A\"\"B\"\t7\n", "", nil},
 
 	// Configure via interp.Config struct
 	{`{ print @"age", @"name" }`, "name,age\nBob,42", "42 Bob\n", "", func(config *interp.Config) {
