@@ -64,7 +64,25 @@ Note that named field assignment such as `@"id" = 42` is not yet supported, but 
 
 ## Go API
 
-TODO
+When using GoAWK via the Go API, you can still use `INPUTMODE`, but it may be more convenient to use the `interp.Config` fields directly: `InputMode`, `CSVInput`, `OutputMode`, and `CSVOutput`.
+
+Here's a simple snippet showing the use of the `InputMode` and `CSVInput` fields to enable `#` as the comment character:
+
+```
+prog, err := parser.ParseProgram([]byte(src), nil)
+if err != nil { ... }
+
+config := &interp.Config{
+    InputMode: interp.CSVMode,
+    CSVInput:  interp.CSVInputConfig{Comment: '#'},
+}
+_, err = interp.ExecProgram(prog, config)
+if err != nil { ... }
+```
+
+Note that `INPUTMODE` and `OUTPUTMODE` set using `Vars` or in the `BEGIN` block will override these settings.
+
+See the [full reference documentation](https://pkg.go.dev/github.com/benhoyt/goawk/interp#Config) of the Go API fields.
 
 
 ## Examples

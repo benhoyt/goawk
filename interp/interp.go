@@ -247,7 +247,7 @@ type Config struct {
 	// "encoding/csv" package.
 	//
 	// You can also enable CSV or TSV input mode by setting INPUTMODE to "csv"
-	// or "tsv" in the BEGIN block.
+	// or "tsv" in Vars or in the BEGIN block (those override this setting).
 	//
 	// For further documentation about GoAWK's CSV support, see:
 	// https://github.com/benhoyt/goawk/blob/master/csv.md
@@ -269,7 +269,8 @@ type Config struct {
 	// the "encoding/csv" package.
 	//
 	// You can also enable CSV or TSV output mode by setting OUTPUTMODE to
-	// "csv" or "tsv" in the BEGIN block.
+	// "csv" or "tsv" in Vars or in the BEGIN block (those override this
+	// setting).
 	OutputMode IOMode
 
 	// Additional options if OutputMode is CSVMode or TSVMode. The zero value
