@@ -9,9 +9,16 @@ Since version v1.17.0, GoAWK has included CSV support, which allows you to read 
 
 In addition, GoAWK supports a special "named field" construct that allows you to access CSV fields by name as well as number, for example `@"Address"` rather than `$5`.
 
-Keep reading for full documentation, or skip straight to the [examples](#examples).
-
 **Many thanks to the [library of the University of Antwerp](https://www.uantwerpen.be/en/library/), who sponsored this feature in April 2022.**
+
+Links to sections:
+
+* [CSV input configuration](#csv-input-configuration)
+* [CSV output configuration](#csv-output-configuration)
+* [Named field syntax](#named-field-syntax)
+* [Go API](#go-api)
+* [Examples](#examples)
+* [Performance](#performance)
 
 
 ## CSV input configuration
