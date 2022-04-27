@@ -201,3 +201,15 @@ NY
 $ goawk -vINPUTMODE=csv '@"State"=="New York" { print @"Abbreviation" }' states.csv
 NY
 ```
+
+
+## Performance
+
+The performance of GoAWK's CSV input and output mode is quite good, on a par with using the `encoding/csv` package from Go directly, and much faster than the `csv` module in Python. CSV input speed is significantly slower than `frawk`, though CSV output speed is significantly faster than `frawk`.
+
+Below are the results of some simple read and write [benchmarks](https://github.com/benhoyt/goawk/blob/master/scripts/csvbench) using `goawk` and `frawk` as well as plain Python and Go. The input for the read benchmarks is a large 1.5GB, 749,818-row input file with many columns (286). Times are in seconds, showing the best of three runs on a 64-bit Linux laptop with an SSD drive:
+
+Test              | goawk | frawk | python |   go
+----------------- | ----- | ----- | ------ | ----
+Reading 1.5GB CSV |  6.56 |  2.23 |   22.4 | 7.16 
+Writing 0.6GB CSV |  3.42 |  8.01 |   11.7 | 2.22
