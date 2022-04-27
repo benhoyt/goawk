@@ -16,11 +16,10 @@ time python3 count.py <huge.csv
 time python3 count.py <huge.csv
 
 echo ===== Reading 1.5GB - Go
-go build count.go
-time ./count <huge.csv
-time ./count <huge.csv
-time ./count <huge.csv
-
+go build -o bin/count ./count
+time ./bin/count <huge.csv
+time ./bin/count <huge.csv
+time ./bin/count <huge.csv
 
 
 echo ===== Writing 0.6GB - goawk
@@ -39,7 +38,7 @@ time python3 write.py >/dev/null
 time python3 write.py >/dev/null
 
 echo ===== Writing 0.6GB - Go
-go build write.go
-time ./write >/dev/null
-time ./write >/dev/null
-time ./write >/dev/null
+go build -o bin/write ./write
+time ./bin/write >/dev/null
+time ./bin/write >/dev/null
+time ./bin/write >/dev/null
