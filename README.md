@@ -92,12 +92,12 @@ Additional features GoAWK has over AWK:
 * It has proper support for CSV and TSV files ([read the documentation](https://github.com/benhoyt/goawk/blob/master/csv.md)).
 * It supports negative field indexes to access fields from the right, for example, `$-1` refers to the last field.
 * It's embeddable in your Go programs! You can even call custom Go functions from your AWK scripts.
-* I/O-bound AWK scripts (which is most of them) are significantly faster than `awk`, and on a par with `gawk` and `mawk`.
+* Most AWK scripts are faster than `awk` and on a par with `gawk`, though usually slower than `mawk`. (See [recent benchmarks](https://benhoyt.com/writings/goawk-compiler-vm/#virtual-machine-results).)
 * The parser supports `'single-quoted strings'` in addition to `"double-quoted strings"`, primarily to make Windows one-liners easier (the Windows `cmd.exe` shell uses `"` as the quote character).
 
 Things AWK has over GoAWK:
 
-* CPU-bound AWK scripts are often somewhat slower than `gawk` and `mawk`.
+* Scripts that use regular expressions are slower than other implementations (unfortunately Go's `regexp` package is relatively slow).
 * AWK is written by Alfred Aho, Peter Weinberger, and Brian Kernighan.
 
 
