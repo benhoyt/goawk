@@ -220,3 +220,24 @@ Test              | goawk | frawk | python |   go
 ----------------- | ----- | ----- | ------ | ----
 Reading 1.5GB CSV |  6.56 |  2.23 |   22.4 | 7.16 
 Writing 0.6GB CSV |  3.42 |  8.01 |   11.7 | 2.22
+
+
+
+TODO:
+* figure out solution to the issue Richard pointed out:
+  - ask frawk author about this issue!
+    0 ~/h/goawk$ echo a,b,c | goawk -i 'csv noheader' -o csv '{ $2="B"; print }'
+    a,B,c
+    0 ~/h/goawk$ echo a,b,c | goawk -i 'csv noheader' -o csv '{ $2="B"; print $0 }'
+    "a,B,c"
+  - leaning towards "it's okay as is", just document it / give warnings/examples
+    "note that this means in CSV output mode, { print } is not the same as { print $0 }"
+  - partly because using print is so nice
+  - partly because that's how frawk works too:
+    0 ~/h/goawk$ echo a,b | frawk -i csv -o csv '{ print }'
+    a,b
+    0 ~/h/goawk$ echo a,b | frawk -i csv -o csv '{ print $0 }'
+    "a,b"
+* consider whether "header" should be the default instead of "noheader" (consistency with frawk)
+  - if we go that route consider adding frawk's "-H" as it's easier than: -i 'csv header'
+* give credit to frawk for some of the design decisions, including the -i/-o options
