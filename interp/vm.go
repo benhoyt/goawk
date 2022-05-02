@@ -74,14 +74,21 @@ func (p *interp) execute(code []compiler.Opcode) error {
 
 		case compiler.FieldByName:
 			fieldName := p.peekTop()
-			field := p.getFieldByName(p.toString(fieldName))
+			field, err := p.getFieldByName(p.toString(fieldName))
+			if err != nil {
+				return err
+			}
 			p.replaceTop(field)
 
 		case compiler.FieldByNameStr:
 			index := code[ip]
 			fieldName := p.strs[index]
 			ip++
-			p.push(p.getFieldByName(fieldName))
+			field, err := p.getFieldByName(fieldName)
+			if err != nil {
+				return err
+			}
+			p.push(field)
 
 		case compiler.Global:
 			index := code[ip]

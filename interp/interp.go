@@ -875,9 +875,12 @@ func (p *interp) getField(index int) value {
 }
 
 // Get the value of a field by name (for CSV/TSV mode), as in @"name".
-func (p *interp) getFieldByName(name string) value {
+func (p *interp) getFieldByName(name string) (value, error) {
 	if p.fieldIndexes == nil {
 		// Lazily create map of field names to indexes.
+		if p.fieldNames == nil {
+			return null(), newError("@ only supported if header parsing enabled")
+		}
 		p.fieldIndexes = make(map[string]int, len(p.fieldNames))
 		for i, n := range p.fieldNames {
 			p.fieldIndexes[n] = i + 1
@@ -885,9 +888,9 @@ func (p *interp) getFieldByName(name string) value {
 	}
 	index := p.fieldIndexes[name]
 	if index == 0 {
-		return str("")
+		return str(""), nil
 	}
-	return p.getField(index)
+	return p.getField(index), nil
 }
 
 // Sets a single field, equivalent to "$index = value"
