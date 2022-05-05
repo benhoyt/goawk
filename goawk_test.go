@@ -632,7 +632,11 @@ func TestCSVDocExamples(t *testing.T) {
 	)
 	runTest := func() {
 		t.Run(fmt.Sprintf("Example%d", n), func(t *testing.T) {
-			cmd := exec.Command("/bin/sh", "-c", command)
+			shell := "/bin/sh"
+			if runtime.GOOS == "windows" {
+				shell = "sh"
+			}
+			cmd := exec.Command(shell, "-c", command)
 			gotBytes, err := cmd.CombinedOutput()
 			if err != nil {
 				t.Fatalf("error running %q: %v\n%s", command, err, gotBytes)
