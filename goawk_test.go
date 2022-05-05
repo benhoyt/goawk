@@ -659,7 +659,7 @@ func TestCSVDocExamples(t *testing.T) {
 				runTest()
 			}
 			inTest = true
-			command = line[2:]
+			command = "./" + line[2:]
 			output = ""
 			truncated = false
 		} else if inTest {
