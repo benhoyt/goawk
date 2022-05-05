@@ -165,7 +165,7 @@ Jill,20
 	config := &interp.Config{
 		Stdin:     strings.NewReader(input),
 		InputMode: interp.CSVMode,
-		CSVInput:  interp.CSVInputConfig{Comment: '#'},
+		CSVInput:  interp.CSVInputConfig{Comment: '#', Header: true},
 	}
 	_, err = interp.ExecProgram(prog, config)
 	if err != nil {

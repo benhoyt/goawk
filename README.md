@@ -27,7 +27,7 @@ $ echo 1 2 3 | goawk '{ print $1 + $3 }'
 
 # Or use GoAWK's CSV and @"named-field" support:
 $ echo -e 'name,amount\nBob,17.50\nJill,20\n"Boba Fett",100.00' | \
-  goawk -i csv '{ total += @"amount" } END { print total }'
+  goawk -i csv -H '{ total += @"amount" } END { print total }'
 137.5
 ```
 

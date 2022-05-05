@@ -258,9 +258,9 @@ type Config struct {
 	//
 	// You can also specify these options by setting INPUTMODE in the BEGIN
 	// block, for example, to use '|' as the field separator, '#' as the
-	// comment character, and disable header row parsing:
+	// comment character, and enable header row parsing:
 	//
-	//     BEGIN { INPUTMODE="csv separator=| comment=# noheader" }
+	//     BEGIN { INPUTMODE="csv separator=| comment=# header" }
 	CSVInput CSVInputConfig
 
 	// Mode for print output: default is to use normal OFS and ORS
@@ -309,10 +309,10 @@ type CSVInputConfig struct {
 	// be ignored as comments.
 	Comment rune
 
-	// If true, do not parse the first row in each input file as a header row
-	// (that is, a list of field names). If set to true, it's not valid to use
-	// the @"field" syntax to get a field by name.
-	NoHeader bool
+	// If true, parse the first row in each input file as a header row (that
+	// is, a list of field names) and enable the @"field" syntax to get a
+	// field by name.
+	Header bool
 }
 
 // CSVOutputConfig holds additional configuration for when OutputMode is
@@ -983,8 +983,8 @@ func inputModeString(mode IOMode, csvConfig CSVInputConfig) string {
 	if csvConfig.Comment != 0 {
 		s += " comment=" + string([]rune{csvConfig.Comment})
 	}
-	if csvConfig.NoHeader {
-		s += " noheader"
+	if csvConfig.Header {
+		s += " header"
 	}
 	return s
 }
@@ -1025,11 +1025,11 @@ func parseInputMode(s string) (mode IOMode, csvConfig CSVInputConfig, err error)
 				return DefaultMode, CSVInputConfig{}, newError("invalid CSV/TSV comment character %q", val)
 			}
 			csvConfig.Comment = r
-		case "noheader":
+		case "header":
 			if val != "" && val != "true" && val != "false" {
-				return DefaultMode, CSVInputConfig{}, newError("invalid noheader value %q", val)
+				return DefaultMode, CSVInputConfig{}, newError("invalid header value %q", val)
 			}
-			csvConfig.NoHeader = val == "" || val == "true"
+			csvConfig.Header = val == "" || val == "true"
 		default:
 			return DefaultMode, CSVInputConfig{}, newError("invalid input mode key %q", key)
 		}

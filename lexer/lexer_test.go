@@ -262,14 +262,14 @@ func TestAllTokens(t *testing.T) {
 	l = NewLexer([]byte(`/foo/`))
 	_, tok1, _ := l.Scan()
 	_, tok2, val := l.ScanRegex()
-	if tok1 != Token(DIV) || tok2 != Token(REGEX) || val != "foo" {
+	if tok1 != DIV || tok2 != REGEX || val != "foo" {
 		t.Errorf(`expected / regex "foo", got %s %s %q`, tok1, tok2, val)
 	}
 
 	l = NewLexer([]byte(`/=foo/`))
 	_, tok1, _ = l.Scan()
 	_, tok2, val = l.ScanRegex()
-	if tok1 != Token(DIV_ASSIGN) || tok2 != Token(REGEX) || val != "=foo" {
+	if tok1 != DIV_ASSIGN || tok2 != REGEX || val != "=foo" {
 		t.Errorf(`expected /= regex "=foo", got %s %s %q`, tok1, tok2, val)
 	}
 }

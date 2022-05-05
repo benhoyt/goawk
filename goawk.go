@@ -49,7 +49,7 @@ const (
 	shortUsage = "usage: goawk [-F fs] [-v var=value] [-f progfile | 'prog'] [file ...]"
 	longUsage  = `Standard AWK arguments:
   -F separator      field separator (default " ")
-  -v assignment     name=value variable assignment (multiple allowed)
+  -v var=value      variable assignment (multiple allowed)
   -f progfile       load AWK source from progfile (multiple allowed)
 
 Additional GoAWK arguments:
@@ -57,11 +57,12 @@ Additional GoAWK arguments:
   -d                print parsed syntax tree to stderr (debug mode)
   -da               print virtual machine assembly instructions to stderr
   -dt               print variable type information to stderr
-  -i mode           use CSV or TSV input parsing (ignore FS and RS)
-                    'csv|tsv [separator=<char>] [comment=<char>] [noheader]'
-  -o mode           use CSV or TSV output for print (ignore OFS and ORS)
+  -H                parse header row and enable @"field" in CSV input mode
+  -h, --help        show this help message
+  -i mode           parse input into fields using CSV format (ignore FS and RS)
+                    'csv|tsv [separator=<char>] [comment=<char>] [header]'
+  -o mode           use CSV output for print with args (ignore OFS and ORS)
                     'csv|tsv [separator=<char>]'
-  -h                show this usage message
   -version          show GoAWK version and exit
 `
 )
@@ -80,6 +81,7 @@ func main() {
 	memprofile := ""
 	inputMode := ""
 	outputMode := ""
+	header := false
 
 	var i int
 	for i = 1; i < len(os.Args); i++ {
@@ -124,6 +126,8 @@ func main() {
 			debugAsm = true
 		case "-dt":
 			debugTypes = true
+		case "-H":
+			header = true
 		case "-h", "--help":
 			fmt.Printf("%s\n\n%s\n\n%s", copyright, shortUsage, longUsage)
 			os.Exit(0)
@@ -237,6 +241,10 @@ func main() {
 		if err != nil {
 			errorExitf("could not disassemble program: %v", err)
 		}
+	}
+
+	if header && inputMode != "" {
+		inputMode += " header"
 	}
 
 	config := &interp.Config{

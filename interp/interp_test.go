@@ -1453,14 +1453,14 @@ type csvTest struct {
 var csvTests = []csvTest{
 	// INPUTMODE combinations
 	{`BEGIN { INPUTMODE="" } { print $1, $3 }`, "name,email\nBob C. Smith,bob@smith.com\nJane X. Brown,jane@brown.com", "name,email \nBob Smith,bob@smith.com\nJane Brown,jane@brown.com\n", "", nil},
-	{`BEGIN { INPUTMODE="csv" } { print $1, $3 }`, "name,email,age\nBob\tSmith,bob@smith.com,42\n\nJane,jane@brown.com,37\n# not a comment", "Bob\tSmith 42\nJane 37\n# not a comment \n", "", nil},
-	{`BEGIN { INPUTMODE="csv separator=|" } { print $1, $3 }`, "name|email|age\nBob,Smith|bob@smith.com|42\nJane|jane@brown.com|37", "Bob,Smith 42\nJane 37\n", "", nil},
-	{`BEGIN { INPUTMODE="csv comment=#" } { print $1, $3 }`, "name,email,age\n# this is a comment\nBob\tSmith,bob@smith.com,42\nJane,jane@brown.com,37", "Bob\tSmith 42\nJane 37\n", "", nil},
-	{`BEGIN { INPUTMODE="csv noheader" } { print $1, $3 }`, "name,email,age\nBob,bob@smith.com,42\nJane,jane@brown.com,37", "name age\nBob 42\nJane 37\n", "", nil},
-	{`BEGIN { INPUTMODE="csv" } { print @"age", @"name" }`, "name,email,age\nBob,bob@smith.com,42\nJane,jane@brown.com,37", "42 Bob\n37 Jane\n", "", nil},
-	{`BEGIN { INPUTMODE="csv" } { x="name"; print @"age", @x }`, "name,age\nBob,42", "42 Bob\n", "", nil},
-	{`BEGIN { INPUTMODE="csv noheader" } { print @"age", @"name" }`, "name,email,age\nBob,bob@smith.com,42\nJane,jane@brown.com,37", "", "@ only supported if header parsing enabled", nil},
-	{`BEGIN { INPUTMODE="tsv" } { print $1, $3 }`, "name\temail\tage\nBob,Smith\tbob@smith.com\t42\nJane\tjane@brown.com\t37", "Bob,Smith 42\nJane 37\n", "", nil},
+	{`BEGIN { INPUTMODE="csv header" } { print $1, $3 }`, "name,email,age\nBob\tSmith,bob@smith.com,42\n\nJane,jane@brown.com,37\n# not a comment", "Bob\tSmith 42\nJane 37\n# not a comment \n", "", nil},
+	{`BEGIN { INPUTMODE="csv separator=|" } { print $1, $3 }`, "Bob,Smith|bob@smith.com|42\nJane|jane@brown.com|37", "Bob,Smith 42\nJane 37\n", "", nil},
+	{`BEGIN { INPUTMODE="csv comment=#" } { print $1, $3 }`, "# this is a comment\nBob\tSmith,bob@smith.com,42\nJane,jane@brown.com,37", "Bob\tSmith 42\nJane 37\n", "", nil},
+	{`BEGIN { INPUTMODE="csv" } { print $1, $3 }`, "name,email,age\nBob,bob@smith.com,42\nJane,jane@brown.com,37", "name age\nBob 42\nJane 37\n", "", nil},
+	{`BEGIN { INPUTMODE="csv header" } { print @"age", @"name" }`, "name,email,age\nBob,bob@smith.com,42\nJane,jane@brown.com,37", "42 Bob\n37 Jane\n", "", nil},
+	{`BEGIN { INPUTMODE="csv header" } { x="name"; print @"age", @x }`, "name,age\nBob,42", "42 Bob\n", "", nil},
+	{`BEGIN { INPUTMODE="csv" } { print @"age", @"name" }`, "name,email,age\nBob,bob@smith.com,42\nJane,jane@brown.com,37", "", "@ only supported if header parsing enabled", nil},
+	{`BEGIN { INPUTMODE="tsv header" } { print $1, $3 }`, "name\temail\tage\nBob,Smith\tbob@smith.com\t42\nJane\tjane@brown.com\t37", "Bob,Smith 42\nJane 37\n", "", nil},
 
 	// OUTPUTMODE combinations
 	{`BEGIN { OUTPUTMODE="csv" } { print $2, $1 }`, "a\"b c\nd e", "c,\"a\"\"b\"\ne,d\n", "", nil},
@@ -1468,37 +1468,36 @@ var csvTests = []csvTest{
 	{`BEGIN { OUTPUTMODE="csv separator=|" } { print $2, $1 }`, "a\"b c\nd e", "c|\"a\"\"b\"\ne|d\n", "", nil},
 
 	// Both input and output in CSV (or TSV) mode
-	{`BEGIN { INPUTMODE=OUTPUTMODE="csv"; print "age", "name" } { print $2, $1 }`, "name,age\nBob,42\n\"J B\",37\n\"A\"\"B\",7", "age,name\n42,Bob\n37,J B\n7,\"A\"\"B\"\n", "", nil},
-	{`BEGIN { INPUTMODE="csv noheader"; OUTPUTMODE="tsv"; } { $1=$1; print }`, "name,age\nBob,42\n\"J B\",37\n\"A\"\"B\",7", "name\tage\nBob\t42\nJ B\t37\n\"A\"\"B\"\t7\n", "", nil},
+	{`BEGIN { INPUTMODE="csv header"; OUTPUTMODE="csv"; print "age", "name" } { print $2, $1 }`, "name,age\nBob,42\n\"J B\",37\n\"A\"\"B\",7", "age,name\n42,Bob\n37,J B\n7,\"A\"\"B\"\n", "", nil},
+	{`BEGIN { INPUTMODE="csv"; OUTPUTMODE="tsv"; } { $1=$1; print }`, "name,age\nBob,42\n\"J B\",37\n\"A\"\"B\",7", "name\tage\nBob\t42\nJ B\t37\n\"A\"\"B\"\t7\n", "", nil},
 
 	// Configure via interp.Config struct
-	{`{ print @"age", @"name" }`, "name,age\nBob,42", "42 Bob\n", "", func(config *interp.Config) {
+	{`{ print $2, $1 }`, "name,age\nBob,42", "age name\n42 Bob\n", "", func(config *interp.Config) {
 		config.InputMode = interp.CSVMode
 	}},
-	{`{ print @"age", @"name" }`, "name\tage\nBob\t42", "42 Bob\n", "", func(config *interp.Config) {
+	{`{ print $2, $1 }`, "name\tage\nBob\t42", "age name\n42 Bob\n", "", func(config *interp.Config) {
 		config.InputMode = interp.TSVMode
 	}},
 	{`{ print $2, $1 }`, "# comment\nBob;42", "42 Bob\n", "", func(config *interp.Config) {
 		config.InputMode = interp.CSVMode
 		config.CSVInput.Separator = ';'
 		config.CSVInput.Comment = '#'
-		config.CSVInput.NoHeader = true
 	}},
 	{`{ print $1, $2 }`, "", "", "input mode configuration not valid in default input mode", func(config *interp.Config) {
 		config.CSVInput.Separator = ';'
 	}},
-	{`{ print @"age", @"name" }`, "name,age\nBob,42", "42\tBob\n", "", func(config *interp.Config) {
+	{`{ print $2, $1 }`, "Bob,42\nJane,37", "42\tBob\n37\tJane\n", "", func(config *interp.Config) {
 		config.InputMode = interp.CSVMode
 		config.OutputMode = interp.TSVMode
 	}},
-	{`BEGIN { INPUTMODE="tsv"; OUTPUTMODE="csv" } { print @"age", @"name" }`, "name\tage\nBob\t42", "42,Bob\n", "", func(config *interp.Config) {
+	{`BEGIN { INPUTMODE="tsv header"; OUTPUTMODE="csv" } { print @"age", @"name" }`, "name\tage\nBob\t42", "42,Bob\n", "", func(config *interp.Config) {
 		config.InputMode = interp.CSVMode // will be overridden by BEGIN
 		config.OutputMode = interp.TSVMode
 	}},
 	{`{ print @"age", @"name" }`, "name\tage\nBob\t42", "42,Bob\n", "", func(config *interp.Config) {
 		config.InputMode = interp.CSVMode // will be overridden by Vars
 		config.OutputMode = interp.TSVMode
-		config.Vars = []string{"INPUTMODE", "tsv", "OUTPUTMODE", "csv"}
+		config.Vars = []string{"INPUTMODE", "tsv header", "OUTPUTMODE", "csv"}
 	}},
 	{`{ print $2, $1 }`, "Bob 42", "42,Bob\n", "", func(config *interp.Config) {
 		config.OutputMode = interp.CSVMode
@@ -1515,37 +1514,37 @@ var csvTests = []csvTest{
 	}},
 
 	// $0 still works as expected in CSV mode
-	{`BEGIN { INPUTMODE="csv" } { print }`, "name,age\nBob,42\nJane,37", "Bob,42\nJane,37\n", "", nil},
-	{`BEGIN { INPUTMODE="csv" } { print $0 }`, "name,age\nBob,42\nJane,37", "Bob,42\nJane,37\n", "", nil},
-	{`BEGIN { INPUTMODE="csv" } { print $0; $0=NR; print $0 }`, "name,age\nBob,42\nJane,37", "Bob,42\n1\nJane,37\n2\n", "", nil},
-	{`BEGIN { INPUTMODE="csv comment=#" } { print $0 } END { for (i=1; i in FIELDS; i++) print i, FIELDS[i] }`,
+	{`BEGIN { INPUTMODE="csv header" } { print }`, "name,age\nBob,42\nJane,37", "Bob,42\nJane,37\n", "", nil},
+	{`BEGIN { INPUTMODE="csv header" } { print $0 }`, "name,age\nBob,42\nJane,37", "Bob,42\nJane,37\n", "", nil},
+	{`BEGIN { INPUTMODE="csv header" } { print $0; $0=NR; print $0 }`, "name,age\nBob,42\nJane,37", "Bob,42\n1\nJane,37\n2\n", "", nil},
+	{`BEGIN { INPUTMODE="csv header comment=#" } { print $0 } END { for (i=1; i in FIELDS; i++) print i, FIELDS[i] }`,
 		"# comment\n\nname,age\n# comment\n\nBob,42\n# comment\nJane,37\n\nFoo,5",
 		"Bob,42\nJane,37\nFoo,5\n1 name\n2 age\n", "", nil},
 
 	// CSV filters
-	{`BEGIN { INPUTMODE="csv" } /foo/ { print $2 }`, "id,type\n1,food\n2,bar\n3,foo\n", "food\nfoo\n", "", nil},
-	{`BEGIN { INPUTMODE="csv" } $1==2 { print $2 }`, "id,type\n1,food\n2,bar\n3,foo\n", "bar\n", "", nil},
-	{`BEGIN { INPUTMODE="csv noheader" } { s += $-1 } END { print s }`, "a,1\nb,2\nc,3\n", "6\n", "", nil},
+	{`BEGIN { INPUTMODE="csv header" } /foo/ { print $2 }`, "id,type\n1,food\n2,bar\n3,foo\n", "food\nfoo\n", "", nil},
+	{`BEGIN { INPUTMODE="csv header" } $1==2 { print $2 }`, "id,type\n1,food\n2,bar\n3,foo\n", "bar\n", "", nil},
+	{`BEGIN { INPUTMODE="csv" } { s += $-1 } END { print s }`, "a,1\nb,2\nc,3\n", "6\n", "", nil},
 
 	// Updating fields
-	{`BEGIN { INPUTMODE="csv" } { $1 = $1 $1; print $1, $2 }`, "x,y\na,1\nb,2", "aa 1\nbb 2\n", "", nil},
-	{`BEGIN { INPUTMODE="csv" } { $1 = $1 $1; print }`, "x,y\na,1\nb,2", "aa 1\nbb 2\n", "", nil},
-	{`BEGIN { INPUTMODE="csv" } { $0 = "X,3"; print $1, $2 }`, "x,y\na,1\nb,2", "X 3\nX 3\n", "", nil},
-	{`BEGIN { INPUTMODE="csv" } { $0 = "X,3"; print }`, "x,y\na,1\nb,2", "X,3\nX,3\n", "", nil},
-	{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { $1 = $1 $1; print $1, $2 }`, "x,y\na,1\nb,2", "aa,1\nbb,2\n", "", nil},
-	{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { $1 = $1 $1; print }`, "x,y\na,1\nb,2", "aa,1\nbb,2\n", "", nil},
-	{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { $0 = "X,3"; print $1, $2 }`, "x,y\na,1\nb,2", "X,3\nX,3\n", "", nil},
-	{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { $0 = "X,3"; print }`, "x,y\na,1\nb,2", "X,3\nX,3\n", "", nil},
+	{`BEGIN { INPUTMODE="csv" } { $1 = $1 $1; print $1, $2 }`, "a,1\nb,2", "aa 1\nbb 2\n", "", nil},
+	{`BEGIN { INPUTMODE="csv" } { $1 = $1 $1; print }`, "a,1\nb,2", "aa 1\nbb 2\n", "", nil},
+	{`BEGIN { INPUTMODE="csv" } { $0 = "X,3"; print $1, $2 }`, "a,1\nb,2", "X 3\nX 3\n", "", nil},
+	{`BEGIN { INPUTMODE="csv" } { $0 = "X,3"; print }`, "a,1\nb,2", "X,3\nX,3\n", "", nil},
+	{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { $1 = $1 $1; print $1, $2 }`, "a,1\nb,2", "aa,1\nbb,2\n", "", nil},
+	{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { $1 = $1 $1; print }`, "a,1\nb,2", "aa,1\nbb,2\n", "", nil},
+	{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { $0 = "X,3"; print $1, $2 }`, "a,1\nb,2", "X,3\nX,3\n", "", nil},
+	{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { $0 = "X,3"; print }`, "a,1\nb,2", "X,3\nX,3\n", "", nil},
 	{`BEGIN { OUTPUTMODE="csv"; $0 = "a b c"; printf "%s|%s %s %s\n", $0, $1, $2, $3; NF=2; printf "%s|%s %s\n", $0, $1, $2 }`, "", "a b c|a b c\na,b|a b\n", "", nil},
 	{`BEGIN { OUTPUTMODE="csv"; $0 = "a b c"; printf "%s|%s %s %s\n", $0, $1, $2, $3; NF=4; printf "%s|%s %s %s %s\n", $0, $1, $2, $3, $4 }`, "", "a b c|a b c\na,b,c,|a b c \n", "", nil},
 
 	// FIELDS array
-	{`BEGIN { INPUTMODE="csv" } NR==1 { for (i=1; i in FIELDS; i++) print i, FIELDS[i] }`, "name,email,age\na,b,c", "1 name\n2 email\n3 age\n", "", nil},
-	{`BEGIN { INPUTMODE="csv noheader" } NR==1 { for (i=1; i in FIELDS; i++) print FIELDS[i] }`, "name,email,age\na,b,c", "", "", nil},
+	{`BEGIN { INPUTMODE="csv header" } NR==1 { for (i=1; i in FIELDS; i++) print i, FIELDS[i] }`, "name,email,age\na,b,c", "1 name\n2 email\n3 age\n", "", nil},
+	{`BEGIN { INPUTMODE="csv" } NR==1 { for (i=1; i in FIELDS; i++) print FIELDS[i] }`, "name,email,age\na,b,c", "", "", nil},
 
 	// Parsing and formatting of INPUTMODE and OUTPUTMODE special variables
 	{`BEGIN { INPUTMODE="csv separator=,"; print INPUTMODE }`, "", "csv\n", "", nil},
-	{`BEGIN { INPUTMODE="csv noheader=true comment=# separator=|"; print INPUTMODE }`, "", "csv separator=| comment=# noheader\n", "", nil},
+	{`BEGIN { INPUTMODE="csv header=true comment=# separator=|"; print INPUTMODE }`, "", "csv separator=| comment=# header\n", "", nil},
 	{`BEGIN { OUTPUTMODE="csv separator=,"; printf "%s", OUTPUTMODE }`, "", "csv", "", nil},
 	{`BEGIN { OUTPUTMODE="csv separator=|"; printf "%s", OUTPUTMODE }`, "", "csv separator=|", "", nil},
 
@@ -1553,7 +1552,7 @@ var csvTests = []csvTest{
 	{`BEGIN { INPUTMODE="xyz" }`, "", "", `invalid input mode "xyz"`, nil},
 	{`BEGIN { INPUTMODE="csv separator=foo" }`, "", "", `invalid CSV/TSV separator "foo"`, nil},
 	{`BEGIN { INPUTMODE="csv comment=bar" }`, "", "", `invalid CSV/TSV comment character "bar"`, nil},
-	{`BEGIN { INPUTMODE="csv noheader=x" }`, "", "", `invalid noheader value "x"`, nil},
+	{`BEGIN { INPUTMODE="csv header=x" }`, "", "", `invalid header value "x"`, nil},
 	{`BEGIN { INPUTMODE="csv foo=bar" }`, "", "", `invalid input mode key "foo"`, nil},
 	{`BEGIN { OUTPUTMODE="xyz" }`, "", "", `invalid output mode "xyz"`, nil},
 	{`BEGIN { OUTPUTMODE="csv separator=foo" }`, "", "", `invalid CSV/TSV separator "foo"`, nil},
@@ -1585,38 +1584,38 @@ func TestCSVMultiRead(t *testing.T) {
 		reads []string
 		out   string
 	}{{
-		name:  "Unquoted",
-		src:   `BEGIN { INPUTMODE="csv"; OFS="|" } { print $0, $1, $2 }`,
+		name:  "UnquotedHeader",
+		src:   `BEGIN { INPUTMODE="csv header"; OFS="|" } { print $0, $1, $2 }`,
 		reads: []string{"name,age\n", "Bob", ",42\n", "", "Jill,", "37", ""},
 		out:   "Bob,42|Bob|42\nJill,37|Jill|37\n",
 	}, {
-		name:  "Quoted",
-		src:   `BEGIN { INPUTMODE="csv"; OFS="|" } { print $0, $1, $2 }`,
+		name:  "QuotedHeader",
+		src:   `BEGIN { INPUTMODE="csv header"; OFS="|" } { print $0, $1, $2 }`,
 		reads: []string{"name,age\n", "\"Bo", "b\"", ",42\n", "\"Ji\n", "ll\",", "37"},
 		out:   "\"Bob\",42|Bob|42\n\"Ji\nll\",37|Ji\nll|37\n",
 	}, {
 		name:  "UnquotedNewline",
-		src:   `BEGIN { INPUTMODE="csv"; OFS="|" } { print $0, $1, $2 }`,
+		src:   `BEGIN { INPUTMODE="csv header"; OFS="|" } { print $0, $1, $2 }`,
 		reads: []string{"name,age\n", "Bob", ",42\n", "Jill,", "37", "\n"},
 		out:   "Bob,42|Bob|42\nJill,37|Jill|37\n",
 	}, {
 		name:  "QuotedNewline",
-		src:   `BEGIN { INPUTMODE="csv"; OFS="|" } { print $0, $1, $2 }`,
+		src:   `BEGIN { INPUTMODE="csv header"; OFS="|" } { print $0, $1, $2 }`,
 		reads: []string{"name,age\n", "\"Bo", "b\"", ",42\n", "\"Ji\n", "ll\",", "37\n"},
 		out:   "\"Bob\",42|Bob|42\n\"Ji\nll\",37|Ji\nll|37\n",
 	}, {
 		name:  "UnquotedNoHeader",
-		src:   `BEGIN { INPUTMODE="csv noheader"; OFS="|" } { print $0, $1, $2 }`,
+		src:   `BEGIN { INPUTMODE="csv"; OFS="|" } { print $0, $1, $2 }`,
 		reads: []string{"Bob", ",42\n", "", "Jill,", "37", ""},
 		out:   "Bob,42|Bob|42\nJill,37|Jill|37\n",
 	}, {
 		name:  "QuotedNoHeader",
-		src:   `BEGIN { INPUTMODE="csv noheader"; OFS="|" } { print $0, $1, $2 }`,
+		src:   `BEGIN { INPUTMODE="csv"; OFS="|" } { print $0, $1, $2 }`,
 		reads: []string{"\"Bo", "b\"", ",42\n", "\"Ji\n", "ll\",", "37\n"},
 		out:   "\"Bob\",42|Bob|42\n\"Ji\nll\",37|Ji\nll|37\n",
 	}, {
 		name:  "QuotedCRLF",
-		src:   `BEGIN { INPUTMODE="csv noheader" } { printf "%s|%s|%s", $0, $1, $2 }`,
+		src:   `BEGIN { INPUTMODE="csv" } { printf "%s|%s|%s", $0, $1, $2 }`,
 		reads: []string{"\"Ji\r\n", "ll\",", "37"},
 		out:   "\"Ji\nll\",37|Ji\nll|37",
 	}}
@@ -2415,7 +2414,7 @@ func BenchmarkCSVInputGoAWK(b *testing.B) {
 	}
 	input := strings.Join(inputLines, "\n")
 	expected := fmt.Sprintf("%d", s)
-	src := `BEGIN { INPUTMODE="csv noheader" } { s += $1 } END { print s }`
+	src := `BEGIN { INPUTMODE="csv" } { s += $1 } END { print s }`
 	benchmarkProgram(b, nil, input, expected, src)
 }
 

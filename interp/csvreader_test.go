@@ -322,7 +322,6 @@ func TestCSVReader(t *testing.T) {
 			inputConfig := CSVInputConfig{
 				Separator: tt.Comma,
 				Comment:   tt.Comment,
-				NoHeader:  true,
 			}
 			if inputConfig.Separator == 0 {
 				inputConfig.Separator = ','
@@ -336,7 +335,6 @@ func TestCSVReader(t *testing.T) {
 					separator: inputConfig.Separator,
 					sepLen:    utf8.RuneLen(inputConfig.Separator),
 					comment:   inputConfig.Comment,
-					noHeader:  true,
 					fields:    &fields,
 				}
 				scanner := bufio.NewScanner(strings.NewReader(tt.Input))

@@ -1,9 +1,9 @@
 #!/bin/sh
 
 echo ===== Reading 1.5GB - goawk
-time goawk -i 'csv noheader' '{ w+=NF } END { print NR, w }' <huge.csv
-time goawk -i 'csv noheader' '{ w+=NF } END { print NR, w }' <huge.csv
-time goawk -i 'csv noheader' '{ w+=NF } END { print NR, w }' <huge.csv
+time goawk -i csv '{ w+=NF } END { print NR, w }' <huge.csv
+time goawk -i csv '{ w+=NF } END { print NR, w }' <huge.csv
+time goawk -i csv '{ w+=NF } END { print NR, w }' <huge.csv
 
 echo ===== Reading 1.5GB - frawk
 time frawk -i csv '{ w+=NF } END { print NR, w }' <huge.csv

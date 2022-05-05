@@ -3,8 +3,10 @@
 package main_test
 
 import (
+	"bufio"
 	"bytes"
 	"flag"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -560,11 +562,11 @@ func TestInputOutputMode(t *testing.T) {
 		output string
 		error  string
 	}{
-		{[]string{"-icsv", `{ print @"age", @"name" }`}, "name,age\nBob,42\nJane,37", "42 Bob\n37 Jane\n", ""},
-		{[]string{"-i", "csv", `{ print @"age", @"name" }`}, "name,age\nBob,42\nJane,37", "42 Bob\n37 Jane\n", ""},
-		{[]string{"-icsv noheader", `{ print $2, $1 }`}, "Bob,42\nJane,37", "42 Bob\n37 Jane\n", ""},
-		{[]string{"-i", "csv noheader", `{ print $2, $1 }`}, "Bob,42\nJane,37", "42 Bob\n37 Jane\n", ""},
-		{[]string{"-icsv", "-ocsv", `{ print @"age", @"name" }`}, "name,age\n\"Bo,ba\",42\nJane,37", "42,\"Bo,ba\"\n37,Jane\n", ""},
+		{[]string{"-icsv", "-H", `{ print @"age", @"name" }`}, "name,age\nBob,42\nJane,37", "42 Bob\n37 Jane\n", ""},
+		{[]string{"-i", "csv", "-H", `{ print @"age", @"name" }`}, "name,age\nBob,42\nJane,37", "42 Bob\n37 Jane\n", ""},
+		{[]string{"-icsv", `{ print $2, $1 }`}, "Bob,42\nJane,37", "42 Bob\n37 Jane\n", ""},
+		{[]string{"-i", "csv", `{ print $2, $1 }`}, "Bob,42\nJane,37", "42 Bob\n37 Jane\n", ""},
+		{[]string{"-icsv", "-H", "-ocsv", `{ print @"age", @"name" }`}, "name,age\n\"Bo,ba\",42\nJane,37", "42,\"Bo,ba\"\n37,Jane\n", ""},
 		{[]string{"-o", "csv", `BEGIN { print "foo,bar", 3.14, "baz" }`}, "", "\"foo,bar\",3.14,baz\n", ""},
 		{[]string{"-iabc", `{}`}, "", "", "invalid input mode \"abc\"\n"},
 		{[]string{"-oxyz", `{}`}, "", "", "invalid output mode \"xyz\"\n"},
@@ -601,7 +603,7 @@ func TestMultipleCSVFiles(t *testing.T) {
 }
 { print @"name", @"age" }
 `
-	stdout, stderr, err := runGoAWK([]string{"-icsv", src, "testdata/csv/1.csv", "testdata/csv/2.csv"}, "")
+	stdout, stderr, err := runGoAWK([]string{"-i", "csv", "-H", src, "testdata/csv/1.csv", "testdata/csv/2.csv"}, "")
 	if err != nil {
 		t.Fatalf("expected no error, got %v (%q)", err, stderr)
 	}
@@ -612,5 +614,70 @@ age,email,name Sarah 25
 `[1:]
 	if stdout != expected {
 		t.Fatalf("expected %q, got %q", expected, stdout)
+	}
+}
+
+func TestCSVDocExamples(t *testing.T) {
+	f, err := os.Open("csv.md")
+	if err != nil {
+		t.Fatalf("error opening examples file: %v", err)
+	}
+	defer f.Close()
+
+	var (
+		command   string
+		output    string
+		truncated bool
+		n         = 1
+	)
+	runTest := func() {
+		t.Run(fmt.Sprintf("Example%d", n), func(t *testing.T) {
+			cmd := exec.Command("/bin/sh", "-c", command)
+			gotBytes, err := cmd.CombinedOutput()
+			if err != nil {
+				t.Fatalf("error running %q: %v\n%s", command, err, gotBytes)
+			}
+			got := string(gotBytes)
+			if truncated {
+				numLines := strings.Count(output, "\n")
+				got = strings.Join(strings.Split(got, "\n")[:numLines], "\n") + "\n"
+			}
+			got = string(normalizeNewlines([]byte(got)))
+			if got != output {
+				t.Fatalf("error running %q\ngot:\n%s\nexpected:\n%s", command, got, output)
+			}
+		})
+		n++
+	}
+
+	scanner := bufio.NewScanner(f)
+	inTest := false
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "$ goawk") {
+			if inTest {
+				runTest()
+			}
+			inTest = true
+			command = line[2:]
+			output = ""
+			truncated = false
+		} else if inTest {
+			switch line {
+			case "```":
+				runTest()
+				inTest = false
+			case "...":
+				truncated = true
+			default:
+				output += line + "\n"
+			}
+		}
+	}
+	if scanner.Err() != nil {
+		t.Errorf("error reading input: %v", scanner.Err())
+	}
+	if inTest {
+		t.Error("unexpectedly in test at end of file")
 	}
 }

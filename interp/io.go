@@ -261,7 +261,7 @@ func (p *interp) newScanner(input io.Reader, buffer []byte) *bufio.Scanner {
 			separator:     p.csvInputConfig.Separator,
 			sepLen:        utf8.RuneLen(p.csvInputConfig.Separator),
 			comment:       p.csvInputConfig.Comment,
-			noHeader:      p.csvInputConfig.NoHeader,
+			header:        p.csvInputConfig.Header,
 			fields:        &p.fields,
 			setFieldNames: p.setFieldNames,
 		}
@@ -284,8 +284,8 @@ func (p *interp) newScanner(input io.Reader, buffer []byte) *bufio.Scanner {
 	return scanner
 }
 
-// setFieldNames is called by csvSplitter.scan on the first row (unless the
-// "noheader" option is specified).
+// setFieldNames is called by csvSplitter.scan on the first row (if the
+// "header" option is specified).
 func (p *interp) setFieldNames(names []string) {
 	p.fieldNames = names
 	p.fieldIndexes = nil // clear name-to-index cache
@@ -423,7 +423,7 @@ type csvSplitter struct {
 	separator rune
 	sepLen    int
 	comment   rune
-	noHeader  bool
+	header    bool
 
 	recordBuffer []byte
 	fieldIndexes []int
@@ -581,7 +581,7 @@ parseField:
 		preIdx = idx
 	}
 
-	if s.rowNum == 0 && !s.noHeader {
+	if s.rowNum == 0 && s.header {
 		// Set header field names and advance, but don't return a line (token).
 		s.rowNum++
 		s.setFieldNames(fields)
@@ -648,7 +648,6 @@ func (p *interp) ensureFields() {
 				separator: p.csvInputConfig.Separator,
 				sepLen:    utf8.RuneLen(p.csvInputConfig.Separator),
 				comment:   p.csvInputConfig.Comment,
-				noHeader:  true,
 				fields:    &p.fields,
 			}
 			scanner.Split(splitter.scan)
