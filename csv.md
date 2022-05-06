@@ -7,9 +7,9 @@ There are other workarounds, such as [Gawk's FPAT feature](https://www.gnu.org/s
 
 Since version v1.17.0, GoAWK has included CSV support, which allows you to read and write CSV and TSV files, including proper handling of quoted and multi-line fields as per [RFC 4180](https://rfc-editor.org/rfc/rfc4180.html).
 
-In addition, GoAWK supports a special "named field" construct that allows you to access CSV fields by name as well as number, for example `@"Address"` rather than `$5`.
+In addition, GoAWK supports a "named field" construct that allows you to access CSV fields by name as well as number, for example `@"Address"` rather than `$5`.
 
-**Many thanks to the [library of the University of Antwerp](https://www.uantwerpen.be/en/library/), who sponsored this feature in April 2022.**
+**Many thanks to the [library of the University of Antwerp](https://www.uantwerpen.be/en/library/), who sponsored this feature in April 2022.** Thanks also to [Eli Rosenthal](https://github.com/ezrosent), whose `frawk` tool inspired aspects of the design (including the `-i` and `-o` command line arguments).
 
 Links to sections:
 
@@ -19,13 +19,14 @@ Links to sections:
 * [Go API](#go-api)
 * [Examples](#examples)
 * [Performance](#performance)
+* [Future work](#future-work)
 
 
 ## CSV input configuration
 
-When in CSV input mode, GoAWK ignores the regular field and record separators (`FS` and `RS`), instead parsing input into records and fields using the CSV format. Fields can be accessed using the standard AWK numbered field syntax (for example, `$1` or `$5`), or using GoAWK's [named field syntax](#named-field-syntax).
+When in CSV input mode, GoAWK ignores the regular field and record separators (`FS` and `RS`), instead parsing input into records and fields using the CSV or TSV format. Fields can be accessed using the standard AWK numbered field syntax (for example, `$1` or `$5`), or using the GoAWK-specific [named field syntax](#named-field-syntax).
 
-To enable CSV input mode when using the `goawk` program, use the `-i mode` command line argument. You can also set the `INPUTMODE` special variable in the `BEGIN` block, or by using the [Go API](#go-api). The full syntax of `mode` is as follows:
+To enable CSV input mode when using the `goawk` program, use the `-i mode` command line argument. You can also enable CSV input mode by setting the `INPUTMODE` special variable in the `BEGIN` block, or by using the [Go API](#go-api). The full syntax of `mode` is as follows:
 
 ```
 csv|tsv [separator=<char>] [comment=<char>] [header]
@@ -33,23 +34,27 @@ csv|tsv [separator=<char>] [comment=<char>] [header]
 
 The first field in `mode` is the format: `csv` for comma-separated values or `tsv` for tab-separated values. Optionally following the mode are configuration fields, defined as follows:
 
-* `separator=<char>`: override the separator character, for example `separator=|` to use the pipe character. The default is `,` for `csv` mode or `\t` (tab) for `tsv` mode.
-* `comment=<char>`: consider lines starting with the given character to be comments and ignore them, for example `comment=#` will ignore any lines starting with `#`. The default is not to support comments.
-* `header`: treat the first line of each input file as a header row providing the field names, and enable the `@"field"` syntax and the `FIELDS` array. This option is equivalent to the `-H` command line argument. If neither `header` or `-H` is specified, you can't use named fields.
+* `separator=<char>`: override the separator character, for example `separator=|` to use the pipe character. The default is `,` (comma) for `csv` format or `\t` (tab) for `tsv` format.
+* `comment=<char>`: consider lines starting with the given character to be comments and skip them, for example `comment=#` will ignore any lines starting with `#` (without preceding whitespace). The default is not to support comments.
+* `header`: treat the first line of each input file as a header row providing the field names, and enable the `@"field"` syntax as well as the `FIELDS` array. This option is equivalent to the `-H` command line argument. If neither `header` or `-H` is specified, you can't use named fields.
 
 
 
 ## CSV output configuration
 
-When in CSV output mode, the GoAWK `print` statement ignores `OFS` and `ORS` and separates fields and records using CSV formatting. No header line is printed -- if required, that must be done in the `BEGIN` block manually. No other functionality is changed, for example, `printf` doesn't do anything different in CSV output mode.
+When in CSV output mode, the GoAWK `print` statement with arguments ignores `OFS` and `ORS` and separates its arguments (fields) and records using CSV formatting. No header row is printed -- if required, a header row can be printed in the `BEGIN` block manually. No other functionality is changed, for example, `printf` doesn't do anything different in CSV output mode.
 
-To enable CSV output mode when using the `goawk` program, use the `-o mode` command line argument. You can also set the `OUTPUTMODE` special variable in the `BEGIN` block, or by using the [Go API](#go-api). The full syntax of `mode` is as follows:
+**NOTE:** The behaviour of `print` without arguments remains unchanged. This means you can print the input line (`$0`) without further quoting by using a bare `print` statement, but `print $0` will print the input line as a single CSV field, which is probably not what you want. See the [example](#example-convert-between-formats-all-fields) below.
+
+To enable CSV output mode when using the `goawk` program, use the `-o mode` command line argument. You can also enable CSV output mode by setting the `OUTPUTMODE` special variable in the `BEGIN` block, or by using the [Go API](#go-api). The full syntax of `mode` is as follows:
 
 ```
 csv|tsv [separator=<char>]
 ```
 
-The meaning of the fields is the same as for the input mode, except that the only configuration field is `separator`.
+The first field in `mode` is the format: `csv` for comma-separated values or `tsv` for tab-separated values. Optionally following the mode are configuration fields, defined as follows:
+
+* `separator=<char>`: override the separator character, for example `separator=|` to use the pipe character. The default is `,` (comma) for `csv` format or `\t` (tab) for `tsv` format.
 
 
 ## Named field syntax
@@ -106,7 +111,9 @@ Below are some examples using the [testdata/csv/states.csv](https://github.com/b
 ...
 ```
 
-To output only a single field (in this case the state's abbreviation):
+### Example: output a field by name
+
+To output a field by name (in this case the state's abbreviation):
 
 ```
 $ goawk -i csv -H '{ print @"Abbreviation" }' testdata/csv/states.csv
@@ -116,6 +123,8 @@ AZ
 ...
 ```
 
+### Example: count matching fields
+
 To count the number of states that have `New` in the state name (using the named field syntax for `@"State"`):
 
 ```
@@ -123,7 +132,9 @@ $ goawk -i csv -H '@"State" ~ /New/ { n++ } END { print n }' testdata/csv/states
 4
 ```
 
-To rename and reorder the fields to `abbr`, `name`:
+### Example: rename and reorder fields
+
+To rename and reorder the fields from `State`, `Abbreviation` to `abbr`, `name`:
 
 ```
 $ goawk -i csv -H -o csv 'BEGIN { print "abbr", "name" } { print @"Abbreviation", @"State" }' testdata/csv/states.csv
@@ -132,6 +143,8 @@ AL,Alabama
 AK,Alaska
 ...
 ```
+
+### Example: convert between formats (explicit field list)
 
 To convert the file from CSV to TSV format (note how we're not using `-H`, so that the header row is included):
 
@@ -143,7 +156,9 @@ Alaska	AK
 ...
 ```
 
-If you don't know the number of fields, you can use a field assignment like `$1=$1` so GoAWK reformats the row to the output format (TSV in this case), and then `print` to print the raw value of `$0`:
+### Example: convert between formats (all fields)
+
+If you want to convert between CSV and TSV format but don't know the number of fields, you can use a field assignment like `$1=$1` so that GoAWK reformats `$0` according to the output format (TSV in this case), and then `print` (without arguments) to print the raw value of `$0`:
 
 ```
 $ goawk -i csv -o tsv '{ $1=$1; print }' testdata/csv/states.csv
@@ -152,6 +167,18 @@ Alabama	AL
 Alaska	AK
 ...
 ```
+
+**NOTE:** It's not correct to use `print $0` in this case, because that would print `$0` as a single TSV field, which you generally don't want:
+
+```
+$ goawk -i csv -o tsv '{ $1=$1; print $0 }' testdata/csv/states.csv  # INCORRECT!
+"State	Abbreviation"
+"Alabama	AL"
+"Alaska	AK"
+...
+```
+
+### Example: override separator
 
 To test overriding the separator character, we can use GoAWK to add a comment and convert the separator to `|` (pipe). We'll also add a comment line to test comment handling:
 
@@ -164,7 +191,9 @@ Alaska|AK
 ...
 ```
 
-And then process that "pipe-separated values" file, handling comment lines, and printing the first three state names (accessed by field number this time):
+### Example: skip comment lines
+
+We can process the "pipe-separated values" file generated above, skipping comment lines, and printing the first three state names (accessed by field number this time):
 
 ```
 $ goawk -i 'csv header comment=# separator=|' 'NR<=3 { print $1 }' testdata/csv/states.psv
@@ -172,6 +201,8 @@ Alabama
 Alaska
 Arizona
 ```
+
+### Example: use dynamic field names
 
 Similar to the `$` operator, you can also use `@` with dynamic values. For example, if there are fields named `address_1`, `address_2`, up through `address_5`, you could loop over them as follows:
 
@@ -187,14 +218,18 @@ Cityville
 United Plates
 ```
 
+### Example: use the `FIELDS` array
+
 A somewhat contrived example showing use of the `FIELDS` array:
 
 ```
-$ echo -e 'id,name,email\n1,Bob,b@bob.com' | goawk -i csv -H '{ for (i=1; i in FIELDS; i++) print FIELDS[i] }'
-id
-name
-email
+$ echo -e 'id,name,email\n1,Bob,b@bob.com' | goawk -i csv -H '{ for (i=1; i in FIELDS; i++) print i, FIELDS[i] }'
+1 id
+2 name
+3 email
 ```
+
+### Example: different ways to specify CSV input mode
 
 And finally, four equivalent examples showing different ways to specify the input mode, using `-i` or the `INPUTMODE` special variable (the same technique works for `-o` and `OUTPUTMODE`):
 
@@ -205,7 +240,7 @@ $ goawk -icsv -H '@"State"=="New York" { print @"Abbreviation" }' testdata/csv/s
 NY
 $ goawk 'BEGIN { INPUTMODE="csv header" } @"State"=="New York" { print @"Abbreviation" }' testdata/csv/states.csv
 NY
-$ goawk '-vINPUTMODE=csv header' '@"State"=="New York" { print @"Abbreviation" }' testdata/csv/states.csv
+$ goawk -v 'INPUTMODE=csv header' '@"State"=="New York" { print @"Abbreviation" }' testdata/csv/states.csv
 NY
 ```
 
@@ -223,15 +258,20 @@ Writing 0.6GB CSV |  3.42 |  8.01 |   11.7 | 2.22
 
 
 
-TODO:
-* more clearly document print vs print $0 issue and $1=$1 thing
+## Future work
+
+* Consider adding a `printrow(a)` or similar function to make it easier to construct CSV rows from scratch.
+  - `a` would be an array such as: `a["name"] = "Bob"; a["age"] = 7`
+  - keys would be ordered by `OFIELDS` (eg: `OFIELDS[1] = "name"; OFIELDS[2] = "age"`) or by "smart name" if `OFIELDS` not set ("smart name" meaning numeric if `a` keys are numeric, string otherwise)
+  - `printrow(a)` could take an optional second `fields` array arg to use that instead of the global `OFIELDS`
+
+
+## TODO before merging
+
 * add examples for dynamic csv output, setting $1 etc then NF then print
-* put ### subheaders above each example
-* write Go test to test these examples
-* give credit to frawk for some of the design decisions, including the -i/-o options
 * think carefully about whether we want a CSVFeatures flag in the parsing config, to enable new, non-backwards compatible features like FIELDS and special vars INPUTMODE/OUTPUTMODE and any other new constructs (@ is okay because it was an error before, so that's backwards-compatible).
+  - can we make printrow() a built-in but user-defined functions/variables override it?
   - for reference, I did add ENVIRON in a minor release
   - it's probably okay because people are very unlikely to use these all-UPPERCASE var names
   - however, if we add a new function like "printrow" or (even worse) "output" we probably need it
   - or we can figure out how to make the parser treat "output" as a variable unless it's called
-* run design of CSV features, especially {print $0} issue, past Arnold Robbins
