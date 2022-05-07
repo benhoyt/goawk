@@ -5,11 +5,9 @@
 
 There are other workarounds, such as [Gawk's FPAT feature](https://www.gnu.org/software/gawk/manual/html_node/Splitting-By-Content.html), various [CSV extensions](http://mcollado.z15.es/xgawk/) for Gawk, or Adam Gordon Bell's [csvquote](https://github.com/adamgordonbell/csvquote) tool. There's also [frawk](https://github.com/ezrosent/frawk), which is an amazing tool that natively supports CSV, but unfortunately it deviates quite a bit from POSIX-compatible AWK.
 
-Since version v1.17.0, GoAWK has included CSV support, which allows you to read and write CSV and TSV files, including proper handling of quoted and multi-line fields as per [RFC 4180](https://rfc-editor.org/rfc/rfc4180.html).
+Since version v1.17.0, GoAWK has included CSV support, which allows you to read and write CSV and TSV files, including proper handling of quoted and multi-line fields as per [RFC 4180](https://rfc-editor.org/rfc/rfc4180.html). In addition, GoAWK supports a "named field" construct that allows you to access CSV fields by name as well as number, for example `@"Address"` rather than `$5`.
 
-In addition, GoAWK supports a "named field" construct that allows you to access CSV fields by name as well as number, for example `@"Address"` rather than `$5`.
-
-**Many thanks to the [library of the University of Antwerp](https://www.uantwerpen.be/en/library/), who sponsored this feature in April 2022.** Thanks also to [Eli Rosenthal](https://github.com/ezrosent), whose `frawk` tool inspired aspects of the design (including the `-i` and `-o` command line arguments).
+**Many thanks to the [library of the University of Antwerp](https://www.uantwerpen.be/en/library/), who sponsored this feature in April 2022.** Thanks also to [Eli Rosenthal](https://github.com/ezrosent), whose frawk tool inspired aspects of the design (including the `-i` and `-o` command line arguments).
 
 Links to sections:
 
@@ -229,7 +227,29 @@ $ echo -e 'id,name,email\n1,Bob,b@bob.com' | goawk -i csv -H '{ for (i=1; i in F
 3 email
 ```
 
-### Example: different ways to specify CSV input mode
+### Example: create CSV file from array
+
+The following example shows how you might pull fields out of an integer-indexed array to produce a CSV file:
+
+```
+$ goawk -o csv 'BEGIN { print "id", "name"; names[1]="Bob"; names[2]="Jane"; for (i=1; i in names; i++) print i, names[i] }'
+id,name
+1,Bob
+2,Jane
+```
+
+### Example: create CSV file by assigning fields
+
+This example shows the same result, but producing the CSV output by assigning individual fields and then using a bare `print` statement:
+
+```
+$ goawk -o csv 'BEGIN { print "id", "name"; $1=1; $2="Bob"; print; $1=2; $2="Jane"; print }'
+id,name
+1,Bob
+2,Jane
+```
+
+### Example: different ways to specify CSV mode
 
 And finally, four equivalent examples showing different ways to specify the input mode, using `-i` or the `INPUTMODE` special variable (the same technique works for `-o` and `OUTPUTMODE`):
 
@@ -268,10 +288,10 @@ Writing 0.6GB CSV |  3.42 |  8.01 |   11.7 | 2.22
 
 ## TODO before merging
 
-* add examples for dynamic csv output, setting $1 etc then NF then print
 * think carefully about whether we want a CSVFeatures flag in the parsing config, to enable new, non-backwards compatible features like FIELDS and special vars INPUTMODE/OUTPUTMODE and any other new constructs (@ is okay because it was an error before, so that's backwards-compatible).
   - can we make printrow() a built-in but user-defined functions/variables override it?
   - for reference, I did add ENVIRON in a minor release
   - it's probably okay because people are very unlikely to use these all-UPPERCASE var names
   - however, if we add a new function like "printrow" or (even worse) "output" we probably need it
   - or we can figure out how to make the parser treat "output" as a variable unless it's called
+* re-run benchmarks
