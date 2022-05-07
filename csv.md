@@ -273,9 +273,8 @@ Below are the results of some simple read and write [benchmarks](https://github.
 
 Test              | goawk | frawk | python |   go
 ----------------- | ----- | ----- | ------ | ----
-Reading 1.5GB CSV |  6.56 |  2.23 |   22.4 | 7.16 
-Writing 0.6GB CSV |  3.42 |  8.01 |   11.7 | 2.22
-
+Reading 1.5GB CSV |  6.49 |  2.03 |   20.2 | 6.95
+Writing 0.6GB CSV |  3.25 |  7.36 |   10.5 | 2.10
 
 
 ## Future work
@@ -284,14 +283,3 @@ Writing 0.6GB CSV |  3.42 |  8.01 |   11.7 | 2.22
   - `a` would be an array such as: `a["name"] = "Bob"; a["age"] = 7`
   - keys would be ordered by `OFIELDS` (eg: `OFIELDS[1] = "name"; OFIELDS[2] = "age"`) or by "smart name" if `OFIELDS` not set ("smart name" meaning numeric if `a` keys are numeric, string otherwise)
   - `printrow(a)` could take an optional second `fields` array arg to use that instead of the global `OFIELDS`
-
-
-## TODO before merging
-
-* think carefully about whether we want a CSVFeatures flag in the parsing config, to enable new, non-backwards compatible features like FIELDS and special vars INPUTMODE/OUTPUTMODE and any other new constructs (@ is okay because it was an error before, so that's backwards-compatible).
-  - can we make printrow() a built-in but user-defined functions/variables override it?
-  - for reference, I did add ENVIRON in a minor release
-  - it's probably okay because people are very unlikely to use these all-UPPERCASE var names
-  - however, if we add a new function like "printrow" or (even worse) "output" we probably need it
-  - or we can figure out how to make the parser treat "output" as a variable unless it's called
-* re-run benchmarks
