@@ -601,7 +601,7 @@ func (c *compiler) expr(expr ast.Expr) {
 		c.expr(e.Index)
 		c.add(Field)
 
-	case *ast.AtExpr:
+	case *ast.NamedFieldExpr:
 		switch index := e.Field.(type) {
 		case *ast.StrExpr:
 			c.add(FieldByNameStr, opcodeInt(c.strIndex(index.Value)))

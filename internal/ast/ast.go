@@ -82,34 +82,25 @@ type Expr interface {
 }
 
 // All these types implement the Expr interface.
-func (e *AtExpr) expr()        {}
-func (e *FieldExpr) expr()     {}
-func (e *UnaryExpr) expr()     {}
-func (e *BinaryExpr) expr()    {}
-func (e *ArrayExpr) expr()     {}
-func (e *InExpr) expr()        {}
-func (e *CondExpr) expr()      {}
-func (e *NumExpr) expr()       {}
-func (e *StrExpr) expr()       {}
-func (e *RegExpr) expr()       {}
-func (e *VarExpr) expr()       {}
-func (e *IndexExpr) expr()     {}
-func (e *AssignExpr) expr()    {}
-func (e *AugAssignExpr) expr() {}
-func (e *IncrExpr) expr()      {}
-func (e *CallExpr) expr()      {}
-func (e *UserCallExpr) expr()  {}
-func (e *MultiExpr) expr()     {}
-func (e *GetlineExpr) expr()   {}
-
-// AtExpr is an expression like @"name".
-type AtExpr struct {
-	Field Expr
-}
-
-func (e *AtExpr) String() string {
-	return "@" + e.Field.String()
-}
+func (e *FieldExpr) expr()      {}
+func (e *NamedFieldExpr) expr() {}
+func (e *UnaryExpr) expr()      {}
+func (e *BinaryExpr) expr()     {}
+func (e *ArrayExpr) expr()      {}
+func (e *InExpr) expr()         {}
+func (e *CondExpr) expr()       {}
+func (e *NumExpr) expr()        {}
+func (e *StrExpr) expr()        {}
+func (e *RegExpr) expr()        {}
+func (e *VarExpr) expr()        {}
+func (e *IndexExpr) expr()      {}
+func (e *AssignExpr) expr()     {}
+func (e *AugAssignExpr) expr()  {}
+func (e *IncrExpr) expr()       {}
+func (e *CallExpr) expr()       {}
+func (e *UserCallExpr) expr()   {}
+func (e *MultiExpr) expr()      {}
+func (e *GetlineExpr) expr()    {}
 
 // FieldExpr is an expression like $0.
 type FieldExpr struct {
@@ -118,6 +109,15 @@ type FieldExpr struct {
 
 func (e *FieldExpr) String() string {
 	return "$" + e.Index.String()
+}
+
+// NamedFieldExpr is an expression like @"name".
+type NamedFieldExpr struct {
+	Field Expr
+}
+
+func (e *NamedFieldExpr) String() string {
+	return "@" + e.Field.String()
 }
 
 // UnaryExpr is an expression like -1234.

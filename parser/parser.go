@@ -524,10 +524,10 @@ func (p *parser) getLine() ast.Expr {
 //
 func (p *parser) _assign(higher func() ast.Expr) ast.Expr {
 	expr := higher()
-	_, isAtExpr := expr.(*ast.AtExpr)
-	if (isAtExpr || ast.IsLValue(expr)) && p.matches(ASSIGN, ADD_ASSIGN, DIV_ASSIGN,
+	_, isNamedField := expr.(*ast.NamedFieldExpr)
+	if (isNamedField || ast.IsLValue(expr)) && p.matches(ASSIGN, ADD_ASSIGN, DIV_ASSIGN,
 		MOD_ASSIGN, MUL_ASSIGN, POW_ASSIGN, SUB_ASSIGN) {
-		if isAtExpr {
+		if isNamedField {
 			panic(p.errorf("assigning @ expression not supported"))
 		}
 		op := p.tok
@@ -718,7 +718,7 @@ func (p *parser) primary() ast.Expr {
 		return &ast.FieldExpr{p.primary()}
 	case AT:
 		p.next()
-		return &ast.AtExpr{p.primary()}
+		return &ast.NamedFieldExpr{p.primary()}
 	case NOT, ADD, SUB:
 		op := p.tok
 		p.next()
