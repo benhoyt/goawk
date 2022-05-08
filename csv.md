@@ -7,7 +7,7 @@ There are other workarounds, such as [Gawk's FPAT feature](https://www.gnu.org/s
 
 Since version v1.17.0, GoAWK has included CSV support, which allows you to read and write CSV and TSV files, including proper handling of quoted and multi-line fields as per [RFC 4180](https://rfc-editor.org/rfc/rfc4180.html). In addition, GoAWK supports a "named field" construct that allows you to access CSV fields by name as well as number, for example `@"Address"` rather than `$5`.
 
-**Many thanks to the [library of the University of Antwerp](https://www.uantwerpen.be/en/library/), who sponsored this feature in April 2022.** Thanks also to [Eli Rosenthal](https://github.com/ezrosent), whose frawk tool inspired aspects of the design (including the `-i` and `-o` command line arguments).
+**Many thanks to the [library of the University of Antwerp](https://www.uantwerpen.be/en/library/), who sponsored this feature in May 2022.** Thanks also to [Eli Rosenthal](https://github.com/ezrosent), whose frawk tool inspired aspects of the design (including the `-i` and `-o` command line arguments).
 
 Links to sections:
 
@@ -40,7 +40,7 @@ The first field in `mode` is the format: `csv` for comma-separated values or `ts
 
 ## CSV output configuration
 
-When in CSV output mode, the GoAWK `print` statement with arguments ignores `OFS` and `ORS` and separates its arguments (fields) and records using CSV formatting. No header row is printed -- if required, a header row can be printed in the `BEGIN` block manually. No other functionality is changed, for example, `printf` doesn't do anything different in CSV output mode.
+When in CSV output mode, the GoAWK `print` statement with one or more arguments ignores `OFS` and `ORS` and separates its arguments (fields) and records using CSV formatting. No header row is printed; if required, a header row can be printed in the `BEGIN` block manually. No other functionality is changed, for example, `printf` doesn't do anything different in CSV output mode.
 
 **NOTE:** The behaviour of `print` without arguments remains unchanged. This means you can print the input line (`$0`) without further quoting by using a bare `print` statement, but `print $0` will print the input line as a single CSV field, which is probably not what you want. See the [example](#example-convert-between-formats-all-fields) below.
 
@@ -61,7 +61,7 @@ If the `header` option or `-H` argument is given, CSV input mode parses the firs
 
 When the header option is enabled, you can use the GoAWK-specific "named field" operator (`@`) to access fields by name instead of by number (`$`). For example, given the header row `id,name,email`, for each record you can access the email address using `@"email"`, `$3`, or even `$-1` (first field from the right). Further usage examples are shown [below](#examples).
 
-Every time a header row is processed, the `FIELDS` special array is updated: it is a mapping of field number to field name, allowing you to loop over the field names dynamically. For example, given the header row `id,name,email`, GoAWK set `FIELDS` using the equivalent of:
+Every time a header row is processed, the `FIELDS` special array is updated: it is a mapping of field number to field name, allowing you to loop over the field names dynamically. For example, given the header row `id,name,email`, GoAWK sets `FIELDS` using the equivalent of:
 
 ```
 FIELDS[1] = "id"
@@ -92,7 +92,7 @@ if err != nil { ... }
 
 Note that `INPUTMODE` and `OUTPUTMODE` set using `Vars` or in the `BEGIN` block will override these settings.
 
-See the [full reference documentation](https://pkg.go.dev/github.com/benhoyt/goawk/interp#Config) of the Go API fields.
+See the [full reference documentation](https://pkg.go.dev/github.com/benhoyt/goawk/interp#Config) for the `interp.Config` struct.
 
 
 ## Examples
@@ -121,18 +121,23 @@ AZ
 ...
 ```
 
-### Example: count matching fields
+### Example: match a field and count
 
-To count the number of states that have `New` in the state name (using the named field syntax for `@"State"`):
+To count the number of states that have `New` in the name, and then print out what they are:
 
 ```
 $ goawk -i csv -H '@"State" ~ /New/ { n++ } END { print n }' testdata/csv/states.csv
 4
+$ goawk -i csv -H '@"State" ~ /New/ { print @"State" }' testdata/csv/states.csv
+New Hampshire
+New Jersey
+New Mexico
+New York
 ```
 
 ### Example: rename and reorder fields
 
-To rename and reorder the fields from `State`, `Abbreviation` to `abbr`, `name`:
+To rename and reorder the fields from `State`, `Abbreviation` to `abbr`, `name`. Note that the `print` statement in the `BEGIN` block prints the header row for the output:
 
 ```
 $ goawk -i csv -H -o csv 'BEGIN { print "abbr", "name" } { print @"Abbreviation", @"State" }' testdata/csv/states.csv
@@ -144,7 +149,7 @@ AK,Alaska
 
 ### Example: convert between formats (explicit field list)
 
-To convert the file from CSV to TSV format (note how we're not using `-H`, so that the header row is included):
+To convert the file from CSV to TSV format (note how we're *not* using `-H`, so the header row is included):
 
 ```
 $ goawk -i csv -o tsv '{ print $1, $2 }' testdata/csv/states.csv
@@ -156,7 +161,7 @@ Alaska	AK
 
 ### Example: convert between formats (all fields)
 
-If you want to convert between CSV and TSV format but don't know the number of fields, you can use a field assignment like `$1=$1` so that GoAWK reformats `$0` according to the output format (TSV in this case), and then `print` (without arguments) to print the raw value of `$0`:
+If you want to convert between CSV and TSV format but don't know the number of fields, you can use a field assignment like `$1=$1` so that GoAWK reformats `$0` according to the output format (TSV in this case). This is similar to how in POSIX AWK a field assignment reformats `$0` according to the output field separator (`OFS`). Then `print` without arguments prints the raw value of `$0`:
 
 ```
 $ goawk -i csv -o tsv '{ $1=$1; print }' testdata/csv/states.csv
@@ -221,7 +226,10 @@ United Plates
 A somewhat contrived example showing use of the `FIELDS` array:
 
 ```
-$ echo -e 'id,name,email\n1,Bob,b@bob.com' | goawk -i csv -H '{ for (i=1; i in FIELDS; i++) print i, FIELDS[i] }'
+$ cat testdata/csv/fields.csv
+id,name,email
+1,Bob,b@bob.com
+$ goawk -i csv -H '{ for (i=1; i in FIELDS; i++) print i, FIELDS[i] }' testdata/csv/fields.csv
 1 id
 2 name
 3 email
@@ -251,7 +259,7 @@ id,name
 
 ### Example: different ways to specify CSV mode
 
-And finally, four equivalent examples showing different ways to specify the input mode, using `-i` or the `INPUTMODE` special variable (the same technique works for `-o` and `OUTPUTMODE`):
+And finally, four equivalent examples showing different ways to specify the input mode, using `-i` or the `INPUTMODE` special variable (the same techniques work for `-o` and `OUTPUTMODE`):
 
 ```
 $ goawk -i csv -H '@"State"=="New York" { print @"Abbreviation" }' testdata/csv/states.csv
@@ -283,3 +291,9 @@ Writing 0.6GB CSV |  3.25 |  7.36 |   10.5 | 2.10
   - `a` would be an array such as: `a["name"] = "Bob"; a["age"] = 7`
   - keys would be ordered by `OFIELDS` (eg: `OFIELDS[1] = "name"; OFIELDS[2] = "age"`) or by "smart name" if `OFIELDS` not set ("smart name" meaning numeric if `a` keys are numeric, string otherwise)
   - `printrow(a)` could take an optional second `fields` array arg to use that instead of the global `OFIELDS`
+* Consider supporting `@"id" = 42` named field assignment.
+
+
+## Feedback
+
+Please [open an issue](https://github.com/benhoyt/goawk/issues) if you have bug reports or feature requests for GoAWK's CSV support.
