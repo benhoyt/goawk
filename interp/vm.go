@@ -762,7 +762,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 					return err
 				}
 			} else {
-				// "print" with no args is equivalent to "print $0",
+				// "print" with no arguments prints the raw value of $0,
 				// regardless of output mode.
 				err := p.printLine(output, p.line)
 				if err != nil {

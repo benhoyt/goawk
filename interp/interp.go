@@ -244,17 +244,18 @@ type Config struct {
 	// and RS behaviour. If set to CSVMode or TSVMode, FS and RS are ignored,
 	// and input records are parsed as comma-separated values or tab-separated
 	// values, respectively. Parsing is done as per RFC 4180 and the
-	// "encoding/csv" package.
+	// "encoding/csv" package, but FieldsPerRecord is not supported,
+	// LazyQuotes is always on, and TrimLeadingSpace is always off.
 	//
 	// You can also enable CSV or TSV input mode by setting INPUTMODE to "csv"
 	// or "tsv" in Vars or in the BEGIN block (those override this setting).
 	//
-	// For further documentation about GoAWK's CSV support, see:
+	// For further documentation about GoAWK's CSV support, see the full docs:
 	// https://github.com/benhoyt/goawk/blob/master/csv.md
 	InputMode IOMode
 
 	// Additional options if InputMode is CSVMode or TSVMode. The zero value
-	// is valid, specifying typical defaults.
+	// is valid, specifying a separator of ',' in CSVMode and '\t' in TSVMode.
 	//
 	// You can also specify these options by setting INPUTMODE in the BEGIN
 	// block, for example, to use '|' as the field separator, '#' as the
@@ -264,9 +265,10 @@ type Config struct {
 	CSVInput CSVInputConfig
 
 	// Mode for print output: default is to use normal OFS and ORS
-	// behaviour. If set to CSVMode or TSVMode, print fields are separated
-	// with comma or tab, respectively. Output is written as per RFC 4180 and
-	// the "encoding/csv" package.
+	// behaviour. If set to CSVMode or TSVMode, the "print" statement with one
+	// or more arguments outputs fields using CSV or TSV formatting,
+	// respectively. Output is written as per RFC 4180 and the "encoding/csv"
+	// package.
 	//
 	// You can also enable CSV or TSV output mode by setting OUTPUTMODE to
 	// "csv" or "tsv" in Vars or in the BEGIN block (those override this
@@ -274,7 +276,7 @@ type Config struct {
 	OutputMode IOMode
 
 	// Additional options if OutputMode is CSVMode or TSVMode. The zero value
-	// is valid, specifying typical defaults.
+	// is valid, specifying a separator of ',' in CSVMode and '\t' in TSVMode.
 	//
 	// You can also specify these options by setting OUTPUTMODE in the BEGIN
 	// block, for example, to use '|' as the output field separator:
@@ -283,19 +285,19 @@ type Config struct {
 	CSVOutput CSVOutputConfig
 }
 
-// IOMode specifies the input parsing or print output writing mode.
+// IOMode specifies the input parsing or print output mode.
 type IOMode int
 
 const (
 	// DefaultMode uses normal AWK field and record separators: FS and RS for
 	// input, OFS and ORS for print output.
-	DefaultMode IOMode = iota
+	DefaultMode IOMode = 0
 
 	// CSVMode uses comma-separated value mode for input or output.
-	CSVMode
+	CSVMode IOMode = 1
 
 	// TSVMode uses tab-separated value mode for input or output.
-	TSVMode
+	TSVMode IOMode = 2
 )
 
 // CSVInputConfig holds additional configuration for when InputMode is CSVMode
@@ -305,13 +307,13 @@ type CSVInputConfig struct {
 	// when InputMode is CSVMode and '\t' when InputMode is TSVMode.
 	Separator rune
 
-	// If nonzero, specifies that lines beginning with this character should
-	// be ignored as comments.
+	// If nonzero, specifies that lines beginning with this character (and no
+	// leading whitespace) should be ignored as comments.
 	Comment rune
 
 	// If true, parse the first row in each input file as a header row (that
-	// is, a list of field names) and enable the @"field" syntax to get a
-	// field by name.
+	// is, a list of field names), and enable the @"field" syntax to get a
+	// field by name as well as the FIELDS special array.
 	Header bool
 }
 

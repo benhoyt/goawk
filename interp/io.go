@@ -435,6 +435,9 @@ type csvSplitter struct {
 
 // The structure of this code is taken from the stdlib encoding/csv Reader
 // code, which is licensed under a compatible BSD-style license.
+//
+// We don't support all encoding/csv features: FieldsPerRecord is not
+// supported, LazyQuotes is always on, and TrimLeadingSpace is always off.
 func (s *csvSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	origData := data
 	if atEOF && len(data) == 0 {
