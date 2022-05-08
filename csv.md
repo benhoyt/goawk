@@ -297,3 +297,4 @@ Writing 0.6GB CSV |  3.25 |  7.36 |   10.5 | 2.10
 ## Feedback
 
 Please [open an issue](https://github.com/benhoyt/goawk/issues) if you have bug reports or feature requests for GoAWK's CSV support.
+
