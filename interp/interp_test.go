@@ -1459,7 +1459,7 @@ var csvTests = []csvTest{
 	{`BEGIN { INPUTMODE="csv" } { print $1, $3 }`, "name,email,age\nBob,bob@smith.com,42\nJane,jane@brown.com,37", "name age\nBob 42\nJane 37\n", "", nil},
 	{`BEGIN { INPUTMODE="csv header" } { print @"age", @"name" }`, "name,email,age\nBob,bob@smith.com,42\nJane,jane@brown.com,37", "42 Bob\n37 Jane\n", "", nil},
 	{`BEGIN { INPUTMODE="csv header" } { x="name"; print @"age", @x }`, "name,age\nBob,42", "42 Bob\n", "", nil},
-	{`BEGIN { INPUTMODE="csv" } { print @"age", @"name" }`, "name,email,age\nBob,bob@smith.com,42\nJane,jane@brown.com,37", "", "@ only supported if header parsing enabled", nil},
+	{`BEGIN { INPUTMODE="csv" } { print @"age", @"name" }`, "name,email,age\nBob,bob@smith.com,42\nJane,jane@brown.com,37", "", `@ only supported if header parsing enabled; use -H or add "header" to INPUTMODE`, nil},
 	{`BEGIN { INPUTMODE="tsv header" } { print $1, $3 }`, "name\temail\tage\nBob,Smith\tbob@smith.com\t42\nJane\tjane@brown.com\t37", "Bob,Smith 42\nJane 37\n", "", nil},
 
 	// OUTPUTMODE combinations
