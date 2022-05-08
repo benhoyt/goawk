@@ -243,7 +243,10 @@ func main() {
 		}
 	}
 
-	if header && inputMode != "" {
+	if header {
+		if inputMode == "" {
+			errorExitf("-H only allowed together with -i")
+		}
 		inputMode += " header"
 	}
 

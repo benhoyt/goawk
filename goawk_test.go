@@ -570,6 +570,7 @@ func TestInputOutputMode(t *testing.T) {
 		{[]string{"-o", "csv", `BEGIN { print "foo,bar", 3.14, "baz" }`}, "", "\"foo,bar\",3.14,baz\n", ""},
 		{[]string{"-iabc", `{}`}, "", "", "invalid input mode \"abc\"\n"},
 		{[]string{"-oxyz", `{}`}, "", "", "invalid output mode \"xyz\"\n"},
+		{[]string{"-H", `{}`}, "", "", "-H only allowed together with -i\n"},
 	}
 
 	for _, test := range tests {
