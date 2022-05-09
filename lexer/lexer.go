@@ -116,6 +116,8 @@ func (l *Lexer) scan() (Position, Token, string) {
 	switch ch {
 	case '$':
 		tok = DOLLAR
+	case '@':
+		tok = AT
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.':
 		// Avoid make/append and use l.offset directly for performance
 		start := l.offset - 2

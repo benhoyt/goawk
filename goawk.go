@@ -48,22 +48,22 @@ const (
 	copyright  = "GoAWK " + version + " - Copyright (c) 2021 Ben Hoyt"
 	shortUsage = "usage: goawk [-F fs] [-v var=value] [-f progfile | 'prog'] [file ...]"
 	longUsage  = `Standard AWK arguments:
-  -F separator
-        field separator (default " ")
-  -v assignment
-        name=value variable assignment (multiple allowed)
-  -f progfile
-        load AWK source from progfile (multiple allowed)
+  -F separator      field separator (default " ")
+  -v var=value      variable assignment (multiple allowed)
+  -f progfile       load AWK source from progfile (multiple allowed)
 
 Additional GoAWK arguments:
-  -cpuprofile file
-        write CPU profile to file
-  -d    print parsed syntax tree to stderr (debug mode)
-  -da   print virtual machine assembly instructions to stderr
-  -dt   print variable type information to stderr
-  -h    show this usage message
-  -version
-        show GoAWK version and exit
+  -cpuprofile file  write CPU profile to file
+  -d                print parsed syntax tree to stderr (debug mode)
+  -da               print virtual machine assembly instructions to stderr
+  -dt               print variable type information to stderr
+  -H                parse header row and enable @"field" in CSV input mode
+  -h, --help        show this help message
+  -i mode           parse input into fields using CSV format (ignore FS and RS)
+                    'csv|tsv [separator=<char>] [comment=<char>] [header]'
+  -o mode           use CSV output for print with args (ignore OFS and ORS)
+                    'csv|tsv [separator=<char>]'
+  -version          show GoAWK version and exit
 `
 )
 
@@ -79,6 +79,9 @@ func main() {
 	debugAsm := false
 	debugTypes := false
 	memprofile := ""
+	inputMode := ""
+	outputMode := ""
+	header := false
 
 	var i int
 	for i = 1; i < len(os.Args); i++ {
@@ -123,15 +126,29 @@ func main() {
 			debugAsm = true
 		case "-dt":
 			debugTypes = true
+		case "-H":
+			header = true
 		case "-h", "--help":
 			fmt.Printf("%s\n\n%s\n\n%s", copyright, shortUsage, longUsage)
 			os.Exit(0)
+		case "-i":
+			if i+1 >= len(os.Args) {
+				errorExitf("flag needs an argument: -i")
+			}
+			i++
+			inputMode = os.Args[i]
 		case "-memprofile":
 			if i+1 >= len(os.Args) {
 				errorExitf("flag needs an argument: -memprofile")
 			}
 			i++
 			memprofile = os.Args[i]
+		case "-o":
+			if i+1 >= len(os.Args) {
+				errorExitf("flag needs an argument: -o")
+			}
+			i++
+			outputMode = os.Args[i]
 		case "-version", "--version":
 			fmt.Println(version)
 			os.Exit(0)
@@ -141,6 +158,10 @@ func main() {
 				fieldSep = arg[2:]
 			case strings.HasPrefix(arg, "-f"):
 				progFiles = append(progFiles, arg[2:])
+			case strings.HasPrefix(arg, "-i"):
+				inputMode = arg[2:]
+			case strings.HasPrefix(arg, "-o"):
+				outputMode = arg[2:]
 			case strings.HasPrefix(arg, "-v"):
 				vars = append(vars, arg[2:])
 			case strings.HasPrefix(arg, "-cpuprofile="):
@@ -222,10 +243,21 @@ func main() {
 		}
 	}
 
+	if header {
+		if inputMode == "" {
+			errorExitf("-H only allowed together with -i")
+		}
+		inputMode += " header"
+	}
+
 	config := &interp.Config{
 		Argv0: filepath.Base(os.Args[0]),
 		Args:  expandWildcardsOnWindows(args),
-		Vars:  []string{"FS", fieldSep},
+		Vars: []string{
+			"FS", fieldSep,
+			"INPUTMODE", inputMode,
+			"OUTPUTMODE", outputMode,
+		},
 	}
 	for _, v := range vars {
 		parts := strings.SplitN(v, "=", 2)

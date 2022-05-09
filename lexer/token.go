@@ -18,6 +18,7 @@ const (
 	AND
 	APPEND
 	ASSIGN
+	AT
 	COLON
 	COMMA
 	DECR
@@ -172,6 +173,7 @@ var tokenNames = map[Token]string{
 	AND:        "&&",
 	APPEND:     ">>",
 	ASSIGN:     "=",
+	AT:         "@",
 	COLON:      ":",
 	COMMA:      ",",
 	DECR:       "--",

@@ -148,3 +148,30 @@ func Example_new() {
 	// d 1 f
 	// x 2 z
 }
+
+func Example_csv() {
+	src := `{ total += @"amount" } END { print total }`
+	input := `# comment
+name,amount
+Bob,17.50
+Jill,20
+"Boba Fett",100.00
+`
+	prog, err := parser.ParseProgram([]byte(src), nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	config := &interp.Config{
+		Stdin:     strings.NewReader(input),
+		InputMode: interp.CSVMode,
+		CSVInput:  interp.CSVInputConfig{Comment: '#', Header: true},
+	}
+	_, err = interp.ExecProgram(prog, config)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	// Output:
+	// 137.5
+}

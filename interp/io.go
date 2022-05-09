@@ -5,12 +5,14 @@ package interp
 import (
 	"bufio"
 	"bytes"
+	"encoding/csv"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -26,6 +28,73 @@ func (p *interp) printLine(writer io.Writer, line string) error {
 		return err
 	}
 	return writeOutput(writer, p.outputRecordSep)
+}
+
+// Print given arguments followed by a newline (for "print" statement).
+func (p *interp) printArgs(writer io.Writer, args []value) error {
+	switch p.outputMode {
+	case CSVMode, TSVMode:
+		fields := make([]string, 0, 7) // up to 7 args won't require a heap allocation
+		for _, arg := range args {
+			fields = append(fields, arg.str(p.outputFormat))
+		}
+		err := p.writeCSV(writer, fields)
+		if err != nil {
+			return err
+		}
+	default:
+		// Print OFS-separated args followed by ORS (usually newline).
+		for i, arg := range args {
+			if i > 0 {
+				err := writeOutput(writer, p.outputFieldSep)
+				if err != nil {
+					return err
+				}
+			}
+			err := writeOutput(writer, arg.str(p.outputFormat))
+			if err != nil {
+				return err
+			}
+		}
+		err := writeOutput(writer, p.outputRecordSep)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (p *interp) writeCSV(output io.Writer, fields []string) error {
+	// If output is already a *bufio.Writer (the common case), csv.NewWriter
+	// will use it directly. This is not explicitly documented, but
+	// csv.NewWriter calls bufio.NewWriter which calls bufio.NewWriterSize
+	// with a 4KB buffer, and bufio.NewWriterSize is documented as returning
+	// the underlying bufio.Writer if it's passed a large enough one.
+	var flush func() error
+	_, isBuffered := output.(*bufio.Writer)
+	if !isBuffered {
+		// Otherwise create a new buffered writer and flush after writing.
+		if p.csvOutput == nil {
+			p.csvOutput = bufio.NewWriterSize(output, 4096)
+		} else {
+			p.csvOutput.Reset(output)
+		}
+		output = p.csvOutput
+		flush = p.csvOutput.Flush
+	}
+
+	// Given the above, creating a new one of these is cheap.
+	writer := csv.NewWriter(output)
+	writer.Comma = p.csvOutputConfig.Separator
+	writer.UseCRLF = runtime.GOOS == "windows"
+	err := writer.Write(fields)
+	if err != nil {
+		return err
+	}
+	if flush != nil {
+		return flush()
+	}
+	return nil
 }
 
 // Implement a buffered version of WriteCloser so output is buffered
@@ -187,22 +256,48 @@ func (p *interp) getInputScannerPipe(name string) (*bufio.Scanner, error) {
 func (p *interp) newScanner(input io.Reader, buffer []byte) *bufio.Scanner {
 	scanner := bufio.NewScanner(input)
 	switch {
+	case p.inputMode == CSVMode || p.inputMode == TSVMode:
+		splitter := csvSplitter{
+			separator:     p.csvInputConfig.Separator,
+			sepLen:        utf8.RuneLen(p.csvInputConfig.Separator),
+			comment:       p.csvInputConfig.Comment,
+			header:        p.csvInputConfig.Header,
+			fields:        &p.fields,
+			setFieldNames: p.setFieldNames,
+		}
+		scanner.Split(splitter.scan)
 	case p.recordSep == "\n":
 		// Scanner default is to split on newlines
 	case p.recordSep == "":
 		// Empty string for RS means split on \n\n (blank lines)
-		splitter := blankLineSplitter{&p.recordTerminator}
+		splitter := blankLineSplitter{terminator: &p.recordTerminator}
 		scanner.Split(splitter.scan)
 	case len(p.recordSep) == 1:
-		splitter := byteSplitter{p.recordSep[0]}
+		splitter := byteSplitter{sep: p.recordSep[0]}
 		scanner.Split(splitter.scan)
 	case utf8.RuneCountInString(p.recordSep) >= 1:
 		// Multi-byte and single char but multi-byte RS use regex
-		splitter := regexSplitter{p.recordSepRegex, &p.recordTerminator}
+		splitter := regexSplitter{re: p.recordSepRegex, terminator: &p.recordTerminator}
 		scanner.Split(splitter.scan)
 	}
 	scanner.Buffer(buffer, maxRecordLength)
 	return scanner
+}
+
+// setFieldNames is called by csvSplitter.scan on the first row (if the
+// "header" option is specified).
+func (p *interp) setFieldNames(names []string) {
+	p.fieldNames = names
+	p.fieldIndexes = nil // clear name-to-index cache
+
+	// Populate FIELDS array (mapping of field indexes to field names).
+	fieldsArray := p.array(ast.ScopeGlobal, p.program.Arrays["FIELDS"])
+	for k := range fieldsArray {
+		delete(fieldsArray, k)
+	}
+	for i, name := range names {
+		fieldsArray[strconv.Itoa(i+1)] = str(name)
+	}
 }
 
 // Copied from bufio/scan.go in the stdlib: I guess it's a bit more
@@ -323,6 +418,207 @@ func (s regexSplitter) scan(data []byte, atEOF bool) (advance int, token []byte,
 	return 0, nil, nil
 }
 
+// Splitter that splits records in CSV or TSV format.
+type csvSplitter struct {
+	separator rune
+	sepLen    int
+	comment   rune
+	header    bool
+
+	recordBuffer []byte
+	fieldIndexes []int
+
+	fields        *[]string
+	setFieldNames func(names []string)
+	rowNum        int
+}
+
+// The structure of this code is taken from the stdlib encoding/csv Reader
+// code, which is licensed under a compatible BSD-style license.
+//
+// We don't support all encoding/csv features: FieldsPerRecord is not
+// supported, LazyQuotes is always on, and TrimLeadingSpace is always off.
+func (s *csvSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	origData := data
+	if atEOF && len(data) == 0 {
+		// No more data, tell Scanner to stop.
+		return 0, nil, nil
+	}
+
+	readLine := func() []byte {
+		newline := bytes.IndexByte(data, '\n')
+		var line []byte
+		switch {
+		case newline >= 0:
+			// Process a single line (including newline).
+			line = data[:newline+1]
+			data = data[newline+1:]
+		case atEOF:
+			// If at EOF, we have a final record without a newline.
+			line = data
+			data = data[len(data):]
+		default:
+			// Need more data
+			return nil
+		}
+
+		// For backwards compatibility, drop trailing \r before EOF.
+		if len(line) > 0 && atEOF && line[len(line)-1] == '\r' {
+			line = line[:len(line)-1]
+			advance++
+		}
+
+		return line
+	}
+
+	// Read line (automatically skipping past empty lines and any comments).
+	skip := 0
+	var line []byte
+	for {
+		line = readLine()
+		if len(line) == 0 {
+			return 0, nil, nil // Request more data
+		}
+		if s.comment != 0 && nextRune(line) == s.comment {
+			advance += len(line)
+			skip += len(line)
+			continue // Skip comment lines
+		}
+		if len(line) == lenNewline(line) {
+			advance += len(line)
+			skip += len(line)
+			continue // Skip empty lines
+		}
+		break
+	}
+
+	// Parse each field in the record.
+	const quoteLen = len(`"`)
+	tokenHasCR := false
+	s.recordBuffer = s.recordBuffer[:0]
+	s.fieldIndexes = s.fieldIndexes[:0]
+parseField:
+	for {
+		if len(line) == 0 || line[0] != '"' {
+			// Non-quoted string field
+			i := bytes.IndexRune(line, s.separator)
+			field := line
+			if i >= 0 {
+				advance += i + s.sepLen
+				field = field[:i]
+			} else {
+				advance += len(field)
+				field = field[:len(field)-lenNewline(field)]
+			}
+			s.recordBuffer = append(s.recordBuffer, field...)
+			s.fieldIndexes = append(s.fieldIndexes, len(s.recordBuffer))
+			if i >= 0 {
+				line = line[i+s.sepLen:]
+				continue parseField
+			}
+			break parseField
+		} else {
+			// Quoted string field
+			line = line[quoteLen:]
+			advance += quoteLen
+			for {
+				i := bytes.IndexByte(line, '"')
+				if i >= 0 {
+					// Hit next quote.
+					s.recordBuffer = append(s.recordBuffer, line[:i]...)
+					line = line[i+quoteLen:]
+					advance += i + quoteLen
+					switch rn := nextRune(line); {
+					case rn == '"':
+						// `""` sequence (append quote).
+						s.recordBuffer = append(s.recordBuffer, '"')
+						line = line[quoteLen:]
+						advance += quoteLen
+					case rn == s.separator:
+						// `",` sequence (end of field).
+						line = line[s.sepLen:]
+						s.fieldIndexes = append(s.fieldIndexes, len(s.recordBuffer))
+						advance += s.sepLen
+						continue parseField
+					case lenNewline(line) == len(line):
+						// `"\n` sequence (end of line).
+						s.fieldIndexes = append(s.fieldIndexes, len(s.recordBuffer))
+						advance += len(line)
+						break parseField
+					default:
+						// `"` sequence (bare quote).
+						s.recordBuffer = append(s.recordBuffer, '"')
+					}
+				} else if len(line) > 0 {
+					// Hit end of line (copy all data so far).
+					advance += len(line)
+					newlineLen := lenNewline(line)
+					if newlineLen == 2 {
+						tokenHasCR = true
+						s.recordBuffer = append(s.recordBuffer, line[:len(line)-2]...)
+						s.recordBuffer = append(s.recordBuffer, '\n')
+					} else {
+						s.recordBuffer = append(s.recordBuffer, line...)
+					}
+					line = readLine()
+					if line == nil {
+						return 0, nil, nil // Request more data
+					}
+				} else {
+					// Abrupt end of file.
+					s.fieldIndexes = append(s.fieldIndexes, len(s.recordBuffer))
+					advance += len(line)
+					break parseField
+				}
+			}
+		}
+	}
+
+	// Create a single string and create slices out of it.
+	// This pins the memory of the fields together, but allocates once.
+	strBuf := string(s.recordBuffer) // Convert to string once to batch allocations
+	fields := make([]string, len(s.fieldIndexes))
+	preIdx := 0
+	for i, idx := range s.fieldIndexes {
+		fields[i] = strBuf[preIdx:idx]
+		preIdx = idx
+	}
+
+	if s.rowNum == 0 && s.header {
+		// Set header field names and advance, but don't return a line (token).
+		s.rowNum++
+		s.setFieldNames(fields)
+		return advance, nil, nil
+	}
+
+	// Normal row, set fields and return a line (token).
+	s.rowNum++
+	*s.fields = fields
+	token = origData[skip:advance]
+	token = token[:len(token)-lenNewline(token)]
+	if tokenHasCR {
+		token = bytes.ReplaceAll(token, []byte{'\r'}, nil)
+	}
+	return advance, token, nil
+}
+
+// lenNewline reports the number of bytes for the trailing \n.
+func lenNewline(b []byte) int {
+	if len(b) > 0 && b[len(b)-1] == '\n' {
+		if len(b) > 1 && b[len(b)-2] == '\r' {
+			return 2
+		}
+		return 1
+	}
+	return 0
+}
+
+// nextRune returns the next rune in b or utf8.RuneError.
+func nextRune(b []byte) rune {
+	r, _ := utf8.DecodeRune(b)
+	return r
+}
+
 // Setup for a new input file with given name (empty string if stdin)
 func (p *interp) setFile(filename string) {
 	p.filename = numStr(filename)
@@ -335,6 +631,7 @@ func (p *interp) setLine(line string, isTrueStr bool) {
 	p.line = line
 	p.lineIsTrueStr = isTrueStr
 	p.haveFields = false
+	p.reparseCSV = true
 }
 
 // Ensure that the current line is parsed into fields, splitting it
@@ -346,6 +643,23 @@ func (p *interp) ensureFields() {
 	p.haveFields = true
 
 	switch {
+	case p.inputMode == CSVMode || p.inputMode == TSVMode:
+		if p.reparseCSV {
+			scanner := bufio.NewScanner(strings.NewReader(p.line))
+			scanner.Buffer(nil, maxRecordLength)
+			splitter := csvSplitter{
+				separator: p.csvInputConfig.Separator,
+				sepLen:    utf8.RuneLen(p.csvInputConfig.Separator),
+				comment:   p.csvInputConfig.Comment,
+				fields:    &p.fields,
+			}
+			scanner.Split(splitter.scan)
+			if !scanner.Scan() {
+				p.fields = nil
+			}
+		} else {
+			// Normally fields have already been parsed by csvSplitter
+		}
 	case p.fieldSep == " ":
 		// FS space (default) means split fields on any whitespace
 		p.fields = strings.Fields(p.line)
@@ -362,7 +676,7 @@ func (p *interp) ensureFields() {
 	// Special case for when RS=="" and FS is single character,
 	// split on newline in addition to FS. See more here:
 	// https://www.gnu.org/software/gawk/manual/html_node/Multiple-Line.html
-	if p.recordSep == "" && utf8.RuneCountInString(p.fieldSep) == 1 {
+	if p.inputMode == DefaultMode && p.recordSep == "" && utf8.RuneCountInString(p.fieldSep) == 1 {
 		fields := make([]string, 0, len(p.fields))
 		for _, field := range p.fields {
 			lines := strings.Split(field, "\n")

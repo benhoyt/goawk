@@ -76,7 +76,8 @@ func (p *parser) initResolve() {
 	p.varTypes[""] = make(map[string]typeInfo) // globals
 	p.functions = make(map[string]int)
 	p.arrayRef("ARGV", Position{1, 1})    // interpreter relies on ARGV being present
-	p.arrayRef("ENVIRON", Position{1, 1}) // and ENVIRON
+	p.arrayRef("ENVIRON", Position{1, 1}) // and other built-in arrays
+	p.arrayRef("FIELDS", Position{1, 1})
 	p.multiExprs = make(map[*ast.MultiExpr]Position, 3)
 }
 

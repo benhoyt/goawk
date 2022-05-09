@@ -3,8 +3,10 @@
 package main_test
 
 import (
+	"bufio"
 	"bytes"
 	"flag"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -401,7 +403,7 @@ func TestCommandLine(t *testing.T) {
 		{[]string{`BEGIN { print "1"; "echo 2" | getline x; print x }`}, "", "1\n2\n", ""},
 
 		// Parse error formatting
-		{[]string{"@"}, "", "", "<cmdline>:1:1: unexpected char\n@\n^"},
+		{[]string{"`"}, "", "", "<cmdline>:1:1: unexpected char\n`\n^"},
 		{[]string{"BEGIN {\n\tx*;\n}"}, "", "", "<cmdline>:2:4: expected expression instead of ;\n    x*;\n      ^"},
 		{[]string{"BEGIN {\n\tx*\r\n}"}, "", "", "<cmdline>:2:4: expected expression instead of <newline>\n    x*\n      ^"},
 		{[]string{"-f", "-"}, "\n ++", "", "<stdin>:2:4: expected expression instead of <newline>\n ++\n   ^"},
@@ -410,7 +412,7 @@ func TestCommandLine(t *testing.T) {
 		{[]string{"-f", "testdata/parseerror/bad.awk", "-f", "testdata/parseerror/good.awk"},
 			"", "", "testdata/parseerror/bad.awk:2:3: expected expression instead of <newline>\nx*\n  ^"},
 		{[]string{"-f", "testdata/parseerror/good.awk", "-f", "-", "-f", "testdata/parseerror/bad.awk"},
-			"@", "", "<stdin>:1:1: unexpected char\n@\n^"},
+			"`", "", "<stdin>:1:1: unexpected char\n`\n^"},
 	}
 	for _, test := range tests {
 		testName := strings.Join(test.args, " ")
@@ -551,4 +553,136 @@ BEGIN { FILENAME = 10; print(FILENAME, FILENAME<2) }
 
 func normalizeNewlines(b []byte) []byte {
 	return bytes.Replace(b, []byte("\r\n"), []byte{'\n'}, -1)
+}
+
+func TestInputOutputMode(t *testing.T) {
+	tests := []struct {
+		args   []string
+		input  string
+		output string
+		error  string
+	}{
+		{[]string{"-icsv", "-H", `{ print @"age", @"name" }`}, "name,age\nBob,42\nJane,37", "42 Bob\n37 Jane\n", ""},
+		{[]string{"-i", "csv", "-H", `{ print @"age", @"name" }`}, "name,age\nBob,42\nJane,37", "42 Bob\n37 Jane\n", ""},
+		{[]string{"-icsv", `{ print $2, $1 }`}, "Bob,42\nJane,37", "42 Bob\n37 Jane\n", ""},
+		{[]string{"-i", "csv", `{ print $2, $1 }`}, "Bob,42\nJane,37", "42 Bob\n37 Jane\n", ""},
+		{[]string{"-icsv", "-H", "-ocsv", `{ print @"age", @"name" }`}, "name,age\n\"Bo,ba\",42\nJane,37", "42,\"Bo,ba\"\n37,Jane\n", ""},
+		{[]string{"-o", "csv", `BEGIN { print "foo,bar", 3.14, "baz" }`}, "", "\"foo,bar\",3.14,baz\n", ""},
+		{[]string{"-iabc", `{}`}, "", "", "invalid input mode \"abc\"\n"},
+		{[]string{"-oxyz", `{}`}, "", "", "invalid output mode \"xyz\"\n"},
+		{[]string{"-H", `{}`}, "", "", "-H only allowed together with -i\n"},
+	}
+
+	for _, test := range tests {
+		testName := strings.Join(test.args, " ")
+		t.Run(testName, func(t *testing.T) {
+			stdout, stderr, err := runGoAWK(test.args, test.input)
+			if err != nil {
+				if test.error == "" {
+					t.Fatalf("expected no error, got %v (%q)", err, stderr)
+				} else if stderr != test.error {
+					t.Fatalf("expected error message %q, got %q", test.error, stderr)
+				}
+			}
+			if stdout != test.output {
+				t.Fatalf("expected %q, got %q", test.output, stdout)
+			}
+		})
+	}
+}
+
+func TestMultipleCSVFiles(t *testing.T) {
+	// Ensure CSV handling works across multiple files with different headers (field names).
+	src := `
+{
+    for (i=1; i in FIELDS; i++) {
+        if (i>1)
+            printf ",";
+        printf "%s", FIELDS[i]
+    }
+    printf " "
+}
+{ print @"name", @"age" }
+`
+	stdout, stderr, err := runGoAWK([]string{"-i", "csv", "-H", src, "testdata/csv/1.csv", "testdata/csv/2.csv"}, "")
+	if err != nil {
+		t.Fatalf("expected no error, got %v (%q)", err, stderr)
+	}
+	expected := `
+name,age Bob 42
+name,age Jill 37
+age,email,name Sarah 25
+`[1:]
+	if stdout != expected {
+		t.Fatalf("expected %q, got %q", expected, stdout)
+	}
+}
+
+func TestCSVDocExamples(t *testing.T) {
+	f, err := os.Open("csv.md")
+	if err != nil {
+		t.Fatalf("error opening examples file: %v", err)
+	}
+	defer f.Close()
+
+	var (
+		command   string
+		output    string
+		truncated bool
+		n         = 1
+	)
+	runTest := func() {
+		t.Run(fmt.Sprintf("Example%d", n), func(t *testing.T) {
+			shell := "/bin/sh"
+			if runtime.GOOS == "windows" {
+				shell = "sh"
+			}
+			cmd := exec.Command(shell, "-c", command)
+			gotBytes, err := cmd.CombinedOutput()
+			if err != nil {
+				t.Fatalf("error running %q: %v\n%s", command, err, gotBytes)
+			}
+			got := string(gotBytes)
+			if truncated {
+				numLines := strings.Count(output, "\n")
+				got = strings.Join(strings.Split(got, "\n")[:numLines], "\n") + "\n"
+			}
+			got = string(normalizeNewlines([]byte(got)))
+			if got != output {
+				t.Fatalf("error running %q\ngot:\n%s\nexpected:\n%s", command, got, output)
+			}
+		})
+		n++
+	}
+
+	scanner := bufio.NewScanner(f)
+	inTest := false
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "$ goawk") {
+			if inTest {
+				runTest()
+			}
+			inTest = true
+			command = "./" + line[2:]
+			output = ""
+			truncated = false
+		} else if inTest {
+			switch line {
+			case "```":
+				runTest()
+				inTest = false
+			case "...":
+				truncated = true
+			default:
+				output += line + "\n"
+			}
+		}
+	}
+	if scanner.Err() != nil {
+		t.Errorf("error reading input: %v", scanner.Err())
+	}
+	if inTest {
+		t.Error("unexpectedly in test at end of file")
+	}
 }

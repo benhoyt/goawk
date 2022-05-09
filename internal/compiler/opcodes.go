@@ -25,14 +25,16 @@ const (
 
 	// Fetch a field, variable, or array item
 	Field
-	FieldInt    // index
-	Global      // index
-	Local       // index
-	Special     // index
-	ArrayGlobal // arrayIndex
-	ArrayLocal  // arrayIndex
-	InGlobal    // arrayIndex
-	InLocal     // arrayIndex
+	FieldInt // index
+	FieldByName
+	FieldByNameStr // strIndex
+	Global         // index
+	Local          // index
+	Special        // index
+	ArrayGlobal    // arrayIndex
+	ArrayLocal     // arrayIndex
+	InGlobal       // arrayIndex
+	InLocal        // arrayIndex
 
 	// Assign a field, variable, or array item
 	AssignField

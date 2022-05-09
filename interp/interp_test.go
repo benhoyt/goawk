@@ -3,14 +3,17 @@ package interp_test
 
 import (
 	"bytes"
+	"encoding/csv"
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"reflect"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -813,7 +816,7 @@ BEGIN { foo(5); bar(10) }
 	{"/foo\n", "", "", "parse error at 1:5: can't have newline in regex", "unterminated regexp"},
 	{`BEGIN { print "\x" }  # !gawk`, "", "", "parse error at 1:18: 1 or 2 hex digits expected", ""},
 	{`BEGIN { print 1&*2 }`, "", "", "parse error at 1:17: unexpected char after '&'", "syntax"},
-	{`BEGIN { @ }`, "", "", "parse error at 1:9: unexpected char", "syntax"},
+	{"BEGIN { ` }", "", "", "parse error at 1:9: unexpected char", "syntax"},
 }
 
 func TestInterp(t *testing.T) {
@@ -1437,6 +1440,231 @@ func TestExit(t *testing.T) {
 			}
 		})
 	}
+}
+
+type csvTest struct {
+	src       string
+	in        string
+	out       string
+	err       string
+	configure func(config *interp.Config)
+}
+
+var csvTests = []csvTest{
+	// INPUTMODE combinations
+	{`BEGIN { INPUTMODE="" } { print $1, $3 }`, "name,email\nBob C. Smith,bob@smith.com\nJane X. Brown,jane@brown.com", "name,email \nBob Smith,bob@smith.com\nJane Brown,jane@brown.com\n", "", nil},
+	{`BEGIN { INPUTMODE="csv header" } { print $1, $3 }`, "name,email,age\nBob\tSmith,bob@smith.com,42\n\nJane,jane@brown.com,37\n# not a comment", "Bob\tSmith 42\nJane 37\n# not a comment \n", "", nil},
+	{`BEGIN { INPUTMODE="csv separator=|" } { print $1, $3 }`, "Bob,Smith|bob@smith.com|42\nJane|jane@brown.com|37", "Bob,Smith 42\nJane 37\n", "", nil},
+	{`BEGIN { INPUTMODE="csv comment=#" } { print $1, $3 }`, "# this is a comment\nBob\tSmith,bob@smith.com,42\nJane,jane@brown.com,37", "Bob\tSmith 42\nJane 37\n", "", nil},
+	{`BEGIN { INPUTMODE="csv" } { print $1, $3 }`, "name,email,age\nBob,bob@smith.com,42\nJane,jane@brown.com,37", "name age\nBob 42\nJane 37\n", "", nil},
+	{`BEGIN { INPUTMODE="csv header" } { print @"age", @"name" }`, "name,email,age\nBob,bob@smith.com,42\nJane,jane@brown.com,37", "42 Bob\n37 Jane\n", "", nil},
+	{`BEGIN { INPUTMODE="csv header" } { x="name"; print @"age", @x }`, "name,age\nBob,42", "42 Bob\n", "", nil},
+	{`BEGIN { INPUTMODE="csv" } { print @"age", @"name" }`, "name,email,age\nBob,bob@smith.com,42\nJane,jane@brown.com,37", "", `@ only supported if header parsing enabled; use -H or add "header" to INPUTMODE`, nil},
+	{`BEGIN { INPUTMODE="tsv header" } { print $1, $3 }`, "name\temail\tage\nBob,Smith\tbob@smith.com\t42\nJane\tjane@brown.com\t37", "Bob,Smith 42\nJane 37\n", "", nil},
+
+	// OUTPUTMODE combinations
+	{`BEGIN { OUTPUTMODE="csv" } { print $2, $1 }`, "a\"b c\nd e", "c,\"a\"\"b\"\ne,d\n", "", nil},
+	{`BEGIN { OUTPUTMODE="tsv" } { print $2, $1 }`, "a\"b c\nd e", "c\t\"a\"\"b\"\ne\td\n", "", nil},
+	{`BEGIN { OUTPUTMODE="csv separator=|" } { print $2, $1 }`, "a\"b c\nd e", "c|\"a\"\"b\"\ne|d\n", "", nil},
+
+	// Both input and output in CSV (or TSV) mode
+	{`BEGIN { INPUTMODE="csv header"; OUTPUTMODE="csv"; print "age", "name" } { print $2, $1 }`, "name,age\nBob,42\n\"J B\",37\n\"A\"\"B\",7", "age,name\n42,Bob\n37,J B\n7,\"A\"\"B\"\n", "", nil},
+	{`BEGIN { INPUTMODE="csv"; OUTPUTMODE="tsv"; } { $1=$1; print }`, "name,age\nBob,42\n\"J B\",37\n\"A\"\"B\",7", "name\tage\nBob\t42\nJ B\t37\n\"A\"\"B\"\t7\n", "", nil},
+
+	// Configure via interp.Config struct
+	{`{ print $2, $1 }`, "name,age\nBob,42", "age name\n42 Bob\n", "", func(config *interp.Config) {
+		config.InputMode = interp.CSVMode
+	}},
+	{`{ print $2, $1 }`, "name\tage\nBob\t42", "age name\n42 Bob\n", "", func(config *interp.Config) {
+		config.InputMode = interp.TSVMode
+	}},
+	{`{ print $2, $1 }`, "# comment\nBob;42", "42 Bob\n", "", func(config *interp.Config) {
+		config.InputMode = interp.CSVMode
+		config.CSVInput.Separator = ';'
+		config.CSVInput.Comment = '#'
+	}},
+	{`{ print $1, $2 }`, "", "", "input mode configuration not valid in default input mode", func(config *interp.Config) {
+		config.CSVInput.Separator = ';'
+	}},
+	{`{ print $2, $1 }`, "Bob,42\nJane,37", "42\tBob\n37\tJane\n", "", func(config *interp.Config) {
+		config.InputMode = interp.CSVMode
+		config.OutputMode = interp.TSVMode
+	}},
+	{`BEGIN { INPUTMODE="tsv header"; OUTPUTMODE="csv" } { print @"age", @"name" }`, "name\tage\nBob\t42", "42,Bob\n", "", func(config *interp.Config) {
+		config.InputMode = interp.CSVMode // will be overridden by BEGIN
+		config.OutputMode = interp.TSVMode
+	}},
+	{`{ print @"age", @"name" }`, "name\tage\nBob\t42", "42,Bob\n", "", func(config *interp.Config) {
+		config.InputMode = interp.CSVMode // will be overridden by Vars
+		config.OutputMode = interp.TSVMode
+		config.Vars = []string{"INPUTMODE", "tsv header", "OUTPUTMODE", "csv"}
+	}},
+	{`{ print $2, $1 }`, "Bob 42", "42,Bob\n", "", func(config *interp.Config) {
+		config.OutputMode = interp.CSVMode
+	}},
+	{`{ print $2, $1 }`, "Bob 42", "42\tBob\n", "", func(config *interp.Config) {
+		config.OutputMode = interp.TSVMode
+	}},
+	{`{ print $2, $1 }`, "Bob 42", "42;Bob\n", "", func(config *interp.Config) {
+		config.OutputMode = interp.CSVMode
+		config.CSVOutput.Separator = ';'
+	}},
+	{`{ print $1, $2 }`, "", "", "output mode configuration not valid in default output mode", func(config *interp.Config) {
+		config.CSVOutput.Separator = ';'
+	}},
+
+	// $0 still works as expected in CSV mode
+	{`BEGIN { INPUTMODE="csv header" } { print }`, "name,age\nBob,42\nJane,37", "Bob,42\nJane,37\n", "", nil},
+	{`BEGIN { INPUTMODE="csv header" } { print $0 }`, "name,age\nBob,42\nJane,37", "Bob,42\nJane,37\n", "", nil},
+	{`BEGIN { INPUTMODE="csv header" } { print $0; $0=NR; print $0 }`, "name,age\nBob,42\nJane,37", "Bob,42\n1\nJane,37\n2\n", "", nil},
+	{`BEGIN { INPUTMODE="csv header comment=#" } { print $0 } END { for (i=1; i in FIELDS; i++) print i, FIELDS[i] }`,
+		"# comment\n\nname,age\n# comment\n\nBob,42\n# comment\nJane,37\n\nFoo,5",
+		"Bob,42\nJane,37\nFoo,5\n1 name\n2 age\n", "", nil},
+
+	// CSV filters
+	{`BEGIN { INPUTMODE="csv header" } /foo/ { print $2 }`, "id,type\n1,food\n2,bar\n3,foo\n", "food\nfoo\n", "", nil},
+	{`BEGIN { INPUTMODE="csv header" } $1==2 { print $2 }`, "id,type\n1,food\n2,bar\n3,foo\n", "bar\n", "", nil},
+	{`BEGIN { INPUTMODE="csv" } { s += $-1 } END { print s }`, "a,1\nb,2\nc,3\n", "6\n", "", nil},
+
+	// Updating fields
+	{`BEGIN { INPUTMODE="csv" } { $1 = $1 $1; print $1, $2 }`, "a,1\nb,2", "aa 1\nbb 2\n", "", nil},
+	{`BEGIN { INPUTMODE="csv" } { $1 = $1 $1; print }`, "a,1\nb,2", "aa 1\nbb 2\n", "", nil},
+	{`BEGIN { INPUTMODE="csv" } { $0 = "X,3"; print $1, $2 }`, "a,1\nb,2", "X 3\nX 3\n", "", nil},
+	{`BEGIN { INPUTMODE="csv" } { $0 = "X,3"; print }`, "a,1\nb,2", "X,3\nX,3\n", "", nil},
+	{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { $1 = $1 $1; print $1, $2 }`, "a,1\nb,2", "aa,1\nbb,2\n", "", nil},
+	{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { $1 = $1 $1; print }`, "a,1\nb,2", "aa,1\nbb,2\n", "", nil},
+	{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { $0 = "X,3"; print $1, $2 }`, "a,1\nb,2", "X,3\nX,3\n", "", nil},
+	{`BEGIN { INPUTMODE=OUTPUTMODE="csv" } { $0 = "X,3"; print }`, "a,1\nb,2", "X,3\nX,3\n", "", nil},
+	{`BEGIN { OUTPUTMODE="csv"; $0 = "a b c"; printf "%s|%s %s %s\n", $0, $1, $2, $3; NF=2; printf "%s|%s %s\n", $0, $1, $2 }`, "", "a b c|a b c\na,b|a b\n", "", nil},
+	{`BEGIN { OUTPUTMODE="csv"; $0 = "a b c"; printf "%s|%s %s %s\n", $0, $1, $2, $3; NF=4; printf "%s|%s %s %s %s\n", $0, $1, $2, $3, $4 }`, "", "a b c|a b c\na,b,c,|a b c \n", "", nil},
+
+	// FIELDS array
+	{`BEGIN { INPUTMODE="csv header" } NR==1 { for (i=1; i in FIELDS; i++) print i, FIELDS[i] }`, "name,email,age\na,b,c", "1 name\n2 email\n3 age\n", "", nil},
+	{`BEGIN { INPUTMODE="csv" } NR==1 { for (i=1; i in FIELDS; i++) print FIELDS[i] }`, "name,email,age\na,b,c", "", "", nil},
+
+	// Parsing and formatting of INPUTMODE and OUTPUTMODE special variables
+	{`BEGIN { INPUTMODE="csv separator=,"; print INPUTMODE }`, "", "csv\n", "", nil},
+	{`BEGIN { INPUTMODE="csv header=true comment=# separator=|"; print INPUTMODE }`, "", "csv separator=| comment=# header\n", "", nil},
+	{`BEGIN { OUTPUTMODE="csv separator=,"; printf "%s", OUTPUTMODE }`, "", "csv", "", nil},
+	{`BEGIN { OUTPUTMODE="csv separator=|"; printf "%s", OUTPUTMODE }`, "", "csv separator=|", "", nil},
+
+	// Error handling when parsing INPUTMODE and OUTPUTMODE
+	{`BEGIN { INPUTMODE="xyz" }`, "", "", `invalid input mode "xyz"`, nil},
+	{`BEGIN { INPUTMODE="csv separator=foo" }`, "", "", `invalid CSV/TSV separator "foo"`, nil},
+	{`BEGIN { INPUTMODE="csv comment=bar" }`, "", "", `invalid CSV/TSV comment character "bar"`, nil},
+	{`BEGIN { INPUTMODE="csv header=x" }`, "", "", `invalid header value "x"`, nil},
+	{`BEGIN { INPUTMODE="csv foo=bar" }`, "", "", `invalid input mode key "foo"`, nil},
+	{`BEGIN { OUTPUTMODE="xyz" }`, "", "", `invalid output mode "xyz"`, nil},
+	{`BEGIN { OUTPUTMODE="csv separator=foo" }`, "", "", `invalid CSV/TSV separator "foo"`, nil},
+	{`BEGIN { OUTPUTMODE="csv foo=bar" }`, "", "", `invalid output mode key "foo"`, nil},
+
+	// Other errors
+	{`BEGIN { @"x" = "y" }`, "", "", "parse error at 1:14: assigning @ expression not supported", nil},
+	{`BEGIN { x="a"; @x = "y" }`, "", "", "parse error at 1:19: assigning @ expression not supported", nil},
+	{`BEGIN { @"x" += "y" }`, "", "", "parse error at 1:14: assigning @ expression not supported", nil},
+	{`BEGIN { x="a"; @x += "y" }`, "", "", "parse error at 1:19: assigning @ expression not supported", nil},
+}
+
+func TestCSV(t *testing.T) {
+	for _, test := range csvTests {
+		testName := test.src
+		if len(testName) > 70 {
+			testName = testName[:70]
+		}
+		t.Run(testName, func(t *testing.T) {
+			testGoAWK(t, test.src, test.in, test.out, test.err, nil, test.configure)
+		})
+	}
+}
+
+func TestCSVMultiRead(t *testing.T) {
+	tests := []struct {
+		name  string
+		src   string
+		reads []string
+		out   string
+	}{{
+		name:  "UnquotedHeader",
+		src:   `BEGIN { INPUTMODE="csv header"; OFS="|" } { print $0, $1, $2 }`,
+		reads: []string{"name,age\n", "Bob", ",42\n", "", "Jill,", "37", ""},
+		out:   "Bob,42|Bob|42\nJill,37|Jill|37\n",
+	}, {
+		name:  "QuotedHeader",
+		src:   `BEGIN { INPUTMODE="csv header"; OFS="|" } { print $0, $1, $2 }`,
+		reads: []string{"name,age\n", "\"Bo", "b\"", ",42\n", "\"Ji\n", "ll\",", "37"},
+		out:   "\"Bob\",42|Bob|42\n\"Ji\nll\",37|Ji\nll|37\n",
+	}, {
+		name:  "UnquotedNewline",
+		src:   `BEGIN { INPUTMODE="csv header"; OFS="|" } { print $0, $1, $2 }`,
+		reads: []string{"name,age\n", "Bob", ",42\n", "Jill,", "37", "\n"},
+		out:   "Bob,42|Bob|42\nJill,37|Jill|37\n",
+	}, {
+		name:  "QuotedNewline",
+		src:   `BEGIN { INPUTMODE="csv header"; OFS="|" } { print $0, $1, $2 }`,
+		reads: []string{"name,age\n", "\"Bo", "b\"", ",42\n", "\"Ji\n", "ll\",", "37\n"},
+		out:   "\"Bob\",42|Bob|42\n\"Ji\nll\",37|Ji\nll|37\n",
+	}, {
+		name:  "UnquotedNoHeader",
+		src:   `BEGIN { INPUTMODE="csv"; OFS="|" } { print $0, $1, $2 }`,
+		reads: []string{"Bob", ",42\n", "", "Jill,", "37", ""},
+		out:   "Bob,42|Bob|42\nJill,37|Jill|37\n",
+	}, {
+		name:  "QuotedNoHeader",
+		src:   `BEGIN { INPUTMODE="csv"; OFS="|" } { print $0, $1, $2 }`,
+		reads: []string{"\"Bo", "b\"", ",42\n", "\"Ji\n", "ll\",", "37\n"},
+		out:   "\"Bob\",42|Bob|42\n\"Ji\nll\",37|Ji\nll|37\n",
+	}, {
+		name:  "QuotedCRLF",
+		src:   `BEGIN { INPUTMODE="csv" } { printf "%s|%s|%s", $0, $1, $2 }`,
+		reads: []string{"\"Ji\r\n", "ll\",", "37"},
+		out:   "\"Ji\nll\",37|Ji\nll|37",
+	}}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			prog, err := parser.ParseProgram([]byte(test.src), nil)
+			if err != nil {
+				t.Fatalf("error parsing program: %v", err)
+			}
+			outBuf := &concurrentBuffer{}
+			config := &interp.Config{
+				Stdin:  &sliceReader{reads: test.reads},
+				Output: outBuf,
+				Error:  outBuf,
+			}
+			status, err := interp.ExecProgram(prog, config)
+			if err != nil {
+				t.Fatalf("error executing program: %v", err)
+			}
+			out := outBuf.String()
+			if runtime.GOOS == "windows" {
+				out = normalizeNewlines(out)
+			}
+			if out != test.out {
+				t.Fatalf("expected %q, got %q", test.out, out)
+			}
+			if status != 0 {
+				t.Fatalf("expected status 0, got %d", status)
+			}
+		})
+	}
+}
+
+type sliceReader struct {
+	reads []string
+}
+
+func (r *sliceReader) Read(buf []byte) (int, error) {
+	if len(r.reads) == 0 {
+		return 0, io.EOF
+	}
+	n := copy(buf, r.reads[0])
+	if n < len(r.reads[0]) {
+		r.reads[0] = r.reads[0][:len(buf)]
+	} else {
+		r.reads = r.reads[1:]
+	}
+	return n, nil
 }
 
 func benchmarkProgram(b *testing.B, funcs map[string]interface{},
@@ -2173,6 +2401,88 @@ func BenchmarkRepeatIONew(b *testing.B) {
 		if output.String() != expected {
 			b.Fatalf("expected %q, got %q", expected, output.String())
 		}
+	}
+}
+
+func BenchmarkCSVInputGoAWK(b *testing.B) {
+	b.StopTimer()
+	s := 0
+	var inputLines []string
+	for i := 0; i < b.N; i++ {
+		s += i
+		inputLines = append(inputLines, fmt.Sprintf(`%d,foo,Bob Smith,"foo,bar,baz",email@example.com`, i))
+	}
+	input := strings.Join(inputLines, "\n")
+	expected := fmt.Sprintf("%d", s)
+	src := `BEGIN { INPUTMODE="csv" } { s += $1 } END { print s }`
+	benchmarkProgram(b, nil, input, expected, src)
+}
+
+func BenchmarkCSVInputReader(b *testing.B) {
+	b.StopTimer()
+	s := 0
+	var inputLines []string
+	for i := 0; i < b.N; i++ {
+		s += i
+		inputLines = append(inputLines, fmt.Sprintf(`%d,foo,Bob Smith,"foo,bar,baz",email@example.com`, i))
+	}
+	input := strings.Join(inputLines, "\n")
+	reader := csv.NewReader(strings.NewReader(input))
+	total := 0
+	b.StartTimer()
+	for {
+		record, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			b.Fatalf("read error: %v", err)
+		}
+		v, _ := strconv.Atoi(record[0])
+		total += v
+	}
+	if s != total {
+		b.Fatalf("expected %d, got %d", s, total)
+	}
+}
+
+func BenchmarkCSVOutputGoAWK(b *testing.B) {
+	b.StopTimer()
+	var expectedLines []string
+	for i := 0; i < b.N; i++ {
+		expectedLines = append(expectedLines, fmt.Sprintf(`%d,foo,Bob Smith,"foo,bar,baz",email@example.com`, i))
+	}
+	expected := strings.Join(expectedLines, "\n")
+	benchmarkProgram(b, nil, "", expected, `
+BEGIN {
+	OUTPUTMODE = "csv";
+	for (i=0; i<%d; i++)
+		print i, "foo", "Bob Smith", "foo,bar,baz", "email@example.com"
+}
+`, b.N)
+}
+
+func BenchmarkCSVOutputWriter(b *testing.B) {
+	b.StopTimer()
+	var expectedLines []string
+	for i := 0; i < b.N; i++ {
+		expectedLines = append(expectedLines, fmt.Sprintf(`%d,foo,Bob Smith,"foo,bar,baz",email@example.com`, i))
+	}
+	expected := strings.Join(expectedLines, "\n") + "\n"
+	var buf bytes.Buffer
+	writer := csv.NewWriter(&buf)
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		err := writer.Write([]string{strconv.Itoa(i), "foo", "Bob Smith", "foo,bar,baz", "email@example.com"})
+		if err != nil {
+			b.Fatalf("write error: %v", err)
+		}
+	}
+	writer.Flush()
+	b.StopTimer()
+	output := buf.String()
+	if output != expected {
+		b.Fatalf("expected %q, got %q\n", expected, output)
 	}
 }
 

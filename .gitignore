@@ -11,3 +11,5 @@ goawk_*.zip
 goawk_*.tar.gz
 .idea
 interp/testdata
+scripts/csvbench/bin
+scripts/csvbench/huge.csv

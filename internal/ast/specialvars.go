@@ -13,11 +13,13 @@ const (
 	V_FILENAME
 	V_FNR
 	V_FS
+	V_INPUTMODE
 	V_NF
 	V_NR
 	V_OFMT
 	V_OFS
 	V_ORS
+	V_OUTPUTMODE
 	V_RLENGTH
 	V_RS
 	V_RSTART
@@ -28,21 +30,23 @@ const (
 )
 
 var specialVars = map[string]int{
-	"ARGC":     V_ARGC,
-	"CONVFMT":  V_CONVFMT,
-	"FILENAME": V_FILENAME,
-	"FNR":      V_FNR,
-	"FS":       V_FS,
-	"NF":       V_NF,
-	"NR":       V_NR,
-	"OFMT":     V_OFMT,
-	"OFS":      V_OFS,
-	"ORS":      V_ORS,
-	"RLENGTH":  V_RLENGTH,
-	"RS":       V_RS,
-	"RSTART":   V_RSTART,
-	"RT":       V_RT,
-	"SUBSEP":   V_SUBSEP,
+	"ARGC":       V_ARGC,
+	"CONVFMT":    V_CONVFMT,
+	"FILENAME":   V_FILENAME,
+	"FNR":        V_FNR,
+	"FS":         V_FS,
+	"INPUTMODE":  V_INPUTMODE,
+	"NF":         V_NF,
+	"NR":         V_NR,
+	"OFMT":       V_OFMT,
+	"OFS":        V_OFS,
+	"ORS":        V_ORS,
+	"OUTPUTMODE": V_OUTPUTMODE,
+	"RLENGTH":    V_RLENGTH,
+	"RS":         V_RS,
+	"RSTART":     V_RSTART,
+	"RT":         V_RT,
+	"SUBSEP":     V_SUBSEP,
 }
 
 // SpecialVarIndex returns the "index" of the special variable, or 0
@@ -66,6 +70,8 @@ func SpecialVarName(index int) string {
 		return "FNR"
 	case V_FS:
 		return "FS"
+	case V_INPUTMODE:
+		return "INPUTMODE"
 	case V_NF:
 		return "NF"
 	case V_NR:
@@ -76,6 +82,8 @@ func SpecialVarName(index int) string {
 		return "OFS"
 	case V_ORS:
 		return "ORS"
+	case V_OUTPUTMODE:
+		return "OUTPUTMODE"
 	case V_RLENGTH:
 		return "RLENGTH"
 	case V_RS:
