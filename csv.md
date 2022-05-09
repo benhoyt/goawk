@@ -123,7 +123,7 @@ AZ
 
 ### Example: match a field and count
 
-To count the number of states that have `New` in the name, and then print out what they are:
+To count the number of states that have "New" in the name, and then print out what they are:
 
 ```
 $ goawk -i csv -H '@"State" ~ /New/ { n++ } END { print n }' testdata/csv/states.csv
@@ -279,7 +279,7 @@ The performance of GoAWK's CSV input and output mode is quite good, on a par wit
 
 Below are the results of some simple read and write [benchmarks](https://github.com/benhoyt/goawk/blob/master/scripts/csvbench) using `goawk` and `frawk` as well as plain Python and Go. The input for the read benchmarks is a large 1.5GB, 749,818-row input file with many columns (286). Times are in seconds, showing the best of three runs on a 64-bit Linux laptop with an SSD drive:
 
-Test              | goawk | frawk | python |   go
+Test              | goawk | frawk | Python |   Go
 ----------------- | ----- | ----- | ------ | ----
 Reading 1.5GB CSV |  6.49 |  2.03 |   20.2 | 6.95
 Writing 0.6GB CSV |  3.25 |  7.36 |   10.5 | 2.10

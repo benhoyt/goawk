@@ -9,7 +9,11 @@ AWK is a fascinating text-processing language, and somehow after reading the del
 
 GoAWK is a POSIX-compatible version of AWK, and additionally has a CSV mode for reading and writing CSV and TSV files. This feature was sponsored by the [library of the University of Antwerp](https://www.uantwerpen.be/en/library/). [Read the CSV documentation.](https://github.com/benhoyt/goawk/blob/master/csv.md)
 
-Read the [**original article about how GoAWK works and performs**](https://benhoyt.com/writings/goawk/), or the follow-up article about how I converted the tree-walking interpreter to a [**bytecode compiler and virtual machine**](https://benhoyt.com/writings/goawk-compiler-vm/).
+You can also read one of the articles I've written about GoAWK:
+
+* The original article about [how GoAWK works and performs](https://benhoyt.com/writings/goawk/)
+* How I converted the tree-walking interpreter to a [bytecode compiler and virtual machine](https://benhoyt.com/writings/goawk-compiler-vm/)
+* A description of why and how I added [CSV support](https://benhoyt.com/writings/goawk-csv/)
 
 
 ## Basic usage
@@ -80,7 +84,7 @@ if err != nil {
 
 If you need to repeat execution of the same program on different inputs, you can call [`interp.New`](https://pkg.go.dev/github.com/benhoyt/goawk/interp#New) once, and then call the returned object's `Execute` method as many times as you need.
 
-Read the [documentation](https://pkg.go.dev/github.com/benhoyt/goawk) for more details.
+Read the [package documentation](https://pkg.go.dev/github.com/benhoyt/goawk) for more details.
 
 
 ## Differences from AWK
