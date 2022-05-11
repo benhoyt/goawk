@@ -291,6 +291,7 @@ Writing 0.6GB CSV |  3.25 |  7.36 |   10.5 | 2.10
   - `a` would be an array such as: `a["name"] = "Bob"; a["age"] = 7`
   - keys would be ordered by `OFIELDS` (eg: `OFIELDS[1] = "name"; OFIELDS[2] = "age"`) or by "smart name" if `OFIELDS` not set ("smart name" meaning numeric if `a` keys are numeric, string otherwise)
   - `printrow(a)` could take an optional second `fields` array arg to use that instead of the global `OFIELDS`
+* Consider allowing `-H` to accept an optional list of field names which could be used as headers in the absence of headers in the file itself (either `-H=name,age` or `-i 'csv header=name,age'`).
 * Consider supporting `@"id" = 42` named field assignment.
 
 
