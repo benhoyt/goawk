@@ -27,7 +27,6 @@ jobs:
     - name: Build and Test
       run: |
         gawk --version
-        go build
         go test -race ./...
 
   build-windows:
@@ -53,7 +52,6 @@ jobs:
     - name: Build and Test
       run: |
         gawk --version
-        go build
         go test -race ./...
 
   build-macos:
@@ -79,5 +77,4 @@ jobs:
     - name: Build and Test
       run: |
         gawk --version
-        go build
         go test -race ./...

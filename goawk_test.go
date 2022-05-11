@@ -23,6 +23,7 @@ import (
 )
 
 var (
+	goExe      string
 	testsDir   string
 	outputDir  string
 	awkExe     string
@@ -32,6 +33,7 @@ var (
 )
 
 func TestMain(m *testing.M) {
+	flag.StringVar(&goExe, "goexe", "go", "set to override Go executable used to build goawk")
 	flag.StringVar(&testsDir, "testsdir", "./testdata", "directory with one-true-awk tests")
 	flag.StringVar(&outputDir, "outputdir", "./testdata/output", "directory for test output")
 	flag.StringVar(&awkExe, "awk", "gawk", "awk executable name")
@@ -39,6 +41,14 @@ func TestMain(m *testing.M) {
 	flag.BoolVar(&writeAWK, "writeawk", false, "write expected output")
 	flag.BoolVar(&writeGoAWK, "writegoawk", true, "write Go AWK output")
 	flag.Parse()
+
+	cmd := exec.Command(goExe, "build")
+	err := cmd.Run()
+	if err != nil {
+		fmt.Printf("error building goawk: %v\n", err)
+		os.Exit(1)
+	}
+
 	os.Exit(m.Run())
 }
 
