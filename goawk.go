@@ -1,4 +1,4 @@
-// Package goawk is an implementation of AWK written in Go.
+// Package goawk is an implementation of AWK with CSV support
 //
 // You can use the command-line "goawk" command or run AWK from your
 // Go programs using the "interp" package. The command-line program
@@ -23,7 +23,7 @@
 //     102
 //
 // To use GoAWK in your Go programs, see README.md or the "interp"
-// docs.
+// package docs.
 //
 package main
 

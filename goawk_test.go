@@ -45,7 +45,7 @@ func TestMain(m *testing.M) {
 	cmd := exec.Command(goExe, "build")
 	err := cmd.Run()
 	if err != nil {
-		fmt.Printf("error building goawk: %v\n", err)
+		fmt.Fprintf(os.Stderr, "error building goawk: %v\n", err)
 		os.Exit(1)
 	}
 

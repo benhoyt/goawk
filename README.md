@@ -1,13 +1,13 @@
 
-# GoAWK: an AWK interpreter written in Go
+# GoAWK: an AWK interpreter with CSV support
 
 [![Documentation](https://pkg.go.dev/badge/github.com/benhoyt/goawk)](https://pkg.go.dev/github.com/benhoyt/goawk)
 [![GitHub Actions Build](https://github.com/benhoyt/goawk/workflows/Go/badge.svg)](https://github.com/benhoyt/goawk/actions?query=workflow%3AGo)
 
 
-AWK is a fascinating text-processing language, and somehow after reading the delightfully-terse [*The AWK Programming Language*](https://ia802309.us.archive.org/25/items/pdfy-MgN0H1joIoDVoIC7/The_AWK_Programming_Language.pdf) I was inspired to write an interpreter for it in Go. So here it is, feature-complete and tested against "the one true AWK" test suite.
+AWK is a fascinating text-processing language, and somehow after reading the delightfully-terse [*The AWK Programming Language*](https://ia802309.us.archive.org/25/items/pdfy-MgN0H1joIoDVoIC7/The_AWK_Programming_Language.pdf) I was inspired to write an interpreter for it in Go. So here it is, feature-complete and tested against "the one true AWK" and GNU AWK test suites.
 
-GoAWK is a POSIX-compatible version of AWK, and additionally has a CSV mode for reading and writing CSV and TSV files. This feature was sponsored by the [library of the University of Antwerp](https://www.uantwerpen.be/en/library/). [Read the CSV documentation.](https://github.com/benhoyt/goawk/blob/master/csv.md)
+GoAWK is a POSIX-compatible version of AWK, and additionally has a CSV mode for reading and writing CSV and TSV files. This feature was sponsored by the [library of the University of Antwerp](https://www.uantwerpen.be/en/library/). Read the [CSV documentation](https://github.com/benhoyt/goawk/blob/master/csv.md).
 
 You can also read one of the articles I've written about GoAWK:
 
