@@ -311,6 +311,8 @@ BEGIN {
 	// Other FNR behaviour is tested in goawk_test.go
 	{`BEGIN { print "|" FS "|"; FS="," } { print $1, $2 }`, "a b\na,b\nx,,y", "| |\na b \na b\nx \n", "", ""},
 	{`BEGIN { print "|" FS "|"; FS="\\." } { print $1, $2 }`, "a b\na.b\nx..y", "| |\na b \na b\nx \n", "", ""},
+	{`BEGIN { FS="\x1f"; RS="\x1e"; OFS="," } { print $1, $2, $3 }`, "id\x1fname\x1fage\x1e1\x1fBob \"Billy\" Smith\x1f42\x1e2\x1fJane\nBrown\x1f37", "id,name,age\n1,Bob \"Billy\" Smith,42\n2,Jane\nBrown,37\n", "", ""},
+	{`BEGIN { FS="␟"; RS="␞"; OFS="," } { print $1, $2, $3 }`, "id␟name␟age␞1␟Bob \"Billy\" Smith␟42␞2␟Jane\nBrown␟37", "id,name,age\n1,Bob \"Billy\" Smith,42\n2,Jane\nBrown,37\n", "", ""},
 	{`BEGIN { FS="\\" } { print $1, $2 }`, "a\\b", "a b\n", "", ""},
 	{`{ print NF }`, "\na\nc d\ne f g", "0\n1\n2\n3\n", "", ""},
 	{`BEGIN { NR = 123; print NR }`, "", "123\n", "", ""},
