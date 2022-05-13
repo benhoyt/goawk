@@ -316,7 +316,7 @@ BEGIN {
 		"id\x1fname\x1fage\x1e1\x1fBob \"Billy\" Smith\x1f42\x1e2\x1fJane\nBrown\x1f37",
 		"id,name,age\n1,Bob \"Billy\" Smith,42\n2,Jane\nBrown,37\n", "", ""},
 	// Unicode unit and record separator (skip on Windows under gawk due to Unicode command line issues)
-	{`BEGIN { FS="␟"; RS="␞"; OFS=","; print "FS="FS; print "RS="RS; print "-----" } { print $1, $2, $3 }`, // TODO: # !windows-gawk
+	{`BEGIN { FS="␟"; RS="␞"; OFS="," } { print $1, $2, $3 }  # !windows-gawk`,
 		"id␟name␟age␞1␟Bob \"Billy\" Smith␟42␞2␟Jane\nBrown␟37",
 		"id,name,age\n1,Bob \"Billy\" Smith,42\n2,Jane\nBrown,37\n", "", ""},
 	{`BEGIN { FS="\\" } { print $1, $2 }`, "a\\b", "a b\n", "", ""},
