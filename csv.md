@@ -277,25 +277,26 @@ NY
 
 The performance of GoAWK's CSV input and output mode is quite good, on a par with using the `encoding/csv` package from Go directly, and much faster than the `csv` module in Python. CSV input speed is significantly slower than `frawk`, though CSV output speed is significantly faster than `frawk`.
 
-Below are the results of some simple read and write [benchmarks](https://github.com/benhoyt/goawk/blob/master/scripts/csvbench) using `goawk` and `frawk` as well as plain Python and Go. The input for the read benchmarks is a large 1.5GB, 749,818-row input file with many columns (286). Times are in seconds, showing the best of three runs on a 64-bit Linux laptop with an SSD drive:
+Below are the results of some simple read and write [benchmarks](https://github.com/benhoyt/goawk/blob/master/scripts/csvbench) using `goawk` and `frawk` as well as plain Python and Go. The output of the write benchmarks is a 1GB, 3.5 million row CSV file with 20 columns (including quoted columns); the input for the read benchmarks uses that same file. Times are in seconds, showing the best of three runs on a 64-bit Linux laptop with an SSD drive:
 
-Test              | goawk | frawk | Python |   Go
------------------ | ----- | ----- | ------ | ----
-Reading 1.5GB CSV |  6.49 |  2.03 |   20.2 | 6.95
-Writing 0.6GB CSV |  3.25 |  7.36 |   10.5 | 2.10
+Test            | goawk | frawk | Python |   Go
+--------------- | ----- | ----- | ------ | ----
+Reading 1GB CSV |  3.18 |  1.01 |   13.4 | 3.22
+Writing 1GB CSV |  5.64 |  13.0 |   17.0 | 3.24
 
 
 ## Future work
 
+* Add a comparison csv [csvkit](https://csvkit.readthedocs.io/en/latest/) tools (of developer experience, not performance), maybe under Examples or in a separate doc. See: https://news.ycombinator.com/item?id=31351116
 * Consider adding a `printrow(a)` or similar function to make it easier to construct CSV rows from scratch.
   - `a` would be an array such as: `a["name"] = "Bob"; a["age"] = 7`
   - keys would be ordered by `OFIELDS` (eg: `OFIELDS[1] = "name"; OFIELDS[2] = "age"`) or by "smart name" if `OFIELDS` not set ("smart name" meaning numeric if `a` keys are numeric, string otherwise)
   - `printrow(a)` could take an optional second `fields` array arg to use that instead of the global `OFIELDS`
 * Consider allowing `-H` to accept an optional list of field names which could be used as headers in the absence of headers in the file itself (either `-H=name,age` or `-i 'csv header=name,age'`).
+* Consider adding TrimLeadingSpace CSV input option. See: https://github.com/benhoyt/goawk/issues/109
 * Consider supporting `@"id" = 42` named field assignment.
 
 
 ## Feedback
 
 Please [open an issue](https://github.com/benhoyt/goawk/issues) if you have bug reports or feature requests for GoAWK's CSV support.
-
