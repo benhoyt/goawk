@@ -778,9 +778,6 @@ func (p *interp) setSpecial(index int, v value) error {
 	case ast.V_ORS:
 		p.outputRecordSep = p.toString(v)
 	case ast.V_RS:
-		if p.outputFormat == "ZZZ" {
-			fmt.Printf("TODO FS=%q, RS=%q\n", p.fieldSep, p.toString(v))
-		}
 		p.recordSep = p.toString(v)
 		switch { // compare to interp.newScanner
 		case len(p.recordSep) <= 1:
