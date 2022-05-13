@@ -314,7 +314,7 @@ BEGIN {
 	// ASCII unit and record separator
 	{`BEGIN { FS="\x1f"; RS="\x1e"; OFS="," } { print $1, $2, $3 }`, "id\x1fname\x1fage\x1e1\x1fBob \"Billy\" Smith\x1f42\x1e2\x1fJane\nBrown\x1f37", "id,name,age\n1,Bob \"Billy\" Smith,42\n2,Jane\nBrown,37\n", "", ""},
 	// Unicode unit and record separator
-	{"BEGIN { FS=\"\u241f\"; RS=\"\u241e\"; OFS=\",\" } { print $1, $2, $3 }", "id\u241fname\u241fage\u241e1\u241fBob \"Billy\" Smith\u241f42\u241e2\u241fJane\nBrown\u241f37", "id,name,age\n1,Bob \"Billy\" Smith,42\n2,Jane\nBrown,37\n", "", ""},
+	{"BEGIN { OFMT=\"ZZZ\"; FS=\"\u241f\"; RS=\"\u241e\"; OFS=\",\" } { print $1, $2, $3 }", "id\u241fname\u241fage\u241e1\u241fBob \"Billy\" Smith\u241f42\u241e2\u241fJane\nBrown\u241f37", "id,name,age\n1,Bob \"Billy\" Smith,42\n2,Jane\nBrown,37\n", "", ""},
 	{`BEGIN { FS="\\" } { print $1, $2 }`, "a\\b", "a b\n", "", ""},
 	{`{ print NF }`, "\na\nc d\ne f g", "0\n1\n2\n3\n", "", ""},
 	{`BEGIN { NR = 123; print NR }`, "", "123\n", "", ""},
