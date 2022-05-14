@@ -276,9 +276,9 @@ NY
 
 ## Examples based on csvkit
 
-The [csvkit](https://csvkit.readthedocs.io/en/latest/index.html) suite is a set of tools that allow you to quickly analyze and extract fields from CSV files (among other things). Each csvkit tool allows you to do a specific task; GoAWK is more low-level and verbose, but also a more general tool ([`csvsql`](https://csvkit.readthedocs.io/en/latest/tutorial/3_power_tools.html#csvsql-and-sql2csv-ultimate-power) being the exception!). GoAWK also runs significantly faster than csvkit (the latter is written in Python).
+The [csvkit](https://csvkit.readthedocs.io/en/latest/index.html) suite is a set of tools that allow you to quickly analyze and extract fields from CSV files. Each csvkit tool allows you to do a specific task; GoAWK is more low-level and verbose, but also a more general tool ([`csvsql`](https://csvkit.readthedocs.io/en/latest/tutorial/3_power_tools.html#csvsql-and-sql2csv-ultimate-power) being the exception!). GoAWK also runs significantly faster than csvkit (the latter is written in Python).
 
-Below are a few snippets showing how you'd do some of the tasks in the csvkit documentation, but using GoAWK (the input file is [testdata/csv/nz-schools.csv]([testdata/csv/states.csv](https://github.com/benhoyt/goawk/blob/master/testdata/csv/nz-schools.csv)):
+Below are a few snippets showing how you'd do some of the tasks in the csvkit documentation, but using GoAWK (the input file is [testdata/csv/nz-schools.csv](https://github.com/benhoyt/goawk/blob/master/testdata/csv/nz-schools.csv)):
 
 ### csvkit example: print column names
 
@@ -324,7 +324,7 @@ $ goawk -i csv -H -o csv 'BEGIN { print "# Students", "School" } { print @"Total
 
 ### csvkit example: generate statistics
 
-There's no equivalent of the `csvstat` tool in GoAWK, but you can calculate statistics yourself. For example, to calculate the total number of students in New Zealand schools, you can do the following (csvkit's warning here seems a bit odd):
+There's no equivalent of the `csvstat` tool in GoAWK, but you can calculate statistics yourself. For example, to calculate the total number of students in New Zealand schools, you can do the following (`csvstat` is giving a warning due to the single-column input):
 
 ```
 $ csvcut -c Total testdata/csv/nz-schools.csv | csvstat --sum
