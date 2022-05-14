@@ -684,6 +684,8 @@ func TestCSVDocExamples(t *testing.T) {
 				inTest = false
 			case "...":
 				truncated = true
+				runTest()
+				inTest = false
 			default:
 				output += line + "\n"
 			}

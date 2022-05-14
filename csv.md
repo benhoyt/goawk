@@ -16,6 +16,7 @@ Links to sections:
 * [Named field syntax](#named-field-syntax)
 * [Go API](#go-api)
 * [Examples](#examples)
+* [Examples based on csvkit](#examples-based-on-csvkit)
 * [Performance](#performance)
 * [Future work](#future-work)
 
@@ -273,6 +274,84 @@ NY
 ```
 
 
+## Examples based on csvkit
+
+The [csvkit](https://csvkit.readthedocs.io/en/latest/index.html) suite is a set of tools that allow you to quickly analyze and extract fields from CSV files (among other things). Each csvkit tool allows you to do a specific task; GoAWK is more low-level and verbose, but also a more general tool ([`csvsql`](https://csvkit.readthedocs.io/en/latest/tutorial/3_power_tools.html#csvsql-and-sql2csv-ultimate-power) being the exception!). GoAWK also runs significantly faster than csvkit (the latter is written in Python).
+
+Below are a few snippets showing how you'd do some of the tasks in the csvkit documentation, but using GoAWK (the input file is [testdata/csv/nz-schools.csv]([testdata/csv/states.csv](https://github.com/benhoyt/goawk/blob/master/testdata/csv/nz-schools.csv)):
+
+### csvkit example: print column names
+
+```
+$ csvcut -n testdata/csv/nz-schools.csv
+  1: School_Id
+  2: Org_Name
+  3: Decile
+  4: Total
+
+# In GoAWK you loop through the FIELDS array for this, and you can print the
+# data in any format you want:
+$ goawk -i csv -H '{ for (i=1; i in FIELDS; i++) printf "%3d: %s\n", i, FIELDS[i]; exit }' testdata/csv/nz-schools.csv
+  1: School_Id
+  2: Org_Name
+  3: Decile
+  4: Total
+```
+
+### csvkit example: select a subset of columns
+
+```
+$ csvcut -c Org_Name,Total testdata/csv/nz-schools.csv
+Org_Name,Total
+Waipa Christian School,60
+Remarkables Primary School,494
+...
+
+# In GoAWK you need to print the field names explicitly in BEGIN:
+$ goawk -i csv -H -o csv 'BEGIN { print "Org_Name", "Total" } { print @"Org_Name", @"Total" }' testdata/csv/nz-schools.csv
+Org_Name,Total
+Waipa Christian School,60
+Remarkables Primary School,494
+...
+
+# But you can also change the column names and reorder them:
+$ goawk -i csv -H -o csv 'BEGIN { print "# Students", "School" } { print @"Total", @"Org_Name" }' testdata/csv/nz-schools.csv
+# Students,School
+60,Waipa Christian School
+494,Remarkables Primary School
+...
+```
+
+### csvkit example: generate statistics
+
+There's no equivalent of the `csvstat` tool in GoAWK, but you can calculate statistics yourself. For example, to calculate the total number of students in New Zealand schools, you can do the following (csvkit's warning here seems a bit odd):
+
+```
+$ csvcut -c Total testdata/csv/nz-schools.csv | csvstat --sum
+/usr/local/lib/python3.9/dist-packages/agate/table/from_csv.py:74: RuntimeWarning: Error sniffing CSV dialect: Could not determine delimiter
+802,516
+
+$ goawk -i csv -H '{ sum += @"Total" } END { print sum }' testdata/csv/nz-schools.csv
+802516
+```
+
+To calculate the average (mean) decile level for boys' and girls' schools (sorry, boys!):
+
+```
+$ csvgrep -c Org_Name -m Boys testdata/csv/nz-schools.csv | csvcut -c Decile | csvstat --mean
+/usr/local/lib/python3.9/dist-packages/agate/table/from_csv.py:74: RuntimeWarning: Error sniffing CSV dialect: Could not determine delimiter
+6.45
+$ csvgrep -c Org_Name -m Girls testdata/csv/nz-schools.csv | csvcut -c Decile | csvstat --mean
+/usr/local/lib/python3.9/dist-packages/agate/table/from_csv.py:74: RuntimeWarning: Error sniffing CSV dialect: Could not determine delimiter
+8.889
+
+$ goawk -i csv -H '/Boys/  { d+=@"Decile"; n++ } END { print d/n }' testdata/csv/nz-schools.csv 
+6.45
+$ goawk -i csv -H '/Girls/ { d+=@"Decile"; n++ } END { print d/n }' testdata/csv/nz-schools.csv 
+8.88889
+```
+
+
 ## Performance
 
 The performance of GoAWK's CSV input and output mode is quite good, on a par with using the `encoding/csv` package from Go directly, and much faster than the `csv` module in Python. CSV input speed is significantly slower than `frawk`, though CSV output speed is significantly faster than `frawk`.
@@ -287,7 +366,6 @@ Writing 1GB CSV |  5.64 |  13.0 |   17.0 | 3.24
 
 ## Future work
 
-* Add a comparison csv [csvkit](https://csvkit.readthedocs.io/en/latest/) tools (of developer experience, not performance), maybe under Examples or in a separate doc. See: https://news.ycombinator.com/item?id=31351116
 * Consider adding a `printrow(a)` or similar function to make it easier to construct CSV rows from scratch.
   - `a` would be an array such as: `a["name"] = "Bob"; a["age"] = 7`
   - keys would be ordered by `OFIELDS` (eg: `OFIELDS[1] = "name"; OFIELDS[2] = "age"`) or by "smart name" if `OFIELDS` not set ("smart name" meaning numeric if `a` keys are numeric, string otherwise)
