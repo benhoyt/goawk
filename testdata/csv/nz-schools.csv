@@ -1,0 +1,2563 @@
+School_Id,Org_Name,Decile,Total
+266,Waipa Christian School,7,60
+6783,Remarkables Primary School,10,494
+4211,TKKM o Te Rito,5,87
+2959,Plateau School,8,143
+3036,Tawhai School,5,332
+764,Milldale Primary School (Proposed) (Proposed opening date: 2023-01-01),,0
+4160,TKKM o Te Atihaunui-A-Paparangi,2,113
+4208,TKKM o Mangere,1,262
+4209,TKKM o Manawatu,5,103
+2848,Gracefield School,5,215
+6759,Snells Beach Primary School,6,322
+6760,Somerville Intermediate School,10,923
+1139,Lake Taupo Christian School,8,118
+6117,Hutt Valley Activity Centre,1,0
+6119,Akina School/ Activity Centre,1,0
+6113,Papakura Activity Centre,1,0
+6116,London House Learning Centre,1,0
+3024,St Teresa's School (Karori),10,112
+6741,Te Matauranga,1,318
+6742,Tahatai Coast School,7,717
+6124,Napier Community High School,1,0
+6126,Taranaki Activity Centre,1,0
+6128,Te Ara,1,0
+6110,Awhina School/ Activity Centre,1,0
+3401,Kumara School,6,34
+6788,Hobsonville Point Primary School,10,747
+4212,TKKM o Waitaha,1,158
+4125,Southcity Christian School,5,161
+4126,Palmerston North Adventist Christian School,3,101
+6763,Whangaparaoa College,9,1637
+4207,TKKM o Nga Maungarongo,4,94
+6118,Manawatu Community High School - Manawatu Kura a Iwi,1,0
+3025,St Theresa's School (Plimmerton),10,161
+4129,Rotorua S D A School,4,37
+4140,South Auckland S D A School,2,366
+4141,Southwell School,10,651
+4143,Tamariki School,4,47
+4144,Tauranga Adventist School,6,106
+3943,Dipton School,9,42
+4109,Hohepa School,8,34
+4111,Huntley School (Marton),8,161
+4205,TKKM o Piripono Te Kura Whakahou ki Ōtara,1,77
+6127,Porirua Activity Centre,1,0
+6109,Auckland Secondary Schools' Centre,1,0
+4147,Waihi School,10,98
+4154,Whangarei Adventist Christian School,3,32
+4156,Blind and Low Vision Education Network NZ,3,55
+4204,Hare Krishna School,5,96
+3947,Edendale School (Southland),8,124
+3997,Otama School,9,11
+4006,Rimu School,9,104
+4011,Ruru Special School,4,93
+4013,Sacred Heart School (Waikiwi),9,82
+6111,Invercargill Activity Centre,1,0
+4132,St Joseph's School (Rangiora),9,139
+4123,New Plymouth Adventist Christian School,8,52
+4130,St George's School,99,141
+4146,Timatanga Community School,6,22
+4157,Westbridge Residential School,3,6
+4020,St Patrick's School (Invercargill),3,280
+4022,St Theresa's School (Invercargill),7,254
+4029,Tisbury School,4,106
+4047,Waverley Park School,4,243
+4054,Wyndham School,6,109
+3946,East Gore School,3,98
+4112,Southland Adventist Christian School,5,90
+4003,Pukerau School,7,60
+4007,Riversdale School,9,131
+4008,Riverton School,6,129
+4026,Te Anau School,9,281
+4027,Te Tipua School,5,26
+3957,Gorge Road School,9,30
+3975,Limehills School,10,183
+4104,Hadlow Preparatory School,9,182
+3954,Glenham School,8,6
+3956,Gore Main School,7,185
+4005,Queenstown Primary School,10,617
+4014,Salford School,8,256
+4021,St Teresa's School (Bluff),3,18
+4023,St Thomas School (Winton),9,101
+4028,Thornbury School,7,54
+4030,Tokanui School,10,65
+3977,Lochiel School,10,89
+3991,Myross Bush School,10,152
+3857,Waitati School,9,86
+3961,Halfmoon Bay School,5,38
+3963,Heddon Bush School,9,59
+3979,Longford Intermediate,4,177
+3858,Waiwera South School,8,30
+3859,Wakari School,7,286
+3539,St Patrick's School (Waimate),5,19
+4037,Waikaka School,10,59
+4046,Wallacetown School,8,64
+4053,Woodlands Full Primary School,10,99
+3540,St Patrick's School (Kaiapoi),7,109
+3823,St Gerard's School (Alexandra),9,119
+3824,St John's School (Ranfurly),8,55
+3825,St Joseph's School (Oamaru),5,110
+3826,St Joseph's School (Balclutha),5,64
+3827,St Joseph's Cathedral School,8,139
+3986,Mataura School,2,118
+3990,Mossburn School,7,45
+3938,Hauroko Valley Primary School,7,87
+4105,Hamilton Seventh-Day Adventist School,6,91
+4107,Parkside Christian S D A School,3,31
+3953,Garston School,8,25
+3955,Glenorchy School,7,33
+3964,Hedgehope School,9,26
+3973,Knapdale School,7,51
+3861,Warepa School,7,52
+3529,St Joseph's School (Fairlie),7,17
+3536,St Mary's School (Hokitika),6,121
+3538,St Patrick's School (Greymouth),6,172
+3822,St Francis Xavier School (Mornington),9,115
+3829,St Leonard's School (Dunedin),10,23
+3840,Taieri Beach School,7,6
+3841,Tainui School,7,264
+3842,Tapanui School,9,72
+3980,Lumsden School,8,74
+3930,Arrowtown School,10,475
+3862,Warrington School,8,50
+3864,Weston School,8,257
+3528,St Joseph's School (Pleasant Point),8,51
+3530,St Joseph's School (Kaikoura),5,110
+3831,St Mary's School (Milton),4,58
+3836,Stirling School,6,41
+3838,Tahakopa School,8,3
+3843,Tarras School,6,15
+3807,Purakaunui School,10,22
+3808,Ravensbourne School,6,21
+3790,Opoho School,10,154
+3573,Waimate Centennial School,4,139
+3574,Waimate Main School,3,97
+3845,Tokoiti School,4,25
+3847,Totara School,6,62
+3788,Omakau School,9,59
+3811,Romahapa School,9,65
+3820,St Brigids School (Tainui),10,70
+3795,Outram School,9,161
+3576,Waipara School,6,44
+3591,Wharenui School,3,298
+3592,Whataroa School,7,28
+3797,Palmerston School,6,102
+3561,Tinwald School,6,230
+3563,Tuahiwi School,6,164
+3570,Pegasus Bay School,10,431
+3572,Waimataitai School,6,473
+3577,Wairakei School (Christchurch),6,187
+3706,Arthur Street School,6,182
+3707,Fenwick School,6,290
+3709,Balaclava School,8,231
+3579,Waituna Creek School,6,30
+3586,West Eyreton School,10,185
+3588,Te Ara Koropiko West Spreydon School,4,257
+3597,Windwhistle School,10,21
+3602,Yaldhurst Model School,5,103
+3704,Ardgowan School,6,112
+3710,Balclutha School,5,159
+3723,Clinton School,5,75
+3724,Clutha Valley School,7,118
+3711,Balmacewen Intermediate,8,496
+3727,Concord School,4,76
+3729,Cromwell Primary School,9,343
+3731,Dunedin North Intermediate,7,322
+3736,Fairfield School (Dunedin),9,450
+3738,Five Forks School,9,44
+3725,Clyde School,9,165
+3740,George Street Normal School,9,402
+3741,Goldfields School (Cromwell),8,276
+3535,St Mary's School (Christchurch),4,110
+3537,St Patrick's School (Bryndwr),10,172
+3745,Halfway Bush School,3,44
+3747,Hawea Flat School,10,259
+3754,Kaitangata School,4,86
+3828,St Joseph's School (Port Chalmers),7,5
+3830,St Mary's School (Dunedin),6,47
+3837,Strath Taieri School,5,47
+3742,Grants Braes School,10,234
+3743,Green Island School,6,181
+3776,Mornington School,7,238
+3542,St Peter's School (Beckenham),8,148
+3543,St Teresa's School (Riccarton),4,147
+3756,Karitane School,6,19
+3761,Lee Stream School,9,15
+3772,Milton School,4,115
+3839,Tahuna Normal Intermediate,8,516
+3844,The Terrace School (Alexandra),8,317
+3855,Waitahuna School,8,14
+3557,Te Kura o Huriawa Thorrington,10,404
+3523,St James School (Aranui),1,101
+3273,Albury School,7,35
+3274,Allenton School,7,396
+3275,Allenvale Special School and Res Centre,6,140
+3803,Port Chalmers School,6,102
+3805,Portobello School,8,40
+3812,Rosebank School (Balclutha),6,239
+3819,St Bernadette's School (Forbury),6,150
+3789,Omarama School,7,49
+3569,Waikari School,5,37
+3779,Musselburgh School,5,147
+3547,Swannanoa School,10,302
+3554,Waitaha School,6,121
+3476,Pitt Island School,4,8
+3489,Ross School,5,21
+3490,Rotherham School,8,24
+3492,Te Kōmanawa Rowley School,1,132
+3506,Somerfield Te Kura Wairepo,8,458
+3507,South Hornby School,4,277
+3571,Waimairi School,9,334
+3580,Wakanui School,8,115
+3585,Weedons School,10,141
+3527,St Joseph's School (Ashburton),8,233
+3270,Sacred Heart School (Christchurch),4,168
+2241,St Patrick's School (Inglewood),6,66
+3461,Our Lady of the Assumption School (Chch),10,271
+3463,Our Lady of Victories,6,241
+3508,South New Brighton School,6,450
+3509,Southbridge School,8,129
+3406,Lake Tekapo School,10,27
+3587,West Melton School,10,421
+3589,Westburn School,9,459
+3594,Longbeach School,9,137
+3703,Andersons Bay School,10,271
+3719,Brockville School,2,140
+3737,Pembroke School (Oamaru),3,230
+3470,Parkview Pārua,6,399
+3472,Paroa School (Greymouth),9,163
+3477,Pleasant Point Primary School,8,254
+3407,Lauriston School,9,96
+3425,Mairehau Primary School,6,377
+3426,Makikihi School,6,26
+3441,Mt Somers Springburn School,9,90
+3442,Aoraki Mount Cook School,9,6
+3373,Highfield School,6,266
+3479,Queenspark School,8,527
+3488,Rolleston School,10,735
+3493,Te Ara Maurea Roydvale School,10,274
+3375,Hinds School,5,124
+3389,Kaiapoi North School,7,505
+3391,Kaikoura Primary School,3,112
+3495,Runanga School,2,58
+3502,Sheffield Contributing School,9,88
+3504,Shirley Primary School,3,282
+3518,St Albans School,8,498
+3520,St Anne's School (Woolston),3,158
+3411,Leithfield School,8,101
+3392,Kaikoura Suburban School,5,52
+3289,Banks Avenue School,4,322
+3290,Barrytown School,4,23
+3291,Beckenham Te Kura o Pūroto,8,473
+3292,Belfast School,7,423
+3305,Burnside Primary School,4,304
+3413,Linwood Avenue School,2,347
+3418,Little River School,9,71
+3429,Marshland School,9,527
+3307,Cannington School,6,12
+3308,Carew Peel Forest School,10,75
+3309,Casebrook Intermediate,6,452
+3746,Hampden School,4,44
+3753,Kaikorai School,9,271
+3755,Kakanui School,1,61
+3436,Methven School,9,235
+3443,Mt Pleasant School,10,311
+3445,New Brighton Catholic School (Chch),6,193
+3322,Cobden School,2,64
+3323,Cobham Intermediate,8,625
+3324,Cotswold School,8,497
+3762,Macandrew Bay School,10,142
+3764,Macraes Moonlight School,10,18
+3771,Millers Flat School,6,27
+3452,Okains Bay School,4,10
+3454,Omihi School,9,39
+3379,Hoon Hay Te Kura Kōaka,8,409
+3388,Kaiapoi Borough School,5,374
+3393,Kaniere School,7,83
+3402,Ladbrooks School,10,131
+3325,Cust School,10,141
+3339,Ferndale Te Ahu,2,125
+3340,Fernside School,10,279
+3778,Elmgrove School,7,293
+3544,Our Lady Star of the Sea School (Christchurch),10,66
+3546,Sumner School,10,357
+3284,Ashgrove School,9,416
+3288,Ngutuawa School,3,147
+3293,Bishopdale School,3,159
+3295,Blaketown School,2,79
+3302,Bromley School,3,349
+3304,Burnham School - Te Kura o Tiori,9,119
+3342,Fox Glacier School,8,14
+3357,Greendale School,10,55
+3359,Greta Valley School,5,41
+3553,Te One School,7,36
+3555,Templeton School,8,320
+3521,St Bernadette's School (Hornby),4,113
+2242,St Pius X School (New Plymouth),9,163
+3271,Addington Te Kura Taumatua,3,250
+3276,Amberley School,7,222
+3313,Chertsey School,7,32
+3318,Christchurch South Karamata Intermediate School,8,505
+3327,Diamond Harbour School,10,106
+3372,Heaton Normal Intermediate,9,511
+3206,Motueka South School,4,210
+3207,Motupipi School,7,77
+3462,Our Lady of the Snows School (Methven),8,28
+3478,Prebbleton School,10,494
+3480,Rakaia School,6,160
+3485,Te Kāpehu Riccarton School,3,258
+3496,Russley School,7,420
+3503,Shirley Intermediate,4,141
+3329,Dorie School,9,76
+3336,Fairton School,6,25
+3338,Fendalton Open Air School,10,407
+3208,Nayland Primary School,6,361
+3222,St Peter Chanel School (Motueka),4,57
+3223,Stoke School,4,191
+3224,Tahunanui School,4,235
+3225,Central Takaka School,6,42
+3021,Sts Peter and Paul School (L.Hutt),9,432
+3343,Franz Josef Glacier School,9,35
+3352,Glentunnel School,7,103
+3354,Governors Bay School,10,94
+3505,Wigram Primary School - Te Piki Kāhu,4,349
+3510,Southbrook School,7,302
+3512,Spreydon School,3,236
+3022,St Pius X School (Titahi Bay),4,56
+3023,St Teresa's School (Featherston),5,93
+3361,Greymouth Main School,6,261
+3363,Haast School,8,8
+3368,Hanmer Springs School,9,90
+3370,Harewood School,8,176
+3209,Nelson Central School,7,369
+3220,St Canice's School (Westport),5,137
+3229,Upper Moutere School,8,106
+3234,Wakefield School,8,241
+3236,Westport South School,5,244
+3018,St Claudine Thevenet School,3,244
+3020,St Peter Chanel School (Otaki),4,23
+3004,St Brendan's School (Heretaunga),8,265
+3005,St Brigids School (Johnsonville),9,287
+3006,St Francis De Sales School (Is.Bay),10,224
+3007,St Francis Xavier School (Tawa),8,150
+3011,St Joseph's School (Upper Hutt),7,531
+2945,Pahiatua School,4,354
+2950,Paremata School,9,351
+2961,Pomare School,1,59
+2968,Maungaraki School,10,352
+2970,Rangikura School,2,372
+3008,St Joseph's School (Levin),2,155
+2955,Petone Central School,4,87
+2956,Picton School,5,80
+2957,Pinehaven School,10,191
+2958,Pirinoa School,7,51
+2971,Rapaura School,9,132
+2975,Raumati South School,9,348
+2977,Redwoodtown School,4,298
+2984,Sacred Heart School (Petone),7,150
+2986,San Antonio School (Eastbourne),10,18
+2993,South Featherston School,6,37
+2995,Spring Creek School,5,50
+2972,Raroa Normal Intermediate,10,700
+2973,Rata Street School,2,313
+2974,Raumati Beach School,9,583
+3000,St Benedict's School (Khandallah),10,264
+3002,St Bernard's School (Brooklyn),9,42
+3029,Tairangi School,1,130
+2988,Seddon School,6,126
+2989,Shannon School,1,117
+2990,Silverstream School,10,442
+3034,Tawa Intermediate,8,498
+3043,Titahi Bay Intermediate,4,178
+3045,Titahi Bay School,4,374
+3059,Wainuiomata Primary School,4,209
+3068,Waterloo School,8,473
+3070,Whareama School,6,49
+2991,Solway School,6,227
+3038,Te Horo School (Otaki),9,186
+3040,Thorndon School,10,254
+3041,Tinui School,5,38
+3055,Wadestown School,10,278
+3056,Waikanae School,9,549
+3077,Worser Bay School,10,127
+3184,Broadgreen Intermediate,6,549
+3186,Canvastown School,6,24
+3193,Hampden Street School,6,425
+3195,Hira School,10,76
+3202,Maitai School,7,44
+3057,Waikawa Bay School,5,146
+3071,Whitney Street School,4,354
+3072,Wilford School,6,244
+3073,Otari School,9,202
+3074,Windley School,1,256
+3075,Witherlea School,9,334
+3204,Maruia School,5,19
+2745,St Patrick's School (Napier),4,360
+2802,Arakura School,2,127
+3188,Dovedale School,5,31
+3189,Enner Glynn School,7,340
+3192,Granity School,3,25
+2811,Blenheim School,3,104
+2818,Cannons Creek School,1,113
+2820,Carterton School,6,230
+2827,Clyde Quay School,10,221
+2834,Eastern Hutt School,9,546
+2836,Epuni School,3,119
+2739,Te Kura Kaupapa Maori o Whatatutu,1,26
+2805,Ballance School,1,8
+2806,Bellevue School (Newlands),8,268
+2843,Fernridge School,6,188
+2845,Gladstone School (Masterton),9,155
+2850,Greytown School,8,344
+2852,Hampton Hill School,6,190
+2859,Holy Family School (Porirua),1,209
+2861,Houghton Valley School,10,172
+2868,Kahutara School,8,109
+2875,Karori West Normal School,10,486
+2877,Kelson School,9,265
+2807,Belmont School (Lower Hutt),7,316
+2821,Cashmere Avenue School,10,293
+2823,Crofton Downs Primary School,10,172
+2824,Churton Park School,10,316
+2837,Evans Bay Intermediate,7,381
+2838,Fairfield School (Levin),3,436
+2886,Levin East School,2,344
+2893,Maidstone Intermediate,6,528
+2895,Makuri School,6,17
+2839,Fairhall School,10,171
+2840,Featherston School,4,141
+2841,Fergusson Intermediate (Trentham),7,416
+2854,Hataitai School,10,241
+2855,Havelock School,5,70
+2871,Kapakapanui School,9,546
+2900,Mangatainoka School,4,54
+2902,Te Kura o Hau Karetu,3,128
+2909,Masterton Intermediate,5,446
+2911,Mauriceville School,1,17
+2918,Mt Cook School (Wellington),6,226
+2920,Muritai School,10,347
+2872,Mahinawa Specialist School and Resource Centre,5,112
+2873,Kapiti School,4,158
+2874,Karori Normal School,10,662
+2925,Newlands School,8,283
+2927,Ngaio School,10,360
+2936,Opaki School,9,176
+2943,Oxford Crescent School,6,308
+2684,Takapau School,4,123
+2686,Tamatea School,2,142
+2888,Levin North School,3,213
+2889,Levin School,1,211
+2890,Linden School,4,106
+3519,St Andrew's School (Timaru),4,98
+3410,Leeston School,8,285
+3412,Lincoln Primary School,10,607
+2691,Te Awa School,1,182
+2702,The Terrace School (Waipukurau),2,114
+2711,Twyford School,4,164
+2891,Linkwater School,7,30
+2904,Holy Cross School (Miramar),5,173
+2906,Martinborough School,8,240
+3419,Loburn School,9,158
+3455,Opawa School,4,301
+3376,Hokitika School,5,175
+3380,Hornby Primary School,3,213
+3385,Isleworth School,5,264
+3387,Kaingaroa School (Chatham Islands),4,5
+2718,Waimarama School,1,24
+2725,Waipukurau School,5,306
+2736,Whangara School,4,85
+2921,Naenae Intermediate,3,358
+2922,Naenae School,1,302
+2923,Natone Park School,1,84
+3394,Karoro School,8,164
+3396,Kirkwood Intermediate,7,330
+3285,Ashley Rakahuri School,10,154
+3287,Avonhead School,7,570
+3301,Broadfield School,9,134
+3303,Broomfield School,8,119
+2677,St Joseph's School (Hastings),3,215
+2232,Spotswood Primary School,4,259
+2457,St Mary's School (P North),6,188
+2924,Newlands Intermediate,9,522
+2939,Otaki School,4,156
+2941,Our Lady of the Rosary School (Waiwhetu),5,263
+2687,Taradale Intermediate,9,556
+2688,Taradale School,9,438
+2704,Tikokino School,6,57
+2466,Terrace End School,3,145
+2468,Turakina School,3,26
+3310,Cashmere Primary Te Pae Kererū,10,393
+3321,Clarkville School,10,191
+3326,Darfield School,8,239
+2705,Tiniroto School,3,8
+2706,Hatea-A-Rangi,2,22
+2721,Wainui Beach School,7,267
+2723,Waipawa School,5,309
+2239,St Joseph's School (Waitara),3,71
+1954,St Joseph's Catholic School (Waihi),3,40
+2475,Waituna West School,6,53
+2477,Whanganui Intermediate,4,541
+2584,Kaiti School,1,378
+3335,Fairlie School,6,109
+3346,Gilberthorpe School,2,177
+3369,Hāpuku School,2,8
+1955,St Joseph's Catholic School (Whakatane),6,264
+2236,St Joseph's School (New Plymouth),7,279
+2593,Makaraka School,5,115
+2600,TKKM o Mangatuna,1,17
+2602,Manutuke School,3,131
+3371,Heathcote Valley School,9,197
+3210,Nelson Intermediate,5,431
+3212,Ngatimoti School,5,75
+3219,Sacred Heart School (Reefton),6,24
+3221,St Joseph's School (Nelson),8,368
+3228,Tasman School,9,116
+2237,St Joseph's School (Opunake),6,75
+2238,St Joseph's School (Stratford),6,184
+2453,St Joseph's School (Taihape),6,110
+2609,Mata School,5,5
+2611,Matawai School,5,48
+2616,Motu School,6,7
+3226,Takaka Primary School,6,134
+3235,Westport North School,4,215
+3017,Our Lady of Kapiti School,7,232
+3019,St Patrick's School (Kilbirnie),3,85
+3012,St Mary's School (Blenheim),6,152
+2454,St Mary's School (Wanganui),3,231
+2455,St Mary's School (Foxton),3,26
+2953,Pauatahanui School,10,196
+2960,Plimmerton School,10,416
+2962,Pongaroa School,4,57
+2967,Pukerua Bay School,10,174
+2969,Randwick School,3,141
+2976,Redwood School (Tawa),10,357
+2618,Napier Central School,8,247
+2625,Ohuka School,4,9
+2627,Omakere School,7,56
+2456,St Matthew's School (Marton),2,29
+2472,Waiouru School,7,103
+2587,Kotemaori School,2,16
+2978,Renwick School,7,492
+2985,Sacred Heart Cathedral School,9,221
+2987,Seatoun School,10,336
+2992,South End School,6,176
+2994,South Wellington Intermediate,8,455
+3001,St Bernadette's School (Naenae),3,112
+2634,Otane School,1,75
+2641,Parkvale School,4,452
+2643,Patutahi School,1,22
+2650,Poukawa School,6,106
+2652,Pukehou School,6,88
+2659,TKKM o Tapere-Nui-A-Whatonga,1,38
+2482,Whangaehu School,3,23
+2484,Winchester School (P North),8,352
+2543,Arthur Miller School,7,330
+2588,Kowhai School,2,108
+2590,Lucknow School,5,294
+2604,Maraenui Bilingual School (Napier),1,170
+3035,Tawa School,7,364
+3037,Te Aro School,7,190
+3044,Titahi Bay North School,2,142
+3051,Tui Glen School,2,147
+3053,Upper Hutt School,6,369
+3060,Wainuioru School,9,75
+2550,Cobham School,1,33
+2561,Flemington School (Waipukurau),9,89
+2566,Gisborne Intermediate,4,615
+2606,Marewa School,1,200
+2620,Nelson Park School,5,376
+2621,Ngatapa School,5,19
+2622,Norsewood and Districts School,4,64
+2637,Te Kura o Pakipaki,1,24
+2638,Pakowhai School,2,27
+3062,Wairau Valley School (Blenheim),5,43
+3067,Ward School,7,48
+3185,Brooklyn School (Motueka),5,103
+2575,Heretaunga Intermediate,1,336
+2418,Central Normal School,4,434
+2441,Russell Street School,8,307
+2640,Papatawa School,3,27
+2654,Puketapu School (Hawkes Bay),10,246
+2657,Putere School,2,13
+2672,Sherenden and Districts School,9,54
+2438,Rongotea School,8,139
+2673,Sherwood School (Hawkes Bay),8,30
+3187,Clifton Terrace School,9,288
+3194,Henley School (Nelson),8,522
+3196,Hope School,9,64
+2443,Sanson School,5,21
+2450,St Johns Hill School,8,373
+2452,St Joseph's School (Patea),1,16
+2553,Dannevirke South School,4,258
+2554,Ebbett Park School,1,148
+2555,Elgin School,1,71
+2556,Elsthorpe School,6,47
+2557,Eskdale School,8,308
+2570,Hastings Intermediate,3,459
+3201,Mahana School,9,50
+3203,Mapua School,10,263
+2742,Woodville School,2,92
+2375,Kakatahi School,2,7
+2382,Kiwitea School,9,66
+2384,Te Kura o Kokohuia,1,155
+2571,Haumoana School,7,159
+2572,Havelock North Intermediate,8,522
+2573,Havelock North Primary School,9,526
+2420,Papanui Junction School,6,5
+2436,Whare Kura Morehu ō Ratana,2,25
+2437,Riverdale School (P North),8,341
+2801,Alfredton School,10,41
+2803,Avalon School,2,188
+2808,Berhampore School,7,257
+2391,Mangamahu Primary School,3,3
+2393,Manunui School,2,87
+2400,Milson School,4,322
+2402,Monrad - Te Kura Waenga o Tirohanga,3,366
+2407,Ngamatapouri School,5,12
+2439,Roslyn School,3,349
+2440,Ross Intermediate,5,471
+2810,Birchville School,6,139
+2819,Cardinal McKeefry School (Wilton),10,53
+2826,Clifton Terrace Model School,8,71
+2828,Corinna School,1,196
+2833,Dyer Street School,4,146
+2835,Eketahuna School,4,100
+2409,North Street School,3,348
+2416,Our Lady of Lourdes School (P North),5,130
+2372,Kaitoke School (Wanganui),5,107
+2386,Linton Camp School,10,135
+2387,Linton Country School,6,9
+2842,Fernlea School,4,216
+2844,Fraser Crescent School,5,218
+2851,Grovetown School,7,74
+2862,Hutt Central School,8,279
+2867,West Park School,9,340
+2876,Kelburn Normal School,10,265
+2357,Fordell School,7,134
+2359,Foxton School,1,72
+2366,Hunterville Consolidated School,5,128
+2388,Longburn School,4,121
+2389,Lytton Street School,4,523
+2403,Mosston School,4,147
+2404,Mount Biggs School,9,102
+2405,National Park School,5,39
+2406,Newbury School,8,158
+2878,Kenakena School,7,535
+2883,Korokoro School,10,202
+2887,Levin Intermediate,2,307
+2368,James Cook School,2,193
+2223,Puketapu School (New Plymouth),4,379
+1957,St Mary's Catholic School (Putaruru),5,162
+2355,Durie Hill School,5,233
+2356,Feilding Intermediate,5,361
+2369,Kai Iwi School,6,91
+1959,St Mary's Catholic School (Tauranga),8,392
+1964,St Peter Chanel Catholic School (Te Rapa),7,273
+2892,Lyall Bay School,7,348
+2894,Makara Model School,10,65
+2903,Maraeroa School,1,153
+2370,Kairanga School,8,154
+2371,Kaitieke School,10,16
+2220,Pembroke School,6,87
+2253,Tokirima School,9,24
+2254,Toko School,7,117
+2255,Turuturu School,5,289
+2248,Tawhiti School,6,281
+2257,Uruti School,4,9
+2266,Westown School,3,100
+2912,Mayfield School (Blenheim),2,101
+2926,Newtown School,5,326
+2928,Ngati Toa School,3,121
+2937,Opiki School,6,132
+2942,Owhiro Bay School,9,120
+2944,Paekakariki School,7,153
+2256,Urenui School,5,79
+2336,Aranui School (Wanganui),1,72
+2337,Ashhurst School,7,449
+2268,Woodleigh School,7,355
+2332,Aokautere School,10,149
+2334,Arahunga School,3,46
+2341,Bainesse School,5,58
+2343,Bulls School,5,180
+2350,Cloverlea School,3,295
+2685,Tamatea Intermediate,4,377
+2692,Te Hapara School,2,199
+2701,Te Wharau School (Gisborne),2,396
+2338,Awahou School,7,32
+2339,Awapuni School (P.North),2,74
+2353,College Street Normal School,8,575
+2352,Coley Street School,2,205
+1966,St Pius X Catholic School (Melville),3,200
+1975,Tairua School,7,158
+2703,Tikitiki School,1,17
+2710,Tutira School,2,24
+2733,Westshore School,5,109
+2676,St Joseph's School (Dannevirke),5,144
+2678,St Joseph's School (Waipukurau),6,111
+1982,Tarrangower School,2,41
+1984,Tauhara School,3,232
+1989,Taupo School,5,435
+2240,St Patrick's School (Kaponga),5,12
+2233,St John Bosco School (New Plymouth),8,251
+2235,St Joseph's School (Hawera),6,200
+2460,Takaro School,1,244
+2467,Turitea School,10,143
+2469,Upokongaro School,2,126
+2354,Colyton School,9,145
+1968,Strathmore School,1,140
+1970,Sunset Primary School,1,121
+1991,Tauranga Primary School,7,406
+1998,Te Akau School,6,44
+1809,Te Kura Mana Maori o Matahi,1,19
+2474,Waitotara School,3,36
+2476,Whanganui East School,2,179
+2585,Kereru School,5,25
+2626,Omahu School,1,38
+2592,Mahora School,3,313
+2594,Makarika School,1,11
+1971,Te Kura o Tahaaroa,2,31
+1972,Tahuna School,7,83
+1985,Tauhei Combined School,5,29
+1986,Taumarunui Primary School,1,141
+1987,Taupiri School,3,90
+1988,Taupo Intermediate,6,600
+1680,Aberdeen School,5,645
+1682,Amisfield School,4,151
+1689,Ashbrook School,1,74
+2599,Mangateretere School,2,46
+2617,Muriwai School,1,30
+2619,Napier Intermediate,4,401
+2002,Te Awamutu Primary School,5,511
+1952,St Joseph's Catholic School (Te Aroha),4,76
+1953,St Joseph's Catholic School (Te Kuiti),4,77
+1691,Awakeri School,6,297
+1698,Broadlands School,8,82
+1700,Cambridge East School,10,380
+1573,Willow Park School,9,619
+1575,Windy Ridge School,7,220
+1580,Yendarra School,1,251
+2624,Nuhaka School,2,101
+2628,Onekawa School,4,301
+2642,Patoka School,6,47
+1384,Mt Roskill Primary School,3,634
+1385,Mulberry Grove School,3,30
+1386,Murrays Bay Intermediate,10,1016
+1387,Murrays Bay School,10,680
+1684,Apanui School,5,381
+1686,Arataki School,3,461
+1441,Pt England School,1,502
+1446,Ponsonby Primary School,10,318
+1448,Puhinui School,3,596
+2644,Peterhead School,1,514
+2649,Potaka School,2,44
+2651,Pukehamoamoa School,7,80
+1687,Aria School,5,37
+1701,Cambridge Middle School,9,701
+1702,Cambridge School,9,361
+1450,Pukekohe East School,10,144
+1451,Pukekohe Hill School,5,573
+1452,Pukekohe Intermediate,5,735
+1389,New Lynn School,4,336
+1391,Newmarket School,7,226
+1396,Northcross Intermediate,10,1304
+2658,Putorino School,4,12
+2667,Riverdale School (Gisborne),1,132
+2669,Ruahine School,7,165
+2483,Whenuakura School,4,42
+2542,Argyll East School,5,72
+2544,Awapuni School (Gisborne),3,264
+1453,Pukekohe North School,1,257
+2005,Te Kauwhata Primary School,5,272
+2019,Te Ranga School,4,149
+2007,Te Kowhai School,10,312
+2009,Te Mahoe School,1,34
+2014,Te Poi School,7,86
+2549,Clive School,7,195
+2558,Fairhaven School (Napier),2,84
+2560,Flaxmere Primary School,1,458
+2567,Greenmeadows School,7,436
+2569,Hastings Central School,2,179
+2574,Henry Hill School,1,285
+2020,Te Rapa School,7,486
+2021,Te Rerenga School,6,118
+2035,Tokoroa Central School,1,192
+2016,Te Puke Primary School,2,318
+2025,Te Waotu School,7,104
+2023,Te Kura o Te Teko,1,137
+2032,Tirohanga School,7,21
+2043,Turua Primary School,5,97
+2048,Waihi Beach School,7,232
+2419,Palmerston North Intermediate,8,726
+2424,Parkland School (P North),7,284
+2037,Tokoroa Intermediate,2,308
+2038,Tokoroa North School,3,401
+2052,Waikaretu School,6,27
+2050,Waihi Central School,2,105
+2057,Waimana School,2,21
+2064,Waipa School,2,322
+2066,Wairakei School,5,347
+2068,Te Kura o Waitahanui,2,76
+2073,Waitomo Caves School,6,20
+2442,Rutherford Junior High School,1,171
+2449,St James School (P North),8,145
+2054,Waikino School,4,82
+2055,Waikite Valley School,10,88
+2069,Waitakaruru School,6,93
+2071,Waitetuna School,8,62
+2086,Wharepapa South School,6,36
+2087,Whatawhata School,8,261
+2075,Wairere School,4,51
+2082,Whakatane Intermediate,4,596
+2084,Te Kura Mana Maori o Whangaparaoa,2,112
+2451,St Joseph's School (Feilding),5,89
+2374,Kakaramea School,5,66
+2385,Kopane School,3,47
+2390,Manchester Street School,6,364
+2088,Whenuakite School,7,156
+2152,Auroa School,8,190
+2153,Avon School,1,73
+2392,Mangaweka School,6,13
+2401,Moawhango School,5,18
+2410,Ohakune School,3,286
+2091,Whitiora School,2,210
+2093,Woodstock School,5,339
+2150,Ahititi School,4,8
+902,Auckland Senior College,,0
+2170,Hawera Intermediate,5,322
+2171,Hawera Primary School,4,184
+2157,Bell Block School,5,405
+2168,Frankley School,9,309
+2173,Huiakama School,9,12
+2175,Huirangi School,4,95
+2182,Lepperton School,9,138
+2191,Marco School,8,15
+2417,Owhango School,4,61
+2358,Foxton Beach School,5,148
+2360,Glen Oroua School,9,72
+2172,Highlands Intermediate,7,705
+2189,Mangorei School,10,309
+2203,Moturoa School,4,121
+2205,Ngaere School,7,153
+2206,Norfolk School,9,148
+1818,Matata School,4,85
+2198,Midhirst School,6,134
+2200,Mokau School,2,26
+2207,Normanby School,5,149
+2365,Hokowhitu School,7,363
+2226,Ramanui School,2,46
+1819,Matatoki School,5,90
+1820,Matua School,9,506
+1821,Maungatapu School,5,491
+2216,Opunake School,4,162
+1814,Matangi School,10,192
+1823,Melville Intermediate,3,245
+1958,St Mary's Catholic School (Rotorua),6,426
+1965,St Peter's Catholic School (Cambridge),9,166
+1835,Motumaoho School,6,26
+1836,Mountview School,3,316
+1837,Mt Maunganui Intermediate,6,705
+1838,Mount Maunganui Primary School,9,402
+1851,Ngati Haua School,3,107
+1852,Ngongotaha School,4,372
+1825,Merivale School,1,191
+1832,Mokoia Intermediate,5,363
+1834,Morrinsville School,3,187
+2251,Tikorangi School,4,167
+2258,Vogeltown School,6,348
+2260,Waitara Central School,2,103
+1853,Ngutunui School,6,41
+1854,Nukuhou North School,3,81
+1855,Ohaupo School,8,192
+1841,Nawton School,2,436
+1850,Ngatea School,6,312
+1857,Ohope Beach School,9,253
+1869,Orini Combined School,8,84
+1870,Oropi School,8,338
+1871,Otakiri School,5,174
+1885,Papamoa Primary School,6,581
+1886,Parawai School,5,237
+1888,Te Kura o Te Paroa,2,275
+2265,West End Te Kura O Morere,6,309
+2267,Whareorino School,9,6
+2333,Apiti School,3,33
+1866,Opotiki School,1,274
+1873,TKKM o Otepou,3,57
+1875,Otonga Road School,7,487
+1882,Paengaroa School,4,188
+1884,Pahoia School,9,170
+1889,Paterangi School,7,146
+1902,Puahue School,8,143
+1903,Pukeatua School,8,85
+1904,Pukehina School,1,14
+2342,Brunswick School,7,74
+2349,Clifton School (Bulls),4,155
+1967,Stanley Avenue School,4,253
+1891,Patricia Avenue School,4,213
+1898,Pokuru School,6,154
+1907,Puketaha School,7,285
+1916,Pyes Pa Road School,8,223
+1923,Reporoa School,4,120
+1934,Rotorua School,3,339
+1919,Te Kura o Rangiriri,1,38
+1920,Rangitoto School,6,27
+1921,Rangiuru School,4,62
+1974,Tainui Full Primary School,2,313
+1976,Tamahere Model Country School,10,369
+1983,Tatuanui School,7,118
+1990,Tauranga Intermediate,5,1227
+1992,Gate Pa School,2,314
+1999,Te Aroha Primary School,3,192
+1939,Selwyn School,2,286
+1941,Springdale School,4,44
+1948,St Joseph's Catholic School (Matata),2,34
+1937,Ruawaro Combined School,4,55
+1938,Rukuhia School,8,125
+1704,Cargill Open Plan School,2,24
+2001,Te Awamutu Intermediate,5,508
+1513,Stanmore Bay School,8,598
+1808,Marotiri School,6,103
+1806,Te Kura Mana Maori Maraenui,1,45
+1388,Macleans Primary School,7,471
+1681,Allandale School,2,316
+1950,St Joseph's Catholic School (Opotiki),3,166
+1705,Centennial Park School,1,66
+1707,Coroglen School,5,20
+1718,Te Wharekura o Kirikiriroa,2,255
+1719,Firth School,3,196
+1720,Forest Lake School,4,310
+1721,Frankton School,3,644
+1735,Hautapu School,10,195
+1736,Hauturu School,2,28
+1683,Aorangi School (Rotorua),1,103
+1688,Arohena School,7,23
+1697,Bethlehem School,8,434
+1716,Fairfield Primary School,1,295
+1723,Glen Massey School,5,102
+1725,Glenview School (Hamilton),5,387
+1737,Hikuai School,8,49
+1738,Hikutaia School,5,131
+1751,Huntly School (Waikato),1,211
+1752,Huntly West School,1,120
+1753,Insoll Avenue School,1,295
+1754,Rangitaiki School,5,9
+1699,Brookfield School,4,279
+1574,Wilson School,9,104
+1581,Chapel Downs School,2,525
+1730,Greerton Village School,2,342
+1732,Hamilton North School,4,156
+1739,Hillcrest Normal School,8,570
+1741,Hinuera School,7,181
+1748,TKKM o Huiarau,1,78
+1755,James Street School,2,211
+1770,Kawerau South School,1,286
+1771,Kawhia School,1,51
+1785,Kuratau School,2,88
+1440,Pt Chevalier School,10,548
+1447,Prospect School,2,330
+1449,Pukekawa School,8,109
+1757,Kaihere School,7,32
+1764,Karapiro School,8,29
+1766,Kawaha Point School,3,254
+1773,TKKM o Harataunga,2,21
+1775,Kerepehi School,2,76
+1780,Kiwitahi School,5,55
+1786,Kutarere School,1,19
+1787,Lake Rerewhakaaitu School,7,60
+1788,Lake Rotoma School,1,12
+1390,New Windsor School,4,375
+2024,Te Uku School,5,110
+2008,Te Kuiti Primary School,3,301
+2015,Te Puke Intermediate,3,437
+2017,Te Puna School,7,229
+2031,Tirau Primary School,4,129
+1782,Kopuarahi School,4,16
+1784,Koromatua School,6,198
+1789,Leamington School,7,507
+1519,Sunnyvale School,3,405
+1520,Sutton Park School,1,519
+1518,Sunnynook School,8,437
+2033,Tirohia School,3,42
+2040,Turaki School,3,183
+2049,Waihi East School,3,183
+2058,Waimata School,3,71
+2065,Waipahihi School,7,382
+2076,Welcome Bay School,4,298
+1791,Lynmore Primary School,9,583
+1798,Te Wharekura o Manaia,2,119
+1800,Manawaru School,6,71
+1534,Te Papapa School,2,288
+1535,Three Kings School,7,413
+1536,Tirimoana School,5,618
+1537,Titirangi School,10,434
+1552,Wainui School,9,263
+1553,Waioneke School,4,71
+2074,Walton School,7,116
+2081,Whakarewarewa School,2,133
+2083,Whangamarino School,2,150
+1514,Our Lady Star of the Sea School (Howick),9,335
+1516,Sunnybrae Normal School,7,352
+1521,Swanson School,3,521
+1523,Takanini School,1,402
+1525,Takapuna School,8,367
+1530,Te Atatu Intermediate,6,439
+1554,Waipipi School,6,140
+1567,Western Heights School (Auckland),7,639
+1568,Westmere School (Auckland),10,437
+2090,Whitikahu School,9,114
+2092,Woodlands School (Opotiki),3,167
+2160,Central School Te Kura Waenga O Ngāmotu,8,284
+1532,Te Hihi School,7,168
+1539,Tuakau School,2,252
+1541,Vauxhall School,10,222
+1546,Viscount School,1,522
+1548,Waikowhai Intermediate,5,387
+1550,Waimauku School,10,716
+1569,Waimahia Intermediate School,1,213
+1570,Weymouth School,2,467
+2167,Fitzroy School,8,359
+2165,Eltham School,2,138
+2185,Makahu School,8,6
+1555,Wairau Intermediate,7,240
+1557,Waitakere School,8,481
+1564,Wesley Intermediate,1,112
+1566,West Harbour School,2,447
+1571,Whangaparaoa School (Auckland),9,714
+1455,Puni School,5,222
+1467,Robertson Road School,1,472
+1468,Rongomai School,1,163
+1470,Roscommon School,1,458
+2190,Manukorihi Intermediate,3,254
+2192,Marfell School,2,134
+2199,Mimi School,7,48
+2201,Mokoia School,5,29
+2208,Oakura School,10,358
+2215,Ongarue School,2,18
+1457,Rangeview Intermediate,4,405
+1464,Riverhead School,9,484
+1466,Riverina School,3,106
+1484,Sommerville School,5,312
+1486,St Anne's Catholic School (Manurewa),2,526
+1487,St Dominic's Catholic School (Blockhouse Bay),6,249
+1500,St Leo's Catholic School (Devonport),10,52
+1815,Te Kura o Matapihi,3,188
+1824,Melville Primary School,2,221
+1833,Morrinsville Intermediate,5,323
+1471,Rosebank School (Auckland),2,412
+1473,Rosehill Intermediate,3,419
+1480,Shelly Park School,10,464
+1501,St Mark's School (Pakuranga),6,183
+1502,St Mary's Catholic School (Papakura),4,261
+1842,Netherton School,5,136
+1847,Te Kura o Ngapuke,2,27
+1849,Ngaruawahia School,1,82
+1482,Silverdale School,10,787
+1489,St Heliers School,10,556
+1491,St John the Evangelist Catholic School,1,208
+1503,St Mary's Catholic School (Avondale),3,152
+1504,St Mary's School (Ellerslie),7,356
+1400,Onepoto School,1,80
+1401,Opaheke School,4,514
+1402,Orakei School,4,341
+1403,Oranga School,3,295
+1856,Ohinewai School,3,112
+1858,Kuranui Primary School,8,39
+1865,Te Wharekura o Maniapoto,3,111
+1496,St Joseph's School (Otahuhu),1,310
+1498,St Joseph's Catholic School (Takapuna),9,394
+1505,St Mary's School (Northcote),8,292
+1507,St Patrick's School (Panmure),1,85
+1398,Okiwi School,5,29
+1405,Orere School,3,36
+1417,Pakuranga Intermediate,3,237
+1418,Panama Road School,1,221
+1419,Panmure Bridge School,1,224
+1867,Opoutere School,4,123
+1872,Otamarakau School,7,96
+1874,Otewa School,6,68
+1881,Owhata School,2,245
+1883,Paeroa Central School,1,73
+1892,Peachgrove Intermediate,5,519
+1407,Orewa Primary School,9,449
+1414,Paerata School,1,130
+1416,Pakuranga Heights School,4,492
+1420,Panmure District School,2,113
+1434,Park Estate School,1,137
+1435,Parkside School,5,149
+1436,Parnell School,9,437
+1437,Pasadena Intermediate,8,377
+1383,Mt Roskill Intermediate,4,555
+1897,Pirongia School,10,343
+1899,Pongakawa School,6,297
+1906,Pukenui School (Te Kuiti),1,167
+1421,Papakura Central School,4,363
+1423,Papakura Normal School,3,622
+1430,Papatoetoe South School,2,505
+1300,Greenmeadows Intermediate,2,368
+1352,Manurewa East School,1,333
+1353,Manurewa Intermediate,1,877
+1266,Edmonton School,4,212
+1267,Edmund Hillary School,1,225
+1268,Ellerslie School,9,728
+1908,Pukete School,5,398
+1917,Te Wharekura o Rakaumangamanga,1,394
+1924,Rhode Street School,2,190
+1432,Parakai School,3,208
+1439,Pigeon Mountain School,8,559
+1382,Mt Carmel School (Meadowbank),8,227
+1355,Manurewa South School,1,334
+1271,Fairburn School,1,399
+1273,Favona School,2,313
+1269,Elm Park School,5,535
+1270,Epsom Normal School,8,581
+1367,Maungawhau School,10,605
+1931,Rotokawa School,4,156
+1933,Rotorua Intermediate,3,700
+1940,Silverdale Normal School,4,316
+1357,Maraetai Beach School,10,433
+1364,Matakana School,9,310
+1366,Mauku School,3,144
+1371,Mellons Bay School,10,490
+1373,Meremere School,1,10
+1380,Mountain View School,1,209
+1368,May Road School,1,162
+1369,Mayfield School (Auckland),1,297
+1370,Meadowbank School,10,717
+1942,Hamilton Junior High School,3,94
+1949,St Joseph's Catholic School (Morrinsville),7,192
+1951,St Joseph's Catholic School (Paeroa),3,56
+1321,Hunua School,9,121
+1323,Kaiaua School,4,29
+1330,Kelston Intermediate,2,376
+1332,Kelvin Road School,1,387
+1337,Kowhai Intermediate,7,586
+1339,Leabank School,1,344
+1317,Homai School,1,299
+1318,Howick Intermediate,4,477
+1319,Howick Primary School,8,332
+1706,Colville School,2,34
+1708,David Henry School,1,111
+1715,Fairfield Intermediate,5,800
+1717,Fairhaven School,3,400
+1722,Galatea School,5,104
+1724,Glenholme School,3,318
+1341,Lincoln Heights School,2,436
+1346,Mangere Bridge School,3,355
+1348,Māngere East School,1,517
+1320,Huapai District School,9,458
+1333,Kingsford School,1,294
+1334,Kohimarama School,10,488
+1731,Hamilton East School,4,442
+1733,Hamilton West School,5,658
+1740,Hilltop School,9,553
+1747,Horsham Downs School,10,356
+1749,Hukanui School,10,702
+1756,Kaharoa School,10,165
+1305,Hay Park School,1,146
+1307,Henderson Intermediate,3,716
+1335,Konini School (Auckland),5,418
+1336,Koru School,1,503
+1350,Manuka Primary School,6,223
+1351,Royal Oak Intermediate School,2,455
+1301,Grey Lynn School,9,267
+1302,Halsey Drive School,7,366
+1758,Kaimai School,8,79
+1765,Katikati Primary School,4,455
+1772,Rotorua Specialist School - Te Kura Pūkenga o Rotorua,2,94
+1312,Hillpark School,4,434
+1314,Hobsonville School,7,552
+1316,Holy Cross Catholic School (Henderson),3,407
+1303,Harrisville School,5,201
+1283,Glamorgan School,10,545
+1284,Glen Eden Intermediate,7,998
+1285,Glen Eden School,3,295
+1252,Coatesville School,10,268
+1253,Cockle Bay School,10,721
+1781,Knighton Normal School,5,603
+1783,Korakonui School,8,123
+1790,Lichfield School,5,97
+1280,Freyberg Community School,5,355
+1282,Gladstone School (Auckland),9,749
+1287,Glen Innes School,1,169
+1233,Blockhouse Bay School,7,510
+1234,Bombay School,9,323
+1235,Botany Downs School,9,535
+1289,Glen Taylor School,1,228
+1291,Glenbrae Primary School,1,149
+1296,Glenfield Primary School,5,273
+1792,Maeroa Intermediate,3,723
+1797,Mamaku School,3,110
+1515,Sunnyhills School,9,446
+1236,Brookby School,5,113
+1251,Sir Edmund Hillary Collegiate Junior School,1,435
+1184,Hawera Christian School,6,37
+1185,Matahui School,8,31
+1186,Matamata Christian School,5,71
+1200,Ahuroa School,9,71
+1201,Aka Aka School,7,41
+1202,Albany School,9,688
+1203,Alfriston School,8,376
+1216,Bailey Road School,3,369
+1217,Sir Edmund Hillary Collegiate Middle School,1,271
+1298,Green Bay Primary School,7,660
+1255,Conifer Grove School,4,483
+1257,Cosgrove School,1,452
+1218,Bairds Mainfreight Primary School,1,351
+1219,Balmoral School (Auckland),9,730
+1220,Bayfield School,10,331
+1522,Sylvia Park School,2,493
+1524,Takapuna Normal Intermediate,9,567
+1531,Peninsula Primary School,5,432
+1262,Don Buck School,2,199
+1264,East Tamaki School,1,173
+1221,Bayswater School,10,121
+1223,Beach Haven School,4,436
+1230,Birkdale Primary School,5,194
+1232,Blockhouse Bay Intermediate,5,795
+1167,Wanaka Primary School,10,496
+1168,Emmanuel Christian School,8,252
+1169,Paeroa Christian School,3,42
+1533,Te Kohanga School,3,31
+1538,Torbay School,10,562
+1540,Valley School,8,448
+1547,Waiau Pa School,9,329
+1549,Waikowhai School,2,194
+1556,Wairau Valley Special School,8,210
+1237,Browns Bay School,10,600
+1239,Buckland School,8,232
+1246,Churchill Park School,10,398
+514,Kimi Ora School,8,77
+1001,Aranga School,4,22
+1002,Arapohue School,2,42
+1558,Waitoki School,8,200
+1563,Waterview School,3,280
+1565,Wesley Primary School,1,140
+1572,Whenuapai School,9,471
+1454,Pukeoware School,7,164
+1456,Ramarama School,8,170
+1000,Ahipara School,2,201
+531,Catholic Cathedral College,4,466
+532,John Paul College,7,1155
+1458,Ranui School,2,319
+1463,Richmond Road School,8,300
+1465,Riverhills School,4,90
+1472,Rosehill School,2,292
+1474,Rowandale School,1,556
+1481,Sherwood School (Auckland),10,447
+533,Mt Aspiring College,10,1189
+518,Kingslea School,1,106
+498,Te Aho o Te Kura Pounamu,99,6992
+1016,Horeke School,1,19
+1017,Hukerenui School Years 1-8,5,163
+1018,Hurupaki School,8,284
+1483,Sir Keith Park School,1,169
+1488,St Francis Catholic School (Pt Chevalier),7,228
+1019,Kaeo School,2,122
+1032,Kaurihohore School,7,185
+1033,Kawakawa Primary School,2,158
+1248,Clendon Park School,1,605
+1187,Tauranga Waldorf School,7,190
+1189,Wa Ora Montessori School,8,245
+1490,St Ignatius Catholic School (St Heliers),10,220
+1497,St Joseph's School (Pukekohe),4,291
+1499,St Leonards Road School,3,359
+1506,St Michael's Catholic School (Remuera),10,227
+1508,St Pius X Catholic School (Glen Innes),1,101
+1397,Oaklynn Special School,4,188
+1034,Kerikeri Primary School,5,457
+1035,Kohukohu School,2,41
+1036,Kokopu School,6,108
+1207,Ararimu School,10,109
+1212,Avondale Intermediate,2,359
+1214,Awhitu District School,6,113
+1399,Onehunga Primary School,4,408
+1404,Oratia School,9,486
+1406,Orewa Beach School,7,389
+1408,Otahuhu Intermediate,1,323
+1413,Owairoa Primary School,9,762
+1422,Papakura Intermediate,1,248
+1049,Maungaturoto School,5,207
+1050,Maunu School,8,292
+1052,Morningside School,3,298
+1164,Everglade School,4,429
+528,Ponatahi Christian School,8,114
+530,Waiheke High School,7,394
+428,Whangamata Area School,4,547
+419,Rudolf Steiner School (Chch),8,344
+1014,Hikurangi School,2,203
+1424,Kereru Park Campus,1,175
+1429,Papatoetoe North School,2,726
+1433,Ridgeview School,8,52
+1066,Oruaiti School,2,186
+1068,Otaika Valley School,4,131
+1069,Te Kura o Otangarei,1,92
+1083,Poroti School,3,38
+1084,Portland School,1,58
+1085,Pouto School,2,14
+1021,Kaikohe East School,1,230
+1023,Kaikohe West School,1,175
+1028,Totara Grove School,2,295
+1431,Papatoetoe West School,2,586
+1438,Patumahoe Primary School,8,303
+1299,Greenhithe School,10,473
+1086,Pukenui School (Kaitaia),3,84
+1100,Te Kura o Hato Hohepa Te Kamura,1,24
+1116,Totara North School,2,22
+1119,Umawera School,2,31
+397,St Peter's College (Gore),8,444
+398,Takitimu Primary School,4,63
+1030,Kamo School,5,421
+1037,Mangamuka School,1,16
+1039,Mangonui School,3,134
+1354,Manurewa Central School,2,476
+1356,Manurewa West School,1,391
+1272,Farm Cove Intermediate,8,535
+399,Central Southland College,6,572
+400,Fiordland College,9,260
+401,Menzies College,5,337
+381,Kaikorai Valley College,5,456
+382,Bayfield High School,7,573
+334,Riccarton High School,6,1039
+1046,Te Kura o Mātihetihe,1,26
+1048,Maungatapere School,9,307
+1053,Motatau School,1,50
+1274,Ferguson Intermediate (Otara),1,388
+1365,Matipo Road School,7,414
+1363,Massey Primary School,3,491
+1372,Te Paina School,3,52
+1379,Mt Richmond School,2,191
+1381,Mt Albert School,6,419
+347,Lincoln High School,10,1394
+348,Mount Hutt College,9,498
+349,Ellesmere College,8,511
+1055,Ngataki School,1,33
+1062,Onerahi School,4,442
+1071,Oturu School,1,152
+1324,Kaipara Flats School,4,107
+1322,Jean Batten School,1,315
+1329,Kedgley Intermediate,2,770
+1331,Kelston School,3,259
+1338,Laingholm School,10,245
+1340,Leigh School,7,59
+350,Akaroa Area School,7,130
+314,Kaiapoi High School,7,1026
+316,Papanui High School,7,1619
+1073,Pakaraka School,1,35
+1078,Paparore School,3,129
+1080,Parua Bay School,9,289
+1082,Pompallier Catholic School,3,154
+1087,Pukepoto School,1,28
+1089,Purua School,7,24
+1347,Mangere Central School,1,391
+1304,Hauraki School,10,473
+1306,Helensville School,5,445
+317,Christchurch Adventist School,5,254
+247,Kapiti College,8,1405
+281,Scots College,10,1038
+1096,Russell School (Bay Of Islands),5,68
+1098,St Joseph's Catholic School (Dargaville),4,94
+1313,Hillsborough School,8,364
+1315,Holy Cross School (Papatoetoe),2,543
+1279,Freemans Bay School,6,420
+297,Tapawera Area School,4,167
+298,Motueka High School,5,746
+299,Murchison Area School,4,171
+1105,Tangowahine School,4,21
+1107,Tauhoa School,6,44
+1112,Bay of Islands International Academy,6,94
+1281,Fruitvale Road School,4,293
+1290,Glenavon School,1,366
+1297,Good Shepherd School (Balmoral),7,192
+1254,Colwill School Massey,2,177
+1256,Cornwall Park District School,9,599
+1263,Drury School,7,404
+300,Karamea Area School,4,77
+248,Paraparaumu College,8,1359
+249,Kuranui College,6,774
+1114,Tinopai School,1,16
+1130,Whangarei School,4,490
+394,The Catlins Area School,7,118
+396,Gore High School,6,464
+369,St Kevins College (Oamaru),7,441
+371,East Otago High School,6,161
+1265,Edendale School (Auckland),6,532
+1222,Bayview School,7,417
+1224,Beachlands School,10,661
+250,Upper Hutt College,6,1076
+231,Taikura Rudolf Steiner School,6,310
+197,Feilding High School,5,1628
+198,Awatapu College,4,900
+200,Freyberg High School,5,1100
+337,Te Aratai College,3,895
+335,Middleton Grange School,9,1311
+1229,Birkdale North School,5,158
+1231,Birkenhead School,9,405
+1238,Bruce McLaren Intermediate,2,314
+214,Wairoa College,1,486
+215,Taradale High School,7,1094
+233,Central Hawkes Bay College,4,555
+148,Opotiki College,2,344
+181,Opunake High School,4,310
+182,Hawera High School,5,735
+346,Darfield High School,9,744
+351,Ashburton College,6,1265
+353,Mackenzie College,8,171
+1240,Bucklands Beach Intermediate,9,833
+1247,Clayton Park School,2,299
+1249,Clevedon School,9,353
+183,Ruapehu College,2,207
+65,Glendowie College,10,1160
+49,Selwyn College,4,1378
+48,Western Springs College,8,1739
+14,Tikipunga High School,2,341
+13,Kamo High School,4,842
+362,Waimate High School,5,265
+310,Oxford Area School,7,509
+312,Rangiora High School,9,1654
+319,Burnside High School,8,2424
+287,Queen Charlotte College,6,387
+296,Waimea College,8,1459
+1190,Elim Christian College,7,1270
+1195,Adventure School,10,488
+1204,Anchorage Park School,3,108
+32,Northcote College,7,1187
+31,Birkenhead College,6,487
+30,Glenfield College,6,481
+301,Buller High School,5,347
+303,Greymouth High School,4,564
+305,Westland High School,6,362
+251,Heretaunga College,6,845
+269,Onslow College,10,1321
+253,Aotea College,5,1146
+1206,Arahoe School,5,519
+1213,Avondale Primary School (Auckland),3,290
+1215,Sir Douglas Bader Intermediate School,1,203
+80,Pakuranga College,7,2062
+63,Marcellin College,2,646
+244,Chanel College,5,249
+201,Queen Elizabeth College,3,321
+1170,Whakatane S D A School,4,33
+1172,Cornerstone Christian School,7,591
+81,Saint Kentigern College,10,2264
+99,Manurewa High School,1,2114
+97,Sir Edmund Hillary Collegiate Senior School,1,538
+212,Tolaga Bay Area School,1,290
+235,Tararua College,3,414
+237,Waiopehu College,2,625
+137,Melville High School,4,597
+144,Whakatane High School,4,1115
+146,Te Awamutu College,5,1357
+1179,Maranatha Christian School,7,140
+1165,TKKM o Ruamata,3,229
+1004,Awanui School,2,28
+100,James Cook High School,1,1430
+114,Waihi College,4,617
+115,Te Kauwhata College,4,541
+151,Western Heights High School,4,1153
+176,Ohura Valley Primary,1,13
+185,Patea Area School,1,185
+187,Whanganui City College,2,315
+42,Green Bay High School,8,1635
+44,Waitakere College,3,1548
+527,Twizel Area School,8,215
+536,Kavanagh College,8,639
+522,Halswell Residential College,2,12
+429,Excellere College,5,277
+418,Rangiora New Life School,9,431
+1013,Herekino School,2,41
+116,Te Aroha College,4,322
+113,Paeroa College,2,302
+164,Reporoa College,6,215
+1,Te Kura o Te Kao,2,55
+3,Kaitaia College,2,955
+10,Te Kura Taumata o Panguru,1,110
+12,Tauraroa Area School,6,500
+19,Dargaville High School,3,438
+17,Pompallier Catholic College,7,633
+1015,Hora Hora School (Te Mai),2,299
+1020,Kaihu Valley School,2,16
+1022,Kaikohe Intermediate,1,112
+166,Tauhara College,6,674
+167,Taupo-nui-a-Tia College,5,1062
+565,Stonefields School,9,652
+481,City Impact Church School,9,250
+2104,TKKM o Taumarere,2,149
+2105,Awahono School - Grey Valley,5,77
+26,Kaipara College,7,840
+28,Rangitoto College,10,3284
+78,Avondale College,4,2693
+1029,Kamo Intermediate,5,739
+1031,Karetu School,2,103
+1038,Mangawhai Beach School,6,576
+2119,Donovan Primary School,6,396
+2120,Bluff School,3,111
+551,Coastal Taranaki School,4,277
+1668,Wairoa Primary School,1,194
+1669,Tiaho Primary School,1,132
+2102,Maromaku School,3,23
+69,Mt Albert Grammar School,7,3074
+85,One Tree Hill College,3,1191
+1047,Maungakaramea School,5,87
+1056,Ngunguru School,7,254
+1063,Opua School,5,107
+2103,Moerewa School,1,140
+550,Te Waha O Rerekohu Area School,1,121
+548,Aurora College,2,543
+549,Taihape Area School,4,265
+2756,Whakatipuria Teen Parent Unit,1,0
+2757,He Mataariki School for Teen Parents,1,0
+87,Howick College,8,2087
+96,Aorere College,2,1569
+101,Papakura High School,1,999
+1065,Oromahoe School,6,165
+1072,Paihia School,4,169
+1081,Peria School,2,68
+1095,Ruawai Primary School,3,119
+1097,Selwyn Park School,1,96
+1104,Tangiteroria School,7,34
+484,Wentworth College,10,282
+2754,Stratford High School Teen Parent Unit,1,0
+2755,Titiro Whakamua,1,0
+103,Pukekohe High School,6,1809
+110,Mercury Bay Area School,5,990
+112,Hauraki Plains College,5,865
+117,Katikati College,5,784
+119,Huntly College,1,222
+126,Morrinsville College,6,706
+1106,Tapora School,5,14
+1113,Tikipunga Primary School,1,275
+1115,Tomarata School,5,73
+482,Aquinas College,8,758
+1651,TKKM o Wairarapa,2,96
+1636,St Thomas More Catholic School,6,102
+465,Mana Tamariki,5,75
+466,Manukau Christian School,99,270
+1634,Te Kura Maori o Porirua,3,287
+135,Fraser High School,4,1412
+160,Te Kuiti High School,2,291
+162,Piopio College,4,142
+1120,Waiharara School,1,21
+1122,Waima School,1,57
+1129,Whangarei Intermediate,4,659
+3106,TKKM o Whangaroa,2,57
+3107,TKKM o Te Ara Hou,1,232
+451,Hamilton Christian School,9,748
+2085,ACG Parnell College,99,1462
+6967,Lemonwood Grove School,10,588
+1935,Ficino School,9,148
+169,Taumarunui High School,2,319
+485,Taumata School,8,544
+553,Mission Heights Junior College,7,874
+1131,Whau Valley School,2,247
+393,South Otago High School,6,479
+395,Northern Southland College,7,211
+402,Waiau Area School,3,133
+368,The Cathedral Grammar School,10,260
+370,Maniototo Area School,8,140
+1617,TKKM o Ngati Rangi,1,11
+1618,TKKM o Te Whanau Tahi,3,166
+1619,Te Kura Akonga O Manurewa,2,76
+2761,Kimihia Parents' College,1,0
+6980,Clearview Primary,10,796
+2123,Lake Brunner School,7,53
+336,Hagley Community College,6,2061
+338,Hornby High School,3,805
+618,Sancta Maria Catholic Primary School,5,363
+82,Aidanfield Christian School,8,357
+133,Raphael House Rudolf Steiner Area School,10,319
+2107,Geraldine Primary School,8,256
+2109,Temuka Primary School,5,209
+2116,New River Primary,1,205
+352,Geraldine High School,8,606
+354,Opihi College,5,270
+363,Waitaki Valley School,8,112
+311,Hurunui College,7,207
+318,St Andrew's College (Christchurch),10,1590
+293,Nayland College,6,1448
+4226,TKKM o Tamaki Nui A Rua,3,77
+4227,TKKM o Kaikohe,1,239
+4228,TKKM o Puau Te Moananui-a-Kiwa,2,106
+2118,Newfield Park School,3,204
+1675,Ruakituri School,5,12
+2098,Matapu School,6,135
+320,Mairehau High School,4,383
+304,John Paul II High School,6,184
+268,Newlands College,9,1120
+261,Hutt Valley High School,8,1736
+229,Karamu High School,4,904
+243,Makoura College,3,290
+432,KingsWay School,9,1578
+283,Otamatea Christian School,99,27
+282,Te Kura Amorangi o Whakawatea,4,132
+2100,Koraunui School,3,172
+1666,Te Kura o Waikare,1,90
+2759,He Puaawai Teen Parent Unit,1,0
+546,Whitby Collegiate,10,227
+494,Putaruru College,3,420
+496,Reefton Area School,4,166
+254,Mana College,2,503
+195,Rangitikei College,3,278
+204,St Peter's College (Palmerston North),6,703
+1149,Sonrise Christian School,5,122
+1587,Gloriavale Christian School,99,0
+1584,TKKM o Te Raki Paewhenua,6,88
+1151,TKKM o Te Puaha o Waikato,1,47
+1153,TKKM o Te Koutu,3,293
+6932,Pinehill School (Browns Bay),8,420
+1657,Silverstream (South) Primary School,6,266
+6978,Reremoana Primary School,9,420
+3118,Te Kura Kaupapa Maori o Taumarunui,1,50
+211,Campion College,6,445
+218,Tamatea High School,3,330
+220,William Colenso College,2,429
+1585,St Anthony's School (Wanganui),4,80
+1670,TKKM o Te Ara Whanui,3,329
+968,3H School International,,10
+932,Te Kura ā Iwi o Pawarenga,1,15
+949,St Ignatius of Loyola Catholic College (Proposed opening date: 2024-01-01),,0
+900,A1 Student Limited,99,22
+487,Mt Hobson Academy,99,149
+1655,Destiny School,3,70
+2750,Puawānanga Wairarapa Young Parents,1,0
+234,Dannevirke High School,4,427
+236,Horowhenua College,3,699
+143,Trident High School,4,970
+869,Te Kāpehu Whetū (Teina),3,123
+849,Ako Space,10,14
+834,ADDI Enrichment Academy,99,22
+767,Orewa North West Primary School (Proposed opening date: 2023-01-01),,0
+752,Summit Point School,99,45
+748,Ngākōroa School,7,28
+2752,He Huarahi Tamariki,1,0
+1648,Manaia View School,1,177
+1650,Drummond Primary School,8,63
+145,Edgecumbe College,3,179
+177,Inglewood High School,7,484
+179,Stratford High School,4,560
+52,Tyndale Park Christian School,99,173
+36,Takapuna Grammar School,10,1879
+43,Massey High School,4,1585
+717,Whakatane Teen Parent Unit,1,0
+683,Ao Tawhiti Unlimited Discovery,7,664
+684,Te Waka Unua School,2,457
+478,Wainuiomata High School,3,616
+1641,Amana Christian School,99,78
+3102,TKKM o Waiuku,5,0
+3104,TKKM o Te Kotuku,4,133
+462,Ambury Park Centre,99,12
+6962,Te Wharekura o Mauao,3,260
+45,Henderson High School,3,1009
+2,Taipa Area School,2,320
+4,Whangaroa College,1,128
+685,Waitakiri Primary School,8,541
+682,Eden Christian Academy,5,64
+651,Te Whata Tau o Putauaki,1,53
+632,Tai Wananga,4,189
+648,Carisbrook School,3,298
+633,Kingsview School,10,56
+1630,Central Regional Health School,1,31
+460,Atea College,99,13
+1625,Ascot Community School,3,291
+9,Northland College,1,336
+11,Opononi Area School,1,115
+20,Bream Bay College,5,545
+631,Kia Aroha College,1,218
+566,Maraekakaho School,8,111
+567,Te Wharekura o Te Kaokaoroa o Patetere,2,289
+584,West Rolleston Primary School,10,720
+600,TKKM o Ngaringaomatariki,2,47
+601,Kumeroa School,5,46
+453,Kadimah School,8,130
+2377,TKKM o Tupoho,1,150
+6955,Upper Harbour Primary School,10,456
+18,Mangakahia Area School,3,77
+27,Long Bay College,10,1484
+29,Kristin School,10,1657
+79,Edgewater College,2,630
+95,Papatoetoe High School,3,1364
+86,Onehunga High School,3,996
+615,Rototuna Senior High School,10,804
+616,Murihiku Young Parents' Learning Centre,1,0
+131,Hamilton Boys' High School,7,2174
+6946,Oteha Valley School,9,536
+6948,Albany Junior High School,10,1143
+544,Al-Madinah School,2,556
+102,Rosehill College,5,1562
+104,Wesley College,1,380
+109,Coromandel Area School,3,240
+111,Thames High School,5,417
+118,Mount Maunganui College,6,1796
+120,Otumoetai College,7,1878
+83,Kelston Boys' High School,3,666
+46,Liston College,5,820
+15,Whangārei Boys' High School,5,1321
+1750,St Patrick's Catholic School (Taupo),8,276
+1616,TKKM o Ngati Kahungunu o Te Wairoa,1,160
+421,Richmond View School,5,287
+221,Te Wharekura o Ruatoki,2,207
+903,Ko Taku Reo – Deaf Education New Zealand,3,110
+4145,Te Pi'ipi'inga Kakano Mai I Rangiatea,3,113
+127,Ngaruawahia High School,1,315
+129,Fairfield College,3,748
+93,Auckland Seventh-Day Adventist H S,1,344
+66,Dilworth School,4,517
+216,Napier Boys' High School,6,1166
+199,Hato Paora College,4,111
+4229,TKKM o Manurewa,1,73
+1148,Nelson Christian Academy,6,222
+6921,Point View School,9,688
+6930,Botany Downs Secondary College,9,1760
+1589,TKKM o Toku Mapihi Maurea,5,100
+1582,Nova Montessori School,9,48
+154,Rotorua Lakes High School,5,703
+159,Forest View High School,2,403
+161,Benneydale School,1,37
+232,Te Aute College,3,71
+230,Lindisfarne College,9,518
+315,St Bedes College,9,812
+6937,Summerland Primary,5,567
+6939,Kohia Terrace School,9,357
+1607,Bishop Edward Gaines Catholic School,2,31
+344,Westminster Christian School,8,341
+1673,TKKM o Te Waiu o Ngati Porou,1,111
+946,Motueka Steiner School,4,86
+170,Waitara High School,3,397
+2126,Jean Seabrook Memorial School,99,0
+1658,Putaruru Primary School,2,180
+365,Waitaki Boys' High School,6,378
+331,St Thomas of Canterbury College,8,686
+921,Crimson Global Academy,99,245
+896,Harbour Montessori College,99,20
+878,Te Wharekura o Ngāti Rongomai,2,99
+880,Waatea School,1,75
+871,Te Rangihakahaka Centre for Science and Technology,2,100
+846,Suzanne Aubert Catholic School,7,120
+3119,TKKM o Kawakawa mai Tawhiti,1,128
+2108,Winchester Rural School,7,141
+2106,Paparoa Range School,5,68
+383,Kings High School (Dunedin),7,873
+4108,Hereworth School,10,225
+4158,Hutt International Boys' School,10,647
+778,Aurora School Alternative,99,8
+780,Te Ao Mārama School,10,412
+787,Peace Experiment,99,24
+728,Meraki Montessori School,99,73
+696,Rāwhiti School,3,522
+746,Te Kura Whakatipu o Kawarau,10,108
+2115,Timaru South School,2,236
+2117,Fernworth Primary School,2,232
+552,James Hargest College,8,1889
+384,Queens High School,5,410
+333,St Margaret's College,10,817
+366,Waitaki Girls' High School,6,380
+284,St Catherines College (Kilbirnie),6,196
+265,St Oran's College,10,493
+280,Samuel Marsden Collegiate School,10,449
+712,Te Rōhutu Whio,9,97
+730,Porangahau School,2,64
+719,Te Kura Kaupapa Maori o Te Orini ki Ngati Awa,2,59
+2101,Tautoro School,1,148
+2099,Trentham School,5,360
+1667,He Puna Ruku Mātauranga o Whangaruru,1,49
+217,Napier Girls' High School,6,994
+180,Taranaki Diocesan School for Girls,5,131
+705,Te Tipu Whenua o Pa Harakeke,1,0
+737,Te Kura Kaupapa Maori o Horouta Wananga,2,156
+739,Manukura,5,176
+1663,Stella Maris Primary School,9,283
+2760,Eden Campus,1,0
+547,MindAlive,99,21
+50,St Mary's College (Ponsonby),8,1002
+47,St Dominic's Catholic College (Henderson),5,822
+16,Whangarei Girls' High School,5,1516
+64,Epsom Girls Grammar School,9,2112
+671,Waikato Montessori Education Centre,99,49
+655,Kawerau Putauaki School,2,207
+639,Pa Harakeke Teen Parent Unit,1,0
+132,Hamilton Girls' High School,6,1706
+130,St Paul's Collegiate (Hamilton),9,819
+2758,Kawerau Teen Parent Unit,1,0
+497,Te Kura o Hirangi,1,259
+545,Te Kura Toitu o Te Whaiti-nui-a-Toi,1,18
+555,Tangaroa College Teen Parent Unit,1,0
+564,Ormiston Senior College,7,954
+571,ACG Sunderland,99,623
+585,Ararira Springs Primary- Te Puna o Ararira,10,333
+589,Te Kura o Nga Ruahine Rangi,2,47
+605,Wentworth Primary,10,127
+495,Taieri College,7,1217
+3117,TKKM o Te Tonga o Hokianga,2,139
+488,Nga Taiatea Wharekura,2,290
+2751,Te Whakatipuranga (Otumoetai TPU),1,0
+2753,Te Āhuru Mōwai,1,0
+1647,Konini Primary School (Wainuiomata),4,197
+472,OneSchool Global - New Zealand,9,1498
+1633,St Mary MacKillop Catholic School,1,308
+603,KingsGate School,5,118
+612,Henderson - Teen Parent Unit - He Wero o nga Wahine,1,0
+614,Amesbury School,10,281
+3103,TKKM o Hurungaterangi,1,87
+463,TKK Motuhake o Tawhiuau,1,78
+454,St Dominic's College,99,42
+3101,Te Kura-a-iwi o Whakatupuranga Rua Mano,3,187
+6963,Papamoa College,6,1704
+1631,Southern Health School,1,7
+6070,Golden Sands School,9,582
+452,Southern Cross Campus,1,1468
+2383,TKKM o Ngati Ruanui,2,87
+630,Te Kura Maori o Nga Tapuwae,2,255
+628,TKKM o Tuia te Matangi,4,64
+873,Te Aratika Academy,2,36
+171,New Plymouth Boys' High School,7,1422
+121,Tauranga Boys' College,6,2143
+2351,TKKM o Otepoti,2,44
+443,Hastings Christian School,7,298
+6947,The Gardens School,8,583
+94,De La Salle College,1,953
+51,St Paul's College (Ponsonby),2,389
+37,Westlake Boys High School,9,2487
+1674,TKKM o Te Wananga Whare Tapere o Takitimu,2,168
+6945,Selwyn Ridge School,6,445
+436,Springbank School,99,212
+1613,Te Ra School,8,159
+238,Kaitaia Abundant Life School,2,155
+134,Flaxmere College,1,302
+62,St Peter's College (Epsom),8,1268
+226,St John's College (Hastings),4,404
+4223,TKKM o Tamarongo,2,11
+77,Bethlehem College,9,1850
+1156,Horizon School,6,249
+260,St Bernard's College,6,667
+276,St Patrick's College (Kilbirnie),8,713
+294,Nelson College,7,922
+321,Shirley Boys' High School,6,1303
+330,Christ's College,10,700
+360,Timaru Boys' High School,7,663
+6920,Gulf Harbour School,10,531
+904,Green School New Zealand,99,74
+4230,TKKM o Whakarewa I Te Reo Ki Tuwharetoa,2,205
+387,John McGlashan College,10,531
+4122,Nelson College (Prep.Dept.),10,90
+4138,Selwyn House School,10,280
+4131,St John's Girls' School (Invercargill),9,138
+380,St Hildas Collegiate,10,446
+405,Southland Girls' High School,5,1042
+1138,Renew School,4,184
+6929,Alfriston College,2,1097
+279,TKKM o Hoani Waititi,3,221
+329,Mangakino School,1,48
+1147,Te Rangi Aniwaniwa,1,184
+6922,Waiheke Primary School,7,270
+1608,St Matthew's Primary School (Hastings),4,144
+1154,TKKM o Te Rawhiti Roa,1,175
+1588,St Francis Xavier Catholic School (Whangarei),6,474
+328,Christchurch Girls' High School -Te Kura o Hine Waiora,9,1212
+378,Otago Girls' High School,8,719
+326,Villa Maria College,9,822
+278,Queen Margaret College,10,610
+262,Sacred Heart College (Lower Hutt),7,810
+246,St Matthew's Collegiate (Masterton),9,288
+1606,UP International College New Zealand,7,78
+1672,TKKM o Nga Uri A Maui,3,241
+956,Harvest Christian School,6,32
+203,Palmerston North Girls' High School,8,1241
+196,Nga Tawa Diocesan School,9,169
+961,Hāwera New Year 7-15 School (Proposed opening date: 2023-01-01),,0
+879,Rise UP Academy,1,89
+881,Tūranga Tangata Rite,2,10
+870,Te Kāpehu Whetū (Tuakana),3,61
+872,Te Kōpuku High,3,326
+854,Vanguard Military School,3,159
+847,AGE School,99,83
+779,Fossil Bay School,99,12
+781,Jireh Christian School,3,238
+210,Gisborne Girls' High School,3,749
+228,Hastings Girls' High School,3,649
+729,Northland College Teen Parent Unit,1,0
+747,Te Kura O Take Kārara,10,191
+670,Nelson Teen Parent Unit,1,0
+704,Haeata Community Campus,1,595
+706,Te Pa o Rakaihautu,4,209
+695,Seven Oaks Secondary School,99,0
+219,Sacred Heart College (Napier),5,313
+153,Rotorua Girls' High School,3,720
+688,Ormiston Primary School,7,1027
+686,Lyttelton Primary School,9,194
+738,St Francis of Assisi Catholic School,7,351
+67,Diocesan School For Girls,10,1608
+60,Saint Kentigern Girls' School,99,274
+53,Auckland Girls' Grammar School,3,1071
+35,Carmel College,9,996
+435,Hukarere Girls’ College,2,92
+471,Zayed College for Girls,3,139
+661,Tarawera High School,1,441
+654,Rolleston College,10,1437
+647,Bathgate Park School,3,122
+563,Albany Senior High School,10,836
+570,Mission Heights Primary School,8,625
+572,Te Matauru Primary,7,192
+588,Hingaia Peninsula School,10,368
+577,Te Totara Primary School,10,680
+579,Knights Stream School- Mingimingi Hautoa,10,341
+586,Shotover Primary School,10,556
+595,Kauri Flats School,3,335
+604,Golden Grove School,99,44
+622,Silverstream Christian School,99,32
+620,Huanui College,9,340
+136,St John's College (Hillcrest),7,888
+59,Sacred Heart College (Auckland),8,1281
+54,Auckland Grammar,9,2592
+152,Rotorua Boys' High School,3,1136
+227,Hastings Boys' High School,2,788
+209,Gisborne Boys' High School,3,849
+202,Palmerston North Boys' High School,8,1760
+245,Rathkeale College,9,339
+252,St Patrick's College (Silverstream),8,724
+277,Rongotai College,6,739
+288,Marlborough Boys' College,6,944
+327,Christchurch Boys' High School,10,1360
+404,Southland Boys' High School,6,1053
+377,Otago Boys' High School,9,831
+4121,Nelson College For Girls Prep School,10,93
+361,Timaru Girls' High School,6,385
+343,Marian College,8,405
+295,Nelson College For Girls,7,797
+286,St Mary's College (Wellington),9,536
+263,Chilton Saint James School,10,297
+68,St Cuthbert's College (Epsom),10,1470
+188,Whanganui Girls' College,3,333
+61,Baradene College,9,1358
+70,Marist College,7,751
+84,Kelston Girls' College,2,443
+386,Columba College,10,583
+6125,Turanganui-A-Kiwa Activity Centre,1,0
+4134,St Mark's Church School (Mt Victoria),10,229
+4135,St Mark's School (Christchurch),10,225
+4136,St Michael's Church School,8,151
+4117,Liberton Christian School,7,112
+4119,Miramar Christian School,5,21
+4150,Wellington S D A School,2,95
+4151,Waitakere S D A School,3,49
+4000,Otatara School,10,270
+4001,Otautau School,6,152
+4016,St Joseph's School (Queenstown),10,120
+4017,St Joseph's School (Invercargill),3,135
+4018,St Mary's School (Gore),7,190
+4019,St Patrick's School (Nightcaps),2,28
+4032,Tuturau Primary School,3,26
+4034,Waianiwa School,9,37
+4035,Waihopai School,8,313
+4036,Waikaia School,9,14
+4050,West Gore School,6,167
+4052,Winton School,7,266
+4100,Balmoral S D A School,4,71
+4101,Carncot Independent School,10,118
+3966,Invercargill Middle School,3,137
+3967,Windsor North School,8,306
+3982,Makarewa School,9,132
+3984,Mararoa School,10,47
+3932,Balfour School,10,73
+3935,Hillside Primary School,9,31
+3531,St Joseph's School (Papanui),9,383
+3532,St Joseph's School (Temuka),6,117
+3533,St Joseph's School (Timaru),7,207
+3534,St Martins School,9,457
+3832,St Mary's School (Mosgiel),8,125
+3834,St Peter Chanel School (Green Island),8,56
+3835,St Clair School,8,377
+3850,Waihola District School,7,31
+3851,Waikoikoi School,7,8
+3852,Waikouaiti School,6,85
+3815,Sacred Heart School (Dunedin),8,33
+3816,Sara Cohen School,5,51
+3817,Sawyers Bay School,6,123
+3784,Oamaru Intermediate,5,322
+3785,Te Pākihi o Maru,4,92
+3783,North East Valley Normal School,7,216
+3798,Papakaio School,9,91
+3801,Pine Hill School (Dunedin),3,36
+3802,Poolburn School,10,43
+3565,View Hill School,7,61
+3566,Waiau School,4,36
+3567,Waihao Downs School,7,64
+3581,Waltham School,3,254
+3599,Woodbury School,8,109
+3600,Woodend School,8,377
+3700,Abbotsford School,8,283
+3701,Alexandra School,8,181
+3716,Bradford School,5,83
+3718,Broad Bay School,9,27
+3732,Duntroon School,9,87
+3733,East Taieri School,9,290
+3749,Heriot School,10,80
+3765,Maheno School,6,51
+3767,Makarora Primary School,7,7
+3768,Maori Hill School,10,227
+3549,Tai Tapu School,10,218
+2679,St Joseph's School (Wairoa),2,70
+2680,St Mary's Catholic School (Gisborne),5,200
+3280,Arowhenua Maori School,3,39
+3281,Ashburton Borough School,7,312
+3282,Ashburton Intermediate,6,431
+3283,Ashburton Netherby School,3,137
+3464,Ouruhia Model School,8,56
+3466,Papanui Primary School,6,201
+3467,Paparoa Street School,10,397
+3481,Rangiora Borough School,7,411
+3483,Te Raekura Redcliffs School,10,237
+3484,Redwood School (Christchurch),8,268
+3498,Sacred Heart School (Timaru),5,205
+3501,Sefton School,7,115
+3515,Springfield School,6,40
+3516,Springston School,10,205
+3517,St Albans Catholic School (Christchurch),9,100
+3415,Whītau School,2,288
+3432,Mayfield School (Mid-Canterbury),7,73
+3434,Merrin School,8,460
+3447,North Loburn School,9,101
+3449,Te Kura o Matarangi - Northcote School,3,138
+3450,Oaklands School,9,552
+3451,Ohoka School,10,188
+3381,Hororata School,9,82
+3384,Ilam School,6,363
+3397,Kirwee Model School,10,139
+3398,Kokatahi-Kowhitirangi School,8,35
+3299,Breens Intermediate,7,255
+3314,Chisnallwood Intermediate,5,664
+3316,Christ The King School (Burnside),8,312
+3317,Christchurch East School,3,267
+3331,Dunsandel School,9,105
+3332,Duvauchelle School,6,42
+3334,Elmwood Normal School,10,443
+3347,Gleniti School,9,353
+3348,Glenavy School,7,92
+3366,Halswell School,10,629
+3367,Hampstead School,4,330
+3213,Parklands School (Motueka),3,179
+3214,Ranzau School,9,138
+3216,Richmond School (Nelson),7,441
+3217,Riwaka School,4,189
+3231,Victory Primary School,2,292
+3233,Waimea Intermediate,8,654
+3013,St Mary's School (Carterton),6,134
+3015,St Michael's School (Taita),2,117
+3016,St Patrick's School (Masterton),5,219
+2946,Papakowhai School,10,509
+2947,Paparangi School,9,239
+2948,Paraparaumu Beach School,8,558
+2949,Paraparaumu School,5,341
+2963,Porirua East School,3,103
+2964,Porirua School,2,125
+2965,Poroutawhao School,5,104
+2966,Postgate School,3,302
+2979,Rewa Rewa School,9,128
+2980,Ridgway School,9,207
+2981,Riverlands School,6,210
+2982,Roseneath School,10,98
+2983,Russell School (Porirua East),1,113
+2996,Springlands School,7,351
+2997,St Annes School (Newtown),3,133
+2998,St Anthony's School (Pahiatua),5,102
+2999,St Anthony's School (Seatoun),8,58
+3030,Taita Central School,2,133
+3031,Avalon Intermediate,2,239
+3032,Taitoko School,1,194
+3046,Tokomaru School,6,89
+3048,Totara Park School,7,220
+3050,Tua Marina School,9,108
+3064,Waitaria Bay School,6,19
+3065,Waitohu School,5,253
+3180,Appleby School,9,110
+3181,Auckland Point School,4,115
+3182,Birchwood School,7,236
+3183,Brightwater School,9,262
+3199,Lake Rotoiti School,8,15
+3200,Lower Moutere School,5,237
+2746,Te Kura o Kimi Ora,1,137
+2812,Bohally Intermediate,6,557
+2813,Boulcott School,7,304
+2814,Brandon Intermediate,1,197
+2816,Brooklyn School (Wellington),10,392
+2831,Dalefield School,7,69
+2832,Discovery School,10,456
+2846,Pukeatua Primary School (Wainuiomata),2,127
+2847,Glenview School (Porirua East),1,101
+2849,Greenacres School,9,178
+2863,Hutt Intermediate,8,589
+2865,Island Bay School,10,334
+2866,Johnsonville School,9,317
+2879,Khandallah School,10,320
+2880,Kilbirnie School,10,176
+2882,Koputaroa School,6,183
+2896,Manakau School,6,108
+2899,Mangaroa School,10,109
+2915,Miramar Central School,5,199
+2916,Miramar North School,7,240
+2930,Normandale School,10,162
+2931,Northland School,10,260
+2933,Ohau School,5,191
+2681,St Mary's School (Hastings),4,245
+2697,Te Mata School (Havelock North),10,535
+2698,Te Pohue School,2,21
+2712,Waerenga-O-Kuri School,4,38
+2715,Waikirikiri School,1,176
+2732,Weber School,7,49
+2461,Tangimoana School,2,26
+2462,Taonui School,5,118
+2463,Taoroa School,1,22
+2465,Tawhero School,1,121
+2478,Waverley Primary School,3,105
+2479,West End School (P North),5,323
+2581,Ilminster Intermediate,1,370
+2582,Irongate School,1,264
+2578,Hiruharama School,2,150
+2595,Makauri School,8,164
+2597,Mangapapa School,4,418
+2612,Mayfair School,2,244
+2613,Meeanee School,3,89
+2629,Ongaonga School,6,59
+2664,Rere School,8,30
+2631,Ormond School,7,89
+2647,Porritt School,4,326
+2648,Port Ahuriri School,7,256
+2662,Raureka School,2,297
+2663,Reignier Catholic School,9,166
+2665,Richmond School (Napier),1,75
+2480,Westmere School (Wanganui),8,213
+2481,Whakarongo School,9,476
+2546,Bledisloe School,6,273
+2547,Bridge Pa School,2,92
+2548,Camberley School,1,99
+2562,Frasertown School,2,93
+2563,Frimley School,4,491
+2564,Gisborne Central School,6,352
+2428,Pukeokahu School,7,9
+2429,Raetihi Primary School,2,134
+2446,South Makirikiri School,7,127
+2447,St Anne's School (Wanganui),5,202
+2378,Keith Street School,1,121
+2379,Kimbolton School,5,46
+2395,St Marcellin School (Wanganui),2,43
+2396,Marton Junction School,2,91
+2397,Marton School,3,168
+2398,Mataroa School,7,35
+2412,Okoia School,1,39
+2413,Orautoha School,2,39
+2414,Oroua Downs School,5,102
+2361,Gonville School,2,200
+2362,Halcombe Primary School,8,184
+2363,Te Kura o Wairau,1,193
+2364,Hiwinui School,9,132
+2227,Ratapiko School,7,23
+2228,Rawhitiroa School,7,54
+1960,St Michael's Catholic School (Rotorua),4,92
+1961,St Patrick's Catholic School (Taumarunui),4,43
+1962,St Patrick's Catholic School (Te Awamutu),7,259
+1963,St Paul's Catholic School (Ngaruawahia),4,113
+2244,Stratford Primary School,5,380
+2261,Waitara East School,2,209
+2262,Waitoriki School,7,58
+2264,Welbourn School,8,294
+2330,Aberfeldy School,2,18
+2344,Bunnythorpe School,4,13
+2345,Carlton School,3,230
+2346,Castlecliff School,1,172
+2348,Churton School,3,136
+1978,Taneatua School,1,127
+1980,Tapu School,5,5
+1994,Tauriko School,9,261
+1995,Tauwhare School,9,115
+1996,Tawera Bilingual School,2,45
+1512,Stanley Bay School,10,213
+1811,Te Kura o Te Moutere O Matakana,2,31
+1812,Matamata Intermediate,5,383
+1693,Bankwood School,2,324
+1694,Bellevue School (Tauranga),6,302
+1695,Berkley Normal Middle School,8,754
+1696,TKKM o Bernard Fergusson,2,165
+1576,Wiri Central School,1,340
+1577,Woodhill School,6,60
+1578,Woodlands Park School,10,379
+1579,Wymondley Road School,1,157
+1592,Marina View School,8,600
+1593,Kaitoke School (Claris),3,35
+1594,Riverview School,7,398
+1595,Titirangi Rudolf Steiner School,9,223
+1442,Pokeno School,4,462
+1444,Pomaria Road School,3,436
+1445,Ponsonby Intermediate,9,570
+1392,Newton Central School,7,300
+1393,Nga Iwi School,1,320
+1394,Northcote Intermediate,6,463
+1395,Northcote School (Auckland),9,424
+2010,Te Mata School (Raglan),6,130
+2011,TKKM o Te Matai,1,45
+2012,Te Miro School,10,56
+2013,Te Pahu School,10,115
+2027,Thames South School,2,78
+2028,Thornton School,7,113
+2044,Upper Atiamuri School,4,65
+2045,Vardon School,4,319
+2046,Waerenga School,6,83
+2047,Te Kura o Waharoa,1,17
+2060,Waingaro School,8,19
+2061,Te Kura o Waioweka,1,56
+2062,Te Kura Maori-a-Rohe o Waiohau,1,81
+2063,Waiotahe Valley School,3,106
+2077,Westbrook School,4,500
+2078,Western Heights Primary School (Rotorua),1,413
+2079,Whakamarama School,7,87
+2080,Whakamaru School,4,85
+2094,Marian Catholic School (Hamilton),7,578
+2096,Crawshaw School,1,314
+2161,Devon Intermediate,4,377
+2164,Egmont Village School,8,175
+2177,Inglewood School,5,369
+2178,Kaimata School,5,90
+2195,Matiere School,2,38
+2197,Merrilands School,7,183
+2214,Ōmata School,10,206
+1813,Matamata Primary School,6,436
+1826,Mihi School,2,19
+1829,Moanataiari School,4,134
+1827,Miller Avenue School,2,129
+1843,Newstead Model School,10,139
+1844,Ngahinapouri School,10,155
+1845,Ngakonui Valley School,3,126
+1846,Ngakuru School,9,49
+1860,Omanu School,7,507
+1861,Te Kura o Ōmarumutu,1,91
+1862,Omokoroa Point School,9,322
+1863,Omokoroa School,10,299
+1876,Ōtorohanga School,2,50
+1877,Otorohanga South School,4,324
+1878,Otumoetai Intermediate,7,923
+1879,Otumoetai Primary School,6,520
+1880,St Mary's Catholic School (Otorohanga),4,33
+1893,Pekapekarau School,4,196
+1894,Pillans Point School,8,494
+1895,Piopio Primary School,5,123
+1896,Piripiri School,3,14
+1911,Puriri School,8,26
+1912,Te Puru School,4,170
+1927,Roto-O-Rangi School,9,84
+1929,TKKM o Rotoiti,2,44
+1930,Rotokauri School,8,206
+1943,St Anthony's Catholic School (Huntly),1,42
+1944,St Columba's Catholic School (Frankton),5,453
+1945,St Francis School (Thames),5,75
+1946,St Joseph's Catholic School (Fairfield),7,323
+1947,St Joseph's Catholic School (Matamata),5,43
+1709,David Street School,6,483
+1710,Deanwell School,3,306
+1711,Edgecumbe School,3,203
+1713,Elstow-Waihou Combined School,7,149
+1726,Goldfields School (Paeroa),3,85
+1727,Goodwood School,10,351
+1728,Gordonton School,9,219
+1729,Greenpark School (Tauranga),5,641
+1744,Horahora School (Cambridge),7,50
+1745,Horohoro School,2,47
+1746,Horotiu School,3,230
+1759,Kaingaroa Forest School,1,39
+1760,Kaipaki School,8,121
+1762,Tauranga Special School,5,107
+1763,Karangahake School,3,66
+1761,Kaitao Intermediate,2,299
+1776,Kihikihi School,2,179
+1777,Kimihia School,3,329
+1778,Kinohaku School,4,10
+1779,Kio Kio School,8,131
+1793,Maihiihi School,9,72
+1794,Maketu School,1,35
+1796,Malfroy School,2,269
+1526,Tāmaki School,1,178
+1528,Target Road School,6,374
+1529,Taupaki School,9,200
+1543,Verran Primary School,8,199
+1544,Victoria Avenue School,10,446
+1545,View Road School,5,157
+1559,Waiuku Primary School,5,422
+1560,Wakaaranga School,7,655
+1561,Warkworth School,7,469
+1562,Waterlea Public School,5,436
+1459,Redhill School,1,199
+1460,Redoubt North School,2,548
+1461,Remuera Intermediate,8,822
+1462,Remuera School,10,566
+1475,Royal Oak School,8,459
+1476,Royal Road School,2,266
+1477,Ruapotaka School,1,100
+1478,Rutherford School,5,315
+1479,Sandspit Road School,6,326
+1492,St John's School (Mairangi Bay),10,300
+1493,St Joseph's School (Grey Lynn),4,35
+1494,St Joseph's Catholic School (Onehunga),3,184
+1495,St Joseph's School (Orakei),6,58
+1509,St Therese School (Three Kings),3,74
+1510,St Thomas School (Auckland),10,657
+1511,Stanhope Road School,4,520
+1409,Otahuhu School,1,515
+1410,Otaua School,8,171
+1411,Our Lady Sacred Heart School (Epsom),9,198
+1412,Owairaka District School,3,385
+1425,Paparimu School,10,35
+1426,Papatoetoe Central School,4,637
+1427,Papatoetoe East School,2,455
+1428,Papatoetoe Intermediate,2,672
+1275,Finlayson Park School,1,854
+1276,Flanshaw Road School,5,285
+1358,Maramarua School,3,83
+1359,Marist School (Mt Albert),8,291
+1360,Marist Catholic School (Herne Bay),9,162
+1361,Marlborough School,7,375
+1362,Marshall Laing School,5,553
+625,Tamaoho School,5,188
+1375,Milford School (Auckland),9,461
+1376,Monte Cecilia Catholic School,4,147
+1378,Mt Eden Normal School,10,604
+1325,Karaka School,9,240
+1326,Kaukapakapa School,7,276
+1327,Kauri Park School,7,390
+1328,Kaurilands School,8,729
+1342,Long Bay School,10,472
+1343,Mairangi Bay School,10,411
+1344,Mangatangi School,7,100
+1345,Mangatawhiri School,7,189
+1308,Henderson North School,3,338
+1309,Henderson School,3,207
+1310,Henderson South School,2,236
+1311,Henderson Valley School,4,335
+1277,Flat Bush School,1,388
+1278,Forrest Hill School,8,381
+1292,Glenbrook School,7,271
+1293,Glendene School,2,140
+1294,Glendowie School,10,529
+1295,Glenfield Intermediate,6,396
+1258,Dairy Flat School,10,338
+1259,Dawson School,1,248
+1260,Devonport Primary School,10,237
+1261,Dominion Road School,3,263
+1225,Belmont Intermediate,10,606
+1226,Belmont School (Auckland),10,384
+1227,Birdwood School,2,205
+1228,Birkdale Intermediate,6,430
+1241,Bucklands Beach Primary School,10,397
+1242,Campbells Bay School,10,839
+1243,Chaucer School,4,180
+1244,Chelsea School,10,334
+1245,Christ the King Catholic School (Owairaka),3,79
+1192,Dunedin Rudolf Steiner School,9,62
+1194,Red Beach School,9,484
+1208,Ardmore School,4,329
+1209,Arohanui Special School,4,214
+1210,Northern Health School,1,13
+1211,Auckland Normal Intermediate,9,647
+1177,Te Huruhi School,7,274
+1178,Tasman Bay Christian School,6,44
+1175,Kaikohe Christian School,2,159
+1007,Blomfield Special School and Resource Ctre,3,128
+1008,Dargaville Intermediate,3,172
+1009,Dargaville Primary School,4,358
+422,Faith City School,3,128
+424,Michael Park School,8,360
+425,Odyssey House School (Auckland),99,20
+408,Verdon College,6,706
+409,Aparima College,6,196
+1011,Glenbervie School,8,212
+1024,Kaingaroa School (Kaitaia),3,132
+1025,Kaitaia Intermediate,1,234
+1026,Kaitaia School,1,275
+1027,Kaiwaka School,4,154
+1042,Matakohe School,4,54
+1043,Matarau School,7,300
+1044,Matauri Bay School,2,55
+1058,Ohaeawai School,3,145
+1059,Okaihau Primary School,4,157
+1060,Te Kura o Ōmanaia,1,69
+1061,One Tree Point School,4,183
+1074,Pakiri School,4,15
+1075,Pakotai School,2,14
+1076,Pamapuria School,2,69
+1077,Paparoa School,5,39
+1092,Raurimu Avenue School,3,54
+1093,Rawene School,3,64
+1094,Ruakaka School,4,308
+1111,Te Kopuru School,2,101
+1110,Te Horo School (Whangarei),2,38
+1109,Te Hapua School,1,21
+1124,Waiotira School,3,28
+1125,Waipu School,7,216
+1126,Wellsford School,3,378
+1127,Whananaki School,4,45
+1128,Whangarei Heads School,8,147
+390,Lawrence Area School,6,130
+391,Blue Mountain College,9,213
+392,Tokomairiro High School,4,229
+372,Dunstan High School,8,561
+373,Cromwell College,8,564
+374,Wakatipu High School,10,1230
+375,Roxburgh Area School,7,141
+376,Logan Park High School,7,899
+339,Hillmorton High School,4,1092
+340,Cashmere High School,9,2143
+341,Hillview Christian School,7,502
+358,Roncalli College,7,513
+359,Mountainview High School,6,536
+308,Amuri Area School,8,339
+309,Cheviot Area School,4,178
+290,Collingwood Area School,7,163
+291,Rai Valley Area School,5,117
+292,Golden Bay High School,6,308
+273,Wellington High School and Com Ed Centre,9,1413
+306,South Westland Area School,5,112
+307,Kaikoura High School,4,218
+255,Porirua College,1,629
+256,Bishop Viard College,1,313
+257,Tawa College,8,1311
+258,Taita College,2,374
+259,Naenae College,3,793
+205,Manawatu College,2,288
+206,Ngata Memorial College,1,105
+208,Lytton High School,3,744
+223,Havelock North High School,8,1085
+240,Otaki College,4,472
+241,Wairarapa College,6,1056
+173,Spotswood College,5,932
+141,St Peter's School (Cambridge),9,1202
+142,Cambridge High School,9,1743
+138,Hillcrest High School,7,1767
+189,Whanganui High School,4,1417
+190,Cullinane College,4,366
+191,Longburn Adventist College,5,188
+192,Whanganui Collegiate School,9,457
+58,Tangaroa College,1,805
+57,Tamaki College,1,691
+624,Te Karaka Area School,1,73
+41,Macleans College,9,2604
+40,Rutherford College,5,1383
+6,Broadwood Area School,1,99
+5,Kerikeri High School,6,1573
+8,Bay of Islands College,2,441
+7,Okaihau College,2,350
+24,Mahurangi College,7,1478
+23,Rodney College,4,376
+22,Ruawai College,4,117
+21,Otamatea High School,4,567
+25,Orewa College,9,1899
+74,Mt Roskill Grammar,4,1797
+75,Lynfield College,6,1739
+88,Otahuhu College,1,991
+108,Onewhero Area School,6,483
+106,Tuakau College,4,818
+105,Waiuku College,6,928
+123,Te Puke High School,3,859
+124,Matamata College,6,771
+125,Raglan Area School,4,570
+91,Mangere College,1,710
+157,Ōtorohanga College,4,279
+158,Tokoroa High School,2,513
+557,Holy Family School (Wanaka),10,200
+558,TKKM o Te Kura Kokiri,2,210
+559,Te Kura o Te Wainui-ā-Rua,1,37
+2762,Clendon Teen Parent Unit,1,0
+2110,Oceanview Heights School,2,85
+2111,Grantlea Downs School,5,312
+2112,Barton Rural School,9,162
+2113,Bluestone School,5,459
+2114,Beaconsfield School,9,116
+2095,Kaponga School,6,81
+1679,Rahotu School,5,159
+2097,Manaia School (Taranaki),3,73
+1676,Te Mahia School,1,73
+1677,Mohaka School,1,71
+1678,Te Kura o Waikaremoana,1,24
+473,Auckland International College,8,110
+476,Tongariro School,1,336
+1659,Lakeview School,2,429
+1660,Masterton Primary School,3,244
+1661,Douglas Park School,5,340
+1662,Huia Range School,2,263
+491,Sancta Maria College,7,1031
+941,Iqra School,3,206
+6977,Hobsonville Point Secondary School,10,714
+2749,Te Whare Whai Hua Teenage Parent Centre,1,0
+2747,Hawke's Bay School for Teenage Parents,1,0
+2748,Karanga Mai Young Parents College,1,0
+6976,Rototuna Primary School,10,725
+3114,TKKM o Pukemiro,1,154
+1645,Te Kura o Torere,2,21
+1643,St Paul's School (Massey),4,421
+3115,Te Wharekura o Te Rau Aroha,2,121
+1646,Wainuiomata Intermediate,3,298
+3113,Te Wharekura o Manurewa,2,41
+6975,Garin College,8,567
+3100,TKKM o Te Hiringa,2,116
+456,Pukekohe Christian School,99,320
+1627,St Paul's School (Richmond),8,323
+2445,TKKM o Ngati Kahungunu Ki Heretaunga,1,177
+6959,Willowbank School (Howick),8,651
+6960,Baverstock Oaks School,6,613
+441,ACG Strathallan,99,957
+440,Pinehurst School,10,1043
+439,Totara College of Accelerated Learning,3,65
+506,Drury Christian School,99,25
+539,Waikato Waldorf School ( Rudolf Steiner),7,171
+1611,Timaru Christian School,8,132
+4217,Te Wharekura o Arowhenua,2,204
+4218,TKKM o Tokomaru,2,29
+1143,TKKM o Nga Mokopuna,8,93
+1142,TKKM o Takapau,3,22
+6940,Te Akau ki Papamoa Primary School,5,591
+6944,Randwick Park School,1,578
+6941,Endeavour School,10,401
+874,Pacific Advance Secondary School,1,154
+858,Cambridge West School (Proposed opening date: 2024-01-01),,0
+960,TKKM o Tūtūtarakihi,1,12
+958,Liger Leadership Academy,,29
+876,South Auckland Middle School,1,177
+877,Middle School West Auckland,2,158
+840,Central Auckland Specialist School,5,171
+774,Matua Ngaru School,9,379
+743,Holy Trinity Catholic Primary School,3,288
+723,Massey-Redhills Primary School (Proposed opening date: 2023-01-01),,0
+724,Te Manawa ō Pāpāmoa School,6,163
+725,Scott Point Primary School,9,294
+709,Ormiston Junior College,7,814
+710,Rolleston Christian School,9,205
+708,Rototuna Junior High School,10,1386
+742,Te Kura o Te Whānau-a-Apanui,1,132
+674,Levin Teen Parent Unit,1,0
+707,ACG Tauranga,99,373
+660,Kahurangi School,3,263
+658,Murupara Area School,1,192
+641,Te Wharekura o Nga Purapura o Te Aroha,3,92
+593,Te Uho O Te Nikau Primary School,7,218
+608,Ashburton Christian School,6,206
+610,Seven Oaks School,99,70
+607,Big Rock Primary School,8,97
+39,Rosmini College,9,1068
+175,Francis Douglas Memorial College,8,738
+275,Wellington College,10,1693
+4116,King's School (Remuera),10,700
+4149,Wellesley College,10,276
+4118,Medbury Preparatory School,10,408
+4133,Saint Kentigern Boys' School,10,606
+525,Salisbury School (Nelson),3,4
+324,Avonside Girls' High School,6,1113
+325,Rangi Ruru Girls' School,10,692
+289,Marlborough Girls' College,7,935
+357,Craighead Diocesan School,9,413
+274,Wellington East Girls' College,8,1056
+272,Wellington Girls' College,10,1419
+224,Iona College,10,317
+225,Woodford House,9,356
+222,St Joseph's Maori Girls' College,2,171
+242,Solway College,7,197
+174,Sacred Heart Girls' College (N Plymouth),8,736
+139,Sacred Heart Girls' College (Ham),7,868
+140,Waikato Diocesan School For Girls,10,672
+90,McAuley High School,1,798
+38,Westlake Girls' High School,9,2143
+122,Tauranga Girls' College,6,1431
+172,New Plymouth Girls' High School,7,1325
+89,King's College,10,1167
