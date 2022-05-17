@@ -562,6 +562,7 @@ BEGIN {
 	{`BEGIN { print system(">&2 echo error") }  # !fuzz`,
 		"", "error\n0\n", "", ""},
 	{`BEGIN { print system("exit 42") }  # !fuzz`, "", "42\n", "", ""},
+	{`BEGIN { system("cat") }`, "foo\nbar", "foo\nbar", "", ""},
 
 	// Test bytes/unicode handling (GoAWK currently has char==byte, unlike Gawk).
 	{`BEGIN { print match("food", "foo"), RSTART, RLENGTH }  !gawk`, "", "1 1 3\n", "", ""},
