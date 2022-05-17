@@ -1067,6 +1067,7 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 		}
 		cmdline := p.toString(p.peekTop())
 		cmd := p.execShell(cmdline)
+		cmd.Stdin = p.stdin
 		cmd.Stdout = p.output
 		cmd.Stderr = p.errorOutput
 		_ = p.flushAll() // ensure synchronization
