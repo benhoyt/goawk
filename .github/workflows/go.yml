@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        go: ['1.17', '1.16', '1.15', '1.14', '1.13']
+        go: ['1.18', '1.17', '1.16', '1.15', '1.14']
 
     name: Go ${{ matrix.go }} on Linux
 
@@ -34,7 +34,7 @@ jobs:
 
     strategy:
       matrix:
-        go: ['1.17', '1.13']
+        go: ['1.18', '1.14']
 
     name: Go ${{ matrix.go }} on Windows
 
@@ -59,7 +59,7 @@ jobs:
 
     strategy:
       matrix:
-        go: ['1.17', '1.13']
+        go: ['1.18', '1.14']
 
     name: Go ${{ matrix.go }} on macOS
 
