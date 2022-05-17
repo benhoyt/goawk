@@ -30,6 +30,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -38,6 +39,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/benhoyt/goawk/internal/term"
 	"github.com/benhoyt/goawk/interp"
 	"github.com/benhoyt/goawk/lexer"
 	"github.com/benhoyt/goawk/parser"
@@ -250,6 +252,13 @@ func main() {
 		inputMode += " header"
 	}
 
+	// Default output writer is a buffered version of os.Stdout, but don't
+	// buffer if os.Stdout is a terminal.
+	var stdout io.Writer // nil means "buffered stdout"
+	if term.IsTerminal(os.Stdout.Fd()) {
+		stdout = os.Stdout
+	}
+
 	config := &interp.Config{
 		Argv0: filepath.Base(os.Args[0]),
 		Args:  expandWildcardsOnWindows(args),
@@ -258,6 +267,7 @@ func main() {
 			"INPUTMODE", inputMode,
 			"OUTPUTMODE", outputMode,
 		},
+		Output: stdout,
 	}
 	for _, v := range vars {
 		parts := strings.SplitN(v, "=", 2)
