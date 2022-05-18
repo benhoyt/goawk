@@ -30,6 +30,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -250,6 +251,14 @@ func main() {
 		inputMode += " header"
 	}
 
+	// Don't buffer output if stdout is a terminal (default output writer when
+	// Config.Output is nil is a buffered version of os.Stdout).
+	var stdout io.Writer
+	stdoutInfo, err := os.Stdout.Stat()
+	if err == nil && stdoutInfo.Mode()&os.ModeCharDevice != 0 {
+		stdout = os.Stdout
+	}
+
 	config := &interp.Config{
 		Argv0: filepath.Base(os.Args[0]),
 		Args:  expandWildcardsOnWindows(args),
@@ -258,6 +267,7 @@ func main() {
 			"INPUTMODE", inputMode,
 			"OUTPUTMODE", outputMode,
 		},
+		Output: stdout,
 	}
 	for _, v := range vars {
 		parts := strings.SplitN(v, "=", 2)
