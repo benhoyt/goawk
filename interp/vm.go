@@ -1085,7 +1085,7 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 				if exitErr, ok := err.(*exec.ExitError); ok {
 					ret = float64(exitErr.ProcessState.ExitCode())
 				} else {
-					p.printErrorf("unexpected error running command %q: %v\n", cmdline, err)
+					p.printErrorf("error running command %q: %v\n", cmdline, err)
 					ret = -1
 				}
 			}
