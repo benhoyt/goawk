@@ -1071,22 +1071,17 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 		cmd.Stdout = p.output
 		cmd.Stderr = p.errorOutput
 		_ = p.flushAll() // ensure synchronization
-		err := cmd.Start()
-		var ret float64
+		err := cmd.Run()
+		ret := 0.0
 		if err != nil {
-			p.printErrorf("%s\n", err)
-			ret = -1
-		} else {
-			err = cmd.Wait()
-			if err != nil {
-				if exitErr, ok := err.(*exec.ExitError); ok {
-					ret = float64(exitErr.ProcessState.ExitCode())
-				} else {
-					p.printErrorf("unexpected error running command %q: %v\n", cmdline, err)
-					ret = -1
-				}
+			if p.checkCtx && p.ctx.Err() != nil {
+				return p.ctx.Err()
+			}
+			if exitErr, ok := err.(*exec.ExitError); ok {
+				ret = float64(exitErr.ProcessState.ExitCode())
 			} else {
-				ret = 0
+				p.printErrorf("%v\n", err)
+				ret = -1
 			}
 		}
 		p.replaceTop(num(ret))
