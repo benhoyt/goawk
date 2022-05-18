@@ -1079,6 +1079,9 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 		} else {
 			err = cmd.Wait()
 			if err != nil {
+				if p.checkCtx && p.ctx.Err() != nil {
+					return p.ctx.Err()
+				}
 				if exitErr, ok := err.(*exec.ExitError); ok {
 					ret = float64(exitErr.ProcessState.ExitCode())
 				} else {

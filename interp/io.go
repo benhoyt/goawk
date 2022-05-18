@@ -187,8 +187,11 @@ func (p *interp) execShell(code string) *exec.Cmd {
 	executable := p.shellCommand[0]
 	args := p.shellCommand[1:]
 	args = append(args, code)
-	cmd := exec.Command(executable, args...)
-	return cmd
+	if p.checkCtx {
+		return exec.CommandContext(p.ctx, executable, args...)
+	} else {
+		return exec.Command(executable, args...)
+	}
 }
 
 // Get input Scanner to use for "getline" based on file name
