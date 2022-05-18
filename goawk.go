@@ -39,7 +39,6 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/benhoyt/goawk/internal/term"
 	"github.com/benhoyt/goawk/interp"
 	"github.com/benhoyt/goawk/lexer"
 	"github.com/benhoyt/goawk/parser"
@@ -252,10 +251,11 @@ func main() {
 		inputMode += " header"
 	}
 
-	// Default output writer is a buffered version of os.Stdout, but don't
-	// buffer if os.Stdout is a terminal.
-	var stdout io.Writer // nil means "buffered stdout"
-	if term.IsTerminal(os.Stdout.Fd()) {
+	// Don't buffer output if stdout is a terminal (default output writer when
+	// Config.Output is nil is a buffered version of os.Stdout).
+	var stdout io.Writer
+	stdoutInfo, err := os.Stdout.Stat()
+	if err == nil && stdoutInfo.Mode()&os.ModeCharDevice != 0 {
 		stdout = os.Stdout
 	}
 
