@@ -1,1 +1,0 @@
-/about/ { print $4 }

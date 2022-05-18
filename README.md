@@ -112,7 +112,7 @@ This project has a good suite of tests, which include my own intepreter tests, t
 
 ## AWKGo
 
-The GoAWK repository also includes the creatively-named AWKGo, an AWK-to-Go compiler. This is experimental and is not subject to the stability requirements of GoAWK itself. You can [read more about AWKGo](https://benhoyt.com/writings/awkgo/) or [browse the AWKGo code](https://github.com/benhoyt/goawk/tree/master/awkgo).
+The GoAWK repository also includes the creatively-named AWKGo, an AWK-to-Go compiler. This is experimental and is not subject to the stability requirements of GoAWK itself. You can [read more about AWKGo](https://benhoyt.com/writings/awkgo/) or browse the code on the [`awkgo` branch](https://github.com/benhoyt/goawk/tree/awkgo/awkgo).
 
 
 ## License
