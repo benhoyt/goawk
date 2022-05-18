@@ -144,7 +144,7 @@ func (p *Interpreter) ResetRand() {
 // system() won't be interrupted.
 func (p *Interpreter) ExecuteContext(ctx context.Context, config *Config) (int, error) {
 	p.interp.resetCore()
-	p.interp.checkCtx = ctx != context.Background()
+	p.interp.checkCtx = ctx != context.Background() && ctx != context.TODO()
 	p.interp.ctx = ctx
 	p.interp.ctxDone = ctx.Done()
 	p.interp.ctxOps = 0
