@@ -2,7 +2,8 @@
 
 BEGIN {
     # Constants to determine size and coordinates of grid
-    width = 600; height = 300
+    if (!width) width = 600
+    if (!height) height = 300
     min_x = -2.1; max_x = 0.6
     min_y = -1.2; max_y = 1.2
     iters = 32
