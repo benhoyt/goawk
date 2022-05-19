@@ -1,0 +1,1 @@
+/foo.*d/ { n++ } END { print n }
