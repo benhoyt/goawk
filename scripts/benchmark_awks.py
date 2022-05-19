@@ -12,29 +12,30 @@ import time
 
 AWKS = [
     './goawk',
-    './orig', # GoAWK without perf improvements (commit 8ab5446)
+    './orig', # GoAWK without perf improvements
     'original-awk',
     'gawk',
     'mawk',
 ]
 NORM_INDEX = AWKS.index('original-awk')
-# Only get the mean of these tests because these are the only ones
-# we show in the GoAWK article.
-TESTS_TO_MEAN = [
-    'tt.01',
-    'tt.02',
-    'tt.02a',
-    'tt.03',
-    'tt.03a',
-    'tt.04',
-    'tt.05',
-    'tt.06',
-    'tt.07',
-    'tt.big',
-    'tt.x1',
-    'tt.x2',
-]
-MEAN_TESTS = []
+TESTS_TO_MEAN = None  # By default, calculate the mean of all tests
+if False:
+    # Only get the mean of these tests because these are the only ones
+    # we show in the GoAWK article.
+    TESTS_TO_MEAN = [
+        'tt.01_print',
+        'tt.02_print_NR_NF',
+        'tt.02a_print_length',
+        'tt.03_sum_length',
+        'tt.03a_sum_field',
+        'tt.04_printf_fields',
+        'tt.05_concat_fields',
+        'tt.06_count_lengths',
+        'tt.07_even_fields',
+        'tt.big_complex_program',
+        'tt.x1_mandelbrot',
+        'tt.x2_sum_loop',
+    ]
 NUM_RUNS = 6
 MIN_TIME = 0.5
 PROGRAM_GLOB = 'testdata/tt.*'
@@ -50,13 +51,13 @@ def repeat_file(input_file, repeated_file, n):
             shutil.copyfileobj(fin, fout)
 
 
-print('Test      ', end='')
+print('Test                         ', end='')
 for awk in AWKS:
     display_awk = os.path.basename(awk)
     display_awk = display_awk.replace('original-awk', 'awk')
-    print('| {:>5} '.format(display_awk), end='')
+    print('| {:>8} '.format(display_awk), end='')
 print()
-print('-'*9 + ' | -----'*len(AWKS))
+print('-'*28 + ' | --------'*len(AWKS))
 
 repeats_created = []
 products = [1] * len(AWKS)
@@ -100,18 +101,19 @@ for program in programs:
     norm_time = awk_times[NORM_INDEX]
     speeds = [norm_time/t for t in awk_times]
     test_name = program.split('/')[1]
-    if test_name in TESTS_TO_MEAN:
+    if TESTS_TO_MEAN is None or test_name in TESTS_TO_MEAN:
         num_products += 1
         for i in range(len(AWKS)):
             products[i] *= speeds[i]
 
-    print('{:9}'.format(test_name), end='')
+    display_name = test_name.split('_')[0] + ' (' + ' '.join(test_name.split('_')[1:]) + ')'
+    print('{:28}'.format(display_name), end='')
     for i, awk in enumerate(AWKS):
-        print(' | {:5.2f}'.format(speeds[i]), end='')
+        print(' | {:8.2f}'.format(speeds[i]), end='')
     print()
 
-print('-'*9 + ' | -----'*len(AWKS))
-print('**Geo mean** ', end='')
+print('-'*28 + ' | --------'*len(AWKS))
+print('**Geo mean**                ', end='')
 for i, awk in enumerate(AWKS):
     print(' | **{:.2f}**'.format(products[i] ** (1.0/num_products)), end='')
 print()
