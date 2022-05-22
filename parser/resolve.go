@@ -234,53 +234,45 @@ func (p *parser) printVarTypes(prog *Program) {
 	}
 }
 
-// If we can't finish resolving after this many iterations, give up (500 takes about 100ms)
-const maxResolveIterations = 500
-
 // Resolve unknown variables types and generate variable indexes and
 // name-to-index mappings for interpreter
 func (p *parser) resolveVars(prog *Program) {
 	// First go through all unknown types and try to determine the
-	// type from the parameter type in that function definition. May
-	// need multiple passes depending on the order of functions. This
-	// is not particularly efficient, but on realistic programs it's
-	// not an issue.
-	for i := 0; ; i++ {
-		progressed := false
-		for funcName, infos := range p.varTypes {
-			for name, info := range infos {
-				if info.scope == ast.ScopeSpecial || info.typ != typeUnknown {
-					// It's a special var or type is already known
-					continue
-				}
-				funcIndex, ok := p.functions[info.callName]
-				if !ok {
-					// Function being called is a native function
-					continue
-				}
-				// Determine var type based on type of this parameter
-				// in the called function (if we know that)
-				paramName := prog.Functions[funcIndex].Params[info.argIndex]
-				typ := p.varTypes[info.callName][paramName].typ
-				if typ != typeUnknown {
-					if p.debugTypes {
-						fmt.Fprintf(p.debugWriter, "resolving %s:%s to %s\n",
-							funcName, name, typ)
-					}
-					info.typ = typ
-					p.varTypes[funcName][name] = info
-					progressed = true
-				}
+	// type from the parameter type in that function definition.
+	// Iterate through functions in topological order, for example
+	// if f() calls g(), process g first, then f.
+	callGraph := make(map[string]map[string]struct{})
+	for _, call := range p.userCalls {
+		if _, ok := callGraph[call.inFunc]; !ok {
+			callGraph[call.inFunc] = make(map[string]struct{})
+		}
+		callGraph[call.inFunc][call.call.Name] = struct{}{}
+	}
+	sortedFuncs := topoSort(callGraph)
+	for _, funcName := range sortedFuncs {
+		infos := p.varTypes[funcName]
+		for name, info := range infos {
+			if info.scope == ast.ScopeSpecial || info.typ != typeUnknown {
+				// It's a special var or type is already known
+				continue
 			}
-		}
-		if !progressed {
-			// If we didn't progress we're done (or trying again is
-			// not going to help)
-			break
-		}
-		if i >= maxResolveIterations {
-			// TODO: we should use topological sorting here to avoid O(N^2) behavior for inputs like those in TestResolveTooManyIterations
-			panic(p.errorf("too many iterations trying to resolve variable types"))
+			funcIndex, ok := p.functions[info.callName]
+			if !ok {
+				// Function being called is a native function
+				continue
+			}
+			// Determine var type based on type of this parameter
+			// in the called function (if we know that)
+			paramName := prog.Functions[funcIndex].Params[info.argIndex]
+			typ := p.varTypes[info.callName][paramName].typ
+			if typ != typeUnknown {
+				if p.debugTypes {
+					fmt.Fprintf(p.debugWriter, "resolving %s:%s to %s\n",
+						funcName, name, typ)
+				}
+				info.typ = typ
+				p.varTypes[funcName][name] = info
+			}
 		}
 	}
 
