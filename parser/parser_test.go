@@ -190,21 +190,30 @@ function set(a, k, v) {
 	}
 }
 
-func TestResolveTooManyIterations(t *testing.T) {
+func TestResolveLargeCallGraph(t *testing.T) {
+	const numCalls = 10000
+
 	var buf bytes.Buffer
 	var i int
-	for i = 0; i < 1200; i++ { // at least twice as big as maxResolveIterations in resolve.go
+	for i = 0; i < numCalls; i++ {
 		fmt.Fprintf(&buf, "function f%d(a) { return f%d(a) }\n", i, i+1)
 	}
 	fmt.Fprintf(&buf, "function f%d(a) { return a }\n", i)
-	fmt.Fprintf(&buf, "BEGIN { printf f%d(42) }\n", i)
-
+	fmt.Fprint(&buf, "BEGIN { printf f0(42) }\n")
 	_, err := parser.ParseProgram(buf.Bytes(), nil)
-	if err == nil {
-		t.Fatal("expected error")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
-	if !strings.Contains(err.Error(), "too many iterations") {
-		t.Fatalf(`expected error to contain "too many iterations", got %q`, err.Error())
+
+	buf.Reset()
+	fmt.Fprint(&buf, "BEGIN { printf f0(42) }\n")
+	fmt.Fprintf(&buf, "function f%d(a) { return a }\n", numCalls)
+	for i = numCalls - 1; i >= 0; i-- {
+		fmt.Fprintf(&buf, "function f%d(a) { return f%d(a) }\n", i, i+1)
+	}
+	_, err = parser.ParseProgram(buf.Bytes(), nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
