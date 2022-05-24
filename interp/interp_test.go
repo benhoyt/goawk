@@ -906,6 +906,7 @@ func testGoAWK(
 	t *testing.T, src, in, out, errStr string,
 	funcs map[string]interface{}, configure func(config *interp.Config),
 ) {
+	t.Helper()
 	parserConfig := &parser.ParserConfig{
 		Funcs: funcs,
 	}
@@ -1302,7 +1303,7 @@ func TestSystemCommandNotFound(t *testing.T) {
 }
 
 type mockFlusher struct {
-	bytes.Buffer
+	concurrentBuffer
 	flushes []string
 }
 

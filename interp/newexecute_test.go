@@ -6,6 +6,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -138,13 +140,37 @@ func TestExecuteContextCancel(t *testing.T) {
 	}
 }
 
-func TestExecuteContextSystemTimeout(t *testing.T) {
-	interpreter := newInterp(t, `BEGIN { print system("sleep 4") }`)
+// The three cases here are to ensure we test https://github.com/benhoyt/goawk/issues/122
+func TestExecuteContextSystemTimeoutDefault(t *testing.T) {
+	testExecuteContextSystemTimeout(t, nil)
+}
+
+func TestExecuteContextSystemTimeoutStdoutStderr(t *testing.T) {
+	testExecuteContextSystemTimeout(t, &interp.Config{
+		Output: os.Stdout,
+		Error:  os.Stderr,
+	})
+}
+
+func TestExecuteContextSystemTimeoutDiscard(t *testing.T) {
+	testExecuteContextSystemTimeout(t, &interp.Config{
+		Output: ioutil.Discard,
+		Error:  ioutil.Discard,
+	})
+}
+
+func testExecuteContextSystemTimeout(t *testing.T, config *interp.Config) {
+	started := time.Now()
+	interpreter := newInterp(t, `BEGIN { print system("sleep 1") }`)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Millisecond)
 	defer cancel()
-	_, err := interpreter.ExecuteContext(ctx, nil)
+	_, err := interpreter.ExecuteContext(ctx, config)
 	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("expected DeadlineExceeded error, got: %v", err)
+	}
+	elapsed := time.Since(started)
+	if elapsed > 500*time.Millisecond {
+		t.Fatalf("should have taken ~5ms, took %v", elapsed)
 	}
 }
 
