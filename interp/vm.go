@@ -1068,10 +1068,36 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 		cmdline := p.toString(p.peekTop())
 		cmd := p.execShell(cmdline)
 		cmd.Stdin = p.stdin
-		cmd.Stdout = p.output
-		cmd.Stderr = p.errorOutput
+
+		// To ensure we address https://github.com/golang/go/issues/21922, use
+		// pipes instead of cmd.Stdout and cmd.Stderr directly, otherwise when
+		// the context is cancelled the (grand)child process won't terminate.
+		stdoutPipe, err := cmd.StdoutPipe()
+		if err != nil {
+			return err
+		}
+		stdoutCh := make(chan error)
+		go func() {
+			io.Copy(p.output, stdoutPipe)
+			close(stdoutCh)
+		}()
+		stderrPipe, err := cmd.StderrPipe()
+		if err != nil {
+			return err
+		}
+		stderrCh := make(chan error)
+		go func() {
+			io.Copy(p.errorOutput, stderrPipe)
+			close(stderrCh)
+		}()
+
 		_ = p.flushAll() // ensure synchronization
-		err := cmd.Run()
+		err = cmd.Run()
+
+		// Ensure copy goroutines have exited.
+		<-stdoutCh
+		<-stderrCh
+
 		ret := 0.0
 		if err != nil {
 			if p.checkCtx && p.ctx.Err() != nil {
