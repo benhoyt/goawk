@@ -139,6 +139,7 @@ func TestExecuteContextCancel(t *testing.T) {
 }
 
 func TestExecuteContextSystemTimeout(t *testing.T) {
+	t.Skip("TODO: skipping for now due to #122")
 	interpreter := newInterp(t, `BEGIN { print system("sleep 4") }`)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Millisecond)
 	defer cancel()
