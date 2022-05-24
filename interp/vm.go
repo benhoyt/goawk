@@ -1078,27 +1078,35 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 		if err != nil {
 			return err
 		}
-		stdoutCh := make(chan error)
-		go func() {
-			io.Copy(p.output, stdoutPipe)
-			close(stdoutCh)
-		}()
 		stderrPipe, err := cmd.StderrPipe()
 		if err != nil {
 			return err
 		}
-		stderrCh := make(chan error)
-		go func() {
-			io.Copy(p.errorOutput, stderrPipe)
-			close(stderrCh)
-		}()
 
-		err = cmd.Run()
+		// Start the process (before reading from stdout/stderr).
+		err = cmd.Start()
+		if p.checkCtx && err == nil && p.ctx.Err() != nil {
+			err = p.ctx.Err()
+		}
+		if err == nil {
+			stdoutCh := make(chan error)
+			go func() {
+				io.Copy(p.output, stdoutPipe)
+				close(stdoutCh)
+			}()
+			stderrCh := make(chan error)
+			go func() {
+				io.Copy(p.errorOutput, stderrPipe)
+				close(stderrCh)
+			}()
 
-		// Ensure copy goroutines have exited.
-		<-stdoutCh
-		<-stderrCh
+			// Wait till process completes.
+			err = cmd.Wait()
 
+			// Ensure copy goroutines have exited.
+			<-stdoutCh
+			<-stderrCh
+		}
 		ret := 0.0
 		if err != nil {
 			if p.checkCtx && p.ctx.Err() != nil {
