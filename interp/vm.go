@@ -1069,6 +1069,8 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 		cmd := p.execShell(cmdline)
 		cmd.Stdin = p.stdin
 
+		_ = p.flushAll() // ensure synchronization
+
 		// To ensure we address https://github.com/golang/go/issues/21922, use
 		// pipes instead of cmd.Stdout and cmd.Stderr directly, otherwise when
 		// the context is cancelled the (grand)child process won't terminate.
@@ -1091,7 +1093,6 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 			close(stderrCh)
 		}()
 
-		_ = p.flushAll() // ensure synchronization
 		err = cmd.Run()
 
 		// Ensure copy goroutines have exited.
