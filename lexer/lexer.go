@@ -5,7 +5,6 @@
 //
 // To tokenize some source, create a new lexer with NewLexer(src) and
 // then call Scan() until the token type is EOF or ILLEGAL.
-//
 package lexer
 
 // Lexer tokenizes a byte string of AWK source code. Use NewLexer to

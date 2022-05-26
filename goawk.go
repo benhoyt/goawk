@@ -4,7 +4,7 @@
 // Go programs using the "interp" package. The command-line program
 // has the same interface as regular awk:
 //
-//     goawk [-F fs] [-v var=value] [-f progfile | 'prog'] [file ...]
+//	goawk [-F fs] [-v var=value] [-f progfile | 'prog'] [file ...]
 //
 // The -F flag specifies the field separator (the default is to split
 // on whitespace). The -v flag allows you to set a variable to a
@@ -16,15 +16,14 @@
 // A simple example (prints the sum of the numbers in the file's
 // second column):
 //
-//     $ echo 'foo 12
-//     > bar 34
-//     > baz 56' >file.txt
-//     $ goawk '{ sum += $2 } END { print sum }' file.txt
-//     102
+//	$ echo 'foo 12
+//	> bar 34
+//	> baz 56' >file.txt
+//	$ goawk '{ sum += $2 } END { print sum }' file.txt
+//	102
 //
 // To use GoAWK in your Go programs, see README.md or the "interp"
 // package docs.
-//
 package main
 
 import (
@@ -313,8 +312,8 @@ func main() {
 
 // Show source line and position of error, for example:
 //
-// BEGIN { x*; }
-//           ^
+//	BEGIN { x*; }
+//	          ^
 func showSourceLine(src []byte, pos lexer.Position) {
 	lines := bytes.Split(src, []byte{'\n'})
 	srcLine := string(lines[pos.Line-1])

@@ -2,7 +2,6 @@
 //
 // Use the ParseProgram function to parse an AWK program, and then give the
 // result to interp.Exec, interp.ExecProgram, or interp.New to execute it.
-//
 package parser
 
 import (
@@ -502,8 +501,7 @@ func (p *parser) printExpr() ast.Expr { return p._assign(p.printCond) }
 
 // Parse an "expr | getline [lvalue]" expression:
 //
-//     assign [PIPE GETLINE [lvalue]]
-//
+//	assign [PIPE GETLINE [lvalue]]
 func (p *parser) getLine() ast.Expr {
 	expr := p._assign(p.cond)
 	if p.tok == PIPE {
@@ -517,11 +515,10 @@ func (p *parser) getLine() ast.Expr {
 
 // Parse an = assignment expression:
 //
-//     lvalue [assign_op assign]
+//	lvalue [assign_op assign]
 //
 // An lvalue is a variable name, an array[expr] index expression, or
 // an $expr field expression.
-//
 func (p *parser) _assign(higher func() ast.Expr) ast.Expr {
 	expr := higher()
 	_, isNamedField := expr.(*ast.NamedFieldExpr)
@@ -556,8 +553,7 @@ func (p *parser) _assign(higher func() ast.Expr) ast.Expr {
 
 // Parse a ?: conditional expression:
 //
-//     or [QUESTION NEWLINE* cond COLON NEWLINE* cond]
-//
+//	or [QUESTION NEWLINE* cond COLON NEWLINE* cond]
 func (p *parser) cond() ast.Expr      { return p._cond(p.or) }
 func (p *parser) printCond() ast.Expr { return p._cond(p.printOr) }
 
@@ -577,22 +573,19 @@ func (p *parser) _cond(higher func() ast.Expr) ast.Expr {
 
 // Parse an || or expression:
 //
-//     and [OR NEWLINE* and] [OR NEWLINE* and] ...
-//
+//	and [OR NEWLINE* and] [OR NEWLINE* and] ...
 func (p *parser) or() ast.Expr      { return p.binaryLeft(p.and, true, OR) }
 func (p *parser) printOr() ast.Expr { return p.binaryLeft(p.printAnd, true, OR) }
 
 // Parse an && and expression:
 //
-//     in [AND NEWLINE* in] [AND NEWLINE* in] ...
-//
+//	in [AND NEWLINE* in] [AND NEWLINE* in] ...
 func (p *parser) and() ast.Expr      { return p.binaryLeft(p.in, true, AND) }
 func (p *parser) printAnd() ast.Expr { return p.binaryLeft(p.printIn, true, AND) }
 
 // Parse an "in" expression:
 //
-//     match [IN NAME] [IN NAME] ...
-//
+//	match [IN NAME] [IN NAME] ...
 func (p *parser) in() ast.Expr      { return p._in(p.match) }
 func (p *parser) printIn() ast.Expr { return p._in(p.printMatch) }
 
@@ -609,8 +602,7 @@ func (p *parser) _in(higher func() ast.Expr) ast.Expr {
 
 // Parse a ~ match expression:
 //
-//     compare [MATCH|NOT_MATCH compare]
-//
+//	compare [MATCH|NOT_MATCH compare]
 func (p *parser) match() ast.Expr      { return p._match(p.compare) }
 func (p *parser) printMatch() ast.Expr { return p._match(p.printCompare) }
 
@@ -627,8 +619,7 @@ func (p *parser) _match(higher func() ast.Expr) ast.Expr {
 
 // Parse a comparison expression:
 //
-//     concat [EQUALS|NOT_EQUALS|LESS|LTE|GREATER|GTE concat]
-//
+//	concat [EQUALS|NOT_EQUALS|LESS|LTE|GREATER|GTE concat]
 func (p *parser) compare() ast.Expr      { return p._compare(EQUALS, NOT_EQUALS, LESS, LTE, GTE, GREATER) }
 func (p *parser) printCompare() ast.Expr { return p._compare(EQUALS, NOT_EQUALS, LESS, LTE, GTE) }
 
@@ -935,8 +926,7 @@ func (p *parser) optionalLValue() ast.Expr {
 
 // Parse /.../ regex or generic expression:
 //
-//     REGEX | expr
-//
+//	REGEX | expr
 func (p *parser) regexStr(parse func() ast.Expr) ast.Expr {
 	if p.matches(DIV, DIV_ASSIGN) {
 		regex := p.nextRegex()
@@ -948,8 +938,7 @@ func (p *parser) regexStr(parse func() ast.Expr) ast.Expr {
 // Parse left-associative binary operator. Allow newlines after
 // operator if allowNewline is true.
 //
-//     parse [op parse] [op parse] ...
-//
+//	parse [op parse] [op parse] ...
 func (p *parser) binaryLeft(higher func() ast.Expr, allowNewline bool, ops ...Token) ast.Expr {
 	expr := higher()
 	for p.matches(ops...) {
@@ -966,8 +955,7 @@ func (p *parser) binaryLeft(higher func() ast.Expr, allowNewline bool, ops ...To
 
 // Parse comma followed by optional newlines:
 //
-//     COMMA NEWLINE*
-//
+//	COMMA NEWLINE*
 func (p *parser) commaNewlines() {
 	p.expect(COMMA)
 	p.optionalNewlines()
@@ -975,8 +963,7 @@ func (p *parser) commaNewlines() {
 
 // Parse zero or more optional newlines:
 //
-//    [NEWLINE] [NEWLINE] ...
-//
+//	[NEWLINE] [NEWLINE] ...
 func (p *parser) optionalNewlines() {
 	for p.tok == NEWLINE {
 		p.next()

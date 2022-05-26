@@ -8,7 +8,6 @@
 // If you need to re-run the same parsed program repeatedly on different
 // inputs or with different variables, use New to instantiate an Interpreter
 // and then call the Interpreter.Execute method as many times as you need.
-//
 package interp
 
 import (
