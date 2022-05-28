@@ -679,7 +679,7 @@ func TestCSVDocExamples(t *testing.T) {
 			truncated = false
 		} else if inTest {
 			switch line {
-			case "```":
+			case "```", "":
 				runTest()
 				inTest = false
 			case "...":

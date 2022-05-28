@@ -289,8 +289,15 @@ $ csvcut -n testdata/csv/nz-schools.csv
   3: Decile
   4: Total
 
-# In GoAWK you loop through the FIELDS array for this, and you can print the
-# data in any format you want:
+# In GoAWK you have to loop through the fields, but you can print the data in
+# any format you want (note the "exit" so it stops after the first row):
+$ goawk -i csv '{ for (i=1; i<=NF; i++) printf "%3d: %s\n", i, $i; exit }' testdata/csv/nz-schools.csv
+  1: School_Id
+  2: Org_Name
+  3: Decile
+  4: Total
+
+# You could also use -H and the FIELDS array to do this:
 $ goawk -i csv -H '{ for (i=1; i in FIELDS; i++) printf "%3d: %s\n", i, FIELDS[i]; exit }' testdata/csv/nz-schools.csv
   1: School_Id
   2: Org_Name
