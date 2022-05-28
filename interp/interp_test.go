@@ -1556,6 +1556,9 @@ var csvTests = []csvTest{
 	{`BEGIN { OUTPUTMODE="csv separator=,"; printf "%s", OUTPUTMODE }`, "", "csv", "", nil},
 	{`BEGIN { OUTPUTMODE="csv separator=|"; printf "%s", OUTPUTMODE }`, "", "csv separator=|", "", nil},
 
+	// Ignores UTF-8 byte order mark (BOM) at start of CSV file
+	{`BEGIN { INPUTMODE="csv" } { print $1=="foo" }`, "\ufefffoo,bar\n\ufefffoo,bar", "1\n0\n", "", nil},
+
 	// Error handling when parsing INPUTMODE and OUTPUTMODE
 	{`BEGIN { INPUTMODE="xyz" }`, "", "", `invalid input mode "xyz"`, nil},
 	{`BEGIN { INPUTMODE="csv separator=foo" }`, "", "", `invalid CSV/TSV separator "foo"`, nil},
