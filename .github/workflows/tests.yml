@@ -28,6 +28,7 @@ jobs:
       run: |
         gawk --version
         go test -race ./...
+        go test ./interp -posix
 
   build-windows:
     runs-on: windows-latest
@@ -53,6 +54,7 @@ jobs:
       run: |
         gawk --version
         go test -race ./...
+        go test ./interp -posix
 
   build-macos:
     runs-on: macos-latest
@@ -78,3 +80,4 @@ jobs:
       run: |
         gawk --version
         go test -race ./...
+        go test ./interp -posix
