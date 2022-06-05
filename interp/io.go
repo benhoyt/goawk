@@ -741,7 +741,13 @@ func (p *interp) nextLine() (string, error) {
 				matches := varRegex.FindStringSubmatch(filename)
 				if len(matches) >= 3 {
 					// Yep, set variable to value and keep going
-					err := p.setVarByName(matches[1], matches[2])
+					name, val := matches[1], matches[2]
+					// Oddly, var=value args must interpret escapes (issue #129)
+					unquoted, err := strconv.Unquote(`"` + val + `"`)
+					if err == nil {
+						val = unquoted
+					}
+					err = p.setVarByName(name, val)
 					if err != nil {
 						return "", err
 					}

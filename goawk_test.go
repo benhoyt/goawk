@@ -363,6 +363,7 @@ func TestCommandLine(t *testing.T) {
 		{[]string{"-v", "x=42", "-v", "y=foo", `BEGIN { print x, y }`}, "", "42 foo\n", ""},
 		{[]string{"-v", "RS=;", `$0`}, "a b;c\nd;e", "a b\nc\nd\ne\n", ""},
 		{[]string{"-vRS=;", `$0`}, "a b;c\nd;e", "a b\nc\nd\ne\n", ""},
+		{[]string{"-v", `X=x\ty`, `BEGIN { printf X }`}, "", "x\ty", ""},
 
 		// ARGV/ARGC handling
 		{[]string{`
@@ -392,6 +393,7 @@ func TestCommandLine(t *testing.T) {
 		{[]string{"-v", "A=1", "-f", "testdata/g.3", "B=2", "testdata/test.countries"}, "",
 			"A=1, B=0\n\tARGV[1] = B=2\n\tARGV[2] = testdata/test.countries\nA=1, B=2\n", ""},
 		{[]string{`END { print (x==42) }`, "x=42.0"}, "", "1\n", ""},
+		{[]string{`END { printf X }`, `X=a\tb`}, "", "a\tb", ""},
 		{[]string{"-v", "x=42.0", `BEGIN { print (x==42) }`}, "", "1\n", ""},
 		{[]string{`BEGIN { print(ARGV[1]<2, ARGV[2]<2); ARGV[1]="10"; ARGV[2]="10x"; print(ARGV[1]<2, ARGV[2]<2) }`,
 			"10", "10x"}, "", "0 1\n1 1\n", ""},
