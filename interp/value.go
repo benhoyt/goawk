@@ -154,12 +154,24 @@ func parseFloatPrefix(s string) float64 {
 	}
 	start := i
 
-	// Parse mantissa: optional sign, initial digit(s), optional '.',
-	// then more digits
+	// Parse optional sign and check for NaN and Inf.
 	gotDigit := false
 	if i < len(s) && (s[i] == '+' || s[i] == '-') {
 		i++
 	}
+	if i+3 <= len(s) {
+		if (s[i] == 'n' || s[i] == 'N') && (s[i+1] == 'a' || s[i+1] == 'A') && (s[i+2] == 'n' || s[i+2] == 'N') {
+			return math.NaN()
+		}
+		if (s[i] == 'i' || s[i] == 'I') && (s[i+1] == 'n' || s[i+1] == 'N') && (s[i+2] == 'f' || s[i+2] == 'F') {
+			if s[start] == '-' {
+				return math.Inf(-1)
+			}
+			return math.Inf(1)
+		}
+	}
+
+	// Parse mantissa: initial digit(s), optional '.', then more digits
 	for i < len(s) && s[i] >= '0' && s[i] <= '9' {
 		gotDigit = true
 		i++

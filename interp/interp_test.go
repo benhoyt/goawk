@@ -828,6 +828,41 @@ BEGIN { foo(5); bar(10) }
 	{`BEGIN { print "\x" }  # !gawk`, "", "", "parse error at 1:18: 1 or 2 hex digits expected", ""},
 	{`BEGIN { print 1&*2 }`, "", "", "parse error at 1:17: unexpected char after '&'", "syntax"},
 	{"BEGIN { ` }", "", "", "parse error at 1:9: unexpected char", "syntax"},
+
+	// More number conversions
+	{`{ print $1, $2+0 }  # !gawk`, `
+1 nan
+2 NAN
+3 nanny
+4 +nan
+5 -nan
+6 na
+7 +na
+8 inf
+9 INF
+10 infamous
+11 infinity
+12 +inf
+13 -inf
+14 in
+15 +in
+`[1:], `
+1 nan
+2 nan
+3 nan
+4 nan
+5 nan
+6 0
+7 0
+8 inf
+9 inf
+10 inf
+11 inf
+12 inf
+13 -inf
+14 0
+15 0
+`[1:], "", ""},
 }
 
 func TestInterp(t *testing.T) {
