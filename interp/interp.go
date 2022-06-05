@@ -764,7 +764,7 @@ func (p *interp) setSpecial(index int, v value) error {
 	case ast.V_FS:
 		p.fieldSep = p.toString(v)
 		if utf8.RuneCountInString(p.fieldSep) > 1 { // compare to interp.ensureFields
-			re, err := regexp.Compile(p.fieldSep)
+			re, err := regexp.Compile(compiler.AddRegexFlags(p.fieldSep))
 			if err != nil {
 				return newError("invalid regex %q: %s", p.fieldSep, err)
 			}
@@ -786,7 +786,7 @@ func (p *interp) setSpecial(index int, v value) error {
 			sep := regexp.QuoteMeta(p.recordSep) // not strictly necessary as no multi-byte chars are regex meta chars
 			p.recordSepRegex = regexp.MustCompile(sep)
 		default:
-			re, err := regexp.Compile(p.recordSep)
+			re, err := regexp.Compile(compiler.AddRegexFlags(p.recordSep))
 			if err != nil {
 				return newError("invalid regex %q: %s", p.recordSep, err)
 			}
@@ -946,7 +946,7 @@ func (p *interp) compileRegex(regex string) (*regexp.Regexp, error) {
 	if re, ok := p.regexCache[regex]; ok {
 		return re, nil
 	}
-	re, err := regexp.Compile(regex)
+	re, err := regexp.Compile(compiler.AddRegexFlags(regex))
 	if err != nil {
 		return nil, newError("invalid regex %q: %s", regex, err)
 	}
