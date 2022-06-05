@@ -32,6 +32,7 @@ func TestLexer(t *testing.T) {
 		{`"foo"`, `1:1 string "foo"`},
 		{`"a\t\r\n\z\'\"\a\b\f\vb"`, `1:1 string "a\t\r\nz'\"\a\b\f\vb"`},
 		{`"x`, `1:3 <illegal> "didn't find end quote in string"`},
+		{`"foo\"`, `1:7 <illegal> "didn't find end quote in string"`},
 		{"\"x\n\"", `1:3 <illegal> "can't have newline in string", 1:3 <newline> "", 2:2 <illegal> "didn't find end quote in string"`},
 		{`'foo'`, `1:1 string "foo"`},
 		{`'a\t\r\n\z\'\"b'`, `1:1 string "a\t\r\nz'\"b"`},
@@ -271,6 +272,40 @@ func TestAllTokens(t *testing.T) {
 	_, tok2, val = l.ScanRegex()
 	if tok1 != DIV_ASSIGN || tok2 != REGEX || val != "=foo" {
 		t.Errorf(`expected /= regex "=foo", got %s %s %q`, tok1, tok2, val)
+	}
+}
+
+func TestUnescape(t *testing.T) {
+	tests := []struct {
+		input  string
+		output string
+		error  string
+	}{
+		{``, "", ""},
+		{`foo bar`, "foo bar", ""},
+		{`foo\tbar`, "foo\tbar", ""},
+		{"foo\nbar", "", "can't have newline in string"},
+		{`foo"`, "foo\"", ""},
+		{`O'Connor`, "O'Connor", ""},
+		{`foo\`, "foo\\", ""},
+		// Other cases tested in TestLexer string handling.
+	}
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			got, err := Unescape(test.input)
+			if err != nil {
+				if err.Error() != test.error {
+					t.Fatalf("expected error %q, got %q", test.error, err)
+				}
+			} else {
+				if test.error != "" {
+					t.Fatalf("expected error %q, got %q", test.error, "")
+				}
+				if got != test.output {
+					t.Fatalf("expected %q, got %q", test.output, got)
+				}
+			}
+		})
 	}
 }
 

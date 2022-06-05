@@ -35,7 +35,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/pprof"
-	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -276,9 +275,9 @@ func main() {
 		}
 		name, value := v[:equals], v[equals+1:]
 		// Oddly, -v must interpret escapes (issue #129)
-		unquoted, err := strconv.Unquote(`"` + value + `"`)
+		unescaped, err := lexer.Unescape(value)
 		if err == nil {
-			value = unquoted
+			value = unescaped
 		}
 		config.Vars = append(config.Vars, name, value)
 	}

@@ -743,9 +743,9 @@ func (p *interp) nextLine() (string, error) {
 					// Yep, set variable to value and keep going
 					name, val := matches[1], matches[2]
 					// Oddly, var=value args must interpret escapes (issue #129)
-					unquoted, err := strconv.Unquote(`"` + val + `"`)
+					unescaped, err := Unescape(val)
 					if err == nil {
-						val = unquoted
+						val = unescaped
 					}
 					err = p.setVarByName(name, val)
 					if err != nil {
