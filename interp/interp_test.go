@@ -24,12 +24,10 @@ import (
 
 var (
 	awkExe string
-	posix  bool
 )
 
 func TestMain(m *testing.M) {
 	flag.StringVar(&awkExe, "awk", "gawk", "awk executable name")
-	flag.BoolVar(&posix, "posix", false, "add --posix flag to awk command line")
 	flag.Parse()
 	os.Exit(m.Run())
 }
@@ -324,7 +322,7 @@ BEGIN {
 		"id,name,age\n1,Bob \"Billy\" Smith,42\n2,Jane\nBrown,37\n", "", ""},
 	{`BEGIN { FS="\\" } { print $1, $2 }`, "a\\b", "a b\n", "", ""},
 	{`BEGIN { RS="x"; FS=",.*," } { for (i=1; i<=NF; i++) print $i }`, "one,\n,two", "one\ntwo\n", "", ""},
-	{`BEGIN { FS="x"; RS=",.*," } { print }`, "one,\n,two", "one\ntwo\n", "", ""},
+	{`BEGIN { FS="x"; RS=",.*," } { print }  # !posix`, "one,\n,two", "one\ntwo\n", "", ""},
 	{`{ print NF }`, "\na\nc d\ne f g", "0\n1\n2\n3\n", "", ""},
 	{`BEGIN { NR = 123; print NR }`, "", "123\n", "", ""},
 	{`{ print NR, $0 }`, "a\nb\nc", "1 a\n2 b\n3 c\n", "", ""},
@@ -915,7 +913,7 @@ func TestInterp(t *testing.T) {
 
 		// Run it through external awk program first
 		if awkExe != "" {
-			t.Run("awk_"+testName, func(t *testing.T) {
+			runAWK := func(t *testing.T, posix bool) {
 				if strings.Contains(test.src, "!"+awkExe) {
 					t.Skipf("skipping under %s", awkExe)
 				}
@@ -956,7 +954,15 @@ func TestInterp(t *testing.T) {
 				if normalized != test.out {
 					t.Fatalf("expected/got:\n%q\n%q", test.out, normalized)
 				}
+			}
+			t.Run("awk_"+testName, func(t *testing.T) {
+				runAWK(t, false)
 			})
+			if strings.Contains(awkExe, "gawk") {
+				t.Run("awkposix_"+testName, func(t *testing.T) {
+					runAWK(t, true)
+				})
+			}
 		}
 
 		// Then test it in GoAWK
