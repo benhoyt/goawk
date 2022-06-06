@@ -88,7 +88,7 @@ NR==3, NR==5 { print NR }
 	{`BEGIN { printf "%c", 256 }  # !awk !gawk`, "", "\x00", "", ""},
 	{`BEGIN { printf "%c", "xyz" }`, "", "x", "", ""},
 	{`BEGIN { printf "%c", "" }  # !awk`, "", "\x00", "", ""},
-	{`BEGIN { printf }  # !awk - doesn't error on this`, "", "", "parse error at 1:16: expected printf args, got none", "printf: no arguments"},
+	{`BEGIN { printf }  # !awk !posix - doesn't error on this`, "", "", "parse error at 1:16: expected printf args, got none", "printf: no arguments"},
 	{`BEGIN { printf("%%%dd", 4) }`, "", "%4d", "", ""},
 
 	// if and loop statements
@@ -250,7 +250,7 @@ BEGIN {
 	{`BEGIN { print 2/3, 2/3/4, 2/-3, -2/3, "2"/"3", 3/.14 }`, "", "0.666667 0.166667 -0.666667 -0.666667 0.666667 21.4286\n", "", ""},
 	{`BEGIN { print 2%3, 2%3%4, 2%-3, -2%3, "2"%"3", 3%.14 }`, "", "2 2 2 -2 2 0.06\n", "", ""},
 	{`BEGIN { print 2^3, 2^3^3, 2^-3, -2^3, "2"^"3", 3^.14 }`, "", "8 134217728 0.125 -8 8 1.16626\n", "", ""},
-	{`BEGIN { print 2**3, 2**3**3, 2**-3, -2**3, "2"**"3", 3**.14 }`, "", "8 134217728 0.125 -8 8 1.16626\n", "", ""},
+	{`BEGIN { print 2**3, 2**3**3, 2**-3, -2**3, "2"**"3", 3**.14 }  # !posix`, "", "8 134217728 0.125 -8 8 1.16626\n", "", ""},
 	{`BEGIN { print 1 2, "x" "yz", 1+2 3+4 }`, "", "12 xyz 37\n", "", ""},
 	{`BEGIN { print "food"~/oo/, "food"~/[oO]+d/, "food"~"f", "food"~"F", "food"~0 }`, "", "1 1 1 0 0\n", "", ""},
 	{`BEGIN { print "food"!~/oo/, "food"!~/[oO]+d/, "food"!~"f", "food"!~"F", "food"!~0 }`, "", "0 0 0 1 1\n", "", ""},
@@ -263,7 +263,7 @@ BEGIN {
 	// Number, string, and regex expressions
 	{`BEGIN { print 1, 1., .1, 1e0, -1, 1e }`, "", "1 1 0.1 1 -1 1\n", "", ""},
 	{`BEGIN { print '\"' '\'' 'xy' "z" "'" '\"' }`, "", "\"'xyz'\"\n", "", "syntax error"}, // Check support for single-quoted strings
-	{`BEGIN { print "0\n1\t2\r3\a4\b5\f6\v7\x408\xf" }`, "", "0\n1\t2\r3\a4\b5\f6\v7@8\x0f\n", "", ""},
+	{`BEGIN { print "0\n1\t2\r3\a4\b5\f6\v7\x408\xf" }  # !posix`, "", "0\n1\t2\r3\a4\b5\f6\v7@8\x0f\n", "", ""},
 	{`{ print /foo/ }`, "food\nfoo\nxfooz\nbar\n", "1\n1\n1\n0\n", "", ""},
 	{`/[a-/`, "foo", "", "parse error at 1:1: error parsing regexp: missing closing ]: `[a-`", "terminated"},
 	{`/=foo/`, "=foo", "=foo\n", "", ""},
@@ -274,8 +274,8 @@ BEGIN {
 		"", "-inf\n", "", ""},
 	{`BEGIN { print atan2(0, 8020020000000e20G-0)}`, "", "0\n", "", ""},
 	{`BEGIN { print 1e1000, -1e1000 }  # !gawk`, "", "inf -inf\n", "", ""},
-	{`BEGIN { printf "\x0.\x00.\x0A\x10\xff\xFF\x41" }  # !awk`, "", "\x00.\x00.\n\x10\xff\xffA", "", ""},
-	{`BEGIN { printf "\x1.\x01.\x0A\x10\xff\xFF\x41" }`, "", "\x01.\x01.\n\x10\xff\xffA", "", ""},
+	{`BEGIN { printf "\x0.\x00.\x0A\x10\xff\xFF\x41" }  # !awk !posix`, "", "\x00.\x00.\n\x10\xff\xffA", "", ""},
+	{`BEGIN { printf "\x1.\x01.\x0A\x10\xff\xFF\x41" }  # !posix`, "", "\x01.\x01.\n\x10\xff\xffA", "", ""},
 	{`BEGIN { printf "\0\78\7\77\777\0 \141 " }  # !awk`, "", "\x00\a8\a?\xff\x00 a ", "", ""},
 	{`BEGIN { printf "\1\78\7\77\777\1 \141 " }`, "", "\x01\a8\a?\xff\x01 a ", "", ""},
 
@@ -313,16 +313,16 @@ BEGIN {
 	{`BEGIN { print "|" FS "|"; FS="," } { print $1, $2 }`, "a b\na,b\nx,,y", "| |\na b \na b\nx \n", "", ""},
 	{`BEGIN { print "|" FS "|"; FS="\\." } { print $1, $2 }`, "a b\na.b\nx..y", "| |\na b \na b\nx \n", "", ""},
 	// ASCII unit and record separator
-	{`BEGIN { FS="\x1f"; RS="\x1e"; OFS="," } { print $1, $2, $3 }`,
+	{`BEGIN { FS="\x1f"; RS="\x1e"; OFS="," } { print $1, $2, $3 }  # !posix`,
 		"id\x1fname\x1fage\x1e1\x1fBob \"Billy\" Smith\x1f42\x1e2\x1fJane\nBrown\x1f37",
 		"id,name,age\n1,Bob \"Billy\" Smith,42\n2,Jane\nBrown,37\n", "", ""},
 	// Unicode unit and record separator (skip on Windows under gawk due to Unicode command line issues)
-	{`BEGIN { FS="␟"; RS="␞"; OFS="," } { print $1, $2, $3 }  # !windows-gawk`,
+	{`BEGIN { FS="␟"; RS="␞"; OFS="," } { print $1, $2, $3 }  # !windows-gawk !posix`,
 		"id␟name␟age␞1␟Bob \"Billy\" Smith␟42␞2␟Jane\nBrown␟37",
 		"id,name,age\n1,Bob \"Billy\" Smith,42\n2,Jane\nBrown,37\n", "", ""},
 	{`BEGIN { FS="\\" } { print $1, $2 }`, "a\\b", "a b\n", "", ""},
 	{`BEGIN { RS="x"; FS=",.*," } { for (i=1; i<=NF; i++) print $i }`, "one,\n,two", "one\ntwo\n", "", ""},
-	{`BEGIN { FS="x"; RS=",.*," } { print }`, "one,\n,two", "one\ntwo\n", "", ""},
+	{`BEGIN { FS="x"; RS=",.*," } { print }  # !posix`, "one,\n,two", "one\ntwo\n", "", ""},
 	{`{ print NF }`, "\na\nc d\ne f g", "0\n1\n2\n3\n", "", ""},
 	{`BEGIN { NR = 123; print NR }`, "", "123\n", "", ""},
 	{`{ print NR, $0 }`, "a\nb\nc", "1 a\n2 b\n3 c\n", "", ""},
@@ -359,21 +359,21 @@ BEGIN {
 		"\n\n\n\n", "", "", ""},
 	{`BEGIN { RS="\n" }  { print }`, "a\n\nb\nc", "a\n\nb\nc\n", "", ""},
 	{`BEGIN { RS="ö" }  { print }  # !windows-gawk`, "1ötwoöthree", "1\ntwo\nthree\n", "", ""},
-	{`BEGIN { RS="\\.+" }  { print }`, "1.two..three...4.", "1\ntwo\nthree\n4\n", "", ""},
-	{`BEGIN { RS = "\n|( *[[:upper:]]+ *)" } { print "Record =", $0,"and RT = [" RT "]" }`, // from https://www.gnu.org/software/gawk/manual/html_node/gawk-split-records.html
+	{`BEGIN { RS="\\.+" }  { print }  # !posix`, "1.two..three...4.", "1\ntwo\nthree\n4\n", "", ""},
+	{`BEGIN { RS = "\n|( *[[:upper:]]+ *)" } { print "Record =", $0,"and RT = [" RT "]" }  # !posix`, // from https://www.gnu.org/software/gawk/manual/html_node/gawk-split-records.html
 		"record 1 AAAA record 2 BBBB record 3\n",
 		`Record = record 1 and RT = [ AAAA ]
 Record = record 2 and RT = [ BBBB ]
 Record = record 3 and RT = [
 ]
 `, "", ""},
-	{`BEGIN { RS = "\n|( *[[:upper:]]+ *)" } { print "Record =", $0,"and RT = [" RT "]" }`,
+	{`BEGIN { RS = "\n|( *[[:upper:]]+ *)" } { print "Record =", $0,"and RT = [" RT "]" }  # !posix`,
 		"record 1 AAAA record 2 BBBB record 3",
 		`Record = record 1 and RT = [ AAAA ]
 Record = record 2 and RT = [ BBBB ]
 Record = record 3 and RT = []
 `, "", ""},
-	{`BEGIN { RS=".." } { print $0 RT }`, "foo bar bazz", "fo\no \nba\nr \nba\nzz\n", "", ""},
+	{`BEGIN { RS=".." } { print $0 RT }  # !posix`, "foo bar bazz", "fo\no \nba\nr \nba\nzz\n", "", ""},
 	{`BEGIN { RT="foo"; print RT }`, "", "foo\n", "", ""},
 	{`
 BEGIN {
@@ -462,7 +462,7 @@ BEGIN {
 	{`BEGIN { x=6; x/=3; print x; x/=x; print x; x/=.6; print x }`, "", "2\n1\n1.66667\n", "", ""},
 	{`BEGIN { x=12; x%=5; print x }`, "", "2\n", "", ""},
 	{`BEGIN { x=2; x^=5; print x; x^=0.5; print x }`, "", "32\n5.65685\n", "", ""},
-	{`BEGIN { x=2; x**=5; print x; x**=0.5; print x }`, "", "32\n5.65685\n", "", ""},
+	{`BEGIN { x=2; x**=5; print x; x**=0.5; print x }  # !posix`, "", "32\n5.65685\n", "", ""},
 	{`{ $2+=10; print; $3/=2; print }`, "1 2 3", "1 12 3\n1 12 1.5\n", "", ""},
 	{`BEGIN { a[2] += 1; a["2"] *= 3; print a[2] }`, "", "3\n", "", ""},
 	{`function inc(x, n) { x += n; return x }  BEGIN { print inc(3, 2) }`, "", "5\n", "", ""},
@@ -565,7 +565,7 @@ BEGIN {
 		"", "foo\n0\nbar\n0\n", "", ""},
 	{`BEGIN { print system(">&2 echo error") }  # !fuzz`,
 		"", "error\n0\n", "", ""},
-	{`BEGIN { print system("exit 42") }  # !fuzz`, "", "42\n", "", ""},
+	{`BEGIN { print system("exit 42") }  # !fuzz !posix`, "", "42\n", "", ""},
 	{`BEGIN { system("cat") }`, "foo\nbar", "foo\nbar", "", ""},
 
 	// Test bytes/unicode handling (GoAWK currently has char==byte, unlike Gawk).
@@ -709,6 +709,7 @@ BEGIN { a[1]=2; f1(a); print f2(a, 1) }
 function foo(x) { print "foo", x }
 function bar(foo) { print "bar", foo }
 BEGIN { foo(5); bar(10) }
+# !posix
 `, "", "foo 5\nbar 10\n", "", ""},
 	{`
 function foo(foo) { print "foo", foo }
@@ -829,6 +830,87 @@ BEGIN { foo(5); bar(10) }
 	{`BEGIN { print "\x" }  # !gawk`, "", "", "parse error at 1:18: 1 or 2 hex digits expected", ""},
 	{`BEGIN { print 1&*2 }`, "", "", "parse error at 1:17: unexpected char after '&'", "syntax"},
 	{"BEGIN { ` }", "", "", "parse error at 1:9: unexpected char", "syntax"},
+
+	// Hex floating point and other number conversions
+	{`{ print $1+0 }  # +posix`, `
+0x0
+0X10
+0x1234567890
+0xabcdef
+0xABCDEF
+-0xa
++0XA
+0xf.f
+0xf.fp10
+0xf.fp-10
+0x.f
+0xf.
+0x.
+`[1:], `
+0
+16
+78187493520
+11259375
+11259375
+-10
+10
+15.9375
+16320
+0.015564
+0.9375
+15
+0
+`[1:], "", ""},
+	{`BEGIN { print int("0x22"), int("-0xa"), int("0xffz"), int("022"), int("-022") }  # +posix`, "",
+		"34 -10 255 22 -22\n", "", ""},
+	{`{ print $1, $2+0 }  # !gawk`, `
+1 nan
+2 NAN
+3 nanny
+4 +nan
+5 -nan
+6 na
+7 +na
+8 inf
+9 INF
+10 infamous
+11 infinity
+12 +inf
+13 -inf
+14 in
+15 +in
+`[1:], `
+1 nan
+2 nan
+3 nan
+4 nan
+5 nan
+6 0
+7 0
+8 inf
+9 inf
+10 inf
+11 inf
+12 inf
+13 -inf
+14 0
+15 0
+`[1:], "", ""},
+	{`{ printf "%s < %s == %d\n", $1, $2, $1<$2 }  # +posix`, `
+10 2
+0x10 0x2
++nan +nan
+-0x10 +0x2
+-0x10.0p0 +0x2.0p0
+`[1:], `
+10 < 2 == 0
+0x10 < 0x2 == 0
++nan < +nan == 0
+-0x10 < +0x2 == 1
+-0x10.0p0 < +0x2.0p0 == 1
+`[1:], "", ""},
+	{`{ print !$1 }  # +posix`, "0x0\n0x0.0p0\n0x1\n0x0.01\n", "1\n1\n0\n0\n", "", ""},
+	{`{ print $1<$2 }`, "1_0 2", "1\n", "", ""},
 }
 
 func TestInterp(t *testing.T) {
@@ -846,14 +928,26 @@ func TestInterp(t *testing.T) {
 
 		// Run it through external awk program first
 		if awkExe != "" {
-			t.Run("awk_"+testName, func(t *testing.T) {
+			runAWK := func(t *testing.T, posix bool) {
 				if strings.Contains(test.src, "!"+awkExe) {
 					t.Skipf("skipping under %s", awkExe)
 				}
 				if strings.Contains(test.src, "!"+runtime.GOOS+"-"+awkExe) {
 					t.Skipf("skipping on %s under %s", runtime.GOOS, awkExe)
 				}
-				cmd := exec.Command(awkExe, test.src, "-")
+				if posix && strings.Contains(test.src, "!posix") {
+					t.Skipf("skipping in --posix mode")
+				}
+				if !posix && strings.Contains(test.src, "+posix") {
+					t.Skip("skipping in non-posix mode")
+				}
+
+				var args []string
+				if posix {
+					args = append(args, "--posix")
+				}
+				args = append(args, test.src, "-")
+				cmd := exec.Command(awkExe, args...)
 				if test.in != "" {
 					cmd.Stdin = strings.NewReader(test.in)
 				}
@@ -873,9 +967,17 @@ func TestInterp(t *testing.T) {
 				}
 				normalized := normalizeNewlines(string(out))
 				if normalized != test.out {
-					t.Fatalf("expected %q, got %q", test.out, normalized)
+					t.Fatalf("expected/got:\n%q\n%q", test.out, normalized)
 				}
+			}
+			t.Run("awk_"+testName, func(t *testing.T) {
+				runAWK(t, false)
 			})
+			if strings.Contains(awkExe, "gawk") {
+				t.Run("awkposix_"+testName, func(t *testing.T) {
+					runAWK(t, true)
+				})
+			}
 		}
 
 		// Then test it in GoAWK
@@ -956,7 +1058,7 @@ func testGoAWK(
 	}
 	normalized := normalizeNewlines(outBuf.String())
 	if normalized != out {
-		t.Fatalf("expected %q, got %q", out, normalized)
+		t.Fatalf("expected/got:\n%q\n%q", out, normalized)
 	}
 	if status != 0 {
 		t.Fatalf("expected status 0, got %d", status)
@@ -1384,7 +1486,7 @@ func TestFlushError(t *testing.T) {
 	})
 	expected := "error flushing \"stdout\": that's not good, hackers\n"
 	if f.String() != expected {
-		t.Fatalf("expected %q, got %q", expected, f.String())
+		t.Fatalf("expected/got:\n%q\n%q", expected, f.String())
 	}
 }
 
@@ -1445,7 +1547,7 @@ func TestExit(t *testing.T) {
 			}
 			normalized := normalizeNewlines(outBuf.String())
 			if normalized != test.out {
-				t.Fatalf("expected %q, got %q", test.out, normalized)
+				t.Fatalf("expected/got:\n%q\n%q", test.out, normalized)
 			}
 			if status != test.status {
 				t.Fatalf("expected status %d, got %d", test.status, status)
@@ -1656,7 +1758,7 @@ func TestCSVMultiRead(t *testing.T) {
 				out = normalizeNewlines(out)
 			}
 			if out != test.out {
-				t.Fatalf("expected %q, got %q", test.out, out)
+				t.Fatalf("expected/got:\n%q\n%q", test.out, out)
 			}
 			if status != 0 {
 				t.Fatalf("expected status 0, got %d", status)
@@ -1712,7 +1814,7 @@ func benchmarkProgram(b *testing.B, funcs map[string]interface{},
 	}
 	outStr := strings.Replace(outBuf.String(), "\r\n", "\n", -1)
 	if outStr != expected {
-		b.Fatalf("expected %q, got %q", expected, outStr)
+		b.Fatalf("expected/got:\n%q\n%q", expected, outStr)
 	}
 }
 
@@ -2382,7 +2484,7 @@ func BenchmarkRepeatIOExecProgram(b *testing.B) {
 			b.Fatalf("execute error: %v", err)
 		}
 		if output.String() != expected {
-			b.Fatalf("expected %q, got %q", expected, output.String())
+			b.Fatalf("expected/got:\n%q\n%q", expected, output.String())
 		}
 	}
 }
@@ -2414,7 +2516,7 @@ func BenchmarkRepeatIONew(b *testing.B) {
 			b.Fatalf("execute error: %v", err)
 		}
 		if output.String() != expected {
-			b.Fatalf("expected %q, got %q", expected, output.String())
+			b.Fatalf("expected/got:\n%q\n%q", expected, output.String())
 		}
 	}
 }
@@ -2497,7 +2599,7 @@ func BenchmarkCSVOutputWriter(b *testing.B) {
 	b.StopTimer()
 	output := buf.String()
 	if output != expected {
-		b.Fatalf("expected %q, got %q\n", expected, output)
+		b.Fatalf("expected/got:\n%q\n%q\n", expected, output)
 	}
 }
 
