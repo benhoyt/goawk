@@ -269,11 +269,17 @@ func main() {
 		Output: stdout,
 	}
 	for _, v := range vars {
-		parts := strings.SplitN(v, "=", 2)
-		if len(parts) != 2 {
+		equals := strings.IndexByte(v, '=')
+		if equals < 0 {
 			errorExitf("-v flag must be in format name=value")
 		}
-		config.Vars = append(config.Vars, parts[0], parts[1])
+		name, value := v[:equals], v[equals+1:]
+		// Oddly, -v must interpret escapes (issue #129)
+		unescaped, err := lexer.Unescape(value)
+		if err == nil {
+			value = unescaped
+		}
+		config.Vars = append(config.Vars, name, value)
 	}
 
 	if cpuprofile != "" {

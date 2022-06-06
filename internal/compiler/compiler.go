@@ -945,9 +945,16 @@ func (c *compiler) regexIndex(r string) int {
 		return index // reuse existing constant
 	}
 	index := len(c.program.Regexes)
-	c.program.Regexes = append(c.program.Regexes, regexp.MustCompile(r))
+	c.program.Regexes = append(c.program.Regexes, regexp.MustCompile(AddRegexFlags(r)))
 	c.indexes.regexes[r] = index
 	return index
+}
+
+// AddRegexFlags add the necessary flags to regex to make it work like other
+// AWKs (exported so we can also use this in the interpreter).
+func AddRegexFlags(regex string) string {
+	// "s" flag lets . match \n (multi-line matching like other AWKs)
+	return "(?s:" + regex + ")"
 }
 
 func (c *compiler) binaryOp(op lexer.Token) {
