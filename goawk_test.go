@@ -250,6 +250,7 @@ func TestGAWK(t *testing.T) {
 	dontRunOnWindows := map[string]bool{
 		"delargv":  true, // reads from /dev/null
 		"eofsplit": true, // reads from /etc/passwd
+		"getline5": true, // removes a file while it's open
 		"iobug1":   true, // reads from /dev/null
 	}
 
