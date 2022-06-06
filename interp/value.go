@@ -75,7 +75,7 @@ func (v value) isTrueStr() (float64, bool) {
 	case typeStr:
 		return 0, true
 	case typeNumStr:
-		f, err := strconv.ParseFloat(strings.TrimSpace(v.s), 64)
+		f, err := parseFloat(v.s)
 		if err != nil {
 			return 0, true
 		}
@@ -93,7 +93,7 @@ func (v value) boolean() bool {
 	case typeStr:
 		return v.s != ""
 	case typeNumStr:
-		f, err := strconv.ParseFloat(strings.TrimSpace(v.s), 64)
+		f, err := parseFloat(v.s)
 		if err != nil {
 			return v.s != ""
 		}
@@ -101,6 +101,30 @@ func (v value) boolean() bool {
 	default: // typeNum, typeNull
 		return v.n != 0
 	}
+}
+
+// Like strconv.ParseFloat, but allow hex floating point without exponent, and
+// allow "+nan" and "-nan" (though they both return math.NaN()). Also disallow
+// underscore digit separators.
+func parseFloat(s string) (float64, error) {
+	s = strings.TrimSpace(s)
+	if len(s) > 1 && (s[0] == '+' || s[0] == '-') {
+		if len(s) == 4 && hasNaNPrefix(s[1:]) {
+			// ParseFloat doesn't handle "nan" with sign prefix, so handle it here.
+			return math.NaN(), nil
+		}
+		if len(s) > 3 && hasHexPrefix(s[1:]) && strings.IndexByte(s, 'p') < 0 {
+			s += "p0"
+		}
+	} else if len(s) > 2 && hasHexPrefix(s) && strings.IndexByte(s, 'p') < 0 {
+		s += "p0"
+	}
+	n, err := strconv.ParseFloat(s, 64)
+	if err == nil && strings.IndexByte(s, '_') >= 0 {
+		// Underscore separators aren't supported by AWK.
+		return 0, strconv.ErrSyntax
+	}
+	return n, err
 }
 
 // Return value's string value, or convert to a string using given
@@ -159,10 +183,10 @@ func parseFloatPrefix(s string) float64 {
 		i++
 	}
 	if i+3 <= len(s) {
-		if (s[i] == 'n' || s[i] == 'N') && (s[i+1] == 'a' || s[i+1] == 'A') && (s[i+2] == 'n' || s[i+2] == 'N') {
+		if hasNaNPrefix(s[i:]) {
 			return math.NaN()
 		}
-		if (s[i] == 'i' || s[i] == 'I') && (s[i+1] == 'n' || s[i+1] == 'N') && (s[i+2] == 'f' || s[i+2] == 'F') {
+		if hasInfPrefix(s[i:]) {
 			if s[start] == '-' {
 				return math.Inf(-1)
 			}
@@ -171,7 +195,7 @@ func parseFloatPrefix(s string) float64 {
 	}
 
 	// Parse mantissa: initial digit(s), optional '.', then more digits
-	if i+2 < len(s) && s[i] == '0' && (s[i+1] == 'x' || s[i+1] == 'X') {
+	if i+2 < len(s) && hasHexPrefix(s[i:]) {
 		return parseHexFloatPrefix(s, start, i+2)
 	}
 	gotDigit := false
@@ -209,6 +233,18 @@ func parseFloatPrefix(s string) float64 {
 	return f // Returns infinity in case of "value out of range" error
 }
 
+func hasHexPrefix(s string) bool {
+	return s[0] == '0' && (s[1] == 'x' || s[1] == 'X')
+}
+
+func hasNaNPrefix(s string) bool {
+	return (s[0] == 'n' || s[0] == 'N') && (s[1] == 'a' || s[1] == 'A') && (s[2] == 'n' || s[2] == 'N')
+}
+
+func hasInfPrefix(s string) bool {
+	return (s[0] == 'i' || s[0] == 'I') && (s[1] == 'n' || s[1] == 'N') && (s[2] == 'f' || s[2] == 'F')
+}
+
 // Helper used by parseFloatPrefix to handle hexadecimal floating point.
 func parseHexFloatPrefix(s string, start, i int) float64 {
 	gotDigit := false
@@ -243,7 +279,7 @@ func parseHexFloatPrefix(s string, start, i int) float64 {
 
 	floatStr := s[start:end]
 	if !gotExponent {
-		floatStr = floatStr + "p0" // AWK allows "0x12", ParseFloat requires "0x12p0"
+		floatStr += "p0" // AWK allows "0x12", ParseFloat requires "0x12p0"
 	}
 	f, _ := strconv.ParseFloat(floatStr, 64)
 	return f // Returns infinity in case of "value out of range" error
