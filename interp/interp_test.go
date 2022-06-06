@@ -829,7 +829,38 @@ BEGIN { foo(5); bar(10) }
 	{`BEGIN { print 1&*2 }`, "", "", "parse error at 1:17: unexpected char after '&'", "syntax"},
 	{"BEGIN { ` }", "", "", "parse error at 1:9: unexpected char", "syntax"},
 
-	// More number conversions
+	// Hex floating point and other number conversions
+	{`{ print $1+0 }  # +posix`, `
+0x0
+0X10
+0x1234567890
+0xabcdef
+0xABCDEF
+-0xa
++0XA
+0xf.f
+0xf.fp10
+0xf.fp-10
+0x.f
+0xf.
+0x.
+`[1:], `
+0
+16
+78187493520
+11259375
+11259375
+-10
+10
+15.9375
+16320
+0.015564
+0.9375
+15
+0
+`[1:], "", ""},
+	{`BEGIN { print int("0x22"), int("-0xa"), int("0xffz"), int("022"), int("-022") }  # +posix`, "",
+		"34 -10 255 22 -22\n", "", ""},
 	{`{ print $1, $2+0 }  # !gawk`, `
 1 nan
 2 NAN
@@ -889,6 +920,9 @@ func TestInterp(t *testing.T) {
 				}
 				if posix && strings.Contains(test.src, "!posix") {
 					t.Skipf("skipping in --posix mode")
+				}
+				if !posix && strings.Contains(test.src, "+posix") {
+					t.Skip("skipping in non-posix mode")
 				}
 
 				var args []string

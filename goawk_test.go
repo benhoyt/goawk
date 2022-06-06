@@ -229,11 +229,9 @@ func sortedLines(data []byte) []byte {
 }
 
 func TestGAWK(t *testing.T) {
-	skip := map[string]bool{ // TODO: fix these
+	skip := map[string]bool{ // TODO: fix these (at least the ones that are bugs)
 		"getline":  true, // getline syntax issues (may be okay, see grammar notes at http://pubs.opengroup.org/onlinepubs/007904975/utilities/awk.html#tag_04_06_13_14)
 		"getline3": true, // getline syntax issues (similar to above)
-		"getline5": true, // getline syntax issues (similar to above)
-		"inputred": true, // getline syntax issues (similar to above)
 
 		"gsubtst7":     true, // something wrong with gsub or field split/join
 		"splitwht":     true, // other awks handle split(s, a, " ") differently from split(s, a, / /)
@@ -244,6 +242,9 @@ func TestGAWK(t *testing.T) {
 
 		"rscompat": true, // GoAWK allows multi-char RS by default
 		"rsstart2": true, // GoAWK ^ and $ anchors match beginning and end of line, not file (unlike Gawk)
+
+		"hex2":   true, // GoAWK allows hex numbers / floating point (per POSIX)
+		"strtod": true, // GoAWK allows hex numbers / floating point (per POSIX)
 	}
 
 	dontRunOnWindows := map[string]bool{
@@ -453,6 +454,11 @@ func runGoAWK(args []string, stdin string) (stdout, stderr string, err error) {
 }
 
 func runAWKs(t *testing.T, testArgs []string, testStdin, testOutput, testError string) {
+	var args []string
+	if strings.Contains(awkExe, "gawk") {
+		args = append(args, "--posix")
+	}
+	args = append(args, testArgs...)
 	cmd := exec.Command(awkExe, testArgs...)
 	if testStdin != "" {
 		cmd.Stdin = strings.NewReader(testStdin)

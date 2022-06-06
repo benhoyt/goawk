@@ -155,7 +155,6 @@ func parseFloatPrefix(s string) float64 {
 	start := i
 
 	// Parse optional sign and check for NaN and Inf.
-	gotDigit := false
 	if i < len(s) && (s[i] == '+' || s[i] == '-') {
 		i++
 	}
@@ -172,14 +171,18 @@ func parseFloatPrefix(s string) float64 {
 	}
 
 	// Parse mantissa: initial digit(s), optional '.', then more digits
-	for i < len(s) && s[i] >= '0' && s[i] <= '9' {
+	if i+2 < len(s) && s[i] == '0' && (s[i+1] == 'x' || s[i+1] == 'X') {
+		return parseHexFloatPrefix(s, start, i+2)
+	}
+	gotDigit := false
+	for i < len(s) && isDigit(s[i]) {
 		gotDigit = true
 		i++
 	}
 	if i < len(s) && s[i] == '.' {
 		i++
 	}
-	for i < len(s) && s[i] >= '0' && s[i] <= '9' {
+	for i < len(s) && isDigit(s[i]) {
 		gotDigit = true
 		i++
 	}
@@ -195,7 +198,7 @@ func parseFloatPrefix(s string) float64 {
 		if i < len(s) && (s[i] == '+' || s[i] == '-') {
 			i++
 		}
-		for i < len(s) && s[i] >= '0' && s[i] <= '9' {
+		for i < len(s) && isDigit(s[i]) {
 			i++
 			end = i
 		}
@@ -204,4 +207,52 @@ func parseFloatPrefix(s string) float64 {
 	floatStr := s[start:end]
 	f, _ := strconv.ParseFloat(floatStr, 64)
 	return f // Returns infinity in case of "value out of range" error
+}
+
+// Helper used by parseFloatPrefix to handle hexadecimal floating point.
+func parseHexFloatPrefix(s string, start, i int) float64 {
+	gotDigit := false
+	for i < len(s) && isHexDigit(s[i]) {
+		gotDigit = true
+		i++
+	}
+	if i < len(s) && s[i] == '.' {
+		i++
+	}
+	for i < len(s) && isHexDigit(s[i]) {
+		gotDigit = true
+		i++
+	}
+	if !gotDigit {
+		return 0
+	}
+
+	gotExponent := false
+	end := i
+	if i < len(s) && (s[i] == 'p' || s[i] == 'P') {
+		i++
+		if i < len(s) && (s[i] == '+' || s[i] == '-') {
+			i++
+		}
+		for i < len(s) && isDigit(s[i]) {
+			gotExponent = true
+			i++
+			end = i
+		}
+	}
+
+	floatStr := s[start:end]
+	if !gotExponent {
+		floatStr = floatStr + "p0" // AWK allows "0x12", ParseFloat requires "0x12p0"
+	}
+	f, _ := strconv.ParseFloat(floatStr, 64)
+	return f // Returns infinity in case of "value out of range" error
+}
+
+func isDigit(c byte) bool {
+	return c >= '0' && c <= '9'
+}
+
+func isHexDigit(c byte) bool {
+	return c >= '0' && c <= '9' || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F'
 }
