@@ -49,8 +49,8 @@ const (
 	shortUsage = "usage: goawk [-F fs] [-v var=value] [-f progfile | 'prog'] [file ...]"
 	longUsage  = `Standard AWK arguments:
   -F separator      field separator (default " ")
-  -v var=value      variable assignment (multiple allowed)
   -f progfile       load AWK source from progfile (multiple allowed)
+  -v var=value      variable assignment (multiple allowed)
 
 Additional GoAWK arguments:
   -cpuprofile file  write CPU profile to file
