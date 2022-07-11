@@ -42,10 +42,10 @@ func TestMain(m *testing.M) {
 	flag.BoolVar(&writeGoAWK, "writegoawk", true, "write Go AWK output")
 	flag.Parse()
 
-	cmd := exec.Command(goExe, "build")
-	err := cmd.Run()
+	cmd := exec.Command(goExe, "build", "-ldflags=-w")
+	stderr, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error building goawk: %v\n", err)
+		fmt.Fprintf(os.Stderr, "error building goawk: %v\n%s\n", err, stderr)
 		os.Exit(1)
 	}
 
