@@ -3,4 +3,4 @@ which is
 	 
 Environment variable TEST=
 and the current input file is called ""
-in main loop, this input file is known as ""
+in main loop, this input file is known as "-"

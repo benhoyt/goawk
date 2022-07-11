@@ -722,7 +722,7 @@ func (p *interp) nextLine() (string, error) {
 				// Moved past number of ARGV args and haven't seen
 				// any files yet, use stdin
 				p.input = p.stdin
-				p.setFile("")
+				p.setFile("-")
 			} else {
 				if p.filenameIndex >= p.argc {
 					// Done with ARGV args, all done with input
@@ -759,7 +759,7 @@ func (p *interp) nextLine() (string, error) {
 				} else if filename == "-" {
 					// ARGV arg is "-" meaning stdin
 					p.input = p.stdin
-					p.setFile("")
+					p.setFile("-")
 				} else {
 					// A regular file name, open it
 					if p.noFileReads {
