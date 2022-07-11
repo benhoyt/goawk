@@ -350,6 +350,7 @@ func TestCommandLine(t *testing.T) {
 		{[]string{`$0`, "testdata/g.1", "-", "testdata/g.2"}, "STDIN", "ONE\nSTDIN\nTWO\n", ""},
 		{[]string{`$0`, "testdata/g.1", "-", "testdata/g.2", "-"}, "STDIN", "ONE\nSTDIN\nTWO\n", ""},
 		{[]string{"-F", " ", "--", "$0", "testdata/g.1"}, "", "ONE\n", ""},
+		{[]string{"{ print NR, FNR } END { print NR, FNR }", "-"}, "a\nb\nc\n", "1 1\n2 2\n3 3\n3 3\n", ""},
 		// I've deleted the "-ftest" file for now as it was causing problems with "go install" zip files
 		// {[]string{"--", "$0", "-ftest"}, "", "used in tests; do not delete\n", ""}, // Issue #53
 		// {[]string{"$0", "-ftest"}, "", "used in tests; do not delete\n", ""},

@@ -309,6 +309,7 @@ BEGIN {
 	// Other FILENAME behaviour is tested in goawk_test.go
 	{`BEGIN { FNR = 123; print FNR }`, "", "123\n", "", ""},
 	{`{ print FNR, $0 }`, "a\nb\nc", "1 a\n2 b\n3 c\n", "", ""},
+	{`{ print NR, FNR } END { print NR, FNR }`, "a\nb\nc\n", "1 1\n2 2\n3 3\n3 3\n", "", ""},
 	// Other FNR behaviour is tested in goawk_test.go
 	{`BEGIN { print "|" FS "|"; FS="," } { print $1, $2 }`, "a b\na,b\nx,,y", "| |\na b \na b\nx \n", "", ""},
 	{`BEGIN { print "|" FS "|"; FS="\\." } { print $1, $2 }`, "a b\na.b\nx..y", "| |\na b \na b\nx \n", "", ""},
