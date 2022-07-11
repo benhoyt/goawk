@@ -636,6 +636,7 @@ func nextRune(b []byte) rune {
 func (p *interp) setFile(filename string) {
 	p.filename = numStr(filename)
 	p.fileLineNum = 0
+	p.hadFiles = true
 }
 
 // Setup for a new input line (but don't parse it into fields till we
@@ -722,7 +723,6 @@ func (p *interp) nextLine() (string, error) {
 				// any files yet, use stdin
 				p.input = p.stdin
 				p.setFile("")
-				p.hadFiles = true
 			} else {
 				if p.filenameIndex >= p.argc {
 					// Done with ARGV args, all done with input
@@ -771,7 +771,6 @@ func (p *interp) nextLine() (string, error) {
 					}
 					p.input = input
 					p.setFile(filename)
-					p.hadFiles = true
 				}
 			}
 			if p.inputBuffer == nil { // reuse buffer from last input file
