@@ -738,7 +738,10 @@ func (p *interp) nextLine() (string, error) {
 				p.filenameIndex++
 
 				// Is it actually a var=value assignment?
-				matches := varRegex.FindStringSubmatch(filename)
+				var matches []string
+				if !p.noArgVars {
+					matches = varRegex.FindStringSubmatch(filename)
+				}
 				if len(matches) >= 3 {
 					// Yep, set variable to value and keep going
 					name, val := matches[1], matches[2]

@@ -57,6 +57,7 @@ Additional GoAWK arguments:
   -d                print parsed syntax tree to stderr (debug mode)
   -da               print virtual machine assembly instructions to stderr
   -dt               print variable type information to stderr
+  -E progfile       load program, treat as last option, disable var=value args
   -H                parse header row and enable @"field" in CSV input mode
   -h, --help        show this help message
   -i mode           parse input into fields using CSV format (ignore FS and RS)
@@ -82,8 +83,10 @@ func main() {
 	inputMode := ""
 	outputMode := ""
 	header := false
+	noArgVars := false
 
 	var i int
+argsLoop:
 	for i = 1; i < len(os.Args); i++ {
 		// Stop on explicit end of args or first arg not prefixed with "-"
 		arg := os.Args[i]
@@ -96,6 +99,15 @@ func main() {
 		}
 
 		switch arg {
+		case "-E":
+			if i+1 >= len(os.Args) {
+				errorExitf("flag needs an argument: -E")
+			}
+			i++
+			progFiles = append(progFiles, os.Args[i])
+			noArgVars = true
+			i++
+			break argsLoop
 		case "-F":
 			if i+1 >= len(os.Args) {
 				errorExitf("flag needs an argument: -F")
@@ -154,6 +166,11 @@ func main() {
 			os.Exit(0)
 		default:
 			switch {
+			case strings.HasPrefix(arg, "-E"):
+				progFiles = append(progFiles, arg[2:])
+				noArgVars = true
+				i++
+				break argsLoop
 			case strings.HasPrefix(arg, "-F"):
 				fieldSep = arg[2:]
 			case strings.HasPrefix(arg, "-f"):
@@ -259,14 +276,15 @@ func main() {
 	}
 
 	config := &interp.Config{
-		Argv0: filepath.Base(os.Args[0]),
-		Args:  expandWildcardsOnWindows(args),
+		Argv0:     filepath.Base(os.Args[0]),
+		Args:      expandWildcardsOnWindows(args),
+		NoArgVars: noArgVars,
+		Output:    stdout,
 		Vars: []string{
 			"FS", fieldSep,
 			"INPUTMODE", inputMode,
 			"OUTPUTMODE", outputMode,
 		},
-		Output: stdout,
 	}
 	for _, v := range vars {
 		equals := strings.IndexByte(v, '=')
