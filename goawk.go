@@ -44,7 +44,7 @@ import (
 )
 
 const (
-	version    = "v1.19.0"
+	version    = "v1.20.0"
 	copyright  = "GoAWK " + version + " - Copyright (c) 2022 Ben Hoyt"
 	shortUsage = "usage: goawk [-F fs] [-v var=value] [-f progfile | 'prog'] [file ...]"
 	longUsage  = `Standard AWK arguments:
