@@ -403,6 +403,13 @@ func TestCommandLine(t *testing.T) {
 		{[]string{`BEGIN { print(ARGV[1]<2, ARGV[2]<2); ARGV[1]="10"; ARGV[2]="10x"; print(ARGV[1]<2, ARGV[2]<2) }`,
 			"10", "10x"}, "", "0 1\n1 1\n", ""},
 
+		// -E argument
+		{[]string{"-E", "testdata/awc.awk", "-w", "testdata/awc.awk"}, "", "95 \n", ""},
+		{[]string{"-Etestdata/awc.awk", "-w", "testdata/awc.awk"}, "", "95 \n", ""},
+		{[]string{"-E", "testdata/awc.awk", "-w", "--", "testdata/awc.awk"}, "", "95 \n", ""},
+		{[]string{"-E", "testdata/awc.awk", "--", "-l"}, "", "", `file "-l" not found`},
+		{[]string{"-E", "testdata/awc.awk", "foo=bar"}, "", "", `file "foo=bar" not found`},
+
 		// Error handling
 		{[]string{}, "", "", "usage: goawk [-F fs] [-v var=value] [-f progfile | 'prog'] [file ...]"},
 		{[]string{"-F"}, "", "", "flag needs an argument: -F"},
@@ -460,46 +467,50 @@ func runGoAWK(args []string, stdin string) (stdout, stderr string, err error) {
 }
 
 func runAWKs(t *testing.T, testArgs []string, testStdin, testOutput, testError string) {
-	var args []string
-	if strings.Contains(awkExe, "gawk") {
-		args = append(args, "--posix")
-	}
-	args = append(args, testArgs...)
-	cmd := exec.Command(awkExe, testArgs...)
-	if testStdin != "" {
-		cmd.Stdin = strings.NewReader(testStdin)
-	}
-	errBuf := &bytes.Buffer{}
-	cmd.Stderr = errBuf
-	output, err := cmd.Output()
-	if err != nil {
-		if testError == "" {
-			t.Fatalf("expected no error, got AWK error: %v (%s)", err, errBuf.String())
+	t.Run("awk", func(t *testing.T) {
+		var args []string
+		if strings.Contains(awkExe, "gawk") {
+			args = append(args, "--posix")
 		}
-	} else {
-		if testError != "" {
-			t.Fatalf("expected AWK error, got none")
+		args = append(args, testArgs...)
+		cmd := exec.Command(awkExe, testArgs...)
+		if testStdin != "" {
+			cmd.Stdin = strings.NewReader(testStdin)
 		}
-	}
-	stdout := string(normalizeNewlines(output))
-	if stdout != testOutput {
-		t.Fatalf("expected AWK to give %q, got %q", testOutput, stdout)
-	}
+		errBuf := &bytes.Buffer{}
+		cmd.Stderr = errBuf
+		output, err := cmd.Output()
+		if err != nil {
+			if testError == "" {
+				t.Fatalf("expected no error, got AWK error: %v (%s)", err, errBuf.String())
+			}
+		} else {
+			if testError != "" {
+				t.Fatalf("expected AWK error, got none")
+			}
+		}
+		stdout := string(normalizeNewlines(output))
+		if stdout != testOutput {
+			t.Fatalf("AWK expected/got:\n%q\n%q", testOutput, stdout)
+		}
+	})
 
-	stdout, stderr, err := runGoAWK(testArgs, testStdin)
-	if err != nil {
-		stderr = strings.TrimSpace(stderr)
-		if stderr != testError {
-			t.Fatalf("expected GoAWK error %q, got %q", testError, stderr)
+	t.Run("goawk", func(t *testing.T) {
+		stdout, stderr, err := runGoAWK(testArgs, testStdin)
+		if err != nil {
+			stderr = strings.TrimSpace(stderr)
+			if stderr != testError {
+				t.Fatalf("expected GoAWK error %q, got %q", testError, stderr)
+			}
+		} else {
+			if testError != "" {
+				t.Fatalf("expected GoAWK error %q, got none", testError)
+			}
 		}
-	} else {
-		if testError != "" {
-			t.Fatalf("expected GoAWK error %q, got none", testError)
+		if stdout != testOutput {
+			t.Fatalf("GoAWK expected/got:\n%q\n%q", testOutput, stdout)
 		}
-	}
-	if stdout != testOutput {
-		t.Fatalf("expected GoAWK to give %q, got %q", testOutput, stdout)
-	}
+	})
 }
 
 func TestWildcards(t *testing.T) {

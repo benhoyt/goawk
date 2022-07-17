@@ -87,6 +87,7 @@ type interp struct {
 	noFileReads   bool
 	shellCommand  []string
 	csvOutput     *bufio.Writer
+	noArgVars     bool
 
 	// Scalars, arrays, and function state
 	globals     []value
@@ -185,7 +186,13 @@ type Config struct {
 	// Input arguments (usually filenames): empty slice means read
 	// only from Stdin, and a filename of "-" means read from Stdin
 	// instead of a real file.
+	//
+	// Arguments of the form "var=value" are treated as variable
+	// assignments.
 	Args []string
+
+	// Set to true to disable "var=value" assignments in Args.
+	NoArgVars bool
 
 	// List of name-value pairs for variables to set before executing
 	// the program (useful for setting FS and other built-in
@@ -432,6 +439,7 @@ func (p *interp) setExecuteConfig(config *Config) error {
 	for i, arg := range config.Args {
 		p.setArrayValue(ast.ScopeGlobal, argvIndex, strconv.Itoa(i+1), numStr(arg))
 	}
+	p.noArgVars = config.NoArgVars
 	p.filenameIndex = 1
 	p.hadFiles = false
 	for i := 0; i < len(config.Vars); i += 2 {
