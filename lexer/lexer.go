@@ -363,7 +363,7 @@ func (l *Lexer) unread() {
 }
 
 func isNameStart(ch byte) bool {
-	return ch == '_' || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')
+	return ch == '_' || ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z'
 }
 
 func isDigit(ch byte) bool {

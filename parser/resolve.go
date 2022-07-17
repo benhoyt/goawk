@@ -454,7 +454,7 @@ func (p *parser) checkMultiExprs() {
 	// Show error on first comma-separated expression
 	min := Position{1000000000, 1000000000}
 	for _, pos := range p.multiExprs {
-		if pos.Line < min.Line || (pos.Line == min.Line && pos.Column < min.Column) {
+		if pos.Line < min.Line || pos.Line == min.Line && pos.Column < min.Column {
 			min = pos
 		}
 	}

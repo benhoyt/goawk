@@ -316,14 +316,14 @@ func (p *parser) stmt() ast.Stmt {
 			if !ok {
 				panic(p.errorf("expected 'for (var in array) ...'"))
 			}
-			inExpr, ok := (exprStmt.Expr).(*ast.InExpr)
+			inExpr, ok := exprStmt.Expr.(*ast.InExpr)
 			if !ok {
 				panic(p.errorf("expected 'for (var in array) ...'"))
 			}
 			if len(inExpr.Index) != 1 {
 				panic(p.errorf("expected 'for (var in array) ...'"))
 			}
-			varExpr, ok := (inExpr.Index[0]).(*ast.VarExpr)
+			varExpr, ok := inExpr.Index[0].(*ast.VarExpr)
 			if !ok {
 				panic(p.errorf("expected 'for (var in array) ...'"))
 			}
@@ -637,7 +637,7 @@ func (p *parser) _compare(ops ...Token) ast.Expr {
 func (p *parser) concat() ast.Expr {
 	expr := p.add()
 	for p.matches(DOLLAR, AT, NOT, NAME, NUMBER, STRING, LPAREN, INCR, DECR) ||
-		(p.tok >= FIRST_FUNC && p.tok <= LAST_FUNC) {
+		p.tok >= FIRST_FUNC && p.tok <= LAST_FUNC {
 		right := p.add()
 		expr = &ast.BinaryExpr{expr, CONCAT, right}
 	}

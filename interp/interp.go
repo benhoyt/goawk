@@ -514,7 +514,7 @@ func validateCSVInputConfig(mode IOMode, config CSVInputConfig) error {
 		return nil
 	}
 	if config.Separator == config.Comment || !validCSVSeparator(config.Separator) ||
-		(config.Comment != 0 && !validCSVSeparator(config.Comment)) {
+		config.Comment != 0 && !validCSVSeparator(config.Comment) {
 		return errCSVSeparator
 	}
 	return nil
