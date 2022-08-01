@@ -2,8 +2,7 @@
 # GoAWK: an AWK interpreter with CSV support
 
 [![Documentation](https://pkg.go.dev/badge/github.com/benhoyt/goawk)](https://pkg.go.dev/github.com/benhoyt/goawk)
-[![GitHub Actions Build](https://github.com/benhoyt/goawk/workflows/Go/badge.svg)](https://github.com/benhoyt/goawk/actions?query=workflow%3AGo)
-
+[![GitHub Actions Build](https://github.com/benhoyt/goawk/workflows/Tests/badge.svg)](https://github.com/benhoyt/goawk/actions/workflows/tests.yml)
 
 AWK is a fascinating text-processing language, and somehow after reading the delightfully-terse [*The AWK Programming Language*](https://ia802309.us.archive.org/25/items/pdfy-MgN0H1joIoDVoIC7/The_AWK_Programming_Language.pdf) I was inspired to write an interpreter for it in Go. So here it is, feature-complete and tested against "the one true AWK" and GNU AWK test suites.
 
