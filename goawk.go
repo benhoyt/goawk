@@ -53,6 +53,8 @@ const (
   -v var=value      variable assignment (multiple allowed)
 
 Additional GoAWK arguments:
+  -covermode mode   TODO
+  -coverprofile file TODO
   -cpuprofile file  write CPU profile to file
   -d                print parsed syntax tree to stderr (debug mode)
   -da               print virtual machine assembly instructions to stderr
@@ -84,6 +86,7 @@ func main() {
 	outputMode := ""
 	header := false
 	noArgVars := false
+	covermode := ""
 
 	var i int
 argsLoop:
@@ -99,6 +102,15 @@ argsLoop:
 		}
 
 		switch arg {
+		case "-covermode":
+			if i+1 >= len(os.Args) {
+				errorExitf("flag needs an argument: -covermode")
+			}
+			i++
+			covermode = os.Args[i]
+			if covermode != "set" && covermode != "count" {
+				errorExitf("covermode can only be one of: set, count")
+			}
 		case "-E":
 			if i+1 >= len(os.Args) {
 				errorExitf("flag needs an argument: -E")

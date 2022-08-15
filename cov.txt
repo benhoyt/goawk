@@ -3,7 +3,6 @@ https://go.dev/blog/cover
 
 
 goawk -f a.awk -coverprofile c.out -covermode set/count    # generates coverage report
-## goawk -f a.awk -coverannotate                              # to stdout
 goawk -f a.awk -covermode set                              # to stdout
 
 go tool cover -html=c.out
@@ -18,8 +17,14 @@ goawk -coverreport c.out                 # 77.5
 Options:
 
 -coverprofile
+    set the cover report filename to put collected coverage profile data.
+    If this option is omitted, but the -covermode is set - outputs the annotated awk source to stdout.
 -covermode
-## -coverannotate we don't need this behavior will be if we omit -coverprofile
+    Can have one of two values:
+        set: did each statement run?
+        count: how many times did each statement run?
+
+todo:
 -coverreport
 
 
