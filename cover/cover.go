@@ -7,16 +7,27 @@ import (
 
 func Annotate(prog *parser.Program) {
 	prog.Begin = annotateStmtsList(prog.Begin)
-	return nil
+	prog.End = annotateStmtsList(prog.End)
+	for _, action := range prog.Actions {
+		action.Stmts = annotateStmts(action.Stmts)
+	}
+	for _, function := range prog.Functions {
+		function.Body = annotateStmts(function.Body)
+	}
 }
 
-func annotateStmtsList(stmtsList []ast.Stmts) (annotatedStmtsList []ast.Stmts) {
-	var res []ast.Stmts
+func annotateStmtsList(stmtsList []ast.Stmts) (res []ast.Stmts) {
 	for _, stmts := range stmtsList {
 		res = append(res, annotateStmts(stmts))
 	}
-	return res
+	return
 }
-func annotateStmts(stmts ast.Stmts) (annotatedStmts ast.Stmts) {
-	// TODO
+func annotateStmts(stmts ast.Stmts) (res ast.Stmts) {
+	trackProg, err := parser.ParseProgram([]byte(`BEGIN { __COVER[0]++ }`), nil)
+	if err != nil {
+		panic(err)
+	}
+	res = append(res, trackProg.Begin[0][0])
+	res = append(res, stmts...)
+	return
 }
