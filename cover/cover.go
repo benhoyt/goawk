@@ -40,6 +40,24 @@ func annotateStmts(stmts ast.Stmts) (res ast.Stmts) {
 		panic(err)
 	}
 	res = append(res, trackProg.Begin[0][0])
-	res = append(res, stmts...)
+	for _, stmt := range stmts {
+		switch s := stmt.(type) {
+		case *ast.IfStmt:
+			s.Body = annotateStmts(s.Body)
+			s.Else = annotateStmts(s.Else)
+		case *ast.ForStmt:
+			s.Body = annotateStmts(s.Body) // TODO should we do smth with pre & post?
+		case *ast.ForInStmt:
+			s.Body = annotateStmts(s.Body)
+		case *ast.WhileStmt:
+			s.Body = annotateStmts(s.Body)
+		case *ast.DoWhileStmt:
+			s.Body = annotateStmts(s.Body)
+		case *ast.BlockStmt:
+			s.Body = annotateStmts(s.Body)
+		}
+		res = append(res, stmt)
+	}
 	return
+	// TODO complete handling of if/else/else if
 }
