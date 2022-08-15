@@ -1,4 +1,9 @@
 
+TODO:
+- print annotated to stdout or err?
+- should somehow interact with -d ?
+
+
 https://go.dev/blog/cover
 
 

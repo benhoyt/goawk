@@ -29,6 +29,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/benhoyt/goawk/cover"
 	"io"
 	"io/ioutil"
 	"os"
@@ -87,6 +88,7 @@ func main() {
 	header := false
 	noArgVars := false
 	covermode := ""
+	coverprofile := ""
 
 	var i int
 argsLoop:
@@ -108,9 +110,7 @@ argsLoop:
 			}
 			i++
 			covermode = os.Args[i]
-			if covermode != "set" && covermode != "count" {
-				errorExitf("covermode can only be one of: set, count")
-			}
+			validateCovermode(covermode)
 		case "-E":
 			if i+1 >= len(os.Args) {
 				errorExitf("flag needs an argument: -E")
@@ -197,6 +197,9 @@ argsLoop:
 				cpuprofile = arg[12:]
 			case strings.HasPrefix(arg, "-memprofile="):
 				memprofile = arg[12:]
+			case strings.HasPrefix(arg, "-covermode="):
+				covermode = arg[11:]
+				validateCovermode(covermode)
 			default:
 				errorExitf("flag provided but not defined: %s", arg)
 			}
@@ -259,6 +262,14 @@ argsLoop:
 			os.Exit(1)
 		}
 		errorExitf("%s", err)
+	}
+
+	if covermode != "" {
+		cover.Annotate(prog)
+		if coverprofile == "" {
+			fmt.Fprintln(os.Stdout, prog)
+			os.Exit(0)
+		}
 	}
 
 	if debug {
@@ -344,6 +355,12 @@ argsLoop:
 	}
 
 	os.Exit(status)
+}
+
+func validateCovermode(covermode string) {
+	if covermode != "set" && covermode != "count" {
+		errorExitf("covermode can only be one of: set, count")
+	}
 }
 
 // Show source line and position of error, for example:

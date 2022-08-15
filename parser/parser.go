@@ -72,9 +72,16 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	// Parse into abstract syntax tree
 	prog = p.program()
 
-	// Compile to virtual machine code
-	prog.Compiled, err = compiler.Compile(prog.toAST())
 	return prog, err
+}
+
+// EnsureCompiled ensures the program is compiled to opcodes
+func (p *Program) EnsureCompiled() (err error) {
+	if p.Compiled == nil {
+		// Compile to virtual machine code
+		p.Compiled, err = compiler.Compile(p.toAST())
+	}
+	return
 }
 
 // Program is the parsed and compiled representation of an entire AWK program.

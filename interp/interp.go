@@ -340,8 +340,12 @@ type CSVOutputConfig struct {
 // defaults (zero values). However, it may be simpler to use Exec in that
 // case.
 func ExecProgram(program *parser.Program, config *Config) (int, error) {
+	err := program.EnsureCompiled()
+	if err != nil {
+		return 0, err
+	}
 	p := newInterp(program)
-	err := p.setExecuteConfig(config)
+	err = p.setExecuteConfig(config)
 	if err != nil {
 		return 0, err
 	}
