@@ -1,0 +1,43 @@
+
+https://go.dev/blog/cover
+
+
+goawk -f a.awk -coverprofile c.out -covermode set/count    # generates coverage report
+## goawk -f a.awk -coverannotate                              # to stdout
+goawk -f a.awk -covermode set                              # to stdout
+
+go tool cover -html=c.out
+go tool cover -func=c.out                # this will not work, we'll have below
+
+
+goawk -coverreport c.out -func           # analogous to `go tool cover -func=c.out`
+goawk -coverreport c.out                 # 77.5
+
+
+-----
+Options:
+
+-coverprofile
+-covermode
+## -coverannotate we don't need this behavior will be if we omit -coverprofile
+-coverreport
+
+
+-----
+
+Usage of 'go tool cover':
+Given a coverage profile produced by 'go test':
+	go test -coverprofile=c.out
+
+Open a web browser displaying annotated source code:
+	go tool cover -html=c.out
+
+Write out an HTML file instead of launching a web browser:
+	go tool cover -html=c.out -o coverage.html
+
+Display coverage percentages to stdout for each function:
+	go tool cover -func=c.out
+
+Finally, to generate modified source code with coverage annotations
+(what go test -cover does):
+	go tool cover -mode=set -var=CoverageVariableName program.go
