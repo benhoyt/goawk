@@ -72,15 +72,15 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	// Parse into abstract syntax tree
 	prog = p.program()
 
+	// Compile to virtual machine code
+	err = prog.Compile()
+
 	return prog, err
 }
 
-// EnsureCompiled ensures the program is compiled to opcodes
-func (p *Program) EnsureCompiled() (err error) {
-	if p.Compiled == nil {
-		// Compile to virtual machine code
-		p.Compiled, err = compiler.Compile(p.toAST())
-	}
+// Compile compiles to virtual machine code
+func (p *Program) Compile() (err error) {
+	p.Compiled, err = compiler.Compile(p.toAST())
 	return
 }
 

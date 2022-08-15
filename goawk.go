@@ -270,6 +270,10 @@ argsLoop:
 			fmt.Fprintln(os.Stdout, prog)
 			os.Exit(0)
 		}
+		err := prog.Compile() // recompile for annotations to take an effect
+		if err != nil {
+			errorExitf("%s", err)
+		}
 	}
 
 	if debug {
