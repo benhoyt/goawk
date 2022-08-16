@@ -159,8 +159,8 @@ type parser struct {
 func (p *parser) markStartPos() {
 	p.startPos = p.pos
 }
-func (p *parser) GetBoundary() ast.StmtPosInfo {
-	return ast.StmtPosInfo{p.startPos, p.pos /* TODO: should this be next? */}
+func (p *parser) GetBoundary() ast.StmtBoundary {
+	return ast.StmtBoundary{p.startPos, p.pos /* TODO: should this be next? */}
 }
 
 // Parse an entire AWK program.
@@ -266,7 +266,7 @@ func (p *parser) simpleStmt() ast.Stmt {
 			if len(args) == 0 {
 				panic(p.errorf("expected printf args, got none"))
 			}
-			return &ast.PrintfStmt{args, redirect, dest}
+			return &ast.PrintfStmt{args, redirect, dest, p.GetBoundary()}
 		}
 	case DELETE:
 		p.next()
@@ -281,11 +281,11 @@ func (p *parser) simpleStmt() ast.Stmt {
 			}
 			p.expect(RBRACKET)
 		}
-		return &ast.DeleteStmt{ref, index}
+		return &ast.DeleteStmt{ref, index, p.GetBoundary()}
 	case IF, FOR, WHILE, DO, BREAK, CONTINUE, NEXT, EXIT, RETURN:
 		panic(p.errorf("expected print/printf, delete, or expression"))
 	default:
-		return &ast.ExprStmt{p.expr()}
+		return &ast.ExprStmt{p.expr(), p.GetBoundary()}
 	}
 }
 
@@ -295,6 +295,7 @@ func (p *parser) stmt() ast.Stmt {
 		p.next()
 	}
 	var s ast.Stmt
+	p.markStartPos()
 	switch p.tok {
 	case IF:
 		p.next()
@@ -406,7 +407,7 @@ func (p *parser) stmt() ast.Stmt {
 		if !p.matches(NEWLINE, SEMICOLON, RBRACE) {
 			status = p.expr()
 		}
-		s = &ast.ExitStmt{status}
+		s = &ast.ExitStmt{status, p.GetBoundary()}
 	case RETURN:
 		if p.funcName == "" {
 			panic(p.errorf("return must be inside a function"))
@@ -416,7 +417,7 @@ func (p *parser) stmt() ast.Stmt {
 		if !p.matches(NEWLINE, SEMICOLON, RBRACE) {
 			value = p.expr()
 		}
-		s = &ast.ReturnStmt{value}
+		s = &ast.ReturnStmt{value, p.GetBoundary()}
 	case LBRACE:
 		body := p.stmtsBrace()
 		s = &ast.BlockStmt{body}

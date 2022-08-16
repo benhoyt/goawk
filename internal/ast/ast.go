@@ -379,24 +379,24 @@ type Stmt interface {
 	String() string
 }
 
-type StmtPos interface {
-	Start() Position
-	End() Position
+//type StmtPos interface {
+//	Start() Position
+//	End() Position
+//}
+
+type StmtBoundary struct {
+	Start Position
+	End   Position
 }
 
-type StmtPosInfo struct {
-	StartPos Position
-	EndPos   Position
-}
-
-func (pos *StmtPosInfo) Start() Position {
-	return pos.StartPos
-}
-func (pos *StmtPosInfo) End() Position {
-	return pos.EndPos
-}
-func (pos *StmtPosInfo) String() string {
-	return pos.StartPos.String() + "-" + pos.EndPos.String()
+//func (pos *StmtBoundary) Start() Position {
+//	return pos.StartPos
+//}
+//func (pos *StmtBoundary) End() Position {
+//	return pos.EndPos
+//}
+func (pos *StmtBoundary) String() string {
+	return pos.Start.String() + "-" + pos.End.String()
 }
 
 // All these types implement the Stmt interface.
@@ -421,11 +421,11 @@ type PrintStmt struct {
 	Args     []Expr
 	Redirect Token
 	Dest     Expr
-	StmtPosInfo
+	StmtBoundary
 }
 
 func (s *PrintStmt) String() string {
-	return printString("print", s.Args, s.Redirect, s.Dest) + " # " + s.StmtPosInfo.String()
+	return printString("print", s.Args, s.Redirect, s.Dest) //+ " # " + s.StmtBoundary.String()
 }
 
 func printString(f string, args []Expr, redirect Token, dest Expr) string {
@@ -445,6 +445,7 @@ type PrintfStmt struct {
 	Args     []Expr
 	Redirect Token
 	Dest     Expr
+	StmtBoundary
 }
 
 func (s *PrintfStmt) String() string {
@@ -454,10 +455,11 @@ func (s *PrintfStmt) String() string {
 // ExprStmt is statement like a bare function call: my_func(x).
 type ExprStmt struct {
 	Expr Expr
+	StmtBoundary
 }
 
 func (s *ExprStmt) String() string {
-	return s.Expr.String()
+	return s.Expr.String() //+ " # " + s.StmtBoundary.String()
 }
 
 // IfStmt is an if or if-else statement.
@@ -531,21 +533,27 @@ func (s *DoWhileStmt) String() string {
 }
 
 // BreakStmt is a break statement.
-type BreakStmt struct{}
+type BreakStmt struct {
+	StmtBoundary
+}
 
 func (s *BreakStmt) String() string {
 	return "break"
 }
 
 // ContinueStmt is a continue statement.
-type ContinueStmt struct{}
+type ContinueStmt struct {
+	StmtBoundary
+}
 
 func (s *ContinueStmt) String() string {
 	return "continue"
 }
 
 // NextStmt is a next statement.
-type NextStmt struct{}
+type NextStmt struct {
+	StmtBoundary
+}
 
 func (s *NextStmt) String() string {
 	return "next"
@@ -554,6 +562,7 @@ func (s *NextStmt) String() string {
 // ExitStmt is an exit statement.
 type ExitStmt struct {
 	Status Expr
+	StmtBoundary
 }
 
 func (s *ExitStmt) String() string {
@@ -568,6 +577,7 @@ func (s *ExitStmt) String() string {
 type DeleteStmt struct {
 	Array *ArrayExpr
 	Index []Expr
+	StmtBoundary
 }
 
 func (s *DeleteStmt) String() string {
@@ -581,6 +591,7 @@ func (s *DeleteStmt) String() string {
 // ReturnStmt is a return statement.
 type ReturnStmt struct {
 	Value Expr
+	StmtBoundary
 }
 
 func (s *ReturnStmt) String() string {
