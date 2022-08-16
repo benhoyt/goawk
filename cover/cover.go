@@ -34,13 +34,25 @@ func annotateStmtsList(stmtsList []ast.Stmts) (res []ast.Stmts) {
 	}
 	return
 }
+
+// annotateStmts takes a list of statements and adds counters to the beginning of
+// each basic block at the top level of that list. For instance, given
+//
+//	S1
+//	if cond {
+//		S2
+//	}
+//	S3
+//
+// counters will be added before S1,S2,S3.
 func annotateStmts(stmts ast.Stmts) (res ast.Stmts) {
 	trackProg, err := parser.ParseProgram([]byte(`BEGIN { __COVER[0]++ }`), nil)
 	if err != nil {
 		panic(err)
 	}
-	res = append(res, trackProg.Begin[0][0])
+	var simpleStatements []ast.Stmt
 	for _, stmt := range stmts {
+		wasBlock := true
 		switch s := stmt.(type) {
 		case *ast.IfStmt:
 			s.Body = annotateStmts(s.Body)
@@ -55,8 +67,21 @@ func annotateStmts(stmts ast.Stmts) (res ast.Stmts) {
 			s.Body = annotateStmts(s.Body)
 		case *ast.BlockStmt:
 			s.Body = annotateStmts(s.Body)
+		default:
+			wasBlock = false
 		}
-		res = append(res, stmt)
+		if wasBlock {
+			res = append(res, trackProg.Begin[0][0])
+			res = append(res, simpleStatements...)
+			res = append(res, stmt)
+			simpleStatements = []ast.Stmt{}
+		} else {
+			simpleStatements = append(simpleStatements, stmt)
+		}
+	}
+	if len(simpleStatements) > 0 {
+		res = append(res, trackProg.Begin[0][0])
+		res = append(res, simpleStatements...)
 	}
 	return
 	// TODO complete handling of if/else/else if
