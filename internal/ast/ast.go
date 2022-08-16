@@ -379,6 +379,26 @@ type Stmt interface {
 	String() string
 }
 
+type StmtPos interface {
+	Start() Position
+	End() Position
+}
+
+type StmtPosInfo struct {
+	StartPos Position
+	EndPos   Position
+}
+
+func (pos *StmtPosInfo) Start() Position {
+	return pos.StartPos
+}
+func (pos *StmtPosInfo) End() Position {
+	return pos.EndPos
+}
+func (pos *StmtPosInfo) String() string {
+	return pos.StartPos.String() + "-" + pos.EndPos.String()
+}
+
 // All these types implement the Stmt interface.
 func (s *PrintStmt) stmt()    {}
 func (s *PrintfStmt) stmt()   {}
@@ -401,10 +421,11 @@ type PrintStmt struct {
 	Args     []Expr
 	Redirect Token
 	Dest     Expr
+	StmtPosInfo
 }
 
 func (s *PrintStmt) String() string {
-	return printString("print", s.Args, s.Redirect, s.Dest)
+	return printString("print", s.Args, s.Redirect, s.Dest) + " # " + s.StmtPosInfo.String()
 }
 
 func printString(f string, args []Expr, redirect Token, dest Expr) string {

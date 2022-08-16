@@ -132,6 +132,8 @@ type parser struct {
 	prevTok Token    // previously lexed token
 	val     string   // string value of last token (or "")
 
+	startPos Position
+
 	// Parsing state
 	inAction  bool   // true if parsing an action (false in BEGIN or END)
 	funcName  string // function name if parsing a func, else ""
@@ -152,6 +154,13 @@ type parser struct {
 	// Configuration and debugging
 	debugTypes  bool      // show variable types for debugging
 	debugWriter io.Writer // where the debug output goes
+}
+
+func (p *parser) markStartPos() {
+	p.startPos = p.pos
+}
+func (p *parser) GetBoundary() ast.StmtPosInfo {
+	return ast.StmtPosInfo{p.startPos, p.pos /* TODO: should this be next? */}
 }
 
 // Parse an entire AWK program.
@@ -231,6 +240,7 @@ func (p *parser) stmtsBrace() ast.Stmts {
 
 // Parse a "simple" statement (eg: allowed in a for loop init clause).
 func (p *parser) simpleStmt() ast.Stmt {
+	p.markStartPos()
 	switch p.tok {
 	case PRINT, PRINTF:
 		op := p.tok
@@ -251,7 +261,7 @@ func (p *parser) simpleStmt() ast.Stmt {
 			dest = p.expr()
 		}
 		if op == PRINT {
-			return &ast.PrintStmt{args, redirect, dest}
+			return &ast.PrintStmt{args, redirect, dest, p.GetBoundary()}
 		} else {
 			if len(args) == 0 {
 				panic(p.errorf("expected printf args, got none"))
