@@ -384,18 +384,18 @@ type Stmt interface {
 //	End() Position
 //}
 
-type StmtBoundary struct {
+type Boundary struct {
 	Start Position
 	End   Position
 }
 
-//func (pos *StmtBoundary) Start() Position {
+//func (pos *Boundary) Start() Position {
 //	return pos.StartPos
 //}
-//func (pos *StmtBoundary) End() Position {
+//func (pos *Boundary) End() Position {
 //	return pos.EndPos
 //}
-func (pos *StmtBoundary) String() string {
+func (pos *Boundary) String() string {
 	return pos.Start.String() + "-" + pos.End.String()
 }
 
@@ -421,11 +421,11 @@ type PrintStmt struct {
 	Args     []Expr
 	Redirect Token
 	Dest     Expr
-	StmtBoundary
+	Boundary
 }
 
 func (s *PrintStmt) String() string {
-	return printString("print", s.Args, s.Redirect, s.Dest) //+ " # " + s.StmtBoundary.String()
+	return printString("print", s.Args, s.Redirect, s.Dest) //+ " # " + s.Boundary.String()
 }
 
 func printString(f string, args []Expr, redirect Token, dest Expr) string {
@@ -445,7 +445,7 @@ type PrintfStmt struct {
 	Args     []Expr
 	Redirect Token
 	Dest     Expr
-	StmtBoundary
+	Boundary
 }
 
 func (s *PrintfStmt) String() string {
@@ -455,11 +455,11 @@ func (s *PrintfStmt) String() string {
 // ExprStmt is statement like a bare function call: my_func(x).
 type ExprStmt struct {
 	Expr Expr
-	StmtBoundary
+	Boundary
 }
 
 func (s *ExprStmt) String() string {
-	return s.Expr.String() //+ " # " + s.StmtBoundary.String()
+	return s.Expr.String() + " # " + s.Boundary.String()
 }
 
 // IfStmt is an if or if-else statement.
@@ -534,7 +534,7 @@ func (s *DoWhileStmt) String() string {
 
 // BreakStmt is a break statement.
 type BreakStmt struct {
-	StmtBoundary
+	Boundary
 }
 
 func (s *BreakStmt) String() string {
@@ -543,7 +543,7 @@ func (s *BreakStmt) String() string {
 
 // ContinueStmt is a continue statement.
 type ContinueStmt struct {
-	StmtBoundary
+	Boundary
 }
 
 func (s *ContinueStmt) String() string {
@@ -552,7 +552,7 @@ func (s *ContinueStmt) String() string {
 
 // NextStmt is a next statement.
 type NextStmt struct {
-	StmtBoundary
+	Boundary
 }
 
 func (s *NextStmt) String() string {
@@ -562,7 +562,7 @@ func (s *NextStmt) String() string {
 // ExitStmt is an exit statement.
 type ExitStmt struct {
 	Status Expr
-	StmtBoundary
+	Boundary
 }
 
 func (s *ExitStmt) String() string {
@@ -577,7 +577,7 @@ func (s *ExitStmt) String() string {
 type DeleteStmt struct {
 	Array *ArrayExpr
 	Index []Expr
-	StmtBoundary
+	Boundary
 }
 
 func (s *DeleteStmt) String() string {
@@ -591,7 +591,7 @@ func (s *DeleteStmt) String() string {
 // ReturnStmt is a return statement.
 type ReturnStmt struct {
 	Value Expr
-	StmtBoundary
+	Boundary
 }
 
 func (s *ReturnStmt) String() string {

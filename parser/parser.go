@@ -159,8 +159,8 @@ type parser struct {
 func (p *parser) markStartPos() {
 	p.startPos = p.pos
 }
-func (p *parser) GetBoundary() ast.StmtBoundary {
-	return ast.StmtBoundary{p.startPos, p.pos /* TODO: should this be next? */}
+func (p *parser) GetBoundary() ast.Boundary {
+	return ast.Boundary{p.startPos, p.pos /* TODO: should this be next? */}
 }
 
 // Parse an entire AWK program.
