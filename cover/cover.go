@@ -4,22 +4,45 @@ import (
 	"fmt"
 	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/parser"
+	"os"
 	"strings"
 )
 
+// TODO mention thread-safety
 type annotator struct {
-	covermode     string
-	annotationIdx int
-	boundaries    map[int]ast.Boundary
+	covermode       string
+	currentFileName string
+	annotationIdx   int
+	boundaries      map[int]ast.Boundary
+	fileNames       map[int]string
 }
 
-func Annotate(prog *parser.Program, covermode string) {
-	annotator := &annotator{covermode, 0, map[int]ast.Boundary{}}
+func NewAnnotator(covermode string) *annotator {
+	return &annotator{covermode, "", 0,
+		map[int]ast.Boundary{}, map[int]string{}}
+}
+
+func (annotator *annotator) AnnotateFile(filename string, code []byte) string {
+	parserConfig := &parser.ParserConfig{
+		DebugWriter:    os.Stderr,
+		OnlyParseToAST: true,
+	}
+	prog, err := parser.ParseProgram(code, parserConfig)
+	if err != nil {
+		panic(err) // at this point the code should be already valid
+	}
+	annotator.currentFileName = filename
+	annotator.annotate(prog)
+	return prog.String()
+}
+
+func (annotator *annotator) annotate(prog *parser.Program) {
+	//annotator := &annotator{covermode, 0, map[int]ast.Boundary{}}
 	prog.Begin = annotator.annotateStmtsList(prog.Begin)
 	prog.Actions = annotator.annotateActions(prog.Actions)
 	prog.End = annotator.annotateStmtsList(prog.End)
 	prog.Functions = annotator.annotateFunctions(prog.Functions)
-	annotator.addCoverageEnd(prog)
+	//annotator.addCoverageEnd(prog)
 }
 
 func (annotator *annotator) annotateActions(actions []ast.Action) (res []ast.Action) {
@@ -100,6 +123,7 @@ func (annotator *annotator) trackStatement(statements []ast.Stmt) ast.Stmt {
 		op = "++"
 	}
 	annotator.annotationIdx++
+	annotator.fileNames[annotator.annotationIdx] = annotator.currentFileName
 	annotator.boundaries[annotator.annotationIdx] = ast.Boundary{
 		Start: statements[0].(ast.SimpleStmt).GetBoundary().Start,
 		End:   statements[len(statements)-1].(ast.SimpleStmt).GetBoundary().End,
@@ -115,14 +139,15 @@ func parseProg(code string) *parser.Program {
 	return prog
 }
 
-func (annotator *annotator) addCoverageEnd(prog *parser.Program) {
+func (annotator *annotator) RenderCoverageEnd() string {
 	var code strings.Builder
 	code.WriteString("END {")
 	for i := 1; i <= annotator.annotationIdx; i++ {
-		code.WriteString(fmt.Sprintf("__COVER_BOUNDARY[%d]=\"%s\"\n", i, renderCoverBoundary(annotator.boundaries[i])))
+		code.WriteString(fmt.Sprintf("__COVER_DATA[%d]=\"%s:%s\"\n",
+			i, annotator.fileNames[i], renderCoverBoundary(annotator.boundaries[i])))
 	}
 	code.WriteString("}")
-	prog.End = append(prog.End, parseProg(code.String()).End...)
+	return code.String()
 }
 
 func renderCoverBoundary(boundary ast.Boundary) string {

@@ -249,9 +249,8 @@ argsLoop:
 
 	// Parse source code and setup interpreter
 	parserConfig := &parser.ParserConfig{
-		DebugTypes:     debugTypes,
-		DebugWriter:    os.Stderr,
-		OnlyParseToAST: true, // TODO remove me
+		DebugTypes:  debugTypes,
+		DebugWriter: os.Stderr,
 	}
 	//fmt.Println("before parse")
 	prog, err := parser.ParseProgram(src, parserConfig)
@@ -268,12 +267,42 @@ argsLoop:
 	//fmt.Println("after parse")
 
 	if covermode != "" {
-		cover.Annotate(prog, covermode) // TODO shall we adjust parsed prog as well, or maybe re-parse?
+		annotator := cover.NewAnnotator(covermode)
+		// Read source: the concatenation of all source files specified
+		buf := &bytes.Buffer{}
+		for _, progFile := range progFiles {
+			var f *os.File
+			if progFile == "-" {
+				f = os.Stdin
+			} else {
+				f, err = os.Open(progFile)
+				if err != nil {
+					errorExit(err)
+				}
+			}
+			b, err := ioutil.ReadAll(f)
+			if err != nil {
+				errorExit(err)
+			}
+			_, _ = buf.WriteString(annotator.AnnotateFile(progFile, b))
+			_ = f.Close()
+			// Append newline to file in case it doesn't end with one
+			_ = buf.WriteByte('\n')
+		}
+		buf.WriteString(annotator.RenderCoverageEnd())
+		src = buf.Bytes()
+
+		prog, err := parser.ParseProgram(src, parserConfig)
+		if err != nil {
+			panic(err)
+		}
+
+		//cover.annotate(prog, covermode) // TODO shall we adjust parsed prog as well, or maybe re-parse?
 		if coverprofile == "" {
 			fmt.Fprintln(os.Stdout, prog)
 			os.Exit(0)
 		}
-		err := prog.Compile() // recompile for annotations to take an effect
+		//err := prog.Compile() // recompile for annotations to take an effect
 		if err != nil {
 			errorExitf("%s", err)
 		}
