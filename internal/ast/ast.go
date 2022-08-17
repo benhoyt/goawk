@@ -379,6 +379,20 @@ type Stmt interface {
 	String() string
 }
 
+type SimpleStmt interface {
+	GetBoundary() Boundary
+}
+
+func (s *PrintStmt) GetBoundary() Boundary    { return s.Boundary }
+func (s *PrintfStmt) GetBoundary() Boundary   { return s.Boundary }
+func (s *ExprStmt) GetBoundary() Boundary     { return s.Boundary }
+func (s *BreakStmt) GetBoundary() Boundary    { return s.Boundary }
+func (s *ContinueStmt) GetBoundary() Boundary { return s.Boundary }
+func (s *NextStmt) GetBoundary() Boundary     { return s.Boundary }
+func (s *ExitStmt) GetBoundary() Boundary     { return s.Boundary }
+func (s *DeleteStmt) GetBoundary() Boundary   { return s.Boundary }
+func (s *ReturnStmt) GetBoundary() Boundary   { return s.Boundary }
+
 //type StmtPos interface {
 //	Start() Position
 //	End() Position
@@ -459,7 +473,7 @@ type ExprStmt struct {
 }
 
 func (s *ExprStmt) String() string {
-	return s.Expr.String() + " # " + s.Boundary.String()
+	return s.Expr.String() // + " # " + s.Boundary.String()
 }
 
 // IfStmt is an if or if-else statement.

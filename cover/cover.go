@@ -9,10 +9,11 @@ import (
 type annotator struct {
 	covermode     string
 	annotationIdx int
+	boundaries    map[int]ast.Boundary
 }
 
 func Annotate(prog *parser.Program, covermode string) {
-	annotator := &annotator{covermode, 0}
+	annotator := &annotator{covermode, 0, map[int]ast.Boundary{}}
 	prog.Begin = annotator.annotateStmtsList(prog.Begin)
 	prog.Actions = annotator.annotateActions(prog.Actions)
 	prog.End = annotator.annotateStmtsList(prog.End)
@@ -74,8 +75,10 @@ func (annotator *annotator) annotateStmts(stmts ast.Stmts) (res ast.Stmts) {
 			wasBlock = false
 		}
 		if wasBlock {
-			res = append(res, annotator.trackStatement())
-			res = append(res, simpleStatements...)
+			if len(simpleStatements) > 0 {
+				res = append(res, annotator.trackStatement(simpleStatements))
+				res = append(res, simpleStatements...)
+			}
 			res = append(res, stmt)
 			simpleStatements = []ast.Stmt{}
 		} else {
@@ -83,18 +86,22 @@ func (annotator *annotator) annotateStmts(stmts ast.Stmts) (res ast.Stmts) {
 		}
 	}
 	if len(simpleStatements) > 0 {
-		res = append(res, annotator.trackStatement())
+		res = append(res, annotator.trackStatement(simpleStatements))
 		res = append(res, simpleStatements...)
 	}
 	return
 	// TODO complete handling of if/else/else if
 }
-func (annotator *annotator) trackStatement() ast.Stmt {
+func (annotator *annotator) trackStatement(statements []ast.Stmt) ast.Stmt {
 	op := "=1"
 	if annotator.covermode == "count" {
 		op = "++"
 	}
 	annotator.annotationIdx++
+	annotator.boundaries[annotator.annotationIdx] = ast.Boundary{
+		Start: statements[0].(ast.SimpleStmt).GetBoundary().Start,
+		End:   statements[len(statements)-1].(ast.SimpleStmt).GetBoundary().End,
+	}
 	trackProg, err := parser.ParseProgram([]byte(fmt.Sprintf(`BEGIN { __COVER[%d]%s }`, annotator.annotationIdx, op)), nil)
 	if err != nil {
 		panic(err)
