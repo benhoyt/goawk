@@ -43,10 +43,6 @@ type ParserConfig struct {
 	// Map of named Go functions to allow calling from AWK. See docs
 	// on interp.Config.Funcs for details.
 	Funcs map[string]interface{}
-
-	// Disable resolving/compiling steps for the cases when we only need parsing
-	// to AST, like for coverage annotation.
-	OnlyParseToAST bool
 }
 
 // ParseProgram parses an entire AWK program, returning the *Program
@@ -67,7 +63,6 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	p := parser{lexer: lexer}
 	if config != nil {
 		p.debugTypes = config.DebugTypes
-		p.onlyParseToAST = config.OnlyParseToAST
 		p.debugWriter = config.DebugWriter
 		p.nativeFuncs = config.Funcs
 	}
@@ -77,10 +72,8 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	// Parse into abstract syntax tree
 	prog = p.program()
 
-	if !p.onlyParseToAST {
-		// Compile to virtual machine code
-		err = prog.Compile()
-	}
+	// Compile to virtual machine code
+	err = prog.Compile()
 
 	return prog, err
 }
@@ -104,7 +97,6 @@ type Program struct {
 	Scalars   map[string]int
 	Arrays    map[string]int
 	Compiled  *compiler.Program
-	Resolve   func() // TODO
 }
 
 // String returns an indented, pretty-printed version of the parsed
@@ -140,7 +132,7 @@ type parser struct {
 	prevTok Token    // previously lexed token
 	val     string   // string value of last token (or "")
 
-	startPos Position // TODO
+	startPos Position
 
 	// Parsing state
 	inAction  bool   // true if parsing an action (false in BEGIN or END)
@@ -160,9 +152,8 @@ type parser struct {
 	nativeFuncs map[string]interface{}
 
 	// Configuration and debugging
-	debugTypes     bool      // show variable types for debugging
-	onlyParseToAST bool      // Disable resolving/compiling steps for the cases when we only need parsing to AST, like for coverage annotation.
-	debugWriter    io.Writer // where the debug output goes
+	debugTypes  bool      // show variable types for debugging
+	debugWriter io.Writer // where the debug output goes
 }
 
 func (p *parser) markStartPos() {
@@ -210,13 +201,8 @@ func (p *parser) program() *Program {
 		p.optionalNewlines()
 	}
 
-	prog.Resolve = func() {
-		p.resolveUserCalls(prog)
-		p.resolveVars(prog)
-	}
-	if !p.onlyParseToAST {
-		prog.Resolve()
-	}
+	p.resolveUserCalls(prog)
+	p.resolveVars(prog)
 	p.checkMultiExprs()
 
 	return prog

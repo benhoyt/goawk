@@ -252,7 +252,6 @@ argsLoop:
 		DebugTypes:  debugTypes,
 		DebugWriter: os.Stderr,
 	}
-	//fmt.Println("before parse")
 	prog, err := parser.ParseProgram(src, parserConfig)
 	if err != nil {
 		if err, ok := err.(*parser.ParseError); ok {
@@ -264,33 +263,16 @@ argsLoop:
 		}
 		errorExitf("%s", err)
 	}
-	//fmt.Println("after parse")
 
 	if covermode != "" {
-		annotator := cover.NewAnnotator(covermode, parserConfig)
-		// Read source: the concatenation of all source files specified
-		for _, progFile := range progFiles {
-			var f *os.File
-			if progFile == "-" { // TODO probably we should not annotate code of "-"
-				f = os.Stdin // TODO are we able to read STDIN twice??
-			} else {
-				f, err = os.Open(progFile)
-				if err != nil {
-					errorExit(err)
-				}
-			}
-			b, err := ioutil.ReadAll(f)
-			if err != nil {
-				errorExit(err)
-			}
-			annotator.AddFile(progFile, b)
-			_ = f.Close()
-		}
-		prog = annotator.GetResultProgram()
-
+		cover.Annotate(prog, covermode) // TODO shall we adjust parsed prog as well, or maybe re-parse?
 		if coverprofile == "" {
 			fmt.Fprintln(os.Stdout, prog)
 			os.Exit(0)
+		}
+		err := prog.Compile() // recompile for annotations to take an effect
+		if err != nil {
+			errorExitf("%s", err)
 		}
 	}
 
