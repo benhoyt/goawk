@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/parser"
+	"strings"
 )
 
 type annotator struct {
@@ -18,6 +19,7 @@ func Annotate(prog *parser.Program, covermode string) {
 	prog.Actions = annotator.annotateActions(prog.Actions)
 	prog.End = annotator.annotateStmtsList(prog.End)
 	prog.Functions = annotator.annotateFunctions(prog.Functions)
+	annotator.addCoverageEnd(prog)
 }
 
 func (annotator *annotator) annotateActions(actions []ast.Action) (res []ast.Action) {
@@ -102,9 +104,29 @@ func (annotator *annotator) trackStatement(statements []ast.Stmt) ast.Stmt {
 		Start: statements[0].(ast.SimpleStmt).GetBoundary().Start,
 		End:   statements[len(statements)-1].(ast.SimpleStmt).GetBoundary().End,
 	}
-	trackProg, err := parser.ParseProgram([]byte(fmt.Sprintf(`BEGIN { __COVER[%d]%s }`, annotator.annotationIdx, op)), nil)
+	return parseProg(fmt.Sprintf(`BEGIN { __COVER[%d]%s }`, annotator.annotationIdx, op)).Begin[0][0]
+}
+
+func parseProg(code string) *parser.Program {
+	prog, err := parser.ParseProgram([]byte(code), nil)
 	if err != nil {
 		panic(err)
 	}
-	return trackProg.Begin[0][0]
+	return prog
+}
+
+func (annotator *annotator) addCoverageEnd(prog *parser.Program) {
+	var code strings.Builder
+	code.WriteString("END {")
+	for i := 1; i <= annotator.annotationIdx; i++ {
+		code.WriteString(fmt.Sprintf("__COVER_BOUNDARY[%d]=\"%s\"\n", i, renderCoverBoundary(annotator.boundaries[i])))
+	}
+	code.WriteString("}")
+	prog.End = append(prog.End, parseProg(code.String()).End...)
+}
+
+func renderCoverBoundary(boundary ast.Boundary) string {
+	return fmt.Sprintf("%d.%d,%d.%d",
+		boundary.Start.Line, boundary.Start.Column,
+		boundary.End.Line, boundary.End.Column)
 }
