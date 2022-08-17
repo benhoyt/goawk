@@ -269,11 +269,10 @@ argsLoop:
 	if covermode != "" {
 		annotator := cover.NewAnnotator(covermode)
 		// Read source: the concatenation of all source files specified
-		buf := &bytes.Buffer{}
 		for _, progFile := range progFiles {
 			var f *os.File
-			if progFile == "-" {
-				f = os.Stdin
+			if progFile == "-" { // TODO probably we should not annotate code of "-"
+				f = os.Stdin // TODO are we able to read STDIN twice??
 			} else {
 				f, err = os.Open(progFile)
 				if err != nil {
@@ -284,20 +283,11 @@ argsLoop:
 			if err != nil {
 				errorExit(err)
 			}
-			_, _ = buf.WriteString(annotator.AnnotateFile(progFile, b))
+			annotator.AddFile(progFile, b)
 			_ = f.Close()
-			// Append newline to file in case it doesn't end with one
-			_ = buf.WriteByte('\n')
 		}
-		buf.WriteString(annotator.RenderCoverageEnd())
-		src = buf.Bytes()
+		prog = annotator.GetResultProgram()
 
-		prog, err := parser.ParseProgram(src, parserConfig)
-		if err != nil {
-			panic(err)
-		}
-
-		//cover.annotate(prog, covermode) // TODO shall we adjust parsed prog as well, or maybe re-parse?
 		if coverprofile == "" {
 			fmt.Fprintln(os.Stdout, prog)
 			os.Exit(0)

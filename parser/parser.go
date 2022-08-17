@@ -104,6 +104,7 @@ type Program struct {
 	Scalars   map[string]int
 	Arrays    map[string]int
 	Compiled  *compiler.Program
+	Resolve   func() // TODO
 }
 
 // String returns an indented, pretty-printed version of the parsed
@@ -139,7 +140,7 @@ type parser struct {
 	prevTok Token    // previously lexed token
 	val     string   // string value of last token (or "")
 
-	startPos Position
+	startPos Position // TODO
 
 	// Parsing state
 	inAction  bool   // true if parsing an action (false in BEGIN or END)
@@ -209,9 +210,12 @@ func (p *parser) program() *Program {
 		p.optionalNewlines()
 	}
 
-	if !p.onlyParseToAST {
+	prog.Resolve = func() {
 		p.resolveUserCalls(prog)
 		p.resolveVars(prog)
+	}
+	if !p.onlyParseToAST {
+		prog.Resolve()
 	}
 	p.checkMultiExprs()
 

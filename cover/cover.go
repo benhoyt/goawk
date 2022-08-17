@@ -15,14 +15,15 @@ type annotator struct {
 	annotationIdx   int
 	boundaries      map[int]ast.Boundary
 	fileNames       map[int]string
+	program         *parser.Program
 }
 
 func NewAnnotator(covermode string) *annotator {
 	return &annotator{covermode, "", 0,
-		map[int]ast.Boundary{}, map[int]string{}}
+		map[int]ast.Boundary{}, map[int]string{}, parseProg("") /*TODO apply the parser config from caller*/}
 }
 
-func (annotator *annotator) AnnotateFile(filename string, code []byte) string {
+func (annotator *annotator) AddFile(filename string, code []byte) {
 	parserConfig := &parser.ParserConfig{
 		DebugWriter:    os.Stderr,
 		OnlyParseToAST: true,
@@ -33,7 +34,21 @@ func (annotator *annotator) AnnotateFile(filename string, code []byte) string {
 	}
 	annotator.currentFileName = filename
 	annotator.annotate(prog)
-	return prog.String()
+	annotator.appendProgram(prog)
+}
+
+func (annotator *annotator) appendProgram(prog *parser.Program) {
+	annotator.program.Begin = append(annotator.program.Begin, prog.Begin...)
+	annotator.program.End = append(annotator.program.End, prog.End...)
+	annotator.program.Actions = append(annotator.program.Actions, prog.Actions...)
+	annotator.program.Functions = append(annotator.program.Functions, prog.Functions...)
+}
+
+func (annotator *annotator) GetResultProgram() *parser.Program {
+	annotator.addCoverageEnd()
+	program := annotator.program
+	program.Resolve()
+	return program
 }
 
 func (annotator *annotator) annotate(prog *parser.Program) {
@@ -117,6 +132,7 @@ func (annotator *annotator) annotateStmts(stmts ast.Stmts) (res ast.Stmts) {
 	return
 	// TODO complete handling of if/else/else if
 }
+
 func (annotator *annotator) trackStatement(statements []ast.Stmt) ast.Stmt {
 	op := "=1"
 	if annotator.covermode == "count" {
@@ -139,15 +155,15 @@ func parseProg(code string) *parser.Program {
 	return prog
 }
 
-func (annotator *annotator) RenderCoverageEnd() string {
+func (annotator *annotator) addCoverageEnd() {
 	var code strings.Builder
-	code.WriteString("END {")
+	code.WriteString("END {\n")
 	for i := 1; i <= annotator.annotationIdx; i++ {
 		code.WriteString(fmt.Sprintf("__COVER_DATA[%d]=\"%s:%s\"\n",
 			i, annotator.fileNames[i], renderCoverBoundary(annotator.boundaries[i])))
 	}
 	code.WriteString("}")
-	return code.String()
+	annotator.program.End = append(annotator.program.End, parseProg(code.String()).End...)
 }
 
 func renderCoverBoundary(boundary ast.Boundary) string {
