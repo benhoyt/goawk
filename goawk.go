@@ -267,7 +267,7 @@ argsLoop:
 	//fmt.Println("after parse")
 
 	if covermode != "" {
-		annotator := cover.NewAnnotator(covermode)
+		annotator := cover.NewAnnotator(covermode, parserConfig)
 		// Read source: the concatenation of all source files specified
 		for _, progFile := range progFiles {
 			var f *os.File
@@ -291,10 +291,6 @@ argsLoop:
 		if coverprofile == "" {
 			fmt.Fprintln(os.Stdout, prog)
 			os.Exit(0)
-		}
-		//err := prog.Compile() // recompile for annotations to take an effect
-		if err != nil {
-			errorExitf("%s", err)
 		}
 	}
 

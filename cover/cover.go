@@ -18,17 +18,18 @@ type annotator struct {
 	program         *parser.Program
 }
 
-func NewAnnotator(covermode string) *annotator {
+func NewAnnotator(covermode string, parserConfig *parser.ParserConfig) *annotator {
 	return &annotator{covermode, "", 0,
-		map[int]ast.Boundary{}, map[int]string{}, parseProg("") /*TODO apply the parser config from caller*/}
+		map[int]ast.Boundary{}, map[int]string{}, parseProg("", parserConfig)}
+}
+
+var onlyParseParserConfig = &parser.ParserConfig{
+	DebugWriter:    os.Stderr,
+	OnlyParseToAST: true,
 }
 
 func (annotator *annotator) AddFile(filename string, code []byte) {
-	parserConfig := &parser.ParserConfig{
-		DebugWriter:    os.Stderr,
-		OnlyParseToAST: true,
-	}
-	prog, err := parser.ParseProgram(code, parserConfig)
+	prog, err := parser.ParseProgram(code, onlyParseParserConfig)
 	if err != nil {
 		panic(err) // at this point the code should be already valid
 	}
@@ -48,6 +49,10 @@ func (annotator *annotator) GetResultProgram() *parser.Program {
 	annotator.addCoverageEnd()
 	program := annotator.program
 	program.Resolve()
+	err := program.Compile()
+	if err != nil {
+		panic(err)
+	}
 	return program
 }
 
@@ -144,11 +149,11 @@ func (annotator *annotator) trackStatement(statements []ast.Stmt) ast.Stmt {
 		Start: statements[0].(ast.SimpleStmt).GetBoundary().Start,
 		End:   statements[len(statements)-1].(ast.SimpleStmt).GetBoundary().End,
 	}
-	return parseProg(fmt.Sprintf(`BEGIN { __COVER[%d]%s }`, annotator.annotationIdx, op)).Begin[0][0]
+	return parseProg(fmt.Sprintf(`BEGIN { __COVER[%d]%s }`, annotator.annotationIdx, op), nil).Begin[0][0]
 }
 
-func parseProg(code string) *parser.Program {
-	prog, err := parser.ParseProgram([]byte(code), nil)
+func parseProg(code string, parserConfig *parser.ParserConfig) *parser.Program {
+	prog, err := parser.ParseProgram([]byte(code), parserConfig)
 	if err != nil {
 		panic(err)
 	}
@@ -163,7 +168,7 @@ func (annotator *annotator) addCoverageEnd() {
 			i, annotator.fileNames[i], renderCoverBoundary(annotator.boundaries[i])))
 	}
 	code.WriteString("}")
-	annotator.program.End = append(annotator.program.End, parseProg(code.String()).End...)
+	annotator.program.End = append(annotator.program.End, parseProg(code.String(), nil).End...)
 }
 
 func renderCoverBoundary(boundary ast.Boundary) string {
