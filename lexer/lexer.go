@@ -279,12 +279,22 @@ func (l *Lexer) scan() (Position, Token, string) {
 		}
 	case '|':
 		tok = l.choice('|', PIPE, OR)
+	case FILENAME_QUOTE:
+		start := l.offset - 1
+		for l.ch != FILENAME_QUOTE {
+			l.next()
+		}
+		l.next()
+		tok = FILENAME
+		val = string(l.src[start : l.offset-2])
 	default:
 		tok = ILLEGAL
 		val = "unexpected char"
 	}
 	return pos, tok, val
 }
+
+const FILENAME_QUOTE = '\x01'
 
 // ScanRegex parses an AWK regular expression in /slash/ syntax. The
 // AWK grammar has somewhat special handling of regex tokens, so the

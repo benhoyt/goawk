@@ -107,6 +107,9 @@ const (
 	STRING
 	REGEX
 
+	// fake token used to capture file names for coverage report
+	FILENAME
+
 	LAST       = REGEX
 	FIRST_FUNC = F_ATAN2
 	LAST_FUNC  = F_TOUPPER

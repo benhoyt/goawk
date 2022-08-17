@@ -222,11 +222,17 @@ argsLoop:
 					errorExit(err)
 				}
 				stdinBytes = b
-				_, _ = buf.Write(b)
+				buf.Write(b)
 			} else {
 				f, err := os.Open(progFile)
 				if err != nil {
 					errorExit(err)
+				}
+				if covermode != "" {
+					// Inserting fake token that captures the file name we'll need it for coverage report.
+					buf.WriteByte(lexer.FILENAME_QUOTE)
+					buf.WriteString(progFile)
+					buf.WriteByte(lexer.FILENAME_QUOTE)
 				}
 				_, err = buf.ReadFrom(f)
 				if err != nil {
@@ -265,7 +271,9 @@ argsLoop:
 	}
 
 	if covermode != "" {
-		cover.Annotate(prog, covermode) // TODO shall we adjust parsed prog as well, or maybe re-parse?
+		// TODO shall we adjust parsed prog as well, or maybe re-parse?
+		// TODO or shell we patch prog.Scalars/Arrays?
+		cover.Annotate(prog, covermode)
 		if coverprofile == "" {
 			fmt.Fprintln(os.Stdout, prog)
 			os.Exit(0)

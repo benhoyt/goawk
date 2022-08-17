@@ -154,6 +154,9 @@ type parser struct {
 	// Configuration and debugging
 	debugTypes  bool      // show variable types for debugging
 	debugWriter io.Writer // where the debug output goes
+
+	// TODO
+	currentFileName string
 }
 
 func (p *parser) markStartPos() {
@@ -169,6 +172,9 @@ func (p *parser) program() *Program {
 	p.optionalNewlines()
 	for p.tok != EOF {
 		switch p.tok {
+		case FILENAME:
+			p.next()
+			p.currentFileName = p.val
 		case BEGIN:
 			p.next()
 			prog.Begin = append(prog.Begin, p.stmtsBrace())
