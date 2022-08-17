@@ -265,7 +265,7 @@ argsLoop:
 	}
 
 	if covermode != "" {
-		cover.Annotate(prog)
+		cover.Annotate(prog, covermode) // TODO shall we adjust parsed prog as well, or maybe re-parse?
 		if coverprofile == "" {
 			fmt.Fprintln(os.Stdout, prog)
 			os.Exit(0)
