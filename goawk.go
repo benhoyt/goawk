@@ -251,7 +251,7 @@ argsLoop:
 	parserConfig := &parser.ParserConfig{
 		DebugTypes:     debugTypes,
 		DebugWriter:    os.Stderr,
-		DisableResolve: true, // TODO test
+		OnlyParseToAST: true, // TODO remove me
 	}
 	//fmt.Println("before parse")
 	prog, err := parser.ParseProgram(src, parserConfig)

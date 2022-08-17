@@ -37,16 +37,16 @@ type ParserConfig struct {
 	// Enable printing of type information
 	DebugTypes bool
 
-	// disable resolving step for the cases when we only need parsing to AST
-	// TODO rename to OnlyAST (=exclude resolve, compile)
-	DisableResolve bool
-
 	// io.Writer to print type information on (for example, os.Stderr)
 	DebugWriter io.Writer
 
 	// Map of named Go functions to allow calling from AWK. See docs
 	// on interp.Config.Funcs for details.
 	Funcs map[string]interface{}
+
+	// Disable resolving/compiling steps for the cases when we only need parsing
+	// to AST, like for coverage annotation.
+	OnlyParseToAST bool
 }
 
 // ParseProgram parses an entire AWK program, returning the *Program
@@ -67,7 +67,7 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	p := parser{lexer: lexer}
 	if config != nil {
 		p.debugTypes = config.DebugTypes
-		p.disableResolve = config.DisableResolve
+		p.onlyParseToAST = config.OnlyParseToAST
 		p.debugWriter = config.DebugWriter
 		p.nativeFuncs = config.Funcs
 	}
@@ -77,7 +77,7 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	// Parse into abstract syntax tree
 	prog = p.program()
 
-	if !p.disableResolve {
+	if !p.onlyParseToAST {
 		// Compile to virtual machine code
 		err = prog.Compile()
 	}
@@ -160,7 +160,7 @@ type parser struct {
 
 	// Configuration and debugging
 	debugTypes     bool      // show variable types for debugging
-	disableResolve bool      // disable resolving step for the cases when we only need parsing to AST
+	onlyParseToAST bool      // Disable resolving/compiling steps for the cases when we only need parsing to AST, like for coverage annotation.
 	debugWriter    io.Writer // where the debug output goes
 }
 
@@ -209,7 +209,7 @@ func (p *parser) program() *Program {
 		p.optionalNewlines()
 	}
 
-	if !p.disableResolve {
+	if !p.onlyParseToAST {
 		p.resolveUserCalls(prog)
 		p.resolveVars(prog)
 	}
