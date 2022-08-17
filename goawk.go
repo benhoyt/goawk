@@ -249,9 +249,11 @@ argsLoop:
 
 	// Parse source code and setup interpreter
 	parserConfig := &parser.ParserConfig{
-		DebugTypes:  debugTypes,
-		DebugWriter: os.Stderr,
+		DebugTypes:     debugTypes,
+		DebugWriter:    os.Stderr,
+		DisableResolve: true, // TODO test
 	}
+	//fmt.Println("before parse")
 	prog, err := parser.ParseProgram(src, parserConfig)
 	if err != nil {
 		if err, ok := err.(*parser.ParseError); ok {
@@ -263,6 +265,7 @@ argsLoop:
 		}
 		errorExitf("%s", err)
 	}
+	//fmt.Println("after parse")
 
 	if covermode != "" {
 		cover.Annotate(prog, covermode) // TODO shall we adjust parsed prog as well, or maybe re-parse?

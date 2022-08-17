@@ -37,6 +37,10 @@ type ParserConfig struct {
 	// Enable printing of type information
 	DebugTypes bool
 
+	// disable resolving step for the cases when we only need parsing to AST
+	// TODO rename to OnlyAST (=exclude resolve, compile)
+	DisableResolve bool
+
 	// io.Writer to print type information on (for example, os.Stderr)
 	DebugWriter io.Writer
 
@@ -63,6 +67,7 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	p := parser{lexer: lexer}
 	if config != nil {
 		p.debugTypes = config.DebugTypes
+		p.disableResolve = config.DisableResolve
 		p.debugWriter = config.DebugWriter
 		p.nativeFuncs = config.Funcs
 	}
@@ -72,8 +77,10 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	// Parse into abstract syntax tree
 	prog = p.program()
 
-	// Compile to virtual machine code
-	err = prog.Compile()
+	if !p.disableResolve {
+		// Compile to virtual machine code
+		err = prog.Compile()
+	}
 
 	return prog, err
 }
@@ -152,8 +159,9 @@ type parser struct {
 	nativeFuncs map[string]interface{}
 
 	// Configuration and debugging
-	debugTypes  bool      // show variable types for debugging
-	debugWriter io.Writer // where the debug output goes
+	debugTypes     bool      // show variable types for debugging
+	disableResolve bool      // disable resolving step for the cases when we only need parsing to AST
+	debugWriter    io.Writer // where the debug output goes
 }
 
 func (p *parser) markStartPos() {
@@ -201,8 +209,10 @@ func (p *parser) program() *Program {
 		p.optionalNewlines()
 	}
 
-	p.resolveUserCalls(prog)
-	p.resolveVars(prog)
+	if !p.disableResolve {
+		p.resolveUserCalls(prog)
+		p.resolveVars(prog)
+	}
 	p.checkMultiExprs()
 
 	return prog
