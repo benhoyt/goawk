@@ -129,11 +129,15 @@ func (annotator *annotator) addCoverageEnd(prog *parser.Program) {
 		code.WriteString(fmt.Sprintf("__COVER_DATA[%d]=\"%s\"\n", i, renderCoverData(annotator.boundaries[i], annotator.stmtsCnt[i])))
 	}
 	//code.WriteString("print 111111111111\n")
+
 	code.WriteString(fmt.Sprintf("for(i=1;i<=%d;i++){\n", annotator.annotationIdx))
-	code.WriteString("  printf \"%s %s\\n\", __COVER_DATA[i], __COVER[i] >> \"" + annotator.coverpofile + "\"\n")
+	code.WriteString("  printf \"%s %s\\n\", __COVER_DATA[i], +__COVER[i] >> \"" + annotator.coverpofile + "\"\n")
 	code.WriteString("}\n")
+	code.WriteString("fflush(\"" + annotator.coverpofile + "\")\n")
+	code.WriteString("close(\"" + annotator.coverpofile + "\")\n")
+
 	code.WriteString("}\n")
-	prog.End = append(prog.End, parseProg(code.String()).End...)
+	//prog.End = append(prog.End, parseProg(code.String()).End...)
 }
 
 func renderCoverData(boundary ast.Boundary, stmtsCnt int) string {
