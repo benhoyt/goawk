@@ -163,7 +163,7 @@ func (p *parser) markStartPos() {
 	p.startPos = p.pos
 }
 func (p *parser) GetBoundary() ast.Boundary {
-	return ast.Boundary{p.startPos, p.pos /* TODO: should this be next? */}
+	return ast.Boundary{p.startPos, p.pos, p.currentFileName}
 }
 
 // Parse an entire AWK program.
@@ -173,8 +173,8 @@ func (p *parser) program() *Program {
 	for p.tok != EOF {
 		switch p.tok {
 		case FILENAME:
-			p.next()
 			p.currentFileName = p.val
+			p.next()
 		case BEGIN:
 			p.next()
 			prog.Begin = append(prog.Begin, p.stmtsBrace())

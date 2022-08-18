@@ -399,8 +399,9 @@ func (s *ReturnStmt) GetBoundary() Boundary   { return s.Boundary }
 //}
 
 type Boundary struct {
-	Start Position
-	End   Position
+	Start    Position
+	End      Position
+	FileName string
 }
 
 //func (pos *Boundary) Start() Position {
