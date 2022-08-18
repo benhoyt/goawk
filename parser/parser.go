@@ -394,19 +394,19 @@ func (p *parser) stmt() ast.Stmt {
 			panic(p.errorf("break must be inside a loop body"))
 		}
 		p.next()
-		s = &ast.BreakStmt{}
+		s = &ast.BreakStmt{p.GetBoundary()}
 	case CONTINUE:
 		if p.loopDepth == 0 {
 			panic(p.errorf("continue must be inside a loop body"))
 		}
 		p.next()
-		s = &ast.ContinueStmt{}
+		s = &ast.ContinueStmt{p.GetBoundary()}
 	case NEXT:
 		if !p.inAction && p.funcName == "" {
 			panic(p.errorf("next can't be inside BEGIN or END"))
 		}
 		p.next()
-		s = &ast.NextStmt{}
+		s = &ast.NextStmt{p.GetBoundary()}
 	case EXIT:
 		p.next()
 		var status ast.Expr
