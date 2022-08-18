@@ -11,10 +11,11 @@ type annotator struct {
 	covermode     string
 	annotationIdx int
 	boundaries    map[int]ast.Boundary
+	stmtsCnt      map[int]int
 }
 
 func Annotate(prog *parser.Program, covermode string) {
-	annotator := &annotator{covermode, 0, map[int]ast.Boundary{}}
+	annotator := &annotator{covermode, 0, map[int]ast.Boundary{}, map[int]int{}}
 	prog.Begin = annotator.annotateStmtsList(prog.Begin)
 	prog.Actions = annotator.annotateActions(prog.Actions)
 	prog.End = annotator.annotateStmtsList(prog.End)
@@ -107,6 +108,7 @@ func (annotator *annotator) trackStatement(statements []ast.Stmt) ast.Stmt {
 		End:      lastStmtBoundary.End,
 		FileName: firstStmtBoundary.FileName,
 	}
+	annotator.stmtsCnt[annotator.annotationIdx] = len(statements)
 	return parseProg(fmt.Sprintf(`BEGIN { __COVER[%d]%s }`, annotator.annotationIdx, op)).Begin[0][0]
 }
 
@@ -122,15 +124,17 @@ func (annotator *annotator) addCoverageEnd(prog *parser.Program) {
 	var code strings.Builder
 	code.WriteString("END {")
 	for i := 1; i <= annotator.annotationIdx; i++ {
-		code.WriteString(fmt.Sprintf("__COVER_DATA[%d]=\"%s\"\n", i, renderCoverBoundary(annotator.boundaries[i])))
+		code.WriteString(fmt.Sprintf("__COVER_DATA[%d]=\"%s\"\n", i, renderCoverData(annotator.boundaries[i], annotator.stmtsCnt[i])))
 	}
 	code.WriteString("}")
 	prog.End = append(prog.End, parseProg(code.String()).End...)
 }
 
-func renderCoverBoundary(boundary ast.Boundary) string {
-	return fmt.Sprintf("%s:%d.%d,%d.%d",
+func renderCoverData(boundary ast.Boundary, stmtsCnt int) string {
+	return fmt.Sprintf("%s:%d.%d,%d.%d %d",
 		boundary.FileName,
 		boundary.Start.Line, boundary.Start.Column,
-		boundary.End.Line, boundary.End.Column)
+		boundary.End.Line, boundary.End.Column,
+		stmtsCnt,
+	)
 }
