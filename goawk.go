@@ -28,6 +28,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"github.com/benhoyt/goawk/cover"
 	"io"
@@ -111,6 +112,12 @@ argsLoop:
 			i++
 			covermode = os.Args[i]
 			validateCovermode(covermode)
+		case "-coverprofile":
+			if i+1 >= len(os.Args) {
+				errorExitf("flag needs an argument: -coverprofile")
+			}
+			i++
+			coverprofile = os.Args[i]
 		case "-E":
 			if i+1 >= len(os.Args) {
 				errorExitf("flag needs an argument: -E")
@@ -200,6 +207,8 @@ argsLoop:
 			case strings.HasPrefix(arg, "-covermode="):
 				covermode = arg[11:]
 				validateCovermode(covermode)
+			case strings.HasPrefix(arg, "-coverprofile="):
+				coverprofile = arg[14:]
 			default:
 				errorExitf("flag provided but not defined: %s", arg)
 			}
@@ -271,9 +280,21 @@ argsLoop:
 	}
 
 	if covermode != "" {
+		if coverprofile != "" {
+			if _, err := os.Stat(coverprofile); errors.Is(err, os.ErrNotExist) { // TODO error if exists and is folder
+				err := os.WriteFile(coverprofile, []byte("mode: "+covermode+"\n"), 0644)
+				if err != nil {
+					errorExitf("unable to write to coverprofile: %s", coverprofile)
+				}
+			}
+			if coverprofile, err = filepath.Abs(coverprofile); err != nil {
+				errorExit(err)
+			}
+			//fmt.Println(coverprofile)
+		}
+		cover.Annotate(prog, covermode, coverprofile)
 		// TODO shall we adjust parsed prog as well, or maybe re-parse?
 		// TODO or shell we patch prog.Scalars/Arrays?
-		cover.Annotate(prog, covermode)
 		if coverprofile == "" {
 			fmt.Fprintln(os.Stdout, prog)
 			os.Exit(0)

@@ -9,13 +9,15 @@ import (
 
 type annotator struct {
 	covermode     string
+	coverpofile   string
 	annotationIdx int
 	boundaries    map[int]ast.Boundary
 	stmtsCnt      map[int]int
 }
 
-func Annotate(prog *parser.Program, covermode string) {
-	annotator := &annotator{covermode, 0, map[int]ast.Boundary{}, map[int]int{}}
+func Annotate(prog *parser.Program, covermode string, coverporofile string) {
+	annotator := &annotator{covermode, coverporofile,
+		0, map[int]ast.Boundary{}, map[int]int{}}
 	prog.Begin = annotator.annotateStmtsList(prog.Begin)
 	prog.Actions = annotator.annotateActions(prog.Actions)
 	prog.End = annotator.annotateStmtsList(prog.End)
@@ -126,7 +128,11 @@ func (annotator *annotator) addCoverageEnd(prog *parser.Program) {
 	for i := 1; i <= annotator.annotationIdx; i++ {
 		code.WriteString(fmt.Sprintf("__COVER_DATA[%d]=\"%s\"\n", i, renderCoverData(annotator.boundaries[i], annotator.stmtsCnt[i])))
 	}
-	code.WriteString("}")
+	//code.WriteString("print 111111111111\n")
+	code.WriteString(fmt.Sprintf("for(i=1;i<=%d;i++){\n", annotator.annotationIdx))
+	code.WriteString("  printf \"%s %s\\n\", __COVER_DATA[i], __COVER[i] >> \"" + annotator.coverpofile + "\"\n")
+	code.WriteString("}\n")
+	code.WriteString("}\n")
 	prog.End = append(prog.End, parseProg(code.String()).End...)
 }
 
