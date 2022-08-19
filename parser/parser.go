@@ -155,15 +155,16 @@ type parser struct {
 	debugTypes  bool      // show variable types for debugging
 	debugWriter io.Writer // where the debug output goes
 
-	// TODO
+	// TODO describe
 	currentFileName string
+	fileStartPos    Position
 }
 
 func (p *parser) markStartPos() {
 	p.startPos = p.pos
 }
 func (p *parser) GetBoundary() ast.Boundary {
-	return ast.Boundary{p.startPos, p.pos, p.currentFileName}
+	return ast.Boundary{p.startPos.RelativeTo(p.fileStartPos), p.pos.RelativeTo(p.fileStartPos), p.currentFileName}
 }
 
 // Parse an entire AWK program.
@@ -173,7 +174,7 @@ func (p *parser) program() *Program {
 	for p.tok != EOF {
 		switch p.tok {
 		case FILENAME:
-			p.currentFileName = p.val
+			p.markFileStarted()
 			p.next()
 		case BEGIN:
 			p.next()
@@ -212,6 +213,11 @@ func (p *parser) program() *Program {
 	p.checkMultiExprs()
 
 	return prog
+}
+
+func (p *parser) markFileStarted() {
+	p.currentFileName = p.val
+	p.fileStartPos = p.pos
 }
 
 // Parse a list of statements.

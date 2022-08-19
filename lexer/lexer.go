@@ -37,6 +37,13 @@ func (p Position) String() string {
 	return fmt.Sprintf("%d:%d", p.Line, p.Column)
 }
 
+func (p Position) RelativeTo(startPos Position) Position {
+	return Position{
+		Line:   p.Line - startPos.Line + 1,
+		Column: p.Column, // Here we should probably bother with coverage of the very first line of a file, but it rarely has real code
+	}
+}
+
 // NewLexer creates a new lexer that will tokenize the given source
 // code. See the module-level example for a working example.
 func NewLexer(src []byte) *Lexer {
