@@ -14,8 +14,8 @@ import (
 type varType int
 
 const (
-	ARR_COVER      = "__COVER" // TODO make parameterizable
-	ARR_COVER_DATA = "__COVER_DATA"
+	ARR_COVER      = "__COVER"      // TODO make parameterizable
+	ARR_COVER_DATA = "__COVER_DATA" // TODO remove
 )
 
 var (

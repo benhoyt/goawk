@@ -4,7 +4,9 @@ package interp
 
 import (
 	"context"
+	"github.com/benhoyt/goawk/internal/ast"
 	"math"
+	"strconv"
 
 	"github.com/benhoyt/goawk/parser"
 )
@@ -58,6 +60,19 @@ func (p *Interpreter) Execute(config *Config) (int, error) {
 	}
 
 	return p.interp.executeAll()
+}
+
+func (p *Interpreter) GetCoverData() (res map[int]int64) {
+	res = map[int]int64{}
+	array := p.interp.array(ast.ScopeGlobal, parser.IDX_COVER)
+	for k, v := range array {
+		ki, err := strconv.Atoi(k)
+		if err != nil {
+			panic(err)
+		}
+		res[ki] = int64(v.num())
+	}
+	return
 }
 
 func (p *interp) resetCore() {

@@ -4,20 +4,17 @@ import (
 	"fmt"
 	"github.com/benhoyt/goawk/internal/ast"
 	. "github.com/benhoyt/goawk/parser"
-	"strings"
 )
 
 type annotator struct {
 	covermode     string
-	coverpofile   string
 	annotationIdx int
 	boundaries    map[int]ast.Boundary
 	stmtsCnt      map[int]int
 }
 
-func Annotate(prog *Program, covermode string, coverporofile string) {
-	annotator := &annotator{covermode, coverporofile,
-		0, map[int]ast.Boundary{}, map[int]int{}}
+func Annotate(prog *Program, covermode string) {
+	annotator := &annotator{covermode, 0, map[int]ast.Boundary{}, map[int]int{}}
 	IDX_COVER = len(prog.Arrays)
 	IDX_COVER_DATA = IDX_COVER + 1
 	prog.Begin = annotator.annotateStmtsList(prog.Begin)
@@ -26,7 +23,12 @@ func Annotate(prog *Program, covermode string, coverporofile string) {
 	prog.Functions = annotator.annotateFunctions(prog.Functions)
 	prog.Arrays[ARR_COVER] = IDX_COVER
 	prog.Arrays[ARR_COVER_DATA] = IDX_COVER_DATA
-	annotator.addCoverageEnd(prog)
+	//annotator.addCoverageEnd(prog)
+}
+
+func AppendCoverData(coverprofile string, coverData map[int]int64) error {
+	fmt.Printf("Cover data: %v", coverData)
+	return nil
 }
 
 func (annotator *annotator) annotateActions(actions []ast.Action) (res []ast.Action) {
@@ -126,7 +128,7 @@ func parseProg(code string) *Program {
 	return prog
 }
 
-func (annotator *annotator) addCoverageEnd(prog *Program) {
+/*func (annotator *annotator) addCoverageEnd(prog *Program) {
 	var code strings.Builder
 	code.WriteString("END {")
 	for i := 1; i <= annotator.annotationIdx; i++ {
@@ -141,7 +143,7 @@ func (annotator *annotator) addCoverageEnd(prog *Program) {
 
 	code.WriteString("}\n")
 	prog.End = append(prog.End, parseProg(code.String()).End...)
-}
+}*/
 
 func renderCoverData(boundary ast.Boundary, stmtsCnt int) string {
 	return fmt.Sprintf("%s:%d.%d,%d.%d %d",

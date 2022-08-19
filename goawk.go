@@ -28,7 +28,6 @@ package main
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"github.com/benhoyt/goawk/cover"
 	"io"
@@ -279,19 +278,20 @@ argsLoop:
 		errorExitf("%s", err)
 	}
 
+	// TODO handle coverprofile set, covermode not set
 	if covermode != "" {
-		if coverprofile != "" {
-			if _, err := os.Stat(coverprofile); errors.Is(err, os.ErrNotExist) { // TODO error if exists and is folder
-				err := os.WriteFile(coverprofile, []byte("mode: "+covermode+"\n"), 0644)
-				if err != nil {
-					errorExitf("unable to write to coverprofile: %s", coverprofile)
-				}
-			}
-			if coverprofile, err = filepath.Abs(coverprofile); err != nil {
-				errorExit(err)
-			}
-		}
-		cover.Annotate(prog, covermode, coverprofile)
+		//if coverprofile != "" {
+		//	if _, err := os.Stat(coverprofile); errors.Is(err, os.ErrNotExist) { // TODO error if exists and is folder
+		//		err := os.WriteFile(coverprofile, []byte("mode: "+covermode+"\n"), 0644)
+		//		if err != nil {
+		//			errorExitf("unable to write to coverprofile: %s", coverprofile)
+		//		}
+		//	}
+		//	if coverprofile, err = filepath.Abs(coverprofile); err != nil {
+		//		errorExit(err)
+		//	}
+		//}
+		cover.Annotate(prog, covermode)
 		if coverprofile == "" {
 			fmt.Fprintln(os.Stdout, prog)
 			os.Exit(0)
@@ -364,9 +364,18 @@ argsLoop:
 	}
 
 	// Run the program!
-	status, err := interp.ExecProgram(prog, config)
+	interpreter, err := interp.New(prog)
+	status, err := interpreter.Execute(config)
+
 	if err != nil {
 		errorExit(err)
+	}
+
+	if coverprofile != "" {
+		err := cover.AppendCoverData(coverprofile, interpreter.GetCoverData())
+		if err != nil {
+			errorExit(err)
+		}
 	}
 
 	if cpuprofile != "" {
