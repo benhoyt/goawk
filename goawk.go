@@ -281,17 +281,6 @@ argsLoop:
 	annotator := cover.NewAnnotator(covermode)
 	// TODO handle coverprofile set, covermode not set
 	if covermode != "" {
-		//if coverprofile != "" {
-		//	if _, err := os.Stat(coverprofile); errors.Is(err, os.ErrNotExist) { // TODO error if exists and is folder
-		//		err := os.WriteFile(coverprofile, []byte("mode: "+covermode+"\n"), 0644)
-		//		if err != nil {
-		//			errorExitf("unable to write to coverprofile: %s", coverprofile)
-		//		}
-		//	}
-		//	if coverprofile, err = filepath.Abs(coverprofile); err != nil {
-		//		errorExit(err)
-		//	}
-		//}
 		annotator.Annotate(prog)
 		if coverprofile == "" {
 			fmt.Fprintln(os.Stdout, prog)
