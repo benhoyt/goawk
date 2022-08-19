@@ -21,13 +21,11 @@ func NewAnnotator(covermode string) *annotator {
 
 func (annotator *annotator) Annotate(prog *Program) {
 	IDX_COVER = len(prog.Arrays)
-	IDX_COVER_DATA = IDX_COVER + 1
 	prog.Begin = annotator.annotateStmtsList(prog.Begin)
 	prog.Actions = annotator.annotateActions(prog.Actions)
 	prog.End = annotator.annotateStmtsList(prog.End)
 	prog.Functions = annotator.annotateFunctions(prog.Functions)
 	prog.Arrays[ARR_COVER] = IDX_COVER
-	prog.Arrays[ARR_COVER_DATA] = IDX_COVER_DATA
 }
 
 func (annotator *annotator) AppendCoverData(coverprofile string, coverData map[int]int64) error {

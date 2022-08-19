@@ -14,13 +14,11 @@ import (
 type varType int
 
 const (
-	ARR_COVER      = "__COVER"      // TODO make parameterizable
-	ARR_COVER_DATA = "__COVER_DATA" // TODO remove
+	ARR_COVER = "__COVER" // TODO make parameterizable
 )
 
 var (
-	IDX_COVER      int
-	IDX_COVER_DATA int
+	IDX_COVER int
 )
 
 const (
@@ -425,12 +423,9 @@ func (p *parser) resolveVars(prog *Program) {
 		if info.typ == typeScalar {
 			panic(p.posErrorf(arrayRef.pos, "can't use scalar %q as array", arrayRef.ref.Name))
 		}
-		switch arrayRef.ref.Name {
-		case ARR_COVER:
+		if arrayRef.ref.Name == ARR_COVER {
 			arrayRef.ref.Index = IDX_COVER
-		case ARR_COVER_DATA:
-			arrayRef.ref.Index = IDX_COVER_DATA
-		default:
+		} else {
 			arrayRef.ref.Index = info.index
 		}
 	}
