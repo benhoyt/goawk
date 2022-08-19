@@ -132,8 +132,6 @@ type parser struct {
 	prevTok Token    // previously lexed token
 	val     string   // string value of last token (or "")
 
-	startPos Position
-
 	// Parsing state
 	inAction  bool   // true if parsing an action (false in BEGIN or END)
 	funcName  string // function name if parsing a func, else ""
@@ -155,9 +153,10 @@ type parser struct {
 	debugTypes  bool      // show variable types for debugging
 	debugWriter io.Writer // where the debug output goes
 
-	// TODO describe
-	currentFileName string
-	fileStartPos    Position
+	// Coverage report functionality
+	startPos        Position // The start position of each parser node that is a subject of the coverage analysis. Needed to capture the boundary data for such nodes.
+	currentFileName string   // The name of a file (passed via -f, multiple files can be provided) being processed by parser
+	fileStartPos    Position // We keep the position where each file content starts in the joined AWK source
 }
 
 func (p *parser) markStartPos() {

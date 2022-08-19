@@ -54,8 +54,8 @@ const (
   -v var=value      variable assignment (multiple allowed)
 
 Additional GoAWK arguments:
-  -covermode mode   TODO
-  -coverprofile file TODO
+  -covermode mode   set the coverage report mode (set/count)
+  -coverprofile file set the coverage report filename
   -cpuprofile file  write CPU profile to file
   -d                print parsed syntax tree to stderr (debug mode)
   -da               print virtual machine assembly instructions to stderr
