@@ -132,7 +132,6 @@ func (annotator *annotator) addCoverageEnd(prog *Program) {
 	for i := 1; i <= annotator.annotationIdx; i++ {
 		code.WriteString(fmt.Sprintf("%s[%d]=\"%s\"\n", ARR_COVER_DATA, i, renderCoverData(annotator.boundaries[i], annotator.stmtsCnt[i])))
 	}
-	//code.WriteString("print 111111111111\n")
 
 	code.WriteString(fmt.Sprintf("for(i=1;i<=%d;i++){\n", annotator.annotationIdx))
 	code.WriteString("  printf \"%s %s\\n\", " + ARR_COVER_DATA + "[i], +" + ARR_COVER + "[i] >> \"" + annotator.coverpofile + "\"\n")

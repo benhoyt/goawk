@@ -393,23 +393,12 @@ func (s *ExitStmt) GetBoundary() Boundary     { return s.Boundary }
 func (s *DeleteStmt) GetBoundary() Boundary   { return s.Boundary }
 func (s *ReturnStmt) GetBoundary() Boundary   { return s.Boundary }
 
-//type StmtPos interface {
-//	Start() Position
-//	End() Position
-//}
-
 type Boundary struct {
 	Start    Position
 	End      Position
 	FileName string
 }
 
-//func (pos *Boundary) Start() Position {
-//	return pos.StartPos
-//}
-//func (pos *Boundary) End() Position {
-//	return pos.EndPos
-//}
 func (pos *Boundary) String() string {
 	return pos.Start.String() + "-" + pos.End.String()
 }
@@ -440,7 +429,7 @@ type PrintStmt struct {
 }
 
 func (s *PrintStmt) String() string {
-	return printString("print", s.Args, s.Redirect, s.Dest) //+ " # " + s.Boundary.String()
+	return printString("print", s.Args, s.Redirect, s.Dest)
 }
 
 func printString(f string, args []Expr, redirect Token, dest Expr) string {
@@ -474,7 +463,7 @@ type ExprStmt struct {
 }
 
 func (s *ExprStmt) String() string {
-	return s.Expr.String() // + " # " + s.Boundary.String()
+	return s.Expr.String()
 }
 
 // IfStmt is an if or if-else statement.

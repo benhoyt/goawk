@@ -290,7 +290,6 @@ argsLoop:
 			if coverprofile, err = filepath.Abs(coverprofile); err != nil {
 				errorExit(err)
 			}
-			//fmt.Println(coverprofile)
 		}
 		cover.Annotate(prog, covermode, coverprofile)
 		if coverprofile == "" {
