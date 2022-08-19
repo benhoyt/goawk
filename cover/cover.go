@@ -1,20 +1,25 @@
 package cover
 
 import (
+	"errors"
 	"fmt"
 	"github.com/benhoyt/goawk/internal/ast"
 	. "github.com/benhoyt/goawk/parser"
+	"os"
 )
 
-type annotator struct {
+type Annotator struct {
 	covermode     string
 	annotationIdx int
 	boundaries    map[int]ast.Boundary
 	stmtsCnt      map[int]int
 }
 
-func Annotate(prog *Program, covermode string) {
-	annotator := &annotator{covermode, 0, map[int]ast.Boundary{}, map[int]int{}}
+func NewAnnotator(covermode string) *Annotator {
+	return &Annotator{covermode, 0, map[int]ast.Boundary{}, map[int]int{}}
+}
+
+func (annotator *Annotator) Annotate(prog *Program) {
 	IDX_COVER = len(prog.Arrays)
 	IDX_COVER_DATA = IDX_COVER + 1
 	prog.Begin = annotator.annotateStmtsList(prog.Begin)
@@ -23,15 +28,45 @@ func Annotate(prog *Program, covermode string) {
 	prog.Functions = annotator.annotateFunctions(prog.Functions)
 	prog.Arrays[ARR_COVER] = IDX_COVER
 	prog.Arrays[ARR_COVER_DATA] = IDX_COVER_DATA
-	//annotator.addCoverageEnd(prog)
 }
 
-func AppendCoverData(coverprofile string, coverData map[int]int64) error {
-	fmt.Printf("Cover data: %v", coverData)
+func (annotator *Annotator) AppendCoverData(coverprofile string, coverData map[int]int64) error {
+	//fmt.Printf("Cover data: %v", coverData)
+	//return nil
+
+	// 1a. If file doesn't exist - create and write covermode line
+	// 1b. If file exists - open it for writing in append mode
+	// 2.  Write all coverData lines
+
+	var f *os.File
+	if _, err := os.Stat(coverprofile); errors.Is(err, os.ErrNotExist) { // TODO error if exists and is folder
+		f, err = os.OpenFile(coverprofile, os.O_CREATE|os.O_APPEND, 0644)
+		if err != nil {
+			return err
+		}
+		_, err := f.WriteString("mode: " + annotator.covermode + "\n")
+		if err != nil {
+			return err
+		}
+	} else if err == nil {
+		// file exists
+		f, err = os.OpenFile(coverprofile, os.O_APPEND, 0644)
+		if err != nil {
+			return err
+		}
+	} else {
+		panic(err)
+	}
+	for i := 1; i <= annotator.annotationIdx; i++ {
+		_, err := f.WriteString(renderCoverDataLine(annotator.boundaries[i], annotator.stmtsCnt[i], coverData[i]))
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
-func (annotator *annotator) annotateActions(actions []ast.Action) (res []ast.Action) {
+func (annotator *Annotator) annotateActions(actions []ast.Action) (res []ast.Action) {
 	for _, action := range actions {
 		action.Stmts = annotator.annotateStmts(action.Stmts)
 		res = append(res, action)
@@ -39,7 +74,7 @@ func (annotator *annotator) annotateActions(actions []ast.Action) (res []ast.Act
 	return
 }
 
-func (annotator *annotator) annotateFunctions(functions []ast.Function) (res []ast.Function) {
+func (annotator *Annotator) annotateFunctions(functions []ast.Function) (res []ast.Function) {
 	for _, function := range functions {
 		function.Body = annotator.annotateStmts(function.Body)
 		res = append(res, function)
@@ -47,7 +82,7 @@ func (annotator *annotator) annotateFunctions(functions []ast.Function) (res []a
 	return
 }
 
-func (annotator *annotator) annotateStmtsList(stmtsList []ast.Stmts) (res []ast.Stmts) {
+func (annotator *Annotator) annotateStmtsList(stmtsList []ast.Stmts) (res []ast.Stmts) {
 	for _, stmts := range stmtsList {
 		res = append(res, annotator.annotateStmts(stmts))
 	}
@@ -64,7 +99,7 @@ func (annotator *annotator) annotateStmtsList(stmtsList []ast.Stmts) (res []ast.
 //	S3
 //
 // counters will be added before S1,S2,S3.
-func (annotator *annotator) annotateStmts(stmts ast.Stmts) (res ast.Stmts) {
+func (annotator *Annotator) annotateStmts(stmts ast.Stmts) (res ast.Stmts) {
 	var simpleStatements []ast.Stmt
 	for _, stmt := range stmts {
 		wasBlock := true
@@ -103,7 +138,7 @@ func (annotator *annotator) annotateStmts(stmts ast.Stmts) (res ast.Stmts) {
 	return
 	// TODO complete handling of if/else/else if
 }
-func (annotator *annotator) trackStatement(statements []ast.Stmt) ast.Stmt {
+func (annotator *Annotator) trackStatement(statements []ast.Stmt) ast.Stmt {
 	op := "=1"
 	if annotator.covermode == "count" {
 		op = "++"
@@ -128,28 +163,28 @@ func parseProg(code string) *Program {
 	return prog
 }
 
-/*func (annotator *annotator) addCoverageEnd(prog *Program) {
+/*func (Annotator *Annotator) addCoverageEnd(prog *Program) {
 	var code strings.Builder
 	code.WriteString("END {")
-	for i := 1; i <= annotator.annotationIdx; i++ {
-		code.WriteString(fmt.Sprintf("%s[%d]=\"%s\"\n", ARR_COVER_DATA, i, renderCoverData(annotator.boundaries[i], annotator.stmtsCnt[i])))
+	for i := 1; i <= Annotator.annotationIdx; i++ {
+		code.WriteString(fmt.Sprintf("%s[%d]=\"%s\"\n", ARR_COVER_DATA, i, renderCoverData(Annotator.boundaries[i], Annotator.stmtsCnt[i])))
 	}
 
-	code.WriteString(fmt.Sprintf("for(i=1;i<=%d;i++){\n", annotator.annotationIdx))
-	code.WriteString("  printf \"%s %s\\n\", " + ARR_COVER_DATA + "[i], +" + ARR_COVER + "[i] >> \"" + annotator.coverpofile + "\"\n")
+	code.WriteString(fmt.Sprintf("for(i=1;i<=%d;i++){\n", Annotator.annotationIdx))
+	code.WriteString("  printf \"%s %s\\n\", " + ARR_COVER_DATA + "[i], +" + ARR_COVER + "[i] >> \"" + Annotator.coverpofile + "\"\n")
 	code.WriteString("}\n")
-	//code.WriteString("fflush(\"" + annotator.coverpofile + "\")\n")
-	//code.WriteString("close(\"" + annotator.coverpofile + "\")\n")
+	//code.WriteString("fflush(\"" + Annotator.coverpofile + "\")\n")
+	//code.WriteString("close(\"" + Annotator.coverpofile + "\")\n")
 
 	code.WriteString("}\n")
 	prog.End = append(prog.End, parseProg(code.String()).End...)
 }*/
 
-func renderCoverData(boundary ast.Boundary, stmtsCnt int) string {
-	return fmt.Sprintf("%s:%d.%d,%d.%d %d",
+func renderCoverDataLine(boundary ast.Boundary, stmtsCnt int, cnt int64) string {
+	return fmt.Sprintf("%s:%d.%d,%d.%d %d %d",
 		boundary.FileName,
 		boundary.Start.Line, boundary.Start.Column,
 		boundary.End.Line, boundary.End.Column,
-		stmtsCnt,
+		stmtsCnt, cnt,
 	)
 }

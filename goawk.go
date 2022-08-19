@@ -278,6 +278,7 @@ argsLoop:
 		errorExitf("%s", err)
 	}
 
+	annotator := cover.NewAnnotator(covermode)
 	// TODO handle coverprofile set, covermode not set
 	if covermode != "" {
 		//if coverprofile != "" {
@@ -291,7 +292,7 @@ argsLoop:
 		//		errorExit(err)
 		//	}
 		//}
-		cover.Annotate(prog, covermode)
+		annotator.Annotate(prog)
 		if coverprofile == "" {
 			fmt.Fprintln(os.Stdout, prog)
 			os.Exit(0)
@@ -372,9 +373,9 @@ argsLoop:
 	}
 
 	if coverprofile != "" {
-		err := cover.AppendCoverData(coverprofile, interpreter.GetCoverData())
+		err := annotator.AppendCoverData(coverprofile, interpreter.GetCoverData())
 		if err != nil {
-			errorExit(err)
+			errorExitf("unable to save coverprofile: %v", err)
 		}
 	}
 
