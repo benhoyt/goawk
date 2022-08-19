@@ -18,6 +18,8 @@ type annotator struct {
 func Annotate(prog *Program, covermode string, coverporofile string) {
 	annotator := &annotator{covermode, coverporofile,
 		0, map[int]ast.Boundary{}, map[int]int{}}
+	IDX_COVER = len(prog.Arrays)
+	IDX_COVER_DATA = IDX_COVER + 1
 	prog.Begin = annotator.annotateStmtsList(prog.Begin)
 	prog.Actions = annotator.annotateActions(prog.Actions)
 	prog.End = annotator.annotateStmtsList(prog.End)

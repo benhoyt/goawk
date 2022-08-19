@@ -16,8 +16,11 @@ type varType int
 const (
 	ARR_COVER      = "__COVER" // TODO make parameterizable
 	ARR_COVER_DATA = "__COVER_DATA"
-	IDX_COVER      = -771
-	IDX_COVER_DATA = -772
+)
+
+var (
+	IDX_COVER      int
+	IDX_COVER_DATA int
 )
 
 const (
