@@ -14,6 +14,13 @@ import (
 type varType int
 
 const (
+	ARR_COVER      = "__COVER" // TODO make parameterizable
+	ARR_COVER_DATA = "__COVER_DATA"
+	IDX_COVER      = -771
+	IDX_COVER_DATA = -772
+)
+
+const (
 	typeUnknown varType = iota
 	typeScalar
 	typeArray
@@ -415,7 +422,14 @@ func (p *parser) resolveVars(prog *Program) {
 		if info.typ == typeScalar {
 			panic(p.posErrorf(arrayRef.pos, "can't use scalar %q as array", arrayRef.ref.Name))
 		}
-		arrayRef.ref.Index = info.index
+		switch arrayRef.ref.Name {
+		case ARR_COVER:
+			arrayRef.ref.Index = IDX_COVER
+		case ARR_COVER_DATA:
+			arrayRef.ref.Index = IDX_COVER_DATA
+		default:
+			arrayRef.ref.Index = info.index
+		}
 	}
 }
 

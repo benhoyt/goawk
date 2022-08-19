@@ -3,7 +3,7 @@ package cover
 import (
 	"fmt"
 	"github.com/benhoyt/goawk/internal/ast"
-	"github.com/benhoyt/goawk/parser"
+	. "github.com/benhoyt/goawk/parser"
 	"strings"
 )
 
@@ -15,13 +15,15 @@ type annotator struct {
 	stmtsCnt      map[int]int
 }
 
-func Annotate(prog *parser.Program, covermode string, coverporofile string) {
+func Annotate(prog *Program, covermode string, coverporofile string) {
 	annotator := &annotator{covermode, coverporofile,
 		0, map[int]ast.Boundary{}, map[int]int{}}
 	prog.Begin = annotator.annotateStmtsList(prog.Begin)
 	prog.Actions = annotator.annotateActions(prog.Actions)
 	prog.End = annotator.annotateStmtsList(prog.End)
 	prog.Functions = annotator.annotateFunctions(prog.Functions)
+	prog.Arrays[ARR_COVER] = IDX_COVER
+	prog.Arrays[ARR_COVER_DATA] = IDX_COVER_DATA
 	annotator.addCoverageEnd(prog)
 }
 
@@ -111,33 +113,33 @@ func (annotator *annotator) trackStatement(statements []ast.Stmt) ast.Stmt {
 		FileName: firstStmtBoundary.FileName,
 	}
 	annotator.stmtsCnt[annotator.annotationIdx] = len(statements)
-	return parseProg(fmt.Sprintf(`BEGIN { __COVER[%d]%s }`, annotator.annotationIdx, op)).Begin[0][0]
+	return parseProg(fmt.Sprintf(`BEGIN { %s[%d]%s }`, ARR_COVER, annotator.annotationIdx, op)).Begin[0][0]
 }
 
-func parseProg(code string) *parser.Program {
-	prog, err := parser.ParseProgram([]byte(code), nil)
+func parseProg(code string) *Program {
+	prog, err := ParseProgram([]byte(code), nil)
 	if err != nil {
 		panic(err)
 	}
 	return prog
 }
 
-func (annotator *annotator) addCoverageEnd(prog *parser.Program) {
+func (annotator *annotator) addCoverageEnd(prog *Program) {
 	var code strings.Builder
 	code.WriteString("END {")
 	for i := 1; i <= annotator.annotationIdx; i++ {
-		code.WriteString(fmt.Sprintf("__COVER_DATA[%d]=\"%s\"\n", i, renderCoverData(annotator.boundaries[i], annotator.stmtsCnt[i])))
+		code.WriteString(fmt.Sprintf("%s[%d]=\"%s\"\n", ARR_COVER_DATA, i, renderCoverData(annotator.boundaries[i], annotator.stmtsCnt[i])))
 	}
 	//code.WriteString("print 111111111111\n")
 
 	code.WriteString(fmt.Sprintf("for(i=1;i<=%d;i++){\n", annotator.annotationIdx))
-	code.WriteString("  printf \"%s %s\\n\", __COVER_DATA[i], +__COVER[i] >> \"" + annotator.coverpofile + "\"\n")
+	code.WriteString("  printf \"%s %s\\n\", " + ARR_COVER_DATA + "[i], +" + ARR_COVER + "[i] >> \"" + annotator.coverpofile + "\"\n")
 	code.WriteString("}\n")
-	code.WriteString("fflush(\"" + annotator.coverpofile + "\")\n")
-	code.WriteString("close(\"" + annotator.coverpofile + "\")\n")
+	//code.WriteString("fflush(\"" + annotator.coverpofile + "\")\n")
+	//code.WriteString("close(\"" + annotator.coverpofile + "\")\n")
 
 	code.WriteString("}\n")
-	//prog.End = append(prog.End, parseProg(code.String()).End...)
+	prog.End = append(prog.End, parseProg(code.String()).End...)
 }
 
 func renderCoverData(boundary ast.Boundary, stmtsCnt int) string {

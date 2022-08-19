@@ -293,6 +293,9 @@ argsLoop:
 			//fmt.Println(coverprofile)
 		}
 		cover.Annotate(prog, covermode, coverprofile)
+		//i := len(prog.Arrays)
+		//prog.Arrays["__COVER"] = i
+		//prog.Arrays["__COVER_DATA"] = i + 1
 		// TODO shall we adjust parsed prog as well, or maybe re-parse?
 		// TODO or shell we patch prog.Scalars/Arrays?
 		if coverprofile == "" {
