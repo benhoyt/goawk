@@ -1,0 +1,3 @@
+mode: count
+test.awk:2.3,6.9 5 1
+test.awk:9.3,9.16 1 3

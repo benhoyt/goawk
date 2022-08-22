@@ -760,37 +760,66 @@ func TestMandelbrot(t *testing.T) {
 }
 
 func TestCover(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		// we use *nix-specific tools for this test
+		return
+	}
+
+	tests := []struct {
+		name                string
+		mode                string
+		runs                [][]string
+		expectedCoverReport string
+	}{
+		{"SingleFile,set", "set", [][]string{{"test.awk"}}, "test_set.cov"},
+		{"SingleFile,count", "count", [][]string{{"test.awk"}}, "test_count.cov"},
+	}
+
 	coverprofile := "/tmp/testCov.txt"
 	coverprofileFixed := "/tmp/testCov_fixed.txt"
 
-	// make sure file doesn't exist
-	if _, err := os.Stat(coverprofile); os.IsNotExist(err) {
+	for _, test := range tests {
+		t.Run("TestCover"+test.name, func(t *testing.T) {
 
-	} else if err == nil {
-		// file exists
-		err := os.Remove(coverprofile)
-		if err != nil {
-			panic(err)
-		}
-	} else {
-		panic(err)
-	}
-	_, stderr, err := runGoAWK([]string{"-f", "testdata/cover/test.awk", "-coverprofile", coverprofile}, "")
-	if err != nil || stderr != "" {
-		t.Fatalf("expected no error, got %v (%q)", err, stderr)
-	}
-	{
-		err := exec.Command("awk", "-v", "OUT="+coverprofileFixed,
-			"-f", "testdata/cover/_fixForCompareWithExpected.awk", coverprofile).Run()
-		if err != nil {
-			panic(err)
-		}
-	}
-	{
-		expected := "testdata/cover/test.txt"
-		diff, err := exec.Command("diff", coverprofileFixed, expected).CombinedOutput()
-		if err != nil {
-			t.Fatalf("Coverage (%s) differs from expected (%s):\n%s\n", coverprofile, expected, string(diff))
-		}
+			// make sure file doesn't exist
+			if _, err := os.Stat(coverprofile); os.IsNotExist(err) {
+
+			} else if err == nil {
+				// file exists
+				err := os.Remove(coverprofile)
+				if err != nil {
+					panic(err)
+				}
+			} else {
+				panic(err)
+			}
+			for _, run := range test.runs {
+				var args []string
+				for _, file := range run {
+					args = append(args, "-f", "testdata/cover/"+file)
+				}
+				args = append(args, "-coverprofile", coverprofile)
+				args = append(args, "-covermode", test.mode)
+				_, stderr, err := runGoAWK(args, "")
+				if err != nil || stderr != "" {
+					t.Fatalf("expected no error, got %v (%q)", err, stderr)
+				}
+			}
+
+			{
+				err := exec.Command("awk", "-v", "OUT="+coverprofileFixed,
+					"-f", "testdata/cover/_fixForCompareWithExpected.awk", coverprofile).Run()
+				if err != nil {
+					panic(err)
+				}
+			}
+			{
+				expected := "testdata/cover/" + test.expectedCoverReport
+				diff, err := exec.Command("diff", coverprofileFixed, expected).CombinedOutput()
+				if err != nil {
+					t.Fatalf("Coverage (%s) differs from expected (%s):\n%s\n", coverprofile, expected, string(diff))
+				}
+			}
+		})
 	}
 }
