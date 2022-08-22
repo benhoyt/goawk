@@ -774,6 +774,7 @@ func TestCover(t *testing.T) {
 		{"SingleFile,set", "set", [][]string{{"a1.awk"}}, "test_set.cov"},
 		{"SingleFile,count", "count", [][]string{{"a1.awk"}}, "test_count.cov"},
 		{"TwoFiles,set", "set", [][]string{{"a1.awk", "a2.awk"}}, "test_a1a2_set.cov"},
+		{"TwoFiles,count", "count", [][]string{{"a1.awk", "a2.awk"}}, "test_a1a2_count.cov"},
 	}
 
 	coverprofile := "/tmp/testCov.txt"
