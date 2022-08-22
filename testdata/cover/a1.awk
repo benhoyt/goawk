@@ -8,4 +8,4 @@ BEGIN {
 function callF(){
   print "world"
 }
-END{}
+END{ print "END" }
