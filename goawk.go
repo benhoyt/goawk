@@ -213,6 +213,9 @@ argsLoop:
 			}
 		}
 	}
+	if coverprofile != "" && covermode == "" {
+		covermode = "set"
+	}
 
 	// Any remaining args are program and input files
 	args := os.Args[i:]
@@ -230,7 +233,7 @@ argsLoop:
 					errorExit(err)
 				}
 				stdinBytes = b
-				buf.Write(b)
+				_, _ = buf.Write(b)
 			} else {
 				f, err := os.Open(progFile)
 				if err != nil {
@@ -283,7 +286,6 @@ argsLoop:
 	}
 
 	annotator := cover.NewAnnotator(covermode)
-	// TODO handle coverprofile set, covermode not set
 	if covermode != "" {
 		annotator.Annotate(prog)
 		if coverprofile == "" {
