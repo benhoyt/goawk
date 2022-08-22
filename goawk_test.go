@@ -760,9 +760,10 @@ func TestMandelbrot(t *testing.T) {
 }
 
 func TestCover(t *testing.T) {
-	// make sure file doesn't exist
-
 	coverprofile := "/tmp/testCov.txt"
+	coverprofileFixed := "/tmp/testCov_fixed.txt"
+
+	// make sure file doesn't exist
 	if _, err := os.Stat(coverprofile); os.IsNotExist(err) {
 
 	} else if err == nil {
@@ -778,9 +779,18 @@ func TestCover(t *testing.T) {
 	if err != nil || stderr != "" {
 		t.Fatalf("expected no error, got %v (%q)", err, stderr)
 	}
-	coverData, err := os.ReadFile(coverprofile)
-	if err != nil {
-		panic(err)
+	{
+		err := exec.Command("awk", "-v", "OUT="+coverprofileFixed,
+			"-f", "testdata/cover/_fixForCompareWithExpected.awk", coverprofile).Run()
+		if err != nil {
+			panic(err)
+		}
 	}
-	fmt.Println(string(coverData))
+	{
+		expected := "testdata/cover/test.txt"
+		diff, err := exec.Command("diff", coverprofileFixed, expected).CombinedOutput()
+		if err != nil {
+			t.Fatalf("Coverage (%s) differs from expected (%s):\n%s\n", coverprofile, expected, string(diff))
+		}
+	}
 }
