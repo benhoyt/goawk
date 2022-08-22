@@ -4,5 +4,5 @@ BEGIN {
     print "world"
   }
   print "end"
-  for (i=0; i<3; i++) print i
+  for (i=0; i<7; i++) print i
 }
