@@ -758,3 +758,29 @@ func TestMandelbrot(t *testing.T) {
 		t.Fatalf("expected:\n%s\ngot:\n%s", expected, stdout)
 	}
 }
+
+func TestCover(t *testing.T) {
+	// make sure file doesn't exist
+
+	coverprofile := "/tmp/testCov.txt"
+	if _, err := os.Stat(coverprofile); os.IsNotExist(err) {
+
+	} else if err == nil {
+		// file exists
+		err := os.Remove(coverprofile)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		panic(err)
+	}
+	_, stderr, err := runGoAWK([]string{"-f", "testdata/cover/test.awk", "-coverprofile", coverprofile}, "")
+	if err != nil || stderr != "" {
+		t.Fatalf("expected no error, got %v (%q)", err, stderr)
+	}
+	coverData, err := os.ReadFile(coverprofile)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(coverData))
+}

@@ -1,7 +1,6 @@
 package cover
 
 import (
-	"errors"
 	"fmt"
 	"github.com/benhoyt/goawk/internal/ast"
 	. "github.com/benhoyt/goawk/parser"
@@ -34,7 +33,7 @@ func (annotator *annotator) AppendCoverData(coverprofile string, coverData map[i
 	// 2.  Write all coverData lines
 
 	var f *os.File
-	if _, err := os.Stat(coverprofile); errors.Is(err, os.ErrNotExist) { // TODO error if exists and is folder
+	if _, err := os.Stat(coverprofile); os.IsNotExist(err) { // TODO error if exists and is folder
 		f, err = os.OpenFile(coverprofile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 		if err != nil {
 			return err
