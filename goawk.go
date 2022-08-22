@@ -239,7 +239,11 @@ argsLoop:
 				if covermode != "" {
 					// Inserting fake token that captures the file name we'll need it for coverage report.
 					buf.WriteByte(lexer.FILENAME_QUOTE)
-					buf.WriteString(progFile)
+					absPath, err := filepath.Abs(progFile)
+					if err != nil {
+						errorExit(err)
+					}
+					buf.WriteString(absPath)
 					buf.WriteByte(lexer.FILENAME_QUOTE)
 				}
 				_, err = buf.ReadFrom(f)
