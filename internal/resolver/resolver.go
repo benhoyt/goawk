@@ -18,8 +18,9 @@ type resolver struct {
 	multiExprs map[*ast.MultiExpr]lexer.Position // tracks comma-separated expressions
 
 	// Function tracking
-	functions map[string]int // map of function name to index
-	userCalls []userCall     // record calls so we can resolve them later
+	functions   map[string]int // map of function name to index
+	userCalls   []userCall     // record calls so we can resolve them later
+	nativeFuncs map[string]interface{}
 }
 
 type ResolveResult struct {
@@ -37,5 +38,6 @@ type ResolverConfig struct {
 }
 
 func Resolve(prog *Program, config *ResolverConfig) (resolveResult *ResolveResult, err error) {
-
+	r := &resolver{}
+	r.initResolve(config)
 }

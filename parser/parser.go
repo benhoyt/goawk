@@ -62,16 +62,22 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	}()
 	lexer := NewLexer(src)
 	p := parser{lexer: lexer}
+	resolverConfig := &resolver.ResolverConfig{}
 	if config != nil {
 		p.debugTypes = config.DebugTypes
 		p.debugWriter = config.DebugWriter
-		p.nativeFuncs = config.Funcs
+		resolverConfig.NativeFuncs = config.Funcs
 	}
-	p.initResolve()
+	//p.initResolve()
 	p.next() // initialize p.tok
 
 	// Parse into abstract syntax tree
 	prog = p.program()
+
+	result, err := resolver.Resolve(prog.toResolverProgram(), resolverConfig)
+	if err != nil {
+		return nil, err
+	}
 
 	// Compile to virtual machine code
 	prog.Compiled, err = compiler.Compile(prog.toAST())

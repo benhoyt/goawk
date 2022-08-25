@@ -72,7 +72,8 @@ type arrayRef struct {
 }
 
 // Initialize the resolver
-func (r *resolver) initResolve() {
+func (r *resolver) initResolve(config *ResolverConfig) {
+	r.nativeFuncs = config.NativeFuncs
 	r.varTypes = make(map[string]map[string]typeInfo)
 	r.varTypes[""] = make(map[string]typeInfo) // globals
 	r.functions = make(map[string]int)
