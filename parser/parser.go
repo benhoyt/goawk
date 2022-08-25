@@ -75,12 +75,14 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	astProg := p.program()
 
 	resolvedProgram, err := resolver.Resolve(astProg, resolverConfig)
+	prog.Program = *resolvedProgram
 	if err != nil {
 		return nil, err
 	}
 
 	// Compile to virtual machine code
 	prog.Compiled, err = compiler.Compile(resolvedProgram)
+
 	return prog, err
 }
 
@@ -97,23 +99,13 @@ type Program struct {
 // String returns an indented, pretty-printed version of the parsed
 // program.
 func (p *Program) String() string {
-	return p.toAST().String()
+	return p.Program.Program.String()
 }
 
 // Disassemble writes a human-readable form of the program's virtual machine
 // instructions to writer.
 func (p *Program) Disassemble(writer io.Writer) error {
 	return p.Compiled.Disassemble(writer)
-}
-
-// toAST converts the *Program to an *ast.Program.
-func (p *Program) toAST() *ast.Program {
-	return &ast.Program{
-		Begin:     p.Begin,
-		Actions:   p.Actions,
-		End:       p.End,
-		Functions: p.Functions,
-	}
 }
 
 // Parser state

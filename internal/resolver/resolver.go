@@ -37,6 +37,7 @@ type Program struct {
 }
 
 func Resolve(prog *ast.Program, config *ResolverConfig) (resolvedProg *Program, err error) {
+	// TODO errors handling via panic recover
 	r := &resolver{}
 	resolvedProg = &Program{
 		Program: *prog,
