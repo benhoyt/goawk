@@ -75,8 +75,15 @@ func (a *Action) String() string {
 	return strings.Join(patterns, ", ") + sep + stmtsStr
 }
 
+type Node interface {
+	// TODO positions below
+	//Pos() token.Pos // position of first character belonging to the node
+	//End() token.Pos // position of first character immediately after the node
+}
+
 // Expr is the abstract syntax tree for any AWK expression.
 type Expr interface {
+	Node
 	expr()
 	String() string
 }
@@ -377,6 +384,7 @@ func IsLValue(expr Expr) bool {
 
 // Stmt is the abstract syntax tree for any AWK statement.
 type Stmt interface {
+	Node
 	stmt()
 	String() string
 }
