@@ -148,6 +148,27 @@ func Walk(v Visitor, node Node) {
 	case *BlockStmt:
 		walkStmtList(v, n.Body)
 
+	case Program:
+		for _, stmts := range n.Begin {
+			walkStmtList(v, stmts)
+		}
+		for _, action := range n.Actions {
+			Walk(v, action)
+		}
+		for _, function := range n.Functions {
+			Walk(v, function)
+		}
+		for _, stmts := range n.End {
+			walkStmtList(v, stmts)
+		}
+
+	case Action:
+		walkExprList(v, n.Pattern)
+		walkStmtList(v, n.Stmts)
+
+	case Function:
+		walkStmtList(v, n.Body)
+
 	default:
 		panic(fmt.Sprintf("ast.Walk: unexpected node type %T", n))
 	}
