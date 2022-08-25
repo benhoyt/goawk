@@ -2,6 +2,7 @@ package resolver
 
 import (
 	"github.com/benhoyt/goawk/internal/ast"
+	"github.com/benhoyt/goawk/internal/compiler"
 	"github.com/benhoyt/goawk/lexer"
 )
 
@@ -25,27 +26,24 @@ type resolver struct {
 	funcIdx int
 }
 
-type ResolveResult struct {
-}
-
-type Program struct {
-	ast.Program
-}
-
 type ResolverConfig struct {
 	NativeFuncs map[string]interface{}
 }
 
-func Resolve(prog *Program, config *ResolverConfig) (resolveResult *ResolveResult, err error) {
+func Resolve(prog *ast.Program, config *ResolverConfig) (resolvedProg *compiler.Program, err error) {
 	r := &resolver{}
+	resolvedProg = &compiler.Program{
+		Program: *prog,
+	}
 	r.initResolve(config)
 
 	ast.Walk(r, prog)
 
 	r.resolveUserCalls(prog)
-	r.resolveVars(prog)
+	r.resolveVars(resolvedProg)
 	//r.checkMultiExprs()
 
+	return resolvedProg, nil
 }
 
 func (r *resolver) Visit(node ast.Node) ast.Visitor {
@@ -76,7 +74,7 @@ func (r *resolver) Visit(node ast.Node) ast.Visitor {
 	case *ast.UserCallExpr:
 		name := n.Name
 		if r.locals[name] {
-			panic(p.errorf("can't call local variable %q as function", name))
+			panic(r.errorf("can't call local variable %q as function", name))
 		}
 		for i, arg := range n.Args {
 			r.processUserCallArg(name, arg, i)

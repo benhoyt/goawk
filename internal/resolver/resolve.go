@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"fmt"
+	"github.com/benhoyt/goawk/internal/compiler"
 	"reflect"
 	"sort"
 
@@ -115,7 +116,7 @@ func (r *resolver) recordUserCall(call *ast.UserCallExpr, pos Position) {
 // After parsing, resolve all user calls to their indexes. Also
 // ensures functions called have actually been defined, and that
 // they're not being called with too many arguments.
-func (r *resolver) resolveUserCalls(prog *Program) {
+func (r *resolver) resolveUserCalls(prog *ast.Program) {
 	// Number the native funcs (order by name to get consistent order)
 	nativeNames := make([]string, 0, len(r.nativeFuncs))
 	for name := range r.nativeFuncs {
@@ -211,7 +212,7 @@ func (r *resolver) arrayRef(name string, pos Position) *ast.ArrayExpr {
 }
 
 // Print variable type information (for debugging) on p.debugWriter
-func (r *resolver) printVarTypes(prog *Program) {
+func (r *resolver) printVarTypes(prog *compiler.Program) {
 	fmt.Fprintf(r.debugWriter, "scalars: %v\n", prog.Scalars)
 	fmt.Fprintf(r.debugWriter, "arrays: %v\n", prog.Arrays)
 	funcNames := []string{}
@@ -239,7 +240,7 @@ func (r *resolver) printVarTypes(prog *Program) {
 
 // Resolve unknown variables types and generate variable indexes and
 // name-to-index mappings for interpreter
-func (r *resolver) resolveVars(prog *Program) {
+func (r *resolver) resolveVars(prog *compiler.Program) {
 	// First go through all unknown types and try to determine the
 	// type from the parameter type in that function definition.
 	// Iterate through functions in topological order, for example
@@ -424,7 +425,7 @@ func (r *resolver) resolveVars(prog *Program) {
 
 // If name refers to a local (in function inFunc), return that
 // function's name, otherwise return "" (meaning global).
-func (r *resolver) getVarFuncName(prog *Program, name, inFunc string) string {
+func (r *resolver) getVarFuncName(prog *compiler.Program, name, inFunc string) string {
 	if inFunc == "" {
 		return ""
 	}

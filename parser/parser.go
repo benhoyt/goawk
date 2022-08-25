@@ -72,15 +72,15 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	p.next() // initialize p.tok
 
 	// Parse into abstract syntax tree
-	prog = p.program()
+	astProg := p.program()
 
-	result, err := resolver.Resolve(prog.asResolverSource(), resolverConfig)
+	resolvedProgram, err := resolver.Resolve(astProg, resolverConfig)
 	if err != nil {
 		return nil, err
 	}
 
 	// Compile to virtual machine code
-	prog.Compiled, err = compiler.Compile(prog.asCompilerSource())
+	prog.Compiled, err = compiler.Compile(resolvedProgram)
 	return prog, err
 }
 
@@ -121,22 +121,6 @@ func (p *Program) toAST() *ast.Program {
 	}
 }
 
-// asCompilerSource converts the *Program to an *compiler.Program.
-func (p *Program) asCompilerSource() *compiler.Program {
-	return &compiler.Program{
-		Program: *p.toAST(),
-		Scalars: p.Scalars,
-		Arrays:  p.Arrays,
-	}
-}
-
-// asResolverSource converts the *Program to an *resolver.Program.
-func (p *Program) asResolverSource() *resolver.Program {
-	return &resolver.Program{
-		Program: *p.toAST(),
-	}
-}
-
 // Parser state
 type parser struct {
 	// Lexer instance and current token values
@@ -169,8 +153,8 @@ type parser struct {
 }
 
 // Parse an entire AWK program.
-func (p *parser) program() *Program {
-	prog := &Program{}
+func (p *parser) program() *ast.Program {
+	prog := &ast.Program{}
 	p.optionalNewlines()
 	for p.tok != EOF {
 		switch p.tok {
