@@ -435,31 +435,3 @@ func (r *resolver) getVarFuncName(prog *Program, name, inFunc string) string {
 	}
 	return ""
 }
-
-// Record a "multi expression" (comma-separated pseudo-expression
-// used to allow commas around print/printf arguments).
-func (r *resolver) multiExpr(exprs []ast.Expr, pos Position) ast.Expr {
-	expr := &ast.MultiExpr{exprs}
-	r.multiExprs[expr] = pos
-	return expr
-}
-
-// Mark the multi expression as used (by a print/printf statement).
-func (r *resolver) useMultiExpr(expr *ast.MultiExpr) {
-	delete(r.multiExprs, expr)
-}
-
-// Check that there are no unused multi expressions (syntax error).
-func (r *resolver) checkMultiExprs() {
-	if len(r.multiExprs) == 0 {
-		return
-	}
-	// Show error on first comma-separated expression
-	min := Position{1000000000, 1000000000}
-	for _, pos := range r.multiExprs {
-		if pos.Line < min.Line || pos.Line == min.Line && pos.Column < min.Column {
-			min = pos
-		}
-	}
-	panic(r.posErrorf(min, "unexpected comma-separated expression"))
-}

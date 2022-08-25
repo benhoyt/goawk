@@ -44,7 +44,7 @@ func Resolve(prog *Program, config *ResolverConfig) (resolveResult *ResolveResul
 
 	r.resolveUserCalls(prog)
 	r.resolveVars(prog)
-	r.checkMultiExprs()
+	//r.checkMultiExprs()
 
 }
 

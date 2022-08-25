@@ -156,7 +156,7 @@ type parser struct {
 	//varTypes   map[string]map[string]typeInfo // map of func name to var name to type
 	//varRefs    []varRef                       // all variable references (usually scalars)
 	//arrayRefs  []arrayRef                     // all array references
-	//multiExprs map[*ast.MultiExpr]Position    // tracks comma-separated expressions
+	multiExprs map[*ast.MultiExpr]Position // tracks comma-separated expressions
 
 	// Function tracking
 	//functions   map[string]int // map of function name to index
@@ -208,7 +208,7 @@ func (p *parser) program() *Program {
 
 	//p.resolveUserCalls(prog)
 	//p.resolveVars(prog)
-	//p.checkMultiExprs()
+	p.checkMultiExprs()
 
 	return prog
 }
@@ -1074,4 +1074,32 @@ func (p *parser) varRef(name string, pos Position) *ast.VarExpr {
 
 func (p *parser) arrayRef(name string, pos Position) *ast.ArrayExpr {
 	return &ast.ArrayExpr{ast.ScopeUnresolved, 0, name}
+}
+
+// Record a "multi expression" (comma-separated pseudo-expression
+// used to allow commas around print/printf arguments).
+func (p *parser) multiExpr(exprs []ast.Expr, pos Position) ast.Expr {
+	expr := &ast.MultiExpr{exprs}
+	p.multiExprs[expr] = pos
+	return expr
+}
+
+// Mark the multi expression as used (by a print/printf statement).
+func (p *parser) useMultiExpr(expr *ast.MultiExpr) {
+	delete(p.multiExprs, expr)
+}
+
+// Check that there are no unused multi expressions (syntax error).
+func (p *parser) checkMultiExprs() {
+	if len(p.multiExprs) == 0 {
+		return
+	}
+	// Show error on first comma-separated expression
+	min := Position{1000000000, 1000000000}
+	for _, pos := range p.multiExprs {
+		if pos.Line < min.Line || pos.Line == min.Line && pos.Column < min.Column {
+			min = pos
+		}
+	}
+	panic(p.posErrorf(min, "unexpected comma-separated expression"))
 }
