@@ -84,7 +84,7 @@ func (r *resolver) initResolve(config *ResolverConfig) {
 }
 
 // Signal the start of a function
-func (r *resolver) startFunction(name string, params []string) {
+func (r *resolver) startFunction(name string) {
 	r.funcName = name
 	r.varTypes[name] = make(map[string]typeInfo)
 }

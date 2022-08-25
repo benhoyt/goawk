@@ -148,7 +148,7 @@ type parser struct {
 	loopDepth int    // current loop depth (0 if not in any loops)
 
 	// Variable tracking and resolving
-	//locals     map[string]bool                // current function's locals (for determining scope)
+	locals map[string]bool // current function's locals (for determining scope)
 	//varTypes   map[string]map[string]typeInfo // map of func name to var name to type
 	//varRefs    []varRef                       // all variable references (usually scalars)
 	//arrayRefs  []arrayRef                     // all array references
@@ -178,7 +178,7 @@ func (p *parser) program() *Program {
 			prog.End = append(prog.End, p.stmtsBrace())
 		case FUNCTION:
 			function := p.function()
-			p.addFunction(function.Name, len(prog.Functions))
+			//p.addFunction(function.Name, len(prog.Functions))
 			prog.Functions = append(prog.Functions, function)
 		default:
 			p.inAction = true
@@ -454,14 +454,14 @@ func (p *parser) function() ast.Function {
 	}
 	p.next()
 	name := p.val
-	if _, ok := p.functions[name]; ok {
-		panic(p.errorf("function %q already defined", name))
-	}
+	//if _, ok := p.functions[name]; ok {
+	//	panic(p.errorf("function %q already defined", name))
+	//}
 	p.expect(NAME)
 	p.expect(LPAREN)
 	first := true
 	params := make([]string, 0, 7) // pre-allocate some to reduce allocations
-	p.locals = make(map[string]bool, 7)
+	//p.locals = make(map[string]bool, 7)
 	for p.tok != RPAREN {
 		if !first {
 			p.commaNewlines()
@@ -471,21 +471,21 @@ func (p *parser) function() ast.Function {
 		if param == name {
 			panic(p.errorf("can't use function name as parameter name"))
 		}
-		if p.locals[param] {
-			panic(p.errorf("duplicate parameter name %q", param))
-		}
+		//if p.locals[param] {
+		//	panic(p.errorf("duplicate parameter name %q", param))
+		//}
 		p.expect(NAME)
 		params = append(params, param)
-		p.locals[param] = true
+		//p.locals[param] = true
 	}
 	p.expect(RPAREN)
 	p.optionalNewlines()
 
 	// Parse the body
-	p.startFunction(name, params)
+	//p.startFunction(name, params)
 	body := p.stmtsBrace()
-	p.stopFunction()
-	p.locals = nil
+	//p.stopFunction()
+	//p.locals = nil
 
 	return ast.Function{name, params, nil, body}
 }

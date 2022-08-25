@@ -42,6 +42,26 @@ func Resolve(prog *Program, config *ResolverConfig) (resolveResult *ResolveResul
 	r.initResolve(config)
 
 	// TODO resolution step to iterate over AST
+	// 1. process functions
+	for i, function := range prog.Functions {
+		name := function.Name
+		r.addFunction(name, i)
+		if _, ok := r.functions[name]; ok {
+			panic(r.errorf("function %q already defined", name))
+		}
+		r.locals = make(map[string]bool, 7)
+		for _, param := range function.Params {
+			if r.locals[param] {
+				panic(r.errorf("duplicate parameter name %q", param))
+			}
+			r.locals[param] = true
+
+		}
+		r.startFunction(name)
+		// TODO process body
+		r.stopFunction()
+		r.locals = nil
+	}
 
 	r.resolveUserCalls(prog)
 	r.resolveVars(prog)
