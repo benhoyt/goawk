@@ -6,6 +6,7 @@ package parser
 
 import (
 	"fmt"
+	"github.com/benhoyt/goawk/internal/resolver"
 	"io"
 	"regexp"
 	"strconv"
@@ -113,6 +114,16 @@ func (p *Program) toAST() *ast.Program {
 		Functions: p.Functions,
 		Scalars:   p.Scalars,
 		Arrays:    p.Arrays,
+	}
+}
+
+// toResolverProgram converts the *Program to an *resolver.Program.
+func (p *Program) toResolverProgram() *resolver.Program {
+	return &resolver.Program{
+		Begin:     p.Begin,
+		Actions:   p.Actions,
+		End:       p.End,
+		Functions: p.Functions,
 	}
 }
 
