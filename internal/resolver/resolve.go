@@ -423,11 +423,11 @@ func (r *resolver) resolveVars(prog *Program) {
 
 // If name refers to a local (in function inFunc), return that
 // function's name, otherwise return "" (meaning global).
-func (p *parser) getVarFuncName(prog *Program, name, inFunc string) string {
+func (r *resolver) getVarFuncName(prog *Program, name, inFunc string) string {
 	if inFunc == "" {
 		return ""
 	}
-	for _, param := range prog.Functions[p.functions[inFunc]].Params {
+	for _, param := range prog.Functions[r.functions[inFunc]].Params {
 		if name == param {
 			return inFunc
 		}

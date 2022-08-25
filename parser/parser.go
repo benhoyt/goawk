@@ -202,9 +202,9 @@ func (p *parser) program() *Program {
 		p.optionalNewlines()
 	}
 
-	p.resolveUserCalls(prog)
-	p.resolveVars(prog)
-	p.checkMultiExprs()
+	//p.resolveUserCalls(prog)
+	//p.resolveVars(prog)
+	//p.checkMultiExprs()
 
 	return prog
 }

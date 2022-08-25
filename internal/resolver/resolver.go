@@ -40,4 +40,11 @@ type ResolverConfig struct {
 func Resolve(prog *Program, config *ResolverConfig) (resolveResult *ResolveResult, err error) {
 	r := &resolver{}
 	r.initResolve(config)
+
+	// TODO resolution step to iterate over AST
+
+	r.resolveUserCalls(prog)
+	r.resolveVars(prog)
+	r.checkMultiExprs()
+
 }
