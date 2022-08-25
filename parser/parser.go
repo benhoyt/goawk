@@ -90,13 +90,8 @@ type Program struct {
 	// but are exported for the interpreter (Program itself needs to
 	// be exported in package "parser", otherwise these could live in
 	// "internal/ast".)
-	Begin     []ast.Stmts
-	Actions   []ast.Action
-	End       []ast.Stmts
-	Functions []ast.Function
-	Scalars   map[string]int
-	Arrays    map[string]int
-	Compiled  *compiler.CompiledProgram
+	resolver.Program
+	Compiled *compiler.Program
 }
 
 // String returns an indented, pretty-printed version of the parsed

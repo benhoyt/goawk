@@ -2,7 +2,6 @@ package resolver
 
 import (
 	"github.com/benhoyt/goawk/internal/ast"
-	"github.com/benhoyt/goawk/internal/compiler"
 	"github.com/benhoyt/goawk/lexer"
 )
 
@@ -30,9 +29,16 @@ type ResolverConfig struct {
 	NativeFuncs map[string]interface{}
 }
 
-func Resolve(prog *ast.Program, config *ResolverConfig) (resolvedProg *compiler.Program, err error) {
+// Program represents the resolved program.
+type Program struct {
+	ast.Program
+	Scalars map[string]int
+	Arrays  map[string]int
+}
+
+func Resolve(prog *ast.Program, config *ResolverConfig) (resolvedProg *Program, err error) {
 	r := &resolver{}
-	resolvedProg = &compiler.Program{
+	resolvedProg = &Program{
 		Program: *prog,
 	}
 	r.initResolve(config)

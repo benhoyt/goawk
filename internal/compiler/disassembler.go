@@ -13,7 +13,7 @@ import (
 
 // Disassemble writes a human-readable form of the program's virtual machine
 // instructions to writer.
-func (p *CompiledProgram) Disassemble(writer io.Writer) error {
+func (p *Program) Disassemble(writer io.Writer) error {
 	if p.Begin != nil {
 		d := &disassembler{
 			program:         p,
@@ -110,7 +110,7 @@ func (p *CompiledProgram) Disassemble(writer io.Writer) error {
 
 // Disassembles a single block of opcodes.
 type disassembler struct {
-	program         *CompiledProgram
+	program         *Program
 	writer          io.Writer
 	code            []Opcode
 	nativeFuncNames []string

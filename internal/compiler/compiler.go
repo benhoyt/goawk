@@ -3,6 +3,7 @@ package compiler
 
 import (
 	"fmt"
+	"github.com/benhoyt/goawk/internal/resolver"
 	"math"
 	"regexp"
 
@@ -10,15 +11,8 @@ import (
 	"github.com/benhoyt/goawk/lexer"
 )
 
-// Program is an entire AWK program used as an input for compiler.
+// Program holds an entire compiled program.
 type Program struct {
-	ast.Program
-	Scalars map[string]int
-	Arrays  map[string]int
-}
-
-// CompiledProgram holds an entire compiled program.
-type CompiledProgram struct {
 	Begin     []Opcode
 	Actions   []Action
 	End       []Opcode
@@ -61,7 +55,7 @@ func (e *compileError) Error() string {
 }
 
 // Compile compiles an AST (parsed program) into virtual machine instructions.
-func Compile(prog *Program) (compiledProg *CompiledProgram, err error) {
+func Compile(prog *resolver.Program) (compiledProg *Program, err error) {
 	defer func() {
 		// The compiler uses panic with a *compileError to signal compile
 		// errors internally, and they're caught here. This avoids the
@@ -72,7 +66,7 @@ func Compile(prog *Program) (compiledProg *CompiledProgram, err error) {
 		}
 	}()
 
-	p := &CompiledProgram{}
+	p := &Program{}
 
 	// Reuse identical constants across entire program.
 	indexes := constantIndexes{
@@ -173,7 +167,7 @@ type constantIndexes struct {
 
 // Holds the compilation state.
 type compiler struct {
-	program   *CompiledProgram
+	program   *Program
 	indexes   constantIndexes
 	code      []Opcode
 	breaks    [][]int
