@@ -152,7 +152,7 @@ type parser struct {
 	loopDepth int    // current loop depth (0 if not in any loops)
 
 	// Variable tracking and resolving
-	locals map[string]bool // current function's locals (for determining scope)
+	//locals map[string]bool // current function's locals (for determining scope)
 	//varTypes   map[string]map[string]typeInfo // map of func name to var name to type
 	//varRefs    []varRef                       // all variable references (usually scalars)
 	//arrayRefs  []arrayRef                     // all array references
@@ -749,9 +749,9 @@ func (p *parser) primary() ast.Expr {
 			p.expect(RBRACKET)
 			return &ast.IndexExpr{p.arrayRef(name, namePos), index}
 		} else if p.tok == LPAREN && !p.lexer.HadSpace() {
-			if p.locals[name] {
-				panic(p.errorf("can't call local variable %q as function", name))
-			}
+			//if p.locals[name] {
+			//	panic(p.errorf("can't call local variable %q as function", name))
+			//}
 			// Grammar requires no space between function name and
 			// left paren for user function calls, hence the funky
 			// lexer.HadSpace() method.
@@ -1058,13 +1058,13 @@ func (p *parser) userCall(name string, pos Position) *ast.UserCallExpr {
 			p.commaNewlines()
 		}
 		arg := p.expr()
-		p.processUserCallArg(name, arg, i)
+		//p.processUserCallArg(name, arg, i)
 		args = append(args, arg)
 		i++
 	}
 	p.expect(RPAREN)
 	call := &ast.UserCallExpr{false, -1, name, args} // index is resolved later
-	p.recordUserCall(call, pos)
+	//p.recordUserCall(call, pos)
 	return call
 }
 

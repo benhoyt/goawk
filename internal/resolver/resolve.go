@@ -95,8 +95,9 @@ func (r *resolver) stopFunction() {
 }
 
 // Add function by name with given index
-func (r *resolver) addFunction(name string, index int) {
-	r.functions[name] = index
+func (r *resolver) addFunction(name string) {
+	r.functions[name] = r.funcIdx
+	r.funcIdx++
 }
 
 // Records a call to a user function (for resolving indexes later)

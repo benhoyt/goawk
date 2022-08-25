@@ -21,6 +21,8 @@ type resolver struct {
 	functions   map[string]int // map of function name to index
 	userCalls   []userCall     // record calls so we can resolve them later
 	nativeFuncs map[string]interface{}
+
+	funcIdx int
 }
 
 type ResolveResult struct {
@@ -38,14 +40,24 @@ func Resolve(prog *Program, config *ResolverConfig) (resolveResult *ResolveResul
 	r := &resolver{}
 	r.initResolve(config)
 
-	// TODO resolution step to iterate over AST
-	// 1. process functions
-	for i, function := range prog.Functions {
+	ast.Walk(r, prog)
+
+	r.resolveUserCalls(prog)
+	r.resolveVars(prog)
+	r.checkMultiExprs()
+
+}
+
+func (r *resolver) Visit(node ast.Node) ast.Visitor {
+	switch n := node.(type) {
+
+	case ast.Function:
+		function := n
 		name := function.Name
-		r.addFunction(name, i)
 		if _, ok := r.functions[name]; ok {
 			panic(r.errorf("function %q already defined", name))
 		}
+		r.addFunction(name)
 		r.locals = make(map[string]bool, 7)
 		for _, param := range function.Params {
 			if r.locals[param] {
@@ -55,13 +67,24 @@ func Resolve(prog *Program, config *ResolverConfig) (resolveResult *ResolveResul
 
 		}
 		r.startFunction(name)
-		// TODO process body
+
+		ast.WalkStmtList(r, function.Body)
+
 		r.stopFunction()
 		r.locals = nil
+
+	case *ast.UserCallExpr:
+		name := n.Name
+		if r.locals[name] {
+			panic(p.errorf("can't call local variable %q as function", name))
+		}
+		for i, arg := range n.Args {
+			r.processUserCallArg(name, arg, i)
+		}
+		r.recordUserCall(n, pos)
+	default:
+		return r
 	}
 
-	r.resolveUserCalls(prog)
-	r.resolveVars(prog)
-	r.checkMultiExprs()
-
+	return nil
 }

@@ -11,13 +11,13 @@ type Visitor interface {
 
 // Helper functions for common node lists. They may be empty.
 
-func walkExprList(v Visitor, list []Expr) {
+func WalkExprList(v Visitor, list []Expr) {
 	for _, x := range list {
 		Walk(v, x)
 	}
 }
 
-func walkStmtList(v Visitor, list []Stmt) {
+func WalkStmtList(v Visitor, list []Stmt) {
 	for _, x := range list {
 		Walk(v, x)
 	}
@@ -55,7 +55,7 @@ func Walk(v Visitor, node Node) {
 
 	case *ArrayExpr: // leaf
 	case *InExpr:
-		walkExprList(v, n.Index)
+		WalkExprList(v, n.Index)
 		Walk(v, n.Array)
 
 	case *CondExpr:
@@ -69,7 +69,7 @@ func Walk(v Visitor, node Node) {
 	case *VarExpr: // leaf
 	case *IndexExpr:
 		Walk(v, n.Array)
-		walkExprList(v, n.Index)
+		WalkExprList(v, n.Index)
 
 	case *AssignExpr:
 		Walk(v, n.Left)
@@ -83,13 +83,13 @@ func Walk(v Visitor, node Node) {
 		Walk(v, n.Expr)
 
 	case *CallExpr:
-		walkExprList(v, n.Args)
+		WalkExprList(v, n.Args)
 
 	case *UserCallExpr:
-		walkExprList(v, n.Args)
+		WalkExprList(v, n.Args)
 
 	case *MultiExpr:
-		walkExprList(v, n.Exprs)
+		WalkExprList(v, n.Exprs)
 
 	case *GetlineExpr:
 		Walk(v, n.Command)
@@ -98,11 +98,11 @@ func Walk(v Visitor, node Node) {
 
 	// statements
 	case *PrintStmt:
-		walkExprList(v, n.Args)
+		WalkExprList(v, n.Args)
 		Walk(v, n.Dest)
 
 	case *PrintfStmt:
-		walkExprList(v, n.Args)
+		WalkExprList(v, n.Args)
 		Walk(v, n.Dest)
 
 	case *ExprStmt:
@@ -110,26 +110,26 @@ func Walk(v Visitor, node Node) {
 
 	case *IfStmt:
 		Walk(v, n.Cond)
-		walkStmtList(v, n.Body)
-		walkStmtList(v, n.Else)
+		WalkStmtList(v, n.Body)
+		WalkStmtList(v, n.Else)
 
 	case *ForStmt:
 		Walk(v, n.Pre)
 		Walk(v, n.Cond)
 		Walk(v, n.Post)
-		walkStmtList(v, n.Body)
+		WalkStmtList(v, n.Body)
 
 	case *ForInStmt:
 		Walk(v, n.Var)
 		Walk(v, n.Array)
-		walkStmtList(v, n.Body)
+		WalkStmtList(v, n.Body)
 
 	case *WhileStmt:
 		Walk(v, n.Cond)
-		walkStmtList(v, n.Body)
+		WalkStmtList(v, n.Body)
 
 	case *DoWhileStmt:
-		walkStmtList(v, n.Body)
+		WalkStmtList(v, n.Body)
 		Walk(v, n.Cond)
 
 	case *BreakStmt: // leaf
@@ -140,17 +140,17 @@ func Walk(v Visitor, node Node) {
 
 	case *DeleteStmt:
 		Walk(v, n.Array)
-		walkExprList(v, n.Index)
+		WalkExprList(v, n.Index)
 
 	case *ReturnStmt:
 		Walk(v, n.Value)
 
 	case *BlockStmt:
-		walkStmtList(v, n.Body)
+		WalkStmtList(v, n.Body)
 
 	case Program:
 		for _, stmts := range n.Begin {
-			walkStmtList(v, stmts)
+			WalkStmtList(v, stmts)
 		}
 		for _, action := range n.Actions {
 			Walk(v, action)
@@ -159,15 +159,15 @@ func Walk(v Visitor, node Node) {
 			Walk(v, function)
 		}
 		for _, stmts := range n.End {
-			walkStmtList(v, stmts)
+			WalkStmtList(v, stmts)
 		}
 
 	case Action:
-		walkExprList(v, n.Pattern)
-		walkStmtList(v, n.Stmts)
+		WalkExprList(v, n.Pattern)
+		WalkStmtList(v, n.Stmts)
 
 	case Function:
-		walkStmtList(v, n.Body)
+		WalkStmtList(v, n.Body)
 
 	default:
 		panic(fmt.Sprintf("ast.Walk: unexpected node type %T", n))
