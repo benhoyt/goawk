@@ -227,6 +227,8 @@ const (
 	ScopeSpecial VarScope = iota
 	ScopeGlobal
 	ScopeLocal
+
+	ScopeUnresolved VarScope = -1
 )
 
 // VarExpr is a variable reference (special var, global, or local).

@@ -1057,3 +1057,11 @@ func (p *parser) userCall(name string, pos Position) *ast.UserCallExpr {
 	p.recordUserCall(call, pos)
 	return call
 }
+
+func (p *parser) varRef(name string, pos Position) *ast.VarExpr {
+	return &ast.VarExpr{ast.ScopeUnresolved, 0, name}
+}
+
+func (p *parser) arrayRef(name string, pos Position) *ast.ArrayExpr {
+	return &ast.ArrayExpr{ast.ScopeUnresolved, 0, name}
+}
