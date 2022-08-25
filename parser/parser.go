@@ -74,13 +74,13 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	// Parse into abstract syntax tree
 	prog = p.program()
 
-	result, err := resolver.Resolve(prog.toResolverProgram(), resolverConfig)
+	result, err := resolver.Resolve(prog.asResolverSource(), resolverConfig)
 	if err != nil {
 		return nil, err
 	}
 
 	// Compile to virtual machine code
-	prog.Compiled, err = compiler.Compile(prog.toAST())
+	prog.Compiled, err = compiler.Compile(prog.asCompilerSource())
 	return prog, err
 }
 
@@ -96,7 +96,7 @@ type Program struct {
 	Functions []ast.Function
 	Scalars   map[string]int
 	Arrays    map[string]int
-	Compiled  *compiler.Program
+	Compiled  *compiler.CompiledProgram
 }
 
 // String returns an indented, pretty-printed version of the parsed
@@ -118,18 +118,22 @@ func (p *Program) toAST() *ast.Program {
 		Actions:   p.Actions,
 		End:       p.End,
 		Functions: p.Functions,
-		Scalars:   p.Scalars,
-		Arrays:    p.Arrays,
 	}
 }
 
-// toResolverProgram converts the *Program to an *resolver.Program.
-func (p *Program) toResolverProgram() *resolver.Program {
+// asCompilerSource converts the *Program to an *compiler.Program.
+func (p *Program) asCompilerSource() *compiler.Program {
+	return &compiler.Program{
+		Program: *p.toAST(),
+		Scalars: p.Scalars,
+		Arrays:  p.Arrays,
+	}
+}
+
+// asResolverSource converts the *Program to an *resolver.Program.
+func (p *Program) asResolverSource() *resolver.Program {
 	return &resolver.Program{
-		Begin:     p.Begin,
-		Actions:   p.Actions,
-		End:       p.End,
-		Functions: p.Functions,
+		Program: *p.toAST(),
 	}
 }
 

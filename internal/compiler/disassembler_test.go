@@ -12,7 +12,7 @@ func TestDisassembler(t *testing.T) {
 	// disassembly includes the opcode name, to help catch silly typos.
 	for op := Nop; op < EndOpcode; op++ {
 		t.Run(op.String(), func(t *testing.T) {
-			p := Program{
+			p := CompiledProgram{
 				Begin: []Opcode{op, 0, 0, 0, 0, 0, 0, 0},
 				Functions: []Function{
 					{

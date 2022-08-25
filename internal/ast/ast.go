@@ -16,8 +16,6 @@ type Program struct {
 	Actions   []Action
 	End       []Stmts
 	Functions []Function
-	Scalars   map[string]int
-	Arrays    map[string]int
 }
 
 // String returns an indented, pretty-printed version of the parsed

@@ -27,10 +27,7 @@ type ResolveResult struct {
 }
 
 type Program struct {
-	Begin     []ast.Stmts
-	Actions   []ast.Action
-	End       []ast.Stmts
-	Functions []ast.Function
+	ast.Program
 }
 
 type ResolverConfig struct {
