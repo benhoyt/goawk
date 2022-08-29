@@ -10,6 +10,7 @@ import (
 
 	"github.com/benhoyt/goawk/internal/ast"
 	. "github.com/benhoyt/goawk/lexer"
+	"github.com/benhoyt/goawk/parser"
 )
 
 type varType int
@@ -133,11 +134,11 @@ func (r *resolver) resolveUserCalls(prog *ast.Program) {
 		if !ok {
 			f, haveNative := r.nativeFuncs[c.call.Name]
 			if !haveNative {
-				panic(r.posErrorf(c.pos, "undefined function %q", c.call.Name))
+				panic(parser.PosErrorf(c.pos, "undefined function %q", c.call.Name))
 			}
 			typ := reflect.TypeOf(f)
 			if !typ.IsVariadic() && len(c.call.Args) > typ.NumIn() {
-				panic(r.posErrorf(c.pos, "%q called with more arguments than declared", c.call.Name))
+				panic(parser.PosErrorf(c.pos, "%q called with more arguments than declared", c.call.Name))
 			}
 			c.call.Native = true
 			c.call.Index = nativeIndexes[c.call.Name]
@@ -145,7 +146,7 @@ func (r *resolver) resolveUserCalls(prog *ast.Program) {
 		}
 		function := prog.Functions[index]
 		if len(c.call.Args) > len(function.Params) {
-			panic(r.posErrorf(c.pos, "%q called with more arguments than declared", c.call.Name))
+			panic(parser.PosErrorf(c.pos, "%q called with more arguments than declared", c.call.Name))
 		}
 		c.call.Index = index
 	}
@@ -373,7 +374,7 @@ func (r *resolver) resolveVars(prog *Program) {
 				funcName := r.getVarFuncName(prog, varExpr.Name, c.inFunc)
 				info := r.varTypes[funcName][varExpr.Name]
 				if info.typ == typeArray {
-					panic(r.posErrorf(c.pos, "can't pass array %q to native function", varExpr.Name))
+					panic(parser.PosErrorf(c.pos, "can't pass array %q to native function", varExpr.Name))
 				}
 			}
 			continue
@@ -385,17 +386,17 @@ func (r *resolver) resolveVars(prog *Program) {
 			varExpr, ok := arg.(*ast.VarExpr)
 			if !ok {
 				if function.Arrays[i] {
-					panic(r.posErrorf(c.pos, "can't pass scalar %s as array param", arg))
+					panic(parser.PosErrorf(c.pos, "can't pass scalar %s as array param", arg))
 				}
 				continue
 			}
 			funcName := r.getVarFuncName(prog, varExpr.Name, c.inFunc)
 			info := r.varTypes[funcName][varExpr.Name]
 			if info.typ == typeArray && !function.Arrays[i] {
-				panic(r.posErrorf(c.pos, "can't pass array %q as scalar param", varExpr.Name))
+				panic(parser.PosErrorf(c.pos, "can't pass array %q as scalar param", varExpr.Name))
 			}
 			if info.typ != typeArray && function.Arrays[i] {
-				panic(r.posErrorf(c.pos, "can't pass scalar %q as array param", varExpr.Name))
+				panic(parser.PosErrorf(c.pos, "can't pass scalar %q as array param", varExpr.Name))
 			}
 		}
 	}
@@ -409,14 +410,14 @@ func (r *resolver) resolveVars(prog *Program) {
 	for _, varRef := range r.varRefs {
 		info := r.varTypes[varRef.funcName][varRef.ref.Name]
 		if info.typ == typeArray && !varRef.isArg {
-			panic(r.posErrorf(varRef.pos, "can't use array %q as scalar", varRef.ref.Name))
+			panic(parser.PosErrorf(varRef.pos, "can't use array %q as scalar", varRef.ref.Name))
 		}
 		varRef.ref.Index = info.index
 	}
 	for _, arrayRef := range r.arrayRefs {
 		info := r.varTypes[arrayRef.funcName][arrayRef.ref.Name]
 		if info.typ == typeScalar {
-			panic(r.posErrorf(arrayRef.pos, "can't use scalar %q as array", arrayRef.ref.Name))
+			panic(parser.PosErrorf(arrayRef.pos, "can't use scalar %q as array", arrayRef.ref.Name))
 		}
 		arrayRef.ref.Index = info.index
 	}

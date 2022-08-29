@@ -322,6 +322,7 @@ type UserCallExpr struct {
 	Index  int
 	Name   string
 	Args   []Expr
+	Pos    Position
 }
 
 func (e *UserCallExpr) String() string {
@@ -593,6 +594,7 @@ type Function struct {
 	Params []string
 	Arrays []bool
 	Body   Stmts
+	Pos    Position
 }
 
 func (f *Function) String() string {

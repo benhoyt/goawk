@@ -75,10 +75,11 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	astProg := p.program()
 
 	resolvedProgram, err := resolver.Resolve(astProg, resolverConfig)
-	prog.Program = *resolvedProgram
 	if err != nil {
 		return nil, err
 	}
+
+	prog.Program = *resolvedProgram
 
 	// Compile to virtual machine code
 	prog.Compiled, err = compiler.Compile(resolvedProgram)
@@ -432,11 +433,12 @@ func (p *parser) function() ast.Function {
 	//if _, ok := p.functions[name]; ok {
 	//	panic(p.errorf("function %q already defined", name))
 	//}
+	funcNamePos := p.pos
 	p.expect(NAME)
 	p.expect(LPAREN)
 	first := true
 	params := make([]string, 0, 7) // pre-allocate some to reduce allocations
-	//p.locals = make(map[string]bool, 7)
+	locals := make(map[string]bool, 7)
 	for p.tok != RPAREN {
 		if !first {
 			p.commaNewlines()
@@ -446,12 +448,12 @@ func (p *parser) function() ast.Function {
 		if param == name {
 			panic(p.errorf("can't use function name as parameter name"))
 		}
-		//if p.locals[param] {
-		//	panic(p.errorf("duplicate parameter name %q", param))
-		//}
+		if locals[param] {
+			panic(p.errorf("duplicate parameter name %q", param))
+		}
 		p.expect(NAME)
 		params = append(params, param)
-		//p.locals[param] = true
+		locals[param] = true
 	}
 	p.expect(RPAREN)
 	p.optionalNewlines()
@@ -462,7 +464,7 @@ func (p *parser) function() ast.Function {
 	//p.stopFunction()
 	//p.locals = nil
 
-	return ast.Function{name, params, nil, body}
+	return ast.Function{name, params, nil, body, funcNamePos}
 }
 
 // Parse expressions separated by commas: args to print[f] or user
@@ -662,7 +664,7 @@ func (p *parser) preIncr() ast.Expr {
 		exprPos := p.pos
 		expr := p.preIncr()
 		if !ast.IsLValue(expr) {
-			panic(p.posErrorf(exprPos, "expected lvalue after ++ or --"))
+			panic(PosErrorf(exprPos, "expected lvalue after ++ or --"))
 		}
 		return &ast.IncrExpr{expr, op, true}
 	}
@@ -777,7 +779,7 @@ func (p *parser) primary() ast.Expr {
 			inPos := p.pos
 			in := p.expr()
 			if !ast.IsLValue(in) {
-				panic(p.posErrorf(inPos, "3rd arg to sub/gsub must be lvalue"))
+				panic(PosErrorf(inPos, "3rd arg to sub/gsub must be lvalue"))
 			}
 			args = append(args, in)
 		}
@@ -1009,11 +1011,11 @@ func (p *parser) matches(operators ...Token) bool {
 // Format given string and args with Sprintf and return *ParseError
 // with that message and the current position.
 func (p *parser) errorf(format string, args ...interface{}) error {
-	return p.posErrorf(p.pos, format, args...)
+	return PosErrorf(p.pos, format, args...)
 }
 
 // Like errorf, but with an explicit position.
-func (p *parser) posErrorf(pos Position, format string, args ...interface{}) error {
+func PosErrorf(pos Position, format string, args ...interface{}) error {
 	message := fmt.Sprintf(format, args...)
 	return &ParseError{pos, message}
 }
@@ -1034,7 +1036,7 @@ func (p *parser) userCall(name string, pos Position) *ast.UserCallExpr {
 		i++
 	}
 	p.expect(RPAREN)
-	call := &ast.UserCallExpr{false, -1, name, args} // index is resolved later
+	call := &ast.UserCallExpr{false, -1, name, args, pos} // index is resolved later
 	//p.recordUserCall(call, pos)
 	return call
 }
@@ -1072,5 +1074,5 @@ func (p *parser) checkMultiExprs() {
 			min = pos
 		}
 	}
-	panic(p.posErrorf(min, "unexpected comma-separated expression"))
+	panic(PosErrorf(min, "unexpected comma-separated expression"))
 }

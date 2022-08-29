@@ -3,6 +3,7 @@ package resolver
 import (
 	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/lexer"
+	"github.com/benhoyt/goawk/parser"
 )
 
 type resolver struct {
@@ -60,14 +61,14 @@ func (r *resolver) Visit(node ast.Node) ast.Visitor {
 		function := n
 		name := function.Name
 		if _, ok := r.functions[name]; ok {
-			panic(r.errorf("function %q already defined", name))
+			panic(parser.PosErrorf(function.Pos, "function %q already defined", name))
 		}
 		r.addFunction(name)
 		r.locals = make(map[string]bool, 7)
 		for _, param := range function.Params {
-			if r.locals[param] {
-				panic(r.errorf("duplicate parameter name %q", param))
-			}
+			//if r.locals[param] {
+			//	panic(parser.PosErrorf(function.ParamsPos[i], "duplicate parameter name %q", param))
+			//}
 			r.locals[param] = true
 
 		}
@@ -81,12 +82,12 @@ func (r *resolver) Visit(node ast.Node) ast.Visitor {
 	case *ast.UserCallExpr:
 		name := n.Name
 		if r.locals[name] {
-			panic(r.errorf("can't call local variable %q as function", name))
+			panic(parser.PosErrorf(n.Pos, "can't call local variable %q as function", name))
 		}
 		for i, arg := range n.Args {
 			r.processUserCallArg(name, arg, i)
 		}
-		r.recordUserCall(n, pos)
+		r.recordUserCall(n, n.Pos)
 	default:
 		return r
 	}
