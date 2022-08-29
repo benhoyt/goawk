@@ -31,9 +31,9 @@ type resolver struct {
 	debugWriter io.Writer // where the debug output goes
 }
 
-func Resolve(prog *ast.Program, config *parser.ParserConfig) (resolvedProg *ast.ResolvedProgram) {
+func Resolve(prog *ast.Program, config *parser.ParserConfig) *ast.ResolvedProgram {
 	r := &resolver{}
-	resolvedProg = &ast.ResolvedProgram{
+	resolvedProg := &ast.ResolvedProgram{
 		Program: *prog,
 	}
 	r.initResolve(config)

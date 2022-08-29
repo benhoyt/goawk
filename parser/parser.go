@@ -5,7 +5,6 @@
 package parser
 
 import (
-	"fmt"
 	"github.com/benhoyt/goawk/internal/resolver"
 	"io"
 	"regexp"
@@ -20,16 +19,7 @@ import (
 // ParseError (actually *ParseError) is the type of error returned by
 // ParseProgram.
 type ParseError struct {
-	// Source line/column position where the error occurred.
-	Position Position
-	// Error message.
-	Message string
-}
-
-// Error returns a formatted version of the error, including the line
-// and column numbers.
-func (e *ParseError) Error() string {
-	return fmt.Sprintf("parse error at %d:%d: %s", e.Position.Line, e.Position.Column, e.Message)
+	PositionError
 }
 
 // ParserConfig lets you specify configuration for the parsing
@@ -51,13 +41,14 @@ type ParserConfig struct {
 // the parser configuration (and is allowed to be nil).
 func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	defer func() {
+		// TODO adjust description
 		// The parser uses panic with a *ParseError to signal parsing
 		// errors internally, and they're caught here. This
 		// significantly simplifies the recursive descent calls as
 		// we don't have to check errors everywhere.
 		if r := recover(); r != nil {
 			// Convert to ParseError or re-panic
-			err = r.(*ParseError)
+			err = &ParseError{*r.(*PositionError)}
 		}
 	}()
 	lexer := NewLexer(src)
@@ -73,10 +64,10 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	astProg := p.program()
 
 	// Resolve step
-	prog.Program = *resolver.Resolve(astProg, config)
+	prog.ResolvedProgram = *resolver.Resolve(astProg, config)
 
 	// Compile to virtual machine code
-	prog.Compiled, err = compiler.Compile(&prog.Program)
+	prog.Compiled, err = compiler.Compile(&prog.ResolvedProgram)
 
 	return prog, err
 }
@@ -87,14 +78,14 @@ type Program struct {
 	// but are exported for the interpreter (Program itself needs to
 	// be exported in package "parser", otherwise these could live in
 	// "internal/ast".)
-	resolver.Program
+	ast.ResolvedProgram
 	Compiled *compiler.Program
 }
 
 // String returns an indented, pretty-printed version of the parsed
 // program.
 func (p *Program) String() string {
-	return p.Program.Program.String()
+	return p.ResolvedProgram.Program.String()
 }
 
 // Disassemble writes a human-readable form of the program's virtual machine
@@ -659,7 +650,7 @@ func (p *parser) preIncr() ast.Expr {
 		exprPos := p.pos
 		expr := p.preIncr()
 		if !ast.IsLValue(expr) {
-			panic(PosErrorf(exprPos, "expected lvalue after ++ or --"))
+			panic(exprPos.Errorf("expected lvalue after ++ or --"))
 		}
 		return &ast.IncrExpr{expr, op, true}
 	}
@@ -774,7 +765,7 @@ func (p *parser) primary() ast.Expr {
 			inPos := p.pos
 			in := p.expr()
 			if !ast.IsLValue(in) {
-				panic(PosErrorf(inPos, "3rd arg to sub/gsub must be lvalue"))
+				panic(inPos.Errorf("3rd arg to sub/gsub must be lvalue"))
 			}
 			args = append(args, in)
 		}
@@ -1006,14 +997,7 @@ func (p *parser) matches(operators ...Token) bool {
 // Format given string and args with Sprintf and return *ParseError
 // with that message and the current position.
 func (p *parser) errorf(format string, args ...interface{}) error {
-	return PosErrorf(p.pos, format, args...)
-}
-
-// Like errorf, but with an explicit position.
-// TODO this should be internal or not exported
-func PosErrorf(pos Position, format string, args ...interface{}) error {
-	message := fmt.Sprintf(format, args...)
-	return &ParseError{pos, message}
+	return p.pos.Errorf(format, args...)
 }
 
 // Parse call to a user-defined function (and record call site for
@@ -1062,5 +1046,5 @@ func (p *parser) checkMultiExprs() {
 			min = pos
 		}
 	}
-	panic(PosErrorf(min, "unexpected comma-separated expression"))
+	panic(min.Errorf("unexpected comma-separated expression"))
 }
