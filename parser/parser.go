@@ -720,7 +720,7 @@ func (p *parser) primary() ast.Expr {
 				panic(p.errorf("expected expression instead of ]"))
 			}
 			p.expect(RBRACKET)
-			return &ast.IndexExpr{p.arrayRef(name, namePos), index}
+			return &ast.IndexExpr{ast.ArrayRef(name, namePos), index}
 		} else if p.tok == LPAREN && !p.lexer.HadSpace() {
 			//if p.locals[name] {
 			//	panic(p.errorf("can't call local variable %q as function", name))
@@ -730,7 +730,7 @@ func (p *parser) primary() ast.Expr {
 			// lexer.HadSpace() method.
 			return p.userCall(name, namePos)
 		}
-		return p.varRef(name, namePos)
+		return ast.VarRef(name, namePos)
 	case LPAREN:
 		parenPos := p.pos
 		p.next()
@@ -746,7 +746,7 @@ func (p *parser) primary() ast.Expr {
 			p.expect(RPAREN)
 			if p.tok == IN {
 				p.next()
-				ref := p.arrayRef(p.val, p.pos)
+				ref := ast.ArrayRef(p.val, p.pos)
 				p.expect(NAME)
 				return &ast.InExpr{exprs, ref}
 			}
@@ -790,7 +790,7 @@ func (p *parser) primary() ast.Expr {
 		p.expect(LPAREN)
 		str := p.expr()
 		p.commaNewlines()
-		ref := p.arrayRef(p.val, p.pos)
+		ref := ast.ArrayRef(p.val, p.pos)
 		p.expect(NAME)
 		args := []ast.Expr{str, ref}
 		if p.tok == COMMA {

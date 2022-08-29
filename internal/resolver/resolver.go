@@ -79,6 +79,12 @@ func (r *resolver) Visit(node ast.Node) ast.Visitor {
 		r.stopFunction()
 		r.locals = nil
 
+	case *ast.VarExpr:
+		r.recordVarRef(n)
+
+	case *ast.ArrayExpr:
+		r.recordArrayRef(n)
+
 	case *ast.UserCallExpr:
 		name := n.Name
 		if r.locals[name] {
