@@ -3,7 +3,6 @@ package resolver
 import (
 	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/lexer"
-	"github.com/benhoyt/goawk/parser"
 	"io"
 )
 
@@ -31,7 +30,19 @@ type resolver struct {
 	debugWriter io.Writer // where the debug output goes
 }
 
-func Resolve(prog *ast.Program, config *parser.ParserConfig) *ast.ResolvedProgram {
+type Config struct {
+	// Enable printing of type information
+	DebugTypes bool
+
+	// io.Writer to print type information on (for example, os.Stderr)
+	DebugWriter io.Writer
+
+	// Map of named Go functions to allow calling from AWK. See docs
+	// on interp.Config.Funcs for details.
+	Funcs map[string]interface{}
+}
+
+func Resolve(prog *ast.Program, config *Config) *ast.ResolvedProgram {
 	r := &resolver{}
 	resolvedProg := &ast.ResolvedProgram{
 		Program: *prog,
@@ -54,13 +65,13 @@ func (r *resolver) Visit(node ast.Node) ast.Visitor {
 		function := n
 		name := function.Name
 		if _, ok := r.functions[name]; ok {
-			panic(parser.PosErrorf(function.Pos, "function %q already defined", name))
+			panic(function.Pos.Errorf("function %q already defined", name))
 		}
 		r.addFunction(name)
 		r.locals = make(map[string]bool, 7)
 		for _, param := range function.Params {
 			//if r.locals[param] {
-			//	panic(parser.PosErrorf(function.ParamsPos[i], "duplicate parameter name %q", param))
+			//	panic(function.ParamsPos[i].Errorf( "duplicate parameter name %q", param))
 			//}
 			r.locals[param] = true
 
@@ -81,7 +92,7 @@ func (r *resolver) Visit(node ast.Node) ast.Visitor {
 	case *ast.UserCallExpr:
 		name := n.Name
 		if r.locals[name] {
-			panic(parser.PosErrorf(n.Pos, "can't call local variable %q as function", name))
+			panic(n.Pos.Errorf("can't call local variable %q as function", name))
 		}
 		for i, arg := range n.Args {
 			r.processUserCallArg(name, arg, i)

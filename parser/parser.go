@@ -36,6 +36,17 @@ type ParserConfig struct {
 	Funcs map[string]interface{}
 }
 
+func (c *ParserConfig) toResolverConfig() *resolver.Config {
+	if c == nil {
+		return nil
+	}
+	return &resolver.Config{
+		DebugTypes:  c.DebugTypes,
+		DebugWriter: c.DebugWriter,
+		Funcs:       c.Funcs,
+	}
+}
+
 // ParseProgram parses an entire AWK program, returning the *Program
 // abstract syntax tree or a *ParseError on error. "config" describes
 // the parser configuration (and is allowed to be nil).
@@ -64,7 +75,7 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	astProg := p.program()
 
 	// Resolve step
-	prog.ResolvedProgram = *resolver.Resolve(astProg, config)
+	prog.ResolvedProgram = *resolver.Resolve(astProg, config.toResolverConfig())
 
 	// Compile to virtual machine code
 	prog.Compiled, err = compiler.Compile(&prog.ResolvedProgram)

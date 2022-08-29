@@ -5,7 +5,6 @@ package resolver
 
 import (
 	"fmt"
-	"github.com/benhoyt/goawk/parser"
 	"reflect"
 	"sort"
 
@@ -71,7 +70,7 @@ type arrayRef struct {
 }
 
 // Initialize the resolver
-func (r *resolver) initResolve(config *parser.ParserConfig) {
+func (r *resolver) initResolve(config *Config) {
 	if config != nil {
 		r.nativeFuncs = config.Funcs
 		r.debugTypes = config.DebugTypes
