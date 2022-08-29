@@ -31,16 +31,9 @@ type resolver struct {
 	debugWriter io.Writer // where the debug output goes
 }
 
-// Program represents the resolved program.
-type Program struct {
-	ast.Program
-	Scalars map[string]int
-	Arrays  map[string]int
-}
-
-func Resolve(prog *ast.Program, config *parser.ParserConfig) (resolvedProg *Program) {
+func Resolve(prog *ast.Program, config *parser.ParserConfig) (resolvedProg *ast.ResolvedProgram) {
 	r := &resolver{}
-	resolvedProg = &Program{
+	resolvedProg = &ast.ResolvedProgram{
 		Program: *prog,
 	}
 	r.initResolve(config)

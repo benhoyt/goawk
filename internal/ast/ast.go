@@ -19,6 +19,12 @@ type Program struct {
 	EndPos    Position
 }
 
+type ResolvedProgram struct {
+	Program
+	Scalars map[string]int
+	Arrays  map[string]int
+}
+
 // String returns an indented, pretty-printed version of the parsed
 // program.
 func (p *Program) String() string {
