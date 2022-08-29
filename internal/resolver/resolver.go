@@ -37,8 +37,7 @@ type Program struct {
 	Arrays  map[string]int
 }
 
-func Resolve(prog *ast.Program, config *ResolverConfig) (resolvedProg *Program, err error) {
-	// TODO errors handling via panic recover
+func Resolve(prog *ast.Program, config *ResolverConfig) (resolvedProg *Program) {
 	r := &resolver{}
 	resolvedProg = &Program{
 		Program: *prog,
@@ -51,7 +50,7 @@ func Resolve(prog *ast.Program, config *ResolverConfig) (resolvedProg *Program, 
 	r.resolveVars(resolvedProg)
 	//r.checkMultiExprs()
 
-	return resolvedProg, nil
+	return resolvedProg
 }
 
 func (r *resolver) Visit(node ast.Node) ast.Visitor {

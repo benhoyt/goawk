@@ -74,15 +74,11 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	// Parse into abstract syntax tree
 	astProg := p.program()
 
-	resolvedProgram, err := resolver.Resolve(astProg, resolverConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	prog.Program = *resolvedProgram
+	// Resolve step
+	prog.Program = *resolver.Resolve(astProg, resolverConfig)
 
 	// Compile to virtual machine code
-	prog.Compiled, err = compiler.Compile(resolvedProgram)
+	prog.Compiled, err = compiler.Compile(&prog.Program)
 
 	return prog, err
 }
