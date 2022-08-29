@@ -16,6 +16,7 @@ type Program struct {
 	Actions   []Action
 	End       []Stmts
 	Functions []Function
+	EndPos    Position
 }
 
 // String returns an indented, pretty-printed version of the parsed

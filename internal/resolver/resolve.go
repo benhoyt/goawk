@@ -71,8 +71,12 @@ type arrayRef struct {
 }
 
 // Initialize the resolver
-func (r *resolver) initResolve(config *ResolverConfig) {
-	r.nativeFuncs = config.NativeFuncs
+func (r *resolver) initResolve(config *parser.ParserConfig) {
+	if config != nil {
+		r.nativeFuncs = config.Funcs
+		r.debugTypes = config.DebugTypes
+		r.debugWriter = config.DebugWriter
+	}
 	r.varTypes = make(map[string]map[string]typeInfo)
 	r.varTypes[""] = make(map[string]typeInfo) // globals
 	r.functions = make(map[string]int)
@@ -286,7 +290,7 @@ func (r *resolver) resolveVars(prog *Program) {
 		_, isFunc := r.functions[name]
 		if isFunc {
 			// Global var can't also be the name of a function
-			panic(r.errorf("global var %q can't also be a function", name))
+			panic(parser.PosErrorf(prog.EndPos, "global var %q can't also be a function", name))
 		}
 		var index int
 		if info.scope == ast.ScopeSpecial {
@@ -408,14 +412,14 @@ func (r *resolver) resolveVars(prog *Program) {
 	for _, varRef := range r.varRefs {
 		info := r.varTypes[varRef.funcName][varRef.ref.Name]
 		if info.typ == typeArray && !varRef.isArg {
-			panic(parser.PosErrorf(varRef.pos, "can't use array %q as scalar", varRef.ref.Name))
+			panic(parser.PosErrorf(varRef.ref.Pos, "can't use array %q as scalar", varRef.ref.Name))
 		}
 		varRef.ref.Index = info.index
 	}
 	for _, arrayRef := range r.arrayRefs {
 		info := r.varTypes[arrayRef.funcName][arrayRef.ref.Name]
 		if info.typ == typeScalar {
-			panic(parser.PosErrorf(arrayRef.pos, "can't use scalar %q as array", arrayRef.ref.Name))
+			panic(parser.PosErrorf(arrayRef.ref.Pos, "can't use scalar %q as array", arrayRef.ref.Name))
 		}
 		arrayRef.ref.Index = info.index
 	}

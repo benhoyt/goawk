@@ -4,6 +4,7 @@ import (
 	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/lexer"
 	"github.com/benhoyt/goawk/parser"
+	"io"
 )
 
 type resolver struct {
@@ -24,10 +25,10 @@ type resolver struct {
 	nativeFuncs map[string]interface{}
 
 	funcIdx int
-}
 
-type ResolverConfig struct {
-	NativeFuncs map[string]interface{}
+	// Configuration and debugging
+	debugTypes  bool      // show variable types for debugging
+	debugWriter io.Writer // where the debug output goes
 }
 
 // Program represents the resolved program.
@@ -37,7 +38,7 @@ type Program struct {
 	Arrays  map[string]int
 }
 
-func Resolve(prog *ast.Program, config *ResolverConfig) (resolvedProg *Program) {
+func Resolve(prog *ast.Program, config *parser.ParserConfig) (resolvedProg *Program) {
 	r := &resolver{}
 	resolvedProg = &Program{
 		Program: *prog,

@@ -62,11 +62,9 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	}()
 	lexer := NewLexer(src)
 	p := parser{lexer: lexer}
-	resolverConfig := &resolver.ResolverConfig{}
 	if config != nil {
 		p.debugTypes = config.DebugTypes
 		p.debugWriter = config.DebugWriter
-		resolverConfig.NativeFuncs = config.Funcs
 	}
 	//p.initResolve()
 	p.next() // initialize p.tok
@@ -75,7 +73,7 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	astProg := p.program()
 
 	// Resolve step
-	prog.Program = *resolver.Resolve(astProg, resolverConfig)
+	prog.Program = *resolver.Resolve(astProg, config)
 
 	// Compile to virtual machine code
 	prog.Compiled, err = compiler.Compile(&prog.Program)
@@ -177,6 +175,7 @@ func (p *parser) program() *ast.Program {
 	//p.resolveUserCalls(prog)
 	//p.resolveVars(prog)
 	p.checkMultiExprs()
+	prog.EndPos = p.pos
 
 	return prog
 }
