@@ -62,14 +62,12 @@ type varRef struct {
 	funcName string
 	ref      *ast.VarExpr
 	isArg    bool
-	pos      Position
 }
 
 // A single array reference
 type arrayRef struct {
 	funcName string
 	ref      *ast.ArrayExpr
-	pos      Position
 }
 
 // Initialize the resolver
@@ -78,9 +76,9 @@ func (r *resolver) initResolve(config *ResolverConfig) {
 	r.varTypes = make(map[string]map[string]typeInfo)
 	r.varTypes[""] = make(map[string]typeInfo) // globals
 	r.functions = make(map[string]int)
-	r.arrayRef("ARGV", Position{1, 1})    // interpreter relies on ARGV being present
-	r.arrayRef("ENVIRON", Position{1, 1}) // and other built-in arrays
-	r.arrayRef("FIELDS", Position{1, 1})
+	r.recordArrayRef(ast.ArrayRef("ARGV", Position{1, 1}))    // interpreter relies on ARGV being present
+	r.recordArrayRef(ast.ArrayRef("ENVIRON", Position{1, 1})) // and other built-in arrays
+	r.recordArrayRef(ast.ArrayRef("FIELDS", Position{1, 1}))
 	r.multiExprs = make(map[*ast.MultiExpr]Position, 3)
 }
 
@@ -184,31 +182,31 @@ func (r *resolver) getScope(name string) (ast.VarScope, string) {
 
 // Record a variable (scalar) reference and return the *VarExpr (but
 // VarExpr.Index won't be set till later)
-func (r *resolver) varRef(name string, pos Position) *ast.VarExpr {
+func (r *resolver) recordVarRef(expr *ast.VarExpr) {
+	name := expr.Name
 	scope, funcName := r.getScope(name)
-	expr := &ast.VarExpr{scope, 0, name}
-	r.varRefs = append(r.varRefs, varRef{funcName, expr, false, pos})
+	r.varRefs = append(r.varRefs, varRef{funcName, expr, false})
 	info := r.varTypes[funcName][name]
 	if info.typ == typeUnknown {
 		r.varTypes[funcName][name] = typeInfo{typeScalar, expr, scope, 0, info.callName, 0}
 	}
-	return expr
 }
 
 // Record an array reference and return the *ArrayExpr (but
 // ArrayExpr.Index won't be set till later)
-func (r *resolver) arrayRef(name string, pos Position) *ast.ArrayExpr {
+func (r *resolver) recordArrayRef(expr *ast.ArrayExpr) {
+	name := expr.Name
 	scope, funcName := r.getScope(name)
 	if scope == ast.ScopeSpecial {
-		panic(r.errorf("can't use scalar %q as array", name))
+		panic(parser.PosErrorf(expr.Pos, "can't use scalar %q as array", name))
 	}
-	expr := &ast.ArrayExpr{scope, 0, name}
-	r.arrayRefs = append(r.arrayRefs, arrayRef{funcName, expr, pos})
+	expr.Scope = scope
+	//expr := &ast.ArrayExpr{scope, 0, name}
+	r.arrayRefs = append(r.arrayRefs, arrayRef{funcName, expr})
 	info := r.varTypes[funcName][name]
 	if info.typ == typeUnknown {
 		r.varTypes[funcName][name] = typeInfo{typeArray, nil, scope, 0, info.callName, 0}
 	}
-	return expr
 }
 
 // Print variable type information (for debugging) on p.debugWriter

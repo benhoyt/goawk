@@ -246,7 +246,7 @@ func (p *parser) simpleStmt() ast.Stmt {
 		}
 	case DELETE:
 		p.next()
-		ref := p.arrayRef(p.val, p.pos)
+		ref := ast.ArrayRef(p.val, p.pos)
 		p.expect(NAME)
 		var index []ast.Expr
 		if p.tok == LBRACKET {
@@ -587,7 +587,7 @@ func (p *parser) _in(higher func() ast.Expr) ast.Expr {
 	expr := higher()
 	for p.tok == IN {
 		p.next()
-		ref := p.arrayRef(p.val, p.pos)
+		ref := ast.ArrayRef(p.val, p.pos)
 		p.expect(NAME)
 		expr = &ast.InExpr{[]ast.Expr{expr}, ref}
 	}
@@ -907,9 +907,9 @@ func (p *parser) optionalLValue() ast.Expr {
 				panic(p.errorf("expected expression instead of ]"))
 			}
 			p.expect(RBRACKET)
-			return &ast.IndexExpr{p.arrayRef(name, namePos), index}
+			return &ast.IndexExpr{ast.ArrayRef(name, namePos), index}
 		}
-		return p.varRef(name, namePos)
+		return ast.VarRef(name, namePos)
 	case DOLLAR:
 		p.next()
 		return &ast.FieldExpr{p.primary()}
@@ -1015,6 +1015,7 @@ func (p *parser) errorf(format string, args ...interface{}) error {
 }
 
 // Like errorf, but with an explicit position.
+// TODO this should be internal or not exported
 func PosErrorf(pos Position, format string, args ...interface{}) error {
 	message := fmt.Sprintf(format, args...)
 	return &ParseError{pos, message}
@@ -1036,17 +1037,9 @@ func (p *parser) userCall(name string, pos Position) *ast.UserCallExpr {
 		i++
 	}
 	p.expect(RPAREN)
-	call := &ast.UserCallExpr{false, -1, name, args, pos} // index is resolved later
+	call := &ast.UserCallExpr{false, ast.WillBeResolvedLater, name, args, pos}
 	//p.recordUserCall(call, pos)
 	return call
-}
-
-func (p *parser) varRef(name string, pos Position) *ast.VarExpr {
-	return &ast.VarExpr{ast.ScopeUnresolved, 0, name}
-}
-
-func (p *parser) arrayRef(name string, pos Position) *ast.ArrayExpr {
-	return &ast.ArrayExpr{ast.ScopeUnresolved, 0, name}
 }
 
 // Record a "multi expression" (comma-separated pseudo-expression

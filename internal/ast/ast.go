@@ -159,6 +159,7 @@ type ArrayExpr struct {
 	Scope VarScope
 	Index int
 	Name  string
+	Pos   Position
 }
 
 func (e *ArrayExpr) String() string {
@@ -226,14 +227,15 @@ func (e *RegExpr) String() string {
 	return "/" + escaped + "/"
 }
 
+// meaning it will be set during resolve step
+const WillBeResolvedLater = -1
+
 type VarScope int
 
 const (
 	ScopeSpecial VarScope = iota
 	ScopeGlobal
 	ScopeLocal
-
-	ScopeUnresolved VarScope = -1
 )
 
 // VarExpr is a variable reference (special var, global, or local).
@@ -243,6 +245,7 @@ type VarExpr struct {
 	Scope VarScope
 	Index int
 	Name  string
+	Pos   Position
 }
 
 func (e *VarExpr) String() string {
@@ -607,4 +610,12 @@ func trimParens(s string) string {
 		s = s[1 : len(s)-1]
 	}
 	return s
+}
+
+func VarRef(name string, pos Position) *VarExpr {
+	return &VarExpr{WillBeResolvedLater, WillBeResolvedLater, name, pos}
+}
+
+func ArrayRef(name string, pos Position) *ArrayExpr {
+	return &ArrayExpr{WillBeResolvedLater, WillBeResolvedLater, name, pos}
 }
