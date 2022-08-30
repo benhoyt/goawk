@@ -460,12 +460,22 @@ func (p *parser) function() ast.Function {
 	p.optionalNewlines()
 
 	// Parse the body
-	//p.startFunction(name, params)
+	p.startFunction(name)
 	body := p.stmtsBrace()
-	//p.stopFunction()
+	p.stopFunction()
 	//p.locals = nil
 
 	return ast.Function{name, params, nil, body, funcNamePos}
+}
+
+// Signal the start of a function
+func (p *parser) startFunction(name string) {
+	p.funcName = name
+}
+
+// Signal the end of a function
+func (p *parser) stopFunction() {
+	p.funcName = ""
 }
 
 // Parse expressions separated by commas: args to print[f] or user
