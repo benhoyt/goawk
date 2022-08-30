@@ -74,6 +74,8 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	// Parse into abstract syntax tree
 	astProg := p.program()
 
+	prog = &Program{}
+
 	// Resolve step
 	prog.ResolvedProgram = *resolver.Resolve(astProg, config.toResolverConfig())
 

@@ -30,6 +30,9 @@ func WalkStmtList(v Visitor, list []Stmt) {
 // w.Visit(nil).
 //
 func Walk(v Visitor, node Node) {
+	if node == nil {
+		return
+	}
 	if v = v.Visit(node); v == nil {
 		return
 	}
@@ -148,7 +151,7 @@ func Walk(v Visitor, node Node) {
 	case *BlockStmt:
 		WalkStmtList(v, n.Body)
 
-	case Program:
+	case *Program:
 		for _, stmts := range n.Begin {
 			WalkStmtList(v, stmts)
 		}
