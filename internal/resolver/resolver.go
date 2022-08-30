@@ -89,6 +89,7 @@ func (r *resolver) Visit(node ast.Node) ast.Visitor {
 		r.recordArrayRef(n)
 
 	case *ast.UserCallExpr:
+		ast.WalkExprList(r, n.Args)
 		name := n.Name
 		if r.locals[name] {
 			panic(n.Pos.Errorf("can't call local variable %q as function", name))
