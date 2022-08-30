@@ -1012,7 +1012,7 @@ func (p *parser) userCall(name string, pos Position, endPos Position) *ast.UserC
 		i++
 	}
 	p.expect(RPAREN)
-	return &ast.UserCallExpr{false, ast.WillBeResolvedLater, name, args, pos, endPos}
+	return &ast.UserCallExpr{false, ast.WillBeResolvedLater, name, args, pos}
 }
 
 // Record a "multi expression" (comma-separated pseudo-expression

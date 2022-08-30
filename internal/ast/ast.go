@@ -81,9 +81,7 @@ func (a *Action) String() string {
 }
 
 type Node interface {
-	// TODO positions below
-	//Pos() token.Pos // position of first character belonging to the node
-	//End() token.Pos // position of first character immediately after the node
+	// In the future we may want to place positions information here
 }
 
 // Expr is the abstract syntax tree for any AWK expression.
@@ -333,7 +331,6 @@ type UserCallExpr struct {
 	Name   string
 	Args   []Expr
 	Pos    Position
-	EndPos Position
 }
 
 func (e *UserCallExpr) String() string {
