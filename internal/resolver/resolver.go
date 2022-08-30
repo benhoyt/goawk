@@ -92,7 +92,7 @@ func (r *resolver) Visit(node ast.Node) ast.Visitor {
 		ast.WalkExprList(r, n.Args)
 		name := n.Name
 		if r.locals[name] {
-			panic(n.Pos.Errorf("can't call local variable %q as function", name))
+			panic(n.EndPos.Errorf("can't call local variable %q as function", name))
 		}
 		for i, arg := range n.Args {
 			r.processUserCallArg(name, arg, i)

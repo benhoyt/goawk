@@ -333,6 +333,7 @@ type UserCallExpr struct {
 	Name   string
 	Args   []Expr
 	Pos    Position
+	EndPos Position
 }
 
 func (e *UserCallExpr) String() string {
