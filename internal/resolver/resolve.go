@@ -169,9 +169,10 @@ func (r *resolver) initResolve(config *Config) {
 	r.varTypes = make(map[string]map[string]typeInfo)
 	r.varTypes[""] = make(map[string]typeInfo) // globals
 	r.functions = make(map[string]int)
-	r.recordArrayRef(ast.ArrayRef("ARGV", Position{1, 1}))    // interpreter relies on ARGV being present
-	r.recordArrayRef(ast.ArrayRef("ENVIRON", Position{1, 1})) // and other built-in arrays
-	r.recordArrayRef(ast.ArrayRef("FIELDS", Position{1, 1}))
+	initialPos := Position{1, 1}
+	r.recordArrayRef(ast.ArrayRef("ARGV", initialPos))    // interpreter relies on ARGV being present
+	r.recordArrayRef(ast.ArrayRef("ENVIRON", initialPos)) // and other built-in arrays
+	r.recordArrayRef(ast.ArrayRef("FIELDS", initialPos))
 }
 
 // Records a call to a user function (for resolving indexes later)
