@@ -188,6 +188,7 @@ func (r *resolver) getScope(name string) (ast.VarScope, string) {
 func (r *resolver) recordVarRef(expr *ast.VarExpr) {
 	name := expr.Name
 	scope, funcName := r.getScope(name)
+	expr.Scope = scope
 	r.varRefs = append(r.varRefs, varRef{funcName, expr, false})
 	info := r.varTypes[funcName][name]
 	if info.typ == typeUnknown {
