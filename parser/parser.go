@@ -68,7 +68,6 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 		p.debugTypes = config.DebugTypes
 		p.debugWriter = config.DebugWriter
 	}
-	//p.initResolve()
 	p.multiExprs = make(map[*ast.MultiExpr]Position, 3)
 
 	p.next() // initialize p.tok
@@ -124,16 +123,7 @@ type parser struct {
 	loopDepth int    // current loop depth (0 if not in any loops)
 
 	// Variable tracking and resolving
-	//locals map[string]bool // current function's locals (for determining scope)
-	//varTypes   map[string]map[string]typeInfo // map of func name to var name to type
-	//varRefs    []varRef                       // all variable references (usually scalars)
-	//arrayRefs  []arrayRef                     // all array references
 	multiExprs map[*ast.MultiExpr]Position // tracks comma-separated expressions
-
-	// Function tracking
-	//functions   map[string]int // map of function name to index
-	//userCalls   []userCall     // record calls so we can resolve them later
-	//nativeFuncs map[string]interface{}
 
 	// Configuration and debugging
 	debugTypes  bool      // show variable types for debugging
@@ -154,7 +144,6 @@ func (p *parser) program() *ast.Program {
 			prog.End = append(prog.End, p.stmtsBrace())
 		case FUNCTION:
 			function := p.function()
-			//p.addFunction(function.Name, len(prog.Functions))
 			prog.Functions = append(prog.Functions, function)
 		default:
 			p.inAction = true
@@ -178,8 +167,6 @@ func (p *parser) program() *ast.Program {
 		p.optionalNewlines()
 	}
 
-	//p.resolveUserCalls(prog)
-	//p.resolveVars(prog)
 	p.checkMultiExprs()
 	prog.EndPos = p.pos
 
@@ -431,9 +418,6 @@ func (p *parser) function() ast.Function {
 	}
 	p.next()
 	name := p.val
-	//if _, ok := p.functions[name]; ok {
-	//	panic(p.errorf("function %q already defined", name))
-	//}
 	funcNamePos := p.pos
 	p.expect(NAME)
 	p.expect(LPAREN)
@@ -460,22 +444,13 @@ func (p *parser) function() ast.Function {
 	p.optionalNewlines()
 
 	// Parse the body
-	p.startFunction(name)
+	p.funcName = name
+
 	body := p.stmtsBrace()
-	p.stopFunction()
-	//p.locals = nil
+
+	p.funcName = ""
 
 	return ast.Function{name, params, nil, body, funcNamePos}
-}
-
-// Signal the start of a function
-func (p *parser) startFunction(name string) {
-	p.funcName = name
-}
-
-// Signal the end of a function
-func (p *parser) stopFunction() {
-	p.funcName = ""
 }
 
 // Parse expressions separated by commas: args to print[f] or user
@@ -733,9 +708,6 @@ func (p *parser) primary() ast.Expr {
 			p.expect(RBRACKET)
 			return &ast.IndexExpr{ast.ArrayRef(name, namePos), index}
 		} else if p.tok == LPAREN && !p.lexer.HadSpace() {
-			//if p.locals[name] {
-			//	panic(p.errorf("can't call local variable %q as function", name))
-			//}
 			// Grammar requires no space between function name and
 			// left paren for user function calls, hence the funky
 			// lexer.HadSpace() method.
@@ -1036,14 +1008,11 @@ func (p *parser) userCall(name string, pos Position, endPos Position) *ast.UserC
 			p.commaNewlines()
 		}
 		arg := p.expr()
-		//p.processUserCallArg(name, arg, i)
 		args = append(args, arg)
 		i++
 	}
 	p.expect(RPAREN)
-	call := &ast.UserCallExpr{false, ast.WillBeResolvedLater, name, args, pos, endPos}
-	//p.recordUserCall(call, pos)
-	return call
+	return &ast.UserCallExpr{false, ast.WillBeResolvedLater, name, args, pos, endPos}
 }
 
 // Record a "multi expression" (comma-separated pseudo-expression
