@@ -66,7 +66,7 @@ func (r *resolver) Visit(node ast.Node) ast.Visitor {
 		if _, ok := r.functions[name]; ok {
 			panic(function.Pos.Errorf("function %q already defined", name))
 		}
-		r.addFunction(name)
+		r.functions[name] = len(r.functions)
 		r.locals = make(map[string]bool, 7)
 		for _, param := range function.Params {
 			r.locals[param] = true
@@ -172,11 +172,6 @@ func (r *resolver) initResolve(config *Config) {
 	r.recordArrayRef(ast.ArrayRef("ARGV", Position{1, 1}))    // interpreter relies on ARGV being present
 	r.recordArrayRef(ast.ArrayRef("ENVIRON", Position{1, 1})) // and other built-in arrays
 	r.recordArrayRef(ast.ArrayRef("FIELDS", Position{1, 1}))
-}
-
-// Add function by name with given index
-func (r *resolver) addFunction(name string) {
-	r.functions[name] = len(r.functions)
 }
 
 // Records a call to a user function (for resolving indexes later)
