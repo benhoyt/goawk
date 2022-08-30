@@ -82,7 +82,7 @@ func (r *resolver) initResolve(config *Config) {
 	r.recordArrayRef(ast.ArrayRef("ARGV", Position{1, 1}))    // interpreter relies on ARGV being present
 	r.recordArrayRef(ast.ArrayRef("ENVIRON", Position{1, 1})) // and other built-in arrays
 	r.recordArrayRef(ast.ArrayRef("FIELDS", Position{1, 1}))
-	r.multiExprs = make(map[*ast.MultiExpr]Position, 3)
+	//r.multiExprs = make(map[*ast.MultiExpr]Position, 3)
 }
 
 // Signal the start of a function

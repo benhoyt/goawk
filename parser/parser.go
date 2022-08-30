@@ -69,6 +69,8 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 		p.debugWriter = config.DebugWriter
 	}
 	//p.initResolve()
+	p.multiExprs = make(map[*ast.MultiExpr]Position, 3)
+
 	p.next() // initialize p.tok
 
 	// Parse into abstract syntax tree
