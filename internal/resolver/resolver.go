@@ -6,8 +6,7 @@ import (
 )
 
 type resolver struct {
-	// Parsing state
-	// TODO this reflects the var in parser - is this needed?
+	// Resolving state
 	funcName string // function name if parsing a func, else ""
 
 	// Variable tracking and resolving
@@ -15,7 +14,6 @@ type resolver struct {
 	varTypes  map[string]map[string]typeInfo // map of func name to var name to type
 	varRefs   []varRef                       // all variable references (usually scalars)
 	arrayRefs []arrayRef                     // all array references
-	//multiExprs map[*ast.MultiExpr]lexer.Position // tracks comma-separated expressions
 
 	// Function tracking
 	functions   map[string]int // map of function name to index
@@ -41,16 +39,14 @@ type Config struct {
 
 func Resolve(prog *ast.Program, config *Config) *ast.ResolvedProgram {
 	r := &resolver{}
-	resolvedProg := &ast.ResolvedProgram{
-		Program: *prog,
-	}
 	r.initResolve(config)
+
+	resolvedProg := &ast.ResolvedProgram{Program: *prog}
 
 	ast.Walk(r, prog)
 
 	r.resolveUserCalls(prog)
 	r.resolveVars(resolvedProg)
-	//r.checkMultiExprs()
 
 	return resolvedProg
 }
@@ -67,17 +63,14 @@ func (r *resolver) Visit(node ast.Node) ast.Visitor {
 		r.addFunction(name)
 		r.locals = make(map[string]bool, 7)
 		for _, param := range function.Params {
-			//if r.locals[param] {
-			//	panic(function.ParamsPos[i].Errorf( "duplicate parameter name %q", param))
-			//}
 			r.locals[param] = true
-
 		}
-		r.startFunction(name)
+		r.funcName = name
+		r.varTypes[name] = make(map[string]typeInfo)
 
 		ast.WalkStmtList(r, function.Body)
 
-		r.stopFunction()
+		r.funcName = ""
 		r.locals = nil
 
 	case *ast.VarExpr:
@@ -95,7 +88,7 @@ func (r *resolver) Visit(node ast.Node) ast.Visitor {
 			ast.Walk(r, arg)
 			r.processUserCallArg(name, arg, i)
 		}
-		r.recordUserCall(n, n.Pos)
+		r.userCalls = append(r.userCalls, userCall{n, n.Pos, r.funcName})
 	default:
 		return r
 	}
