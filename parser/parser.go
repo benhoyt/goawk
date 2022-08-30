@@ -52,11 +52,9 @@ func (c *ParserConfig) toResolverConfig() *resolver.Config {
 // the parser configuration (and is allowed to be nil).
 func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	defer func() {
-		// TODO adjust description
-		// The parser uses panic with a *ParseError to signal parsing
-		// errors internally, and they're caught here. This
-		// significantly simplifies the recursive descent calls as
-		// we don't have to check errors everywhere.
+		// The parser and resolver use panic with a *PositionError to signal parsing
+		// errors internally, and they're caught here. This significantly simplifies
+		// the recursive descent calls as we don't have to check errors everywhere.
 		if r := recover(); r != nil {
 			// Convert to ParseError or re-panic
 			err = &ParseError{*r.(*PositionError)}
