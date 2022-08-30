@@ -89,12 +89,12 @@ func (r *resolver) Visit(node ast.Node) ast.Visitor {
 		r.recordArrayRef(n)
 
 	case *ast.UserCallExpr:
-		ast.WalkExprList(r, n.Args)
 		name := n.Name
 		if r.locals[name] {
 			panic(n.EndPos.Errorf("can't call local variable %q as function", name))
 		}
 		for i, arg := range n.Args {
+			ast.Walk(r, arg)
 			r.processUserCallArg(name, arg, i)
 		}
 		r.recordUserCall(n, n.Pos)
