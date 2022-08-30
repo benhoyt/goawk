@@ -709,7 +709,7 @@ func (p *parser) primary() ast.Expr {
 			// Grammar requires no space between function name and
 			// left paren for user function calls, hence the funky
 			// lexer.HadSpace() method.
-			return p.userCall(name, namePos, p.pos)
+			return p.userCall(name, namePos)
 		}
 		return ast.VarRef(name, namePos)
 	case LPAREN:
@@ -997,7 +997,7 @@ func (p *parser) errorf(format string, args ...interface{}) error {
 
 // Parse call to a user-defined function (and record call site for
 // resolving later).
-func (p *parser) userCall(name string, pos Position, endPos Position) *ast.UserCallExpr {
+func (p *parser) userCall(name string, pos Position) *ast.UserCallExpr {
 	p.expect(LPAREN)
 	args := []ast.Expr{}
 	i := 0
