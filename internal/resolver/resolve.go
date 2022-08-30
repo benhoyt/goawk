@@ -1,16 +1,106 @@
 // Resolve function calls and variable types
 package resolver
 
-// TODO put all into resolver.go
-
 import (
 	"fmt"
+	"io"
 	"reflect"
 	"sort"
 
 	"github.com/benhoyt/goawk/internal/ast"
 	. "github.com/benhoyt/goawk/lexer"
 )
+
+type resolver struct {
+	// Resolving state
+	funcName string // function name if parsing a func, else ""
+
+	// Variable tracking and resolving
+	locals    map[string]bool                // current function's locals (for determining scope)
+	varTypes  map[string]map[string]typeInfo // map of func name to var name to type
+	varRefs   []varRef                       // all variable references (usually scalars)
+	arrayRefs []arrayRef                     // all array references
+
+	// Function tracking
+	functions   map[string]int // map of function name to index
+	userCalls   []userCall     // record calls so we can resolve them later
+	nativeFuncs map[string]interface{}
+
+	// Configuration and debugging
+	debugTypes  bool      // show variable types for debugging
+	debugWriter io.Writer // where the debug output goes
+}
+
+type Config struct {
+	// Enable printing of type information
+	DebugTypes bool
+
+	// io.Writer to print type information on (for example, os.Stderr)
+	DebugWriter io.Writer
+
+	// Map of named Go functions to allow calling from AWK. See docs
+	// on interp.Config.Funcs for details.
+	Funcs map[string]interface{}
+}
+
+func Resolve(prog *ast.Program, config *Config) *ast.ResolvedProgram {
+	r := &resolver{}
+	r.initResolve(config)
+
+	resolvedProg := &ast.ResolvedProgram{Program: *prog}
+
+	ast.Walk(r, prog)
+
+	r.resolveUserCalls(prog)
+	r.resolveVars(resolvedProg)
+
+	return resolvedProg
+}
+
+func (r *resolver) Visit(node ast.Node) ast.Visitor {
+	switch n := node.(type) {
+
+	case ast.Function:
+		function := n
+		name := function.Name
+		if _, ok := r.functions[name]; ok {
+			panic(function.Pos.Errorf("function %q already defined", name))
+		}
+		r.addFunction(name)
+		r.locals = make(map[string]bool, 7)
+		for _, param := range function.Params {
+			r.locals[param] = true
+		}
+		r.funcName = name
+		r.varTypes[name] = make(map[string]typeInfo)
+
+		ast.WalkStmtList(r, function.Body)
+
+		r.funcName = ""
+		r.locals = nil
+
+	case *ast.VarExpr:
+		r.recordVarRef(n)
+
+	case *ast.ArrayExpr:
+		r.recordArrayRef(n)
+
+	case *ast.UserCallExpr:
+		name := n.Name
+		if r.locals[name] {
+			panic(n.EndPos.Errorf("can't call local variable %q as function", name))
+		}
+		for i, arg := range n.Args {
+			ast.Walk(r, arg)
+			r.processUserCallArg(name, arg, i)
+		}
+		r.userCalls = append(r.userCalls, userCall{n, n.Pos, r.funcName})
+	default:
+		return r
+	}
+
+	return nil
+}
 
 type varType int
 
@@ -82,18 +172,6 @@ func (r *resolver) initResolve(config *Config) {
 	r.recordArrayRef(ast.ArrayRef("ARGV", Position{1, 1}))    // interpreter relies on ARGV being present
 	r.recordArrayRef(ast.ArrayRef("ENVIRON", Position{1, 1})) // and other built-in arrays
 	r.recordArrayRef(ast.ArrayRef("FIELDS", Position{1, 1}))
-	//r.multiExprs = make(map[*ast.MultiExpr]Position, 3)
-}
-
-// Signal the start of a function
-func (r *resolver) startFunction(name string) {
-	r.funcName = name
-	r.varTypes[name] = make(map[string]typeInfo)
-}
-
-// Signal the end of a function
-func (r *resolver) stopFunction() {
-	r.funcName = ""
 }
 
 // Add function by name with given index
@@ -106,11 +184,6 @@ type userCall struct {
 	call   *ast.UserCallExpr
 	pos    Position
 	inFunc string
-}
-
-// Record a user call site
-func (r *resolver) recordUserCall(call *ast.UserCallExpr, pos Position) {
-	r.userCalls = append(r.userCalls, userCall{call, pos, r.funcName})
 }
 
 // After parsing, resolve all user calls to their indexes. Also
