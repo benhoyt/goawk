@@ -22,8 +22,6 @@ type resolver struct {
 	userCalls   []userCall     // record calls so we can resolve them later
 	nativeFuncs map[string]interface{}
 
-	funcIdx int
-
 	// Configuration and debugging
 	debugTypes  bool      // show variable types for debugging
 	debugWriter io.Writer // where the debug output goes
