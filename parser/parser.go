@@ -151,15 +151,15 @@ type parser struct {
 func (p *parser) program() *Program {
 	prog := &Program{}
 
-	// Terminator SEMICOLON|NEWLINE NEWLINE* is required after each item
+	// Terminator "(SEMICOLON|NEWLINE) NEWLINE*" is required after each item
 	// with two exceptions where it is optional:
 	//
 	// 1. after the last item, or
 	// 2. when the previous item ended with a closing brace.
 	//
 	// NOTE: The second exception does not seem to be correct according to
-	// the Posix grammar definition, but it is the common behaviour for the
-	// major awk implementations.
+	// the POSIX grammar definition, but it is the common behaviour for the
+	// major AWK implementations.
 	needsTerminator := false
 
 	for p.tok != EOF {
