@@ -808,6 +808,15 @@ BEGIN { foo(5); bar(10) }
 	{`BEGIN { print("x" > "out") }`, "", "1\n", "", ""},
 	{`BEGIN { printf("x" > "out") }`, "", "1", "", ""},
 
+	// Semicolon is allowed as item terminator
+	{"function f(){} ; 0", "", "", "", ""}, // after function
+	{"{}             ; 0", "", "", "", ""}, // after action
+	{"1              ; 0", "", "", "", ""}, // after normal pattern without action
+	// also after the last item
+	{"function f(){} ;  ", "", "", "", ""},
+	{"{}             ;  ", "", "", "", ""},
+	{"1              ;  ", "", "", "", ""},
+
 	// Grammar should allow blocks wherever statements are allowed
 	{`BEGIN { if (1) printf "x"; else printf "y" }`, "", "x", "", ""},
 	{`BEGIN { printf "x"; { printf "y"; printf "z" } }`, "", "xyz", "", ""},

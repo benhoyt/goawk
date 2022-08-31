@@ -150,9 +150,30 @@ type parser struct {
 // Parse an entire AWK program.
 func (p *parser) program() *Program {
 	prog := &Program{}
-	p.optionalNewlines()
+
+	// Terminator "(SEMICOLON|NEWLINE) NEWLINE*" is required after each item
+	// with two exceptions where it is optional:
+	//
+	// 1. after the last item, or
+	// 2. when the previous item ended with a closing brace.
+	//
+	// NOTE: The second exception does not seem to be correct according to
+	// the POSIX grammar definition, but it is the common behaviour for the
+	// major AWK implementations.
+	needsTerminator := false
+
 	for p.tok != EOF {
+		if needsTerminator {
+			if !p.matches(NEWLINE, SEMICOLON) {
+				panic(p.errorf("expected ; or newline between items"))
+			}
+			p.next()
+			needsTerminator = false
+		}
+		p.optionalNewlines()
 		switch p.tok {
+		case EOF:
+			break
 		case BEGIN:
 			p.next()
 			prog.Begin = append(prog.Begin, p.stmtsBrace())
@@ -170,7 +191,7 @@ func (p *parser) program() *Program {
 			if !p.matches(LBRACE, EOF) {
 				pattern = append(pattern, p.expr())
 			}
-			if !p.matches(LBRACE, EOF, NEWLINE) {
+			if !p.matches(LBRACE, EOF, NEWLINE, SEMICOLON) {
 				p.commaNewlines()
 				pattern = append(pattern, p.expr())
 			}
@@ -178,11 +199,12 @@ func (p *parser) program() *Program {
 			action := ast.Action{pattern, nil}
 			if p.tok == LBRACE {
 				action.Stmts = p.stmtsBrace()
+			} else {
+				needsTerminator = true
 			}
 			prog.Actions = append(prog.Actions, action)
 			p.inAction = false
 		}
-		p.optionalNewlines()
 	}
 
 	p.resolveUserCalls(prog)
