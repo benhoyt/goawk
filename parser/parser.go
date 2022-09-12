@@ -188,7 +188,6 @@ func (p *parser) program() *ast.Program {
 	}
 
 	p.checkMultiExprs()
-	prog.EndPos = p.pos
 
 	return prog
 }

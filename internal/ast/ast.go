@@ -16,7 +16,6 @@ type Program struct {
 	Actions   []*Action
 	End       []Stmts
 	Functions []*Function
-	EndPos    Position
 }
 
 type ResolvedProgram struct {

@@ -357,7 +357,8 @@ func (r *resolver) resolveVars(prog *ast.ResolvedProgram) {
 		_, isFunc := r.functions[name]
 		if isFunc {
 			// Global var can't also be the name of a function
-			panic(prog.EndPos.Errorf("global var %q can't also be a function", name))
+			pos := Position{1, 1} // Ideally it'd be the position of the global var.
+			panic(pos.Errorf("global var %q can't also be a function", name))
 		}
 		var index int
 		if info.scope == ast.ScopeSpecial {
