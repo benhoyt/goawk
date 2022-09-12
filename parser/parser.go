@@ -176,7 +176,7 @@ func (p *parser) program() *ast.Program {
 				pattern = append(pattern, p.expr())
 			}
 			// Or an empty action (equivalent to { print $0 })
-			action := ast.Action{pattern, nil}
+			action := &ast.Action{pattern, nil}
 			if p.tok == LBRACE {
 				action.Stmts = p.stmtsBrace()
 			} else {
@@ -430,7 +430,7 @@ func (p *parser) loopStmts() ast.Stmts {
 // Parse a function definition and body. As it goes, this resolves
 // the local variable indexes and tracks which parameters are array
 // parameters.
-func (p *parser) function() ast.Function {
+func (p *parser) function() *ast.Function {
 	if p.funcName != "" {
 		// Should never actually get here (FUNCTION token is only
 		// handled at the top level), but just in case.
@@ -470,7 +470,7 @@ func (p *parser) function() ast.Function {
 
 	p.funcName = ""
 
-	return ast.Function{name, params, nil, body, funcNamePos}
+	return &ast.Function{name, params, nil, body, funcNamePos}
 }
 
 // Parse expressions separated by commas: args to print[f] or user

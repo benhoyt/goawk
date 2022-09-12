@@ -165,11 +165,11 @@ func Walk(v Visitor, node Node) {
 			WalkStmtList(v, stmts)
 		}
 
-	case Action:
+	case *Action:
 		WalkExprList(v, n.Pattern)
 		WalkStmtList(v, n.Stmts)
 
-	case Function:
+	case *Function:
 		WalkStmtList(v, n.Body)
 
 	default:

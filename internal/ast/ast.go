@@ -13,9 +13,9 @@ import (
 // Program is an entire AWK program.
 type Program struct {
 	Begin     []Stmts
-	Actions   []Action
+	Actions   []*Action
 	End       []Stmts
-	Functions []Function
+	Functions []*Function
 	EndPos    Position
 }
 
@@ -86,8 +86,8 @@ type Node interface {
 
 // All these types implement the Node interface.
 func (p *Program) node()        {}
-func (a Action) node()          {}
-func (f Function) node()        {}
+func (a *Action) node()         {}
+func (f *Function) node()       {}
 func (e *FieldExpr) node()      {}
 func (e *NamedFieldExpr) node() {}
 func (e *UnaryExpr) node()      {}

@@ -60,7 +60,7 @@ func Resolve(prog *ast.Program, config *Config) *ast.ResolvedProgram {
 func (r *resolver) Visit(node ast.Node) ast.Visitor {
 	switch n := node.(type) {
 
-	case ast.Function:
+	case *ast.Function:
 		function := n
 		name := function.Name
 		if _, ok := r.functions[name]; ok {
