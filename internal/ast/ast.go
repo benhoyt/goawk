@@ -81,8 +81,47 @@ func (a *Action) String() string {
 }
 
 type Node interface {
-	// In the future we may want to place positions information here
+	node()
 }
+
+// All these types implement the Node interface.
+func (p *Program) node()        {}
+func (a Action) node()          {}
+func (f Function) node()        {}
+func (e *FieldExpr) node()      {}
+func (e *NamedFieldExpr) node() {}
+func (e *UnaryExpr) node()      {}
+func (e *BinaryExpr) node()     {}
+func (e *ArrayExpr) node()      {}
+func (e *InExpr) node()         {}
+func (e *CondExpr) node()       {}
+func (e *NumExpr) node()        {}
+func (e *StrExpr) node()        {}
+func (e *RegExpr) node()        {}
+func (e *VarExpr) node()        {}
+func (e *IndexExpr) node()      {}
+func (e *AssignExpr) node()     {}
+func (e *AugAssignExpr) node()  {}
+func (e *IncrExpr) node()       {}
+func (e *CallExpr) node()       {}
+func (e *UserCallExpr) node()   {}
+func (e *MultiExpr) node()      {}
+func (e *GetlineExpr) node()    {}
+func (s *PrintStmt) node()      {}
+func (s *PrintfStmt) node()     {}
+func (s *ExprStmt) node()       {}
+func (s *IfStmt) node()         {}
+func (s *ForStmt) node()        {}
+func (s *ForInStmt) node()      {}
+func (s *WhileStmt) node()      {}
+func (s *DoWhileStmt) node()    {}
+func (s *BreakStmt) node()      {}
+func (s *ContinueStmt) node()   {}
+func (s *NextStmt) node()       {}
+func (s *ExitStmt) node()       {}
+func (s *DeleteStmt) node()     {}
+func (s *ReturnStmt) node()     {}
+func (s *BlockStmt) node()      {}
 
 // Expr is the abstract syntax tree for any AWK expression.
 type Expr interface {
