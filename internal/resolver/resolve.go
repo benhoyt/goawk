@@ -273,7 +273,6 @@ func (r *resolver) recordArrayRef(expr *ast.ArrayExpr) {
 		panic(expr.Pos.Errorf("can't use scalar %q as array", name))
 	}
 	expr.Scope = scope
-	//expr := &ast.ArrayExpr{scope, 0, name}
 	r.arrayRefs = append(r.arrayRefs, arrayRef{funcName, expr})
 	info := r.varTypes[funcName][name]
 	if info.typ == typeUnknown {
