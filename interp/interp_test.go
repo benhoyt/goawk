@@ -719,7 +719,7 @@ BEGIN { foo(5); bar(10) }
 `, "", "", `parse error at 2:14: can't use function name as parameter name`, "function name"},
 	{`function foo() { print foo }  BEGIN { foo() }`,
 		"", "", `parse error at 1:1: global var "foo" can't also be a function`, "function"},
-	{`function f(x) { print x, x(); }  BEGIN { f() }`, "", "", `parse error at 1:27: can't call local variable "x" as function`, "function"},
+	{`function f(x) { print x, x(); }  BEGIN { f() }`, "", "", `parse error at 1:26: can't call local variable "x" as function`, "function"},
 
 	// Redirected I/O
 	{`BEGIN { getline x; print x }`, "foo", "foo\n", "", ""},

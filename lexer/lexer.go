@@ -33,13 +33,6 @@ type Position struct {
 	Column int
 }
 
-func (pos Position) Add(lines int, cols int) Position {
-	return Position{
-		Line:   pos.Line + lines,
-		Column: pos.Column + cols,
-	}
-}
-
 type PositionError struct {
 	// Source line/column position where the error occurred.
 	Position Position
