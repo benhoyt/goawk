@@ -24,7 +24,7 @@ func WalkStmtList(v Visitor, stmts []Stmt) {
 }
 
 // Walk traverses an AST in depth-first order: It starts by calling
-// v.Visit(node); node must not be nil. If the visitor w returned by
+// v.Visit(node); if node is nil, it does nothing. If the visitor w returned by
 // v.Visit(node) is not nil, Walk is invoked recursively with visitor
 // w for each of the non-nil children of node, followed by a call of
 // w.Visit(nil).
