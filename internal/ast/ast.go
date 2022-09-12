@@ -272,7 +272,7 @@ func (e *RegExpr) String() string {
 }
 
 // meaning it will be set during resolve step
-const WillBeResolvedLater = -1
+const resolvedLater = -1
 
 type VarScope int
 
@@ -657,9 +657,13 @@ func trimParens(s string) string {
 }
 
 func VarRef(name string, pos Position) *VarExpr {
-	return &VarExpr{WillBeResolvedLater, WillBeResolvedLater, name, pos}
+	return &VarExpr{resolvedLater, resolvedLater, name, pos}
 }
 
 func ArrayRef(name string, pos Position) *ArrayExpr {
-	return &ArrayExpr{WillBeResolvedLater, WillBeResolvedLater, name, pos}
+	return &ArrayExpr{resolvedLater, resolvedLater, name, pos}
+}
+
+func UserCall(name string, args []Expr, pos Position) *UserCallExpr {
+	return &UserCallExpr{false, resolvedLater, name, args, pos}
 }
