@@ -11,15 +11,15 @@ type Visitor interface {
 
 // Helper functions for common node lists. They may be empty.
 
-func WalkExprList(v Visitor, list []Expr) {
-	for _, x := range list {
-		Walk(v, x)
+func WalkExprList(v Visitor, exprs []Expr) {
+	for _, expr := range exprs {
+		Walk(v, expr)
 	}
 }
 
-func WalkStmtList(v Visitor, list []Stmt) {
-	for _, x := range list {
-		Walk(v, x)
+func WalkStmtList(v Visitor, stmts []Stmt) {
+	for _, stmt := range stmts {
+		Walk(v, stmt)
 	}
 }
 
