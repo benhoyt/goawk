@@ -5,6 +5,7 @@
 package parser
 
 import (
+	"fmt"
 	"io"
 	"regexp"
 	"strconv"
@@ -19,7 +20,16 @@ import (
 // ParseError (actually *ParseError) is the type of error returned by
 // ParseProgram.
 type ParseError struct {
-	ast.PositionError
+	// Source line/column position where the error occurred.
+	Position Position
+	// Error message.
+	Message string
+}
+
+// Error returns a formatted version of the error, including the line
+// and column numbers.
+func (e *ParseError) Error() string {
+	return fmt.Sprintf("parse error at %d:%d: %s", e.Position.Line, e.Position.Column, e.Message)
 }
 
 // ParserConfig lets you specify configuration for the parsing
@@ -52,12 +62,16 @@ func (c *ParserConfig) toResolverConfig() *resolver.Config {
 // the parser configuration (and is allowed to be nil).
 func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	defer func() {
-		// The parser and resolver use panic with a *PositionError to signal parsing
+		// The parser and resolver use panic with an *ast.PositionError to signal parsing
 		// errors internally, and they're caught here. This significantly simplifies
 		// the recursive descent calls as we don't have to check errors everywhere.
 		if r := recover(); r != nil {
 			// Convert to ParseError or re-panic
-			err = &ParseError{*r.(*ast.PositionError)}
+			positionError := *r.(*ast.PositionError)
+			err = &ParseError{
+				Position: positionError.Position,
+				Message:  positionError.Message,
+			}
 		}
 	}()
 	lexer := NewLexer(src)
