@@ -666,3 +666,22 @@ func ArrayRef(name string, pos Position) *ArrayExpr {
 func UserCall(name string, args []Expr, pos Position) *UserCallExpr {
 	return &UserCallExpr{false, resolvedLater, name, args, pos}
 }
+
+type PositionError struct {
+	// Source line/column position where the error occurred.
+	Position Position
+	// Error message.
+	Message string
+}
+
+// PosErrorf like errorf, but with an explicit position.
+func PosErrorf(pos Position, format string, args ...interface{}) error {
+	message := fmt.Sprintf(format, args...)
+	return &PositionError{pos, message}
+}
+
+// Error returns a formatted version of the error, including the line
+// and column numbers.
+func (e *PositionError) Error() string {
+	return fmt.Sprintf("parse error at %d:%d: %s", e.Position.Line, e.Position.Column, e.Message)
+}

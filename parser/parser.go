@@ -19,7 +19,7 @@ import (
 // ParseError (actually *ParseError) is the type of error returned by
 // ParseProgram.
 type ParseError struct {
-	PositionError
+	ast.PositionError
 }
 
 // ParserConfig lets you specify configuration for the parsing
@@ -57,7 +57,7 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 		// the recursive descent calls as we don't have to check errors everywhere.
 		if r := recover(); r != nil {
 			// Convert to ParseError or re-panic
-			err = &ParseError{*r.(*PositionError)}
+			err = &ParseError{*r.(*ast.PositionError)}
 		}
 	}()
 	lexer := NewLexer(src)
@@ -669,7 +669,7 @@ func (p *parser) preIncr() ast.Expr {
 		exprPos := p.pos
 		expr := p.preIncr()
 		if !ast.IsLValue(expr) {
-			panic(exprPos.Errorf("expected lvalue after ++ or --"))
+			panic(ast.PosErrorf(exprPos, "expected lvalue after ++ or --"))
 		}
 		return &ast.IncrExpr{expr, op, true}
 	}
@@ -781,7 +781,7 @@ func (p *parser) primary() ast.Expr {
 			inPos := p.pos
 			in := p.expr()
 			if !ast.IsLValue(in) {
-				panic(inPos.Errorf("3rd arg to sub/gsub must be lvalue"))
+				panic(ast.PosErrorf(inPos, "3rd arg to sub/gsub must be lvalue"))
 			}
 			args = append(args, in)
 		}
@@ -1013,7 +1013,7 @@ func (p *parser) matches(operators ...Token) bool {
 // Format given string and args with Sprintf and return *ParseError
 // with that message and the current position.
 func (p *parser) errorf(format string, args ...interface{}) error {
-	return p.pos.Errorf(format, args...)
+	return ast.PosErrorf(p.pos, format, args...)
 }
 
 // Parse call to a user-defined function (and record call site for
@@ -1059,5 +1059,5 @@ func (p *parser) checkMultiExprs() {
 			min = pos
 		}
 	}
-	panic(min.Errorf("unexpected comma-separated expression"))
+	panic(ast.PosErrorf(min, "unexpected comma-separated expression"))
 }

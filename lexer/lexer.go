@@ -9,7 +9,6 @@ package lexer
 
 import (
 	"errors"
-	"fmt"
 )
 
 // Lexer tokenizes a byte string of AWK source code. Use NewLexer to
@@ -31,25 +30,6 @@ type Position struct {
 	// Column on the line (starts at 1). Note that this is the byte
 	// offset into the line, not rune offset.
 	Column int
-}
-
-type PositionError struct {
-	// Source line/column position where the error occurred.
-	Position Position
-	// Error message.
-	Message string
-}
-
-// Like errorf, but with an explicit position.
-func (pos Position) Errorf(format string, args ...interface{}) error {
-	message := fmt.Sprintf(format, args...)
-	return &PositionError{pos, message}
-}
-
-// Error returns a formatted version of the error, including the line
-// and column numbers.
-func (e *PositionError) Error() string {
-	return fmt.Sprintf("parse error at %d:%d: %s", e.Position.Line, e.Position.Column, e.Message)
 }
 
 // NewLexer creates a new lexer that will tokenize the given source
