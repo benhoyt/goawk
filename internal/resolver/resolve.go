@@ -44,8 +44,7 @@ type Config struct {
 }
 
 func Resolve(prog *ast.Program, config *Config) *ast.ResolvedProgram {
-	r := &resolver{}
-	r.initResolve(config)
+	r := newResolver(config)
 
 	resolvedProg := &ast.ResolvedProgram{Program: *prog}
 
@@ -159,8 +158,9 @@ type arrayRef struct {
 	ref      *ast.ArrayExpr
 }
 
-// Initialize the resolver
-func (r *resolver) initResolve(config *Config) {
+// Constructs the resolver
+func newResolver(config *Config) *resolver {
+	r := &resolver{}
 	if config != nil {
 		r.nativeFuncs = config.Funcs
 		r.debugTypes = config.DebugTypes
@@ -173,6 +173,7 @@ func (r *resolver) initResolve(config *Config) {
 	r.recordArrayRef(ast.ArrayRef("ARGV", initialPos))    // interpreter relies on ARGV being present
 	r.recordArrayRef(ast.ArrayRef("ENVIRON", initialPos)) // and other built-in arrays
 	r.recordArrayRef(ast.ArrayRef("FIELDS", initialPos))
+	return r
 }
 
 // Records a call to a user function (for resolving indexes later)
