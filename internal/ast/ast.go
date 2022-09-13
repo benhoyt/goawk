@@ -659,18 +659,22 @@ func trimParens(s string) string {
 	return s
 }
 
+// VarRef is a constructor for *VarExpr
 func VarRef(name string, pos Position) *VarExpr {
 	return &VarExpr{resolvedLater, resolvedLater, name, pos}
 }
 
+// ArrayRef is a constructor for *ArrayExpr
 func ArrayRef(name string, pos Position) *ArrayExpr {
 	return &ArrayExpr{resolvedLater, resolvedLater, name, pos}
 }
 
+// UserCall is a constructor for *UserCallExpr
 func UserCall(name string, args []Expr, pos Position) *UserCallExpr {
 	return &UserCallExpr{false, resolvedLater, name, args, pos}
 }
 
+// PositionError represents an error bound to specific position in source.
 type PositionError struct {
 	// Source line/column position where the error occurred.
 	Position Position
@@ -678,7 +682,7 @@ type PositionError struct {
 	Message string
 }
 
-// PosErrorf like errorf, but with an explicit position.
+// PosErrorf like fmt.Errorf, but with an explicit position.
 func PosErrorf(pos Position, format string, args ...interface{}) error {
 	message := fmt.Sprintf(format, args...)
 	return &PositionError{pos, message}
