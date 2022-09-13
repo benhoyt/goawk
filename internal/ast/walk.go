@@ -9,14 +9,14 @@ type Visitor interface {
 	Visit(node Node) (w Visitor)
 }
 
-// Helper functions for common node lists. They may be empty.
-
+// WalkExprList walks a visitor over a list of expression AST nodes
 func WalkExprList(v Visitor, exprs []Expr) {
 	for _, expr := range exprs {
 		Walk(v, expr)
 	}
 }
 
+// WalkStmtList walks a visitor over a list of statement AST nodes
 func WalkStmtList(v Visitor, stmts []Stmt) {
 	for _, stmt := range stmts {
 		Walk(v, stmt)
