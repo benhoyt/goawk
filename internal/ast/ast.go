@@ -81,6 +81,8 @@ func (a *Action) String() string {
 	return strings.Join(patterns, ", ") + sep + stmtsStr
 }
 
+// Node is an interface to be satisfied by all AST elements.
+// We need it to be able to work with AST in a generic way, like in ast.Walk().
 type Node interface {
 	node()
 }
