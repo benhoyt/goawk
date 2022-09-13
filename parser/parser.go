@@ -66,7 +66,7 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 		// errors internally, and they're caught here. This significantly simplifies
 		// the recursive descent calls as we don't have to check errors everywhere.
 		if r := recover(); r != nil {
-			// Convert to ParseError or re-panic
+			// Convert to PositionError or re-panic
 			posError := *r.(*ast.PositionError)
 			err = &ParseError{
 				Position: posError.Position,
