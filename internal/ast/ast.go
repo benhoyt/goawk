@@ -18,6 +18,8 @@ type Program struct {
 	Functions []*Function
 }
 
+// ResolvedProgram is a parsed AWK program + additional data prepared by resolve step
+// needed for subsequent interpretation
 type ResolvedProgram struct {
 	Program
 	Scalars map[string]int
