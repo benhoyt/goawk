@@ -5,7 +5,6 @@
 package parser
 
 import (
-	"github.com/benhoyt/goawk/internal/resolver"
 	"io"
 	"regexp"
 	"strconv"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/internal/compiler"
+	"github.com/benhoyt/goawk/internal/resolver"
 	. "github.com/benhoyt/goawk/lexer"
 )
 
