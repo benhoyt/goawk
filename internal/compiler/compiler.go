@@ -54,7 +54,7 @@ func (e *compileError) Error() string {
 }
 
 // Compile compiles an AST (parsed program) into virtual machine instructions.
-func Compile(prog *ast.Program) (compiledProg *Program, err error) {
+func Compile(prog *ast.ResolvedProgram) (compiledProg *Program, err error) {
 	defer func() {
 		// The compiler uses panic with a *compileError to signal compile
 		// errors internally, and they're caught here. This avoids the
