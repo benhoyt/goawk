@@ -13,11 +13,17 @@ import (
 // Program is an entire AWK program.
 type Program struct {
 	Begin     []Stmts
-	Actions   []Action
+	Actions   []*Action
 	End       []Stmts
-	Functions []Function
-	Scalars   map[string]int
-	Arrays    map[string]int
+	Functions []*Function
+}
+
+// ResolvedProgram is a parsed AWK program + additional data prepared by resolve step
+// needed for subsequent interpretation
+type ResolvedProgram struct {
+	Program
+	Scalars map[string]int
+	Arrays  map[string]int
 }
 
 // String returns an indented, pretty-printed version of the parsed
@@ -75,8 +81,54 @@ func (a *Action) String() string {
 	return strings.Join(patterns, ", ") + sep + stmtsStr
 }
 
+// Node is an interface to be satisfied by all AST elements.
+// We need it to be able to work with AST in a generic way, like in ast.Walk().
+type Node interface {
+	node()
+}
+
+// All these types implement the Node interface.
+func (p *Program) node()        {}
+func (a *Action) node()         {}
+func (f *Function) node()       {}
+func (e *FieldExpr) node()      {}
+func (e *NamedFieldExpr) node() {}
+func (e *UnaryExpr) node()      {}
+func (e *BinaryExpr) node()     {}
+func (e *ArrayExpr) node()      {}
+func (e *InExpr) node()         {}
+func (e *CondExpr) node()       {}
+func (e *NumExpr) node()        {}
+func (e *StrExpr) node()        {}
+func (e *RegExpr) node()        {}
+func (e *VarExpr) node()        {}
+func (e *IndexExpr) node()      {}
+func (e *AssignExpr) node()     {}
+func (e *AugAssignExpr) node()  {}
+func (e *IncrExpr) node()       {}
+func (e *CallExpr) node()       {}
+func (e *UserCallExpr) node()   {}
+func (e *MultiExpr) node()      {}
+func (e *GetlineExpr) node()    {}
+func (s *PrintStmt) node()      {}
+func (s *PrintfStmt) node()     {}
+func (s *ExprStmt) node()       {}
+func (s *IfStmt) node()         {}
+func (s *ForStmt) node()        {}
+func (s *ForInStmt) node()      {}
+func (s *WhileStmt) node()      {}
+func (s *DoWhileStmt) node()    {}
+func (s *BreakStmt) node()      {}
+func (s *ContinueStmt) node()   {}
+func (s *NextStmt) node()       {}
+func (s *ExitStmt) node()       {}
+func (s *DeleteStmt) node()     {}
+func (s *ReturnStmt) node()     {}
+func (s *BlockStmt) node()      {}
+
 // Expr is the abstract syntax tree for any AWK expression.
 type Expr interface {
+	Node
 	expr()
 	String() string
 }
@@ -154,6 +206,7 @@ type ArrayExpr struct {
 	Scope VarScope
 	Index int
 	Name  string
+	Pos   Position
 }
 
 func (e *ArrayExpr) String() string {
@@ -221,6 +274,9 @@ func (e *RegExpr) String() string {
 	return "/" + escaped + "/"
 }
 
+// meaning it will be set during resolve step
+const resolvedLater = -1
+
 type VarScope int
 
 const (
@@ -236,6 +292,7 @@ type VarExpr struct {
 	Scope VarScope
 	Index int
 	Name  string
+	Pos   Position
 }
 
 func (e *VarExpr) String() string {
@@ -315,6 +372,7 @@ type UserCallExpr struct {
 	Index  int
 	Name   string
 	Args   []Expr
+	Pos    Position
 }
 
 func (e *UserCallExpr) String() string {
@@ -375,6 +433,7 @@ func IsLValue(expr Expr) bool {
 
 // Stmt is the abstract syntax tree for any AWK statement.
 type Stmt interface {
+	Node
 	stmt()
 	String() string
 }
@@ -621,6 +680,7 @@ type Function struct {
 	Params []string
 	Arrays []bool
 	Body   Stmts
+	Pos    Position
 }
 
 func (f *Function) String() string {
@@ -633,4 +693,39 @@ func trimParens(s string) string {
 		s = s[1 : len(s)-1]
 	}
 	return s
+}
+
+// VarRef is a constructor for *VarExpr
+func VarRef(name string, pos Position) *VarExpr {
+	return &VarExpr{resolvedLater, resolvedLater, name, pos}
+}
+
+// ArrayRef is a constructor for *ArrayExpr
+func ArrayRef(name string, pos Position) *ArrayExpr {
+	return &ArrayExpr{resolvedLater, resolvedLater, name, pos}
+}
+
+// UserCall is a constructor for *UserCallExpr
+func UserCall(name string, args []Expr, pos Position) *UserCallExpr {
+	return &UserCallExpr{false, resolvedLater, name, args, pos}
+}
+
+// PositionError represents an error bound to specific position in source.
+type PositionError struct {
+	// Source line/column position where the error occurred.
+	Position Position
+	// Error message.
+	Message string
+}
+
+// PosErrorf like fmt.Errorf, but with an explicit position.
+func PosErrorf(pos Position, format string, args ...interface{}) error {
+	message := fmt.Sprintf(format, args...)
+	return &PositionError{pos, message}
+}
+
+// Error returns a formatted version of the error, including the line
+// and column numbers.
+func (e *PositionError) Error() string {
+	return fmt.Sprintf("parse error at %d:%d: %s", e.Position.Line, e.Position.Column, e.Message)
 }

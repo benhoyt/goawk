@@ -1,6 +1,6 @@
 // Topological sorting
 
-package parser
+package resolver
 
 /*
 This algorithm is taken from:

@@ -1,1 +1,1 @@
-parse error at 6:15: can't call local variable "abc" as function
+parse error at 6:12: can't call local variable "abc" as function
