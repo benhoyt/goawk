@@ -3,6 +3,7 @@ package cover
 import (
 	"fmt"
 	"github.com/benhoyt/goawk/internal/ast"
+	. "github.com/benhoyt/goawk/internal/resolver"
 	. "github.com/benhoyt/goawk/parser"
 	"os"
 )
@@ -60,7 +61,7 @@ func (annotator *annotator) AppendCoverData(coverprofile string, coverData map[i
 	return nil
 }
 
-func (annotator *annotator) annotateActions(actions []ast.Action) (res []ast.Action) {
+func (annotator *annotator) annotateActions(actions []*ast.Action) (res []*ast.Action) {
 	for _, action := range actions {
 		action.Stmts = annotator.annotateStmts(action.Stmts)
 		res = append(res, action)
@@ -68,7 +69,7 @@ func (annotator *annotator) annotateActions(actions []ast.Action) (res []ast.Act
 	return
 }
 
-func (annotator *annotator) annotateFunctions(functions []ast.Function) (res []ast.Function) {
+func (annotator *annotator) annotateFunctions(functions []*ast.Function) (res []*ast.Function) {
 	for _, function := range functions {
 		function.Body = annotator.annotateStmts(function.Body)
 		res = append(res, function)
