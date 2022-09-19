@@ -680,12 +680,17 @@ type PositionError struct {
 	Position Position
 	// Error message.
 	Message string
+	Node    Node
 }
 
 // PosErrorf like fmt.Errorf, but with an explicit position.
 func PosErrorf(pos Position, format string, args ...interface{}) error {
+	return PosNodeErrorf(pos, nil, format, args...)
+}
+
+func PosNodeErrorf(pos Position, node Node, format string, args ...interface{}) error {
 	message := fmt.Sprintf(format, args...)
-	return &PositionError{pos, message}
+	return &PositionError{pos, message, node}
 }
 
 // Error returns a formatted version of the error, including the line

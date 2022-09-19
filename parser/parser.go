@@ -65,13 +65,12 @@ func (c *ParserConfig) toResolverConfig() *resolver.Config {
 // abstract syntax tree or a *ParseError on error. "config" describes
 // the parser configuration (and is allowed to be nil).
 func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
-	defer recoverParseError("", src, func(parseError *ParseError) {
+	defer recoverParseError(func(posError *ast.PositionError) (path string, src []byte) {
+		return "", src
+	}, func(parseError *ParseError) {
 		err = parseError
 	})
-	astProg, err := parseProgramToAST(src, config)
-	if err != nil {
-		return nil, err
-	}
+	astProg := parseProgramToAST(src, config)
 
 	prog = &Program{}
 
@@ -84,13 +83,14 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	return prog, err
 }
 
-func recoverParseError(path string, src []byte, f func(parseError *ParseError)) {
+func recoverParseError(resolvePathSrcF func(posError *ast.PositionError) (path string, src []byte), f func(parseError *ParseError)) {
 	// The parser and resolver use panic with an *ast.PositionError to signal parsing
 	// errors internally, and they're caught here. This significantly simplifies
 	// the recursive descent calls as we don't have to check errors everywhere.
 	if r := recover(); r != nil {
 		// Convert to PositionError or re-panic
-		posError := *r.(*ast.PositionError)
+		posError := r.(*ast.PositionError)
+		path, src := resolvePathSrcF(posError)
 		err := &ParseError{
 			Position: posError.Position,
 			Message:  posError.Message,
@@ -101,7 +101,7 @@ func recoverParseError(path string, src []byte, f func(parseError *ParseError)) 
 	}
 }
 
-func parseProgramToAST(src []byte, config *ParserConfig) (prog *ast.Program, err error) {
+func parseProgramToAST(src []byte, config *ParserConfig) (prog *ast.Program) {
 	lexer := NewLexer(src)
 	p := parser{lexer: lexer}
 	if config != nil {
@@ -113,43 +113,47 @@ func parseProgramToAST(src []byte, config *ParserConfig) (prog *ast.Program, err
 	p.next() // initialize p.tok
 
 	// Parse into abstract syntax tree
-	astProg := p.program()
+	prog = p.program()
 
-	return astProg, err
+	return
 }
 
 type Parser struct {
-	config      *ParserConfig
-	programs    []*ast.Program
-	currentFile string
-	nodeToFile  map[ast.Node]string
+	config       *ParserConfig
+	programs     []*ast.Program
+	currentFile  string
+	nodeToFile   map[ast.Node]string
+	fileToSource map[string][]byte
 }
 
 func NewParser(config *ParserConfig) *Parser {
 	return &Parser{
-		config:     config,
-		nodeToFile: map[ast.Node]string{},
+		config:       config,
+		nodeToFile:   map[ast.Node]string{},
+		fileToSource: map[string][]byte{},
 	}
 }
 
-func (p *Parser) ParseFile(path string, source io.ReadCloser) error {
+func (p *Parser) ParseFile(path string, source io.ReadCloser) (err error) {
 	b, err := ioutil.ReadAll(source)
 	if err != nil {
 		return err
 	}
-	defer recoverParseError(path, b, func(parseError *ParseError) {
+	defer recoverParseError(func(posError *ast.PositionError) (path string, src []byte) {
+		return "", b
+	}, func(parseError *ParseError) {
 		err = parseError
 	})
-	prog, err := parseProgramToAST(b, p.config)
-	if err != nil {
-		return err
-	}
+	prog := parseProgramToAST(b, p.config)
+
 	p.programs = append(p.programs, prog)
+
+	p.fileToSource[path] = b
 
 	p.currentFile = path
 	ast.Walk(p, prog)
 
-	return nil
+	return err
 }
 
 func (p *Parser) Visit(node ast.Node) ast.Visitor {
@@ -171,20 +175,16 @@ func (p *Parser) Program() (prog *Program, err error) {
 
 	prog = &Program{}
 
-	// TODO remove c-p
-	defer func() {
-		// The parser and resolver use panic with an *ast.PositionError to signal parsing
-		// errors internally, and they're caught here. This significantly simplifies
-		// the recursive descent calls as we don't have to check errors everywhere.
-		if r := recover(); r != nil {
-			// Convert to PositionError or re-panic
-			posError := *r.(*ast.PositionError)
-			err = &ParseError{
-				Position: posError.Position,
-				Message:  posError.Message,
-			}
+	defer recoverParseError(func(posError *ast.PositionError) (path string, src []byte) {
+		node := posError.Node
+		if node == nil {
+			panic("posError.Node must be set")
 		}
-	}()
+		file := p.nodeToFile[node]
+		return file, p.fileToSource[file]
+	}, func(parseError *ParseError) {
+		err = parseError
+	})
 
 	// Resolve step
 	prog.ResolvedProgram = *resolver.Resolve(mergedAstProgram, p.config.toResolverConfig())
