@@ -153,6 +153,8 @@ func (p *Parser) ParseFile(path string, source io.ReadCloser) (err error) {
 	p.currentFile = path
 	ast.Walk(p, prog)
 
+	// _ = source.Close() TODO
+
 	return err
 }
 

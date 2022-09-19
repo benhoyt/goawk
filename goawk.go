@@ -30,7 +30,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -203,11 +202,7 @@ argsLoop:
 	theParser := parser.NewParser(parserConfig)
 
 	var err error
-	//var src []byte
-	//var stdinBytes []byte // used if there's a parse error
 	if len(progFiles) > 0 {
-		// Read source: the concatenation of all source files specified
-		//buf := &bytes.Buffer{}
 		progFiles = expandWildcardsOnWindows(progFiles)
 		for _, progFile := range progFiles {
 			var file *os.File
@@ -225,35 +220,11 @@ argsLoop:
 			if err != nil {
 				break
 			}
-			/*			if progFile == "-" {
-							b, err := ioutil.ReadAll(os.Stdin)
-							if err != nil {
-								errorExit(err)
-							}
-							stdinBytes = b
-							_, _ = buf.Write(b)
-						} else {
-							f, err := os.Open(progFile)
-							if err != nil {
-								errorExit(err)
-							}
-							_, err = buf.ReadFrom(f)
-							if err != nil {
-								_ = f.Close()
-								errorExit(err)
-							}
-							_ = f.Close()
-			*/
 		}
-		// Append newline to file in case it doesn't end with one
-		//_ = buf.WriteByte('\n')
-		//}
-		//src = buf.Bytes()
 	} else {
 		if len(args) < 1 {
 			errorExitf(shortUsage)
 		}
-		//src = []byte(args[0])
 		err = theParser.ParseFile("<cmdline>", io.NopCloser(strings.NewReader(args[0])))
 
 		args = args[1:]
@@ -265,7 +236,6 @@ argsLoop:
 	}
 	if err != nil {
 		if err, ok := err.(*parser.ParseError); ok {
-			//name, line := errorFileLine(progFiles, stdinBytes, err.Position.Line)
 			name := err.Path
 			line := err.Position.Line
 			fmt.Fprintf(os.Stderr, "%s:%d:%d: %s\n",
@@ -372,36 +342,6 @@ func showSourceLine(src []byte, pos lexer.Position) {
 	runeColumn := utf8.RuneCountInString(srcLine[:pos.Column-1])
 	fmt.Fprintln(os.Stderr, strings.Replace(srcLine, "\t", "    ", -1))
 	fmt.Fprintln(os.Stderr, strings.Repeat(" ", runeColumn)+strings.Repeat("   ", numTabs)+"^")
-}
-
-// Determine which filename and line number to display for the overall
-// error line number.
-func errorFileLine(progFiles []string, stdinBytes []byte, errorLine int) (string, int) {
-	if len(progFiles) == 0 {
-		return "<cmdline>", errorLine
-	}
-	startLine := 1
-	for _, progFile := range progFiles {
-		var content []byte
-		if progFile == "-" {
-			progFile = "<stdin>"
-			content = stdinBytes
-		} else {
-			b, err := ioutil.ReadFile(progFile)
-			if err != nil {
-				return "<unknown>", errorLine
-			}
-			content = b
-		}
-		content = append(content, '\n')
-
-		numLines := bytes.Count(content, []byte{'\n'})
-		if errorLine >= startLine && errorLine < startLine+numLines {
-			return progFile, errorLine - startLine + 1
-		}
-		startLine += numLines
-	}
-	return "<unknown>", errorLine
 }
 
 func errorExit(err error) {
