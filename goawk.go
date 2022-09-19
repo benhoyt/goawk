@@ -194,58 +194,82 @@ argsLoop:
 	// Any remaining args are program and input files
 	args := os.Args[i:]
 
-	var src []byte
-	var stdinBytes []byte // used if there's a parse error
-	if len(progFiles) > 0 {
-		// Read source: the concatenation of all source files specified
-		buf := &bytes.Buffer{}
-		progFiles = expandWildcardsOnWindows(progFiles)
-		for _, progFile := range progFiles {
-			if progFile == "-" {
-				b, err := ioutil.ReadAll(os.Stdin)
-				if err != nil {
-					errorExit(err)
-				}
-				stdinBytes = b
-				_, _ = buf.Write(b)
-			} else {
-				f, err := os.Open(progFile)
-				if err != nil {
-					errorExit(err)
-				}
-				_, err = buf.ReadFrom(f)
-				if err != nil {
-					_ = f.Close()
-					errorExit(err)
-				}
-				_ = f.Close()
-			}
-			// Append newline to file in case it doesn't end with one
-			_ = buf.WriteByte('\n')
-		}
-		src = buf.Bytes()
-	} else {
-		if len(args) < 1 {
-			errorExitf(shortUsage)
-		}
-		src = []byte(args[0])
-		args = args[1:]
-	}
-
 	// Parse source code and setup interpreter
 	parserConfig := &parser.ParserConfig{
 		DebugTypes:  debugTypes,
 		DebugWriter: os.Stderr,
 	}
-	prog, err := parser.ParseProgram(src, parserConfig)
+
+	theParser := parser.NewParser(parserConfig)
+
+	var err error
+	//var src []byte
+	//var stdinBytes []byte // used if there's a parse error
+	if len(progFiles) > 0 {
+		// Read source: the concatenation of all source files specified
+		//buf := &bytes.Buffer{}
+		progFiles = expandWildcardsOnWindows(progFiles)
+		for _, progFile := range progFiles {
+			var file *os.File
+			if progFile == "-" {
+				file = os.Stdin
+			} else {
+				f, err := os.Open(progFile)
+				if err != nil {
+					errorExit(err)
+				}
+				file = f
+			}
+			err = theParser.ParseFile(progFile, file)
+			if err != nil {
+				break
+			}
+			/*			if progFile == "-" {
+							b, err := ioutil.ReadAll(os.Stdin)
+							if err != nil {
+								errorExit(err)
+							}
+							stdinBytes = b
+							_, _ = buf.Write(b)
+						} else {
+							f, err := os.Open(progFile)
+							if err != nil {
+								errorExit(err)
+							}
+							_, err = buf.ReadFrom(f)
+							if err != nil {
+								_ = f.Close()
+								errorExit(err)
+							}
+							_ = f.Close()
+			*/
+		}
+		// Append newline to file in case it doesn't end with one
+		//_ = buf.WriteByte('\n')
+		//}
+		//src = buf.Bytes()
+	} else {
+		if len(args) < 1 {
+			errorExitf(shortUsage)
+		}
+		//src = []byte(args[0])
+		err = theParser.ParseFile("", io.NopCloser(strings.NewReader(args[0])))
+
+		args = args[1:]
+	}
+
+	var prog *parser.Program
+	if err == nil {
+		prog, err = theParser.Program()
+	}
 	if err != nil {
-		if err, ok := err.(*parser.ParseError); ok {
+		/*if err, ok := err.(*parser.ParseError); ok {
 			name, line := errorFileLine(progFiles, stdinBytes, err.Position.Line)
 			fmt.Fprintf(os.Stderr, "%s:%d:%d: %s\n",
 				name, line, err.Position.Column, err.Message)
 			showSourceLine(src, err.Position)
 			os.Exit(1)
-		}
+		}*/
 		errorExitf("%s", err)
 	}
 

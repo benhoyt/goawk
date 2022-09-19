@@ -7,6 +7,7 @@ package parser
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"regexp"
 	"strconv"
 	"strings"
@@ -91,6 +92,111 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 
 	// Resolve step
 	prog.ResolvedProgram = *resolver.Resolve(astProg, config.toResolverConfig())
+
+	// Compile to virtual machine code
+	prog.Compiled, err = compiler.Compile(&prog.ResolvedProgram)
+
+	return prog, err
+}
+
+func parseProgramToAST(src []byte, config *ParserConfig) (prog *ast.Program, err error) {
+	defer func() {
+		// The parser and resolver use panic with an *ast.PositionError to signal parsing
+		// errors internally, and they're caught here. This significantly simplifies
+		// the recursive descent calls as we don't have to check errors everywhere.
+		if r := recover(); r != nil {
+			// Convert to PositionError or re-panic
+			posError := *r.(*ast.PositionError)
+			err = &ParseError{
+				Position: posError.Position,
+				Message:  posError.Message,
+			}
+		}
+	}()
+	lexer := NewLexer(src)
+	p := parser{lexer: lexer}
+	if config != nil {
+		p.debugTypes = config.DebugTypes
+		p.debugWriter = config.DebugWriter
+	}
+	p.multiExprs = make(map[*ast.MultiExpr]Position, 3)
+
+	p.next() // initialize p.tok
+
+	// Parse into abstract syntax tree
+	astProg := p.program()
+
+	return astProg, err
+}
+
+type Parser struct {
+	config      *ParserConfig
+	programs    []*ast.Program
+	currentFile string
+	nodeToFile  map[ast.Node]string
+}
+
+func NewParser(config *ParserConfig) *Parser {
+	return &Parser{
+		config:     config,
+		nodeToFile: map[ast.Node]string{},
+	}
+}
+
+func (p *Parser) ParseFile(path string, source io.ReadCloser) error {
+	b, err := ioutil.ReadAll(source)
+	if err != nil {
+		return err
+	}
+
+	prog, err := parseProgramToAST(b, p.config)
+	if err != nil {
+		return err
+	}
+	p.programs = append(p.programs, prog)
+
+	p.currentFile = path
+	ast.Walk(p, prog)
+
+	return nil
+}
+
+func (p *Parser) Visit(node ast.Node) ast.Visitor {
+	if node == nil {
+		return nil
+	}
+	p.nodeToFile[node] = p.currentFile
+	return p
+}
+
+func (p *Parser) Program() (prog *Program, err error) {
+	mergedAstProgram := &ast.Program{}
+	for _, program := range p.programs {
+		mergedAstProgram.Begin = append(mergedAstProgram.Begin, program.Begin...)
+		mergedAstProgram.Actions = append(mergedAstProgram.Actions, program.Actions...)
+		mergedAstProgram.End = append(mergedAstProgram.End, program.End...)
+		mergedAstProgram.Functions = append(mergedAstProgram.Functions, program.Functions...)
+	}
+
+	prog = &Program{}
+
+	// TODO remove c-p
+	defer func() {
+		// The parser and resolver use panic with an *ast.PositionError to signal parsing
+		// errors internally, and they're caught here. This significantly simplifies
+		// the recursive descent calls as we don't have to check errors everywhere.
+		if r := recover(); r != nil {
+			// Convert to PositionError or re-panic
+			posError := *r.(*ast.PositionError)
+			err = &ParseError{
+				Position: posError.Position,
+				Message:  posError.Message,
+			}
+		}
+	}()
+
+	// Resolve step
+	prog.ResolvedProgram = *resolver.Resolve(mergedAstProgram, p.config.toResolverConfig())
 
 	// Compile to virtual machine code
 	prog.Compiled, err = compiler.Compile(&prog.ResolvedProgram)
