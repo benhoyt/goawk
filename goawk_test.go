@@ -448,7 +448,7 @@ func TestCommandLine(t *testing.T) {
 
 func TestDevStdout(t *testing.T) {
 	if runtime.GOOS == "windows" {
-		t.Skip("/dev/stdout not presnt on Windows")
+		t.Skip("/dev/stdout not present on Windows")
 	}
 	runAWKs(t, []string{`BEGIN { print "1"; print "2">"/dev/stdout" }`}, "", "1\n2\n", "")
 }
