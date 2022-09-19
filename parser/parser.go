@@ -65,7 +65,7 @@ func (c *ParserConfig) toResolverConfig() *resolver.Config {
 // abstract syntax tree or a *ParseError on error. "config" describes
 // the parser configuration (and is allowed to be nil).
 func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
-	defer recoverParseError(func(posError *ast.PositionError) (path string, src []byte) {
+	defer recoverParseError(func(posError *ast.PositionError) (string, []byte) {
 		return "", src
 	}, func(parseError *ParseError) {
 		err = parseError
@@ -139,8 +139,8 @@ func (p *Parser) ParseFile(path string, source io.ReadCloser) (err error) {
 	if err != nil {
 		return err
 	}
-	defer recoverParseError(func(posError *ast.PositionError) (path string, src []byte) {
-		return "", b
+	defer recoverParseError(func(posError *ast.PositionError) (string, []byte) {
+		return path, b
 	}, func(parseError *ParseError) {
 		err = parseError
 	})
@@ -180,8 +180,9 @@ func (p *Parser) Program() (prog *Program, err error) {
 		if node == nil {
 			panic("posError.Node must be set")
 		}
-		file := p.nodeToFile[node]
-		return file, p.fileToSource[file]
+		path = p.nodeToFile[node]
+		src = p.fileToSource[path]
+		return
 	}, func(parseError *ParseError) {
 		err = parseError
 	})

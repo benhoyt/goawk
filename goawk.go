@@ -212,6 +212,7 @@ argsLoop:
 		for _, progFile := range progFiles {
 			var file *os.File
 			if progFile == "-" {
+				progFile = "<stdin>"
 				file = os.Stdin
 			} else {
 				f, err := os.Open(progFile)
@@ -253,7 +254,7 @@ argsLoop:
 			errorExitf(shortUsage)
 		}
 		//src = []byte(args[0])
-		err = theParser.ParseFile("", io.NopCloser(strings.NewReader(args[0])))
+		err = theParser.ParseFile("<cmdline>", io.NopCloser(strings.NewReader(args[0])))
 
 		args = args[1:]
 	}
