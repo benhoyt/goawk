@@ -264,13 +264,15 @@ argsLoop:
 		prog, err = theParser.Program()
 	}
 	if err != nil {
-		/*if err, ok := err.(*parser.ParseError); ok {
-			name, line := errorFileLine(progFiles, stdinBytes, err.Position.Line)
+		if err, ok := err.(*parser.ParseError); ok {
+			//name, line := errorFileLine(progFiles, stdinBytes, err.Position.Line)
+			name := err.Path
+			line := err.Position.Line
 			fmt.Fprintf(os.Stderr, "%s:%d:%d: %s\n",
 				name, line, err.Position.Column, err.Message)
-			showSourceLine(src, err.Position)
+			showSourceLine(err.Source, err.Position)
 			os.Exit(1)
-		}*/
+		}
 		errorExitf("%s", err)
 	}
 
