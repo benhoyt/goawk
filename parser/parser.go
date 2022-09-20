@@ -66,22 +66,6 @@ func (c *ParserConfig) toResolverConfig() *resolver.Config {
 // abstract syntax tree or a *ParseError on error. "config" describes
 // the parser configuration (and is allowed to be nil).
 func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
-	/*	defer recoverParseError(func(posError *ast.PositionError) (string, []byte) {
-			return "", src
-		}, func(parseError *ParseError) {
-			err = parseError
-		})
-		astProg := parseProgramToAST(src, config)
-
-		prog = &Program{}
-
-		// Resolve step
-		prog.ResolvedProgram = *resolver.Resolve(astProg, config.toResolverConfig())
-
-		// Compile to virtual machine code
-		prog.Compiled, err = compiler.Compile(&prog.ResolvedProgram)
-
-		return prog, err*/
 	P := NewParser(config)
 	err = P.ParseFile("", io.NopCloser(bytes.NewReader(src)))
 	if err != nil {
@@ -90,7 +74,9 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	return P.Program()
 }
 
-func recoverParseError(resolvePathSrcF func(posError *ast.PositionError) (path string, src []byte), f func(parseError *ParseError)) {
+func recoverParseError(
+	resolvePathSrcF func(posError *ast.PositionError) (path string, src []byte),
+	setErrorF func(parseError *ParseError)) {
 	// The parser and resolver use panic with an *ast.PositionError to signal parsing
 	// errors internally, and they're caught here. This significantly simplifies
 	// the recursive descent calls as we don't have to check errors everywhere.
@@ -104,7 +90,7 @@ func recoverParseError(resolvePathSrcF func(posError *ast.PositionError) (path s
 			Path:     path,
 			Source:   src,
 		}
-		f(err)
+		setErrorF(err)
 	}
 }
 
@@ -121,8 +107,6 @@ func parseProgramToAST(src []byte, config *ParserConfig) (prog *ast.Program) {
 
 	// Parse into abstract syntax tree
 	prog = p.program()
-
-	//fmt.Printf("parsed: %T :: %p\n", prog, prog)
 
 	return
 }
@@ -192,7 +176,6 @@ func (p *Parser) Program() (prog *Program, err error) {
 			panic("posError.Node must be set")
 		}
 		var found bool
-		//fmt.Printf("after : %T :: %p\n", node, node)
 		path, found = p.nodeToFile[node]
 		if !found {
 			panic("node not found in mapping to source file")

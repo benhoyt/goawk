@@ -46,13 +46,10 @@ type Config struct {
 func Resolve(prog *ast.Program, config *Config) *ast.ResolvedProgram {
 	r := newResolver(config)
 
-	//fmt.Printf("resolve: %T :: %p\n", prog, prog)
-
 	resolvedProg := &ast.ResolvedProgram{Program: *prog}
 
 	ast.Walk(r, prog)
 
-	//fmt.Printf("after walk: %T :: %p\n", prog, prog)
 	r.resolveUserCalls(prog)
 	r.resolveVars(resolvedProg)
 
