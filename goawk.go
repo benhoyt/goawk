@@ -205,18 +205,16 @@ argsLoop:
 	if len(progFiles) > 0 {
 		progFiles = expandWildcardsOnWindows(progFiles)
 		for _, progFile := range progFiles {
-			var file *os.File
 			if progFile == "-" {
-				progFile = "<stdin>"
-				file = os.Stdin
+				err = theParser.ParseFile("<stdin>", os.Stdin)
 			} else {
-				f, err := os.Open(progFile)
-				if err != nil {
-					errorExit(err)
+				file, err1 := os.Open(progFile)
+				if err1 != nil {
+					errorExit(err1)
 				}
-				file = f
+				err = theParser.ParseFile(progFile, file)
+				_ = file.Close()
 			}
-			err = theParser.ParseFile(progFile, file)
 			if err != nil {
 				break
 			}
