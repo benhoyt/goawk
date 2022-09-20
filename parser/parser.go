@@ -5,6 +5,7 @@
 package parser
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -65,22 +66,28 @@ func (c *ParserConfig) toResolverConfig() *resolver.Config {
 // abstract syntax tree or a *ParseError on error. "config" describes
 // the parser configuration (and is allowed to be nil).
 func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
-	defer recoverParseError(func(posError *ast.PositionError) (string, []byte) {
-		return "", src
-	}, func(parseError *ParseError) {
-		err = parseError
-	})
-	astProg := parseProgramToAST(src, config)
+	/*	defer recoverParseError(func(posError *ast.PositionError) (string, []byte) {
+			return "", src
+		}, func(parseError *ParseError) {
+			err = parseError
+		})
+		astProg := parseProgramToAST(src, config)
 
-	prog = &Program{}
+		prog = &Program{}
 
-	// Resolve step
-	prog.ResolvedProgram = *resolver.Resolve(astProg, config.toResolverConfig())
+		// Resolve step
+		prog.ResolvedProgram = *resolver.Resolve(astProg, config.toResolverConfig())
 
-	// Compile to virtual machine code
-	prog.Compiled, err = compiler.Compile(&prog.ResolvedProgram)
+		// Compile to virtual machine code
+		prog.Compiled, err = compiler.Compile(&prog.ResolvedProgram)
 
-	return prog, err
+		return prog, err*/
+	P := NewParser(config)
+	err = P.ParseFile("", io.NopCloser(bytes.NewReader(src)))
+	if err != nil {
+		return
+	}
+	return P.Program()
 }
 
 func recoverParseError(resolvePathSrcF func(posError *ast.PositionError) (path string, src []byte), f func(parseError *ParseError)) {
@@ -114,6 +121,8 @@ func parseProgramToAST(src []byte, config *ParserConfig) (prog *ast.Program) {
 
 	// Parse into abstract syntax tree
 	prog = p.program()
+
+	//fmt.Printf("parsed: %T :: %p\n", prog, prog)
 
 	return
 }
@@ -182,7 +191,12 @@ func (p *Parser) Program() (prog *Program, err error) {
 		if node == nil {
 			panic("posError.Node must be set")
 		}
-		path = p.nodeToFile[node]
+		var found bool
+		//fmt.Printf("after : %T :: %p\n", node, node)
+		path, found = p.nodeToFile[node]
+		if !found {
+			panic("node not found in mapping to source file")
+		}
 		src = p.fileToSource[path]
 		return
 	}, func(parseError *ParseError) {

@@ -46,10 +46,13 @@ type Config struct {
 func Resolve(prog *ast.Program, config *Config) *ast.ResolvedProgram {
 	r := newResolver(config)
 
+	//fmt.Printf("resolve: %T :: %p\n", prog, prog)
+
 	resolvedProg := &ast.ResolvedProgram{Program: *prog}
 
 	ast.Walk(r, prog)
 
+	//fmt.Printf("after walk: %T :: %p\n", prog, prog)
 	r.resolveUserCalls(prog)
 	r.resolveVars(resolvedProg)
 
@@ -63,7 +66,7 @@ func (r *resolver) Visit(node ast.Node) ast.Visitor {
 		function := n
 		name := function.Name
 		if _, ok := r.functions[name]; ok {
-			panic(ast.PosErrorf(function.Pos, "function %q already defined", name))
+			panic(ast.PosNodeErrorf(function.Pos, function, "function %q already defined", name))
 		}
 		r.functions[name] = len(r.functions)
 		r.locals = make(map[string]bool, 7)
@@ -87,7 +90,7 @@ func (r *resolver) Visit(node ast.Node) ast.Visitor {
 	case *ast.UserCallExpr:
 		name := n.Name
 		if r.locals[name] {
-			panic(ast.PosErrorf(n.Pos, "can't call local variable %q as function", name))
+			panic(ast.PosNodeErrorf(n.Pos, n, "can't call local variable %q as function", name))
 		}
 		for i, arg := range n.Args {
 			ast.Walk(r, arg)
@@ -123,7 +126,7 @@ func (t varType) String() string {
 // typeInfo records type information for a single variable
 type typeInfo struct {
 	typ      varType
-	ref      *ast.VarExpr
+	ref      ast.Node
 	scope    ast.VarScope
 	index    int
 	callName string
@@ -204,11 +207,11 @@ func (r *resolver) resolveUserCalls(prog *ast.Program) {
 		if !ok {
 			f, haveNative := r.nativeFuncs[c.call.Name]
 			if !haveNative {
-				panic(ast.PosErrorf(c.pos, "undefined function %q", c.call.Name))
+				panic(ast.PosNodeErrorf(c.pos, c.call, "undefined function %q", c.call.Name))
 			}
 			typ := reflect.TypeOf(f)
 			if !typ.IsVariadic() && len(c.call.Args) > typ.NumIn() {
-				panic(ast.PosErrorf(c.pos, "%q called with more arguments than declared", c.call.Name))
+				panic(ast.PosNodeErrorf(c.pos, c.call, "%q called with more arguments than declared", c.call.Name))
 			}
 			c.call.Native = true
 			c.call.Index = nativeIndexes[c.call.Name]
@@ -216,7 +219,7 @@ func (r *resolver) resolveUserCalls(prog *ast.Program) {
 		}
 		function := prog.Functions[index]
 		if len(c.call.Args) > len(function.Params) {
-			panic(ast.PosErrorf(c.pos, "%q called with more arguments than declared", c.call.Name))
+			panic(ast.PosNodeErrorf(c.pos, c.call, "%q called with more arguments than declared", c.call.Name))
 		}
 		c.call.Index = index
 	}
@@ -271,13 +274,13 @@ func (r *resolver) recordArrayRef(expr *ast.ArrayExpr) {
 	name := expr.Name
 	scope, funcName := r.getScope(name)
 	if scope == ast.ScopeSpecial {
-		panic(ast.PosErrorf(expr.Pos, "can't use scalar %q as array", name))
+		panic(ast.PosNodeErrorf(expr.Pos, expr, "can't use scalar %q as array", name))
 	}
 	expr.Scope = scope
 	r.arrayRefs = append(r.arrayRefs, arrayRef{funcName, expr})
 	info := r.varTypes[funcName][name]
 	if info.typ == typeUnknown {
-		r.varTypes[funcName][name] = typeInfo{typeArray, nil, scope, 0, info.callName, 0}
+		r.varTypes[funcName][name] = typeInfo{typeArray, expr, scope, 0, info.callName, 0}
 	}
 }
 
@@ -359,7 +362,7 @@ func (r *resolver) resolveVars(prog *ast.ResolvedProgram) {
 		if isFunc {
 			// Global var can't also be the name of a function
 			pos := Position{1, 1} // Ideally it'd be the position of the global var.
-			panic(ast.PosErrorf(pos, "global var %q can't also be a function", name))
+			panic(ast.PosNodeErrorf(pos, info.ref, "global var %q can't also be a function", name))
 		}
 		var index int
 		if info.scope == ast.ScopeSpecial {
@@ -445,7 +448,7 @@ func (r *resolver) resolveVars(prog *ast.ResolvedProgram) {
 				funcName := r.getVarFuncName(prog, varExpr.Name, c.inFunc)
 				info := r.varTypes[funcName][varExpr.Name]
 				if info.typ == typeArray {
-					panic(ast.PosErrorf(c.pos, "can't pass array %q to native function", varExpr.Name))
+					panic(ast.PosNodeErrorf(c.pos, c.call, "can't pass array %q to native function", varExpr.Name))
 				}
 			}
 			continue
@@ -457,17 +460,17 @@ func (r *resolver) resolveVars(prog *ast.ResolvedProgram) {
 			varExpr, ok := arg.(*ast.VarExpr)
 			if !ok {
 				if function.Arrays[i] {
-					panic(ast.PosErrorf(c.pos, "can't pass scalar %s as array param", arg))
+					panic(ast.PosNodeErrorf(c.pos, c.call, "can't pass scalar %s as array param", arg))
 				}
 				continue
 			}
 			funcName := r.getVarFuncName(prog, varExpr.Name, c.inFunc)
 			info := r.varTypes[funcName][varExpr.Name]
 			if info.typ == typeArray && !function.Arrays[i] {
-				panic(ast.PosErrorf(c.pos, "can't pass array %q as scalar param", varExpr.Name))
+				panic(ast.PosNodeErrorf(c.pos, c.call, "can't pass array %q as scalar param", varExpr.Name))
 			}
 			if info.typ != typeArray && function.Arrays[i] {
-				panic(ast.PosErrorf(c.pos, "can't pass scalar %q as array param", varExpr.Name))
+				panic(ast.PosNodeErrorf(c.pos, c.call, "can't pass scalar %q as array param", varExpr.Name))
 			}
 		}
 	}
@@ -481,14 +484,14 @@ func (r *resolver) resolveVars(prog *ast.ResolvedProgram) {
 	for _, varRef := range r.varRefs {
 		info := r.varTypes[varRef.funcName][varRef.ref.Name]
 		if info.typ == typeArray && !varRef.isArg {
-			panic(ast.PosErrorf(varRef.ref.Pos, "can't use array %q as scalar", varRef.ref.Name))
+			panic(ast.PosNodeErrorf(varRef.ref.Pos, varRef.ref, "can't use array %q as scalar", varRef.ref.Name))
 		}
 		varRef.ref.Index = info.index
 	}
 	for _, arrayRef := range r.arrayRefs {
 		info := r.varTypes[arrayRef.funcName][arrayRef.ref.Name]
 		if info.typ == typeScalar {
-			panic(ast.PosErrorf(arrayRef.ref.Pos, "can't use scalar %q as array", arrayRef.ref.Name))
+			panic(ast.PosNodeErrorf(arrayRef.ref.Pos, arrayRef.ref, "can't use scalar %q as array", arrayRef.ref.Name))
 		}
 		arrayRef.ref.Index = info.index
 	}
