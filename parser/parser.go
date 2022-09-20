@@ -128,20 +128,20 @@ func NewParser(config *ParserConfig) *Parser {
 }
 
 func (p *Parser) ParseFile(path string, source io.Reader) (err error) {
-	scrBytes, err := ioutil.ReadAll(source)
+	srcBytes, err := ioutil.ReadAll(source)
 	if err != nil {
 		return err
 	}
 	defer recoverParseError(func(posError *ast.PositionError) (string, []byte) {
-		return path, scrBytes
+		return path, srcBytes
 	}, func(parseError *ParseError) {
 		err = parseError
 	})
-	prog := parseProgramToAST(scrBytes, p.config)
+	prog := parseProgramToAST(srcBytes, p.config)
 
 	p.programs = append(p.programs, prog)
 
-	p.fileToSource[path] = scrBytes
+	p.fileToSource[path] = srcBytes
 
 	p.currentFile = path
 	ast.Walk(p, prog)
