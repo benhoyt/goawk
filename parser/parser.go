@@ -67,7 +67,7 @@ func (c *ParserConfig) toResolverConfig() *resolver.Config {
 // the parser configuration (and is allowed to be nil).
 func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	P := NewParser(config)
-	err = P.ParseFile("", io.NopCloser(bytes.NewReader(src)))
+	err = P.ParseFile("", bytes.NewReader(src))
 	if err != nil {
 		return
 	}
@@ -127,26 +127,24 @@ func NewParser(config *ParserConfig) *Parser {
 	}
 }
 
-func (p *Parser) ParseFile(path string, source io.ReadCloser) (err error) {
-	b, err := ioutil.ReadAll(source)
+func (p *Parser) ParseFile(path string, source io.Reader) (err error) {
+	scrBytes, err := ioutil.ReadAll(source)
 	if err != nil {
 		return err
 	}
 	defer recoverParseError(func(posError *ast.PositionError) (string, []byte) {
-		return path, b
+		return path, scrBytes
 	}, func(parseError *ParseError) {
 		err = parseError
 	})
-	prog := parseProgramToAST(b, p.config)
+	prog := parseProgramToAST(scrBytes, p.config)
 
 	p.programs = append(p.programs, prog)
 
-	p.fileToSource[path] = b
+	p.fileToSource[path] = scrBytes
 
 	p.currentFile = path
 	ast.Walk(p, prog)
-
-	// _ = source.Close() TODO
 
 	return err
 }

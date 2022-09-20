@@ -225,7 +225,7 @@ argsLoop:
 		if len(args) < 1 {
 			errorExitf(shortUsage)
 		}
-		err = theParser.ParseFile("<cmdline>", io.NopCloser(strings.NewReader(args[0])))
+		err = theParser.ParseFile("<cmdline>", strings.NewReader(args[0]))
 
 		args = args[1:]
 	}
