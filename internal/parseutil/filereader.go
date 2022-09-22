@@ -21,7 +21,7 @@ type file struct {
 
 // AddFile adds input source
 func (fr *FileReader) AddFile(path string, source io.Reader) error {
-	curLen := len(fr.source.Bytes())
+	curLen := fr.source.Len()
 	_, err := fr.source.ReadFrom(source)
 	if err != nil {
 		return err
