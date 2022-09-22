@@ -10,6 +10,11 @@ type FileReader struct {
 	source bytes.Buffer
 }
 
+type file struct {
+	path  string
+	lines int
+}
+
 func (fr *FileReader) AddFile(path string, source io.Reader) error {
 	curLen := len(fr.source.Bytes())
 	_, err := fr.source.ReadFrom(source)
@@ -38,9 +43,4 @@ func (fr *FileReader) FileLine(line int) (path string, fileLine int) {
 
 func (fr *FileReader) Source() []byte {
 	return fr.source.Bytes()
-}
-
-type file struct {
-	path  string
-	lines int
 }
