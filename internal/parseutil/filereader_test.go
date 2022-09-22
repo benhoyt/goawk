@@ -28,21 +28,21 @@ print x
 	}
 
 	{
-		path, l := fr.FileLine(2)
-		if path != file1 || l != 2 {
-			t.Errorf("wrong file/path")
+		path, line := fr.FileLine(2)
+		if path != file1 || line != 2 {
+			t.Errorf("wrong path/line")
 		}
 	}
 	{
-		path, l := fr.FileLine(5)
-		if path != file2 || l != 2 {
-			t.Errorf("wrong file/path")
+		path, line := fr.FileLine(5)
+		if path != file2 || line != 2 {
+			t.Errorf("wrong path/line")
 		}
 	}
 	{
-		path, l := fr.FileLine(100)
-		if path != "" || l != 0 {
-			t.Errorf("wrong file/path")
+		path, line := fr.FileLine(100)
+		if path != "" || line != 0 {
+			t.Errorf("wrong path/line")
 		}
 	}
 }
