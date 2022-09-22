@@ -5,22 +5,22 @@ import (
 	"testing"
 )
 
-func addFile(fr *FileReader, fileName string, code string) {
-	if nil != fr.AddFile(fileName, strings.NewReader(code)) {
-		panic("should not happen")
-	}
-}
-
 func TestLineResolution(t *testing.T) {
 	fr := &FileReader{}
 
 	file1 := "file1"
 	file2 := "file2"
 
-	addFile(fr, file1, `BEGIN {
+	addFile := func(fileName string, code string) {
+		if nil != fr.AddFile(fileName, strings.NewReader(code)) {
+			panic("should not happen")
+		}
+	}
+
+	addFile(file1, `BEGIN {
 print f(1)
 }`)
-	addFile(fr, file2, `function f(x) {
+	addFile(file2, `function f(x) {
 print x
 }`)
 	if len(fr.files) != 2 {
