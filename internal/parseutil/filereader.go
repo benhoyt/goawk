@@ -5,6 +5,9 @@ import (
 	"io"
 )
 
+// FileReader serves two purposes:
+// 1. read input sources and join them for single source
+// 2. track the lines counts of each input source
 type FileReader struct {
 	files  []file
 	source bytes.Buffer
@@ -15,6 +18,7 @@ type file struct {
 	lines int
 }
 
+// AddFile adds input source
 func (fr *FileReader) AddFile(path string, source io.Reader) error {
 	curLen := len(fr.source.Bytes())
 	_, err := fr.source.ReadFrom(source)
@@ -30,6 +34,7 @@ func (fr *FileReader) AddFile(path string, source io.Reader) error {
 	return nil
 }
 
+// FileLine resolves global line number in "joined" source to a local line number in a file (identified by path)
 func (fr *FileReader) FileLine(line int) (path string, fileLine int) {
 	startLine := 1
 	for _, f := range fr.files {
@@ -41,6 +46,7 @@ func (fr *FileReader) FileLine(line int) (path string, fileLine int) {
 	return "", 0
 }
 
+// Source returns "joined" source of all input sources
 func (fr *FileReader) Source() []byte {
 	return fr.source.Bytes()
 }
