@@ -19,7 +19,7 @@ type test struct {
 }
 
 func TestFileReader(t *testing.T) {
-	fileSet1 := []testFile{
+	fileSetNoNewline := []testFile{
 		{"file1", `BEGIN {
 print f(1)
 }`},
@@ -27,25 +27,73 @@ print f(1)
 print x
 }`},
 	}
+	fileSetWithNewline := []testFile{
+		{"file1", `BEGIN {
+print f(1)
+}
+`},
+		{"file2", `function f(x) {
+print x
+}
+`},
+	}
 	tests := []test{
 		{
 			"TestInFirstFile",
-			fileSet1,
+			fileSetNoNewline,
 			2,
 			"file1",
 			2,
 		},
 		{
 			"TestInSecondFile",
-			fileSet1,
+			fileSetNoNewline,
+			5,
+			"file2",
+			2,
+		},
+		{
+			"TestInFirstFileWithNewline",
+			fileSetWithNewline,
+			2,
+			"file1",
+			2,
+		},
+		{
+			"TestInSecondFileWithNewline",
+			fileSetWithNewline,
 			5,
 			"file2",
 			2,
 		},
 		{
 			"TestOutside",
-			fileSet1,
+			fileSetNoNewline,
 			100,
+			"",
+			0,
+		},
+		{
+			"TestOutsideNegative",
+			fileSetNoNewline,
+			-100,
+			"",
+			0,
+		},
+		{
+			"TestNoFiles",
+			[]testFile{},
+			3,
+			"",
+			0,
+		},
+		{
+			"TestZeroLenFiles",
+			[]testFile{
+				{"file1", ""},
+				{"file2", ""},
+			},
+			3,
 			"",
 			0,
 		},
