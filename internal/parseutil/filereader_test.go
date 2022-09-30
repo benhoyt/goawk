@@ -91,11 +91,19 @@ print x
 			"TestZeroLenFiles",
 			[]testFile{
 				{"file1", ""},
-				{"file2", ""},
 			},
 			1,
 			"file1",
 			1,
+		},
+		{
+			"TestZeroLenFiles1",
+			[]testFile{
+				{"file1", ""},
+			},
+			2,
+			"",
+			0,
 		},
 	}
 
