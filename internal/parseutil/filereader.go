@@ -7,7 +7,7 @@ import (
 )
 
 // FileReader serves two purposes:
-// 1. read input sources and join them for single source
+// 1. read input sources and join them into a single source (slice of bytes)
 // 2. track the lines counts of each input source
 type FileReader struct {
 	files  []file
@@ -20,7 +20,7 @@ type file struct {
 	lines     int
 }
 
-// AddFile adds input source
+// AddFile adds a single source file.
 func (fr *FileReader) AddFile(path string, source io.Reader) error {
 	curLen := fr.source.Len()
 	_, err := fr.source.ReadFrom(source)
