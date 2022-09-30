@@ -1,6 +1,7 @@
-package parseutil
+package parseutil_test
 
 import (
+	. "github.com/benhoyt/goawk/internal/parseutil"
 	"strings"
 	"testing"
 )
@@ -23,10 +24,6 @@ print f(1)
 	addFile(file2, `function f(x) {
 print x
 }`)
-	if len(fr.files) != 2 {
-		t.Errorf("must be 2 files")
-	}
-
 	{
 		path, line := fr.FileLine(2)
 		if path != file1 || line != 2 {
