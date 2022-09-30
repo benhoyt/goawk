@@ -6,37 +6,68 @@ import (
 	"testing"
 )
 
-func TestLineResolution(t *testing.T) {
-	fr := &FileReader{}
+type testFile struct{ name, source string }
 
-	addFile := func(fileName string, code string) {
-		if nil != fr.AddFile(fileName, strings.NewReader(code)) {
-			panic("should not happen")
-		}
-	}
+type test struct {
+	name string
+	// input:
+	files []testFile
+	line  int
+	// expected:
+	path     string
+	fileLine int
+}
 
-	addFile("file1", `BEGIN {
+func TestFileReader(t *testing.T) {
+	fileSet1 := []testFile{
+		{"file1", `BEGIN {
 print f(1)
-}`)
-	addFile("file2", `function f(x) {
+}`},
+		{"file2", `function f(x) {
 print x
-}`)
-	{
-		path, line := fr.FileLine(2)
-		if path != "file1" || line != 2 {
-			t.Errorf("wrong path/line")
-		}
+}`},
 	}
-	{
-		path, line := fr.FileLine(5)
-		if path != "file2" || line != 2 {
-			t.Errorf("wrong path/line")
-		}
+	tests := []test{
+		{
+			"TestInFirstFile",
+			fileSet1,
+			2,
+			"file1",
+			2,
+		},
+		{
+			"TestInSecondFile",
+			fileSet1,
+			5,
+			"file2",
+			2,
+		},
+		{
+			"TestOutside",
+			fileSet1,
+			100,
+			"",
+			0,
+		},
 	}
-	{
-		path, line := fr.FileLine(100)
-		if path != "" || line != 0 {
-			t.Errorf("wrong path/line")
-		}
+
+	for _, tst := range tests {
+		t.Run(tst.name, func(t *testing.T) {
+
+			fr := &FileReader{}
+
+			for _, file := range tst.files {
+				if nil != fr.AddFile(file.name, strings.NewReader(file.source)) {
+					panic("should not happen")
+				}
+			}
+
+			{
+				path, fileLine := fr.FileLine(tst.line)
+				if path != tst.path || fileLine != tst.fileLine {
+					t.Errorf("wrong path/line")
+				}
+			}
+		})
 	}
 }
