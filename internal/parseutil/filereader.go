@@ -36,7 +36,8 @@ func (fr *FileReader) AddFile(path string, source io.Reader) error {
 	return nil
 }
 
-// FileLine resolves global line number in joined source to a local line number in a file (identified by path)
+// FileLine resolves an overall line number from the concatenated source code
+// to the local line number in that source file (identified by path).
 func (fr *FileReader) FileLine(line int) (path string, fileLine int) {
 	startLine := 1
 	for _, f := range fr.files {
