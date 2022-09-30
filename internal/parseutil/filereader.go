@@ -1,3 +1,4 @@
+// Package parseutil contains various utilities for parsing GoAWK source code.
 package parseutil
 
 import (
