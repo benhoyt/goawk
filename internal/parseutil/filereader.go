@@ -27,6 +27,7 @@ func (fr *FileReader) AddFile(path string, source io.Reader) error {
 		return err
 	}
 	if !bytes.HasSuffix(fr.source.Bytes(), []byte("\n")) {
+		// Append newline to file in case it doesn't end with one
 		fr.source.WriteByte('\n')
 	}
 	content := fr.source.Bytes()[curLen:]
