@@ -125,6 +125,14 @@ print x
 			if fileLine != tst.fileLine {
 				t.Errorf("expected fileLine: %v, got: %v", tst.fileLine, fileLine)
 			}
+
+			// test result source
+			source := string(fr.Source())
+			for _, file := range tst.files {
+				if strings.Index(source, file.source) < 0 {
+					t.Errorf("Source() is incorrect")
+				}
+			}
 		})
 	}
 }
