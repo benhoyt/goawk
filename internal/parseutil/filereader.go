@@ -49,7 +49,7 @@ func (fr *FileReader) FileLine(line int) (path string, fileLine int) {
 	return "", 0
 }
 
-// Source returns joined source of all input sources
+// Source returns the concatenated source code from all files added.
 func (fr *FileReader) Source() []byte {
 	return fr.source.Bytes()
 }
