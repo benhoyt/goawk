@@ -83,7 +83,7 @@ print x
 		{
 			"TestNoFiles",
 			[]testFile{},
-			3,
+			1,
 			"",
 			0,
 		},
@@ -93,9 +93,9 @@ print x
 				{"file1", ""},
 				{"file2", ""},
 			},
-			3,
-			"",
-			0,
+			1,
+			"file1",
+			1,
 		},
 	}
 
@@ -110,11 +110,12 @@ print x
 				}
 			}
 
-			{
-				path, fileLine := fr.FileLine(tst.line)
-				if path != tst.path || fileLine != tst.fileLine {
-					t.Errorf("wrong path/line")
-				}
+			path, fileLine := fr.FileLine(tst.line)
+			if path != tst.path {
+				t.Errorf("expected path: %v, got: %v", tst.path, path)
+			}
+			if fileLine != tst.fileLine {
+				t.Errorf("expected fileLine: %v, got: %v", tst.fileLine, fileLine)
 			}
 		})
 	}
