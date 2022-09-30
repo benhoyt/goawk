@@ -15,9 +15,8 @@ type FileReader struct {
 }
 
 type file struct {
-	path      string
-	startLine int // the number of first line of this file in joined source
-	lines     int
+	path  string
+	lines int
 }
 
 // AddFile adds a single source file.
@@ -33,21 +32,18 @@ func (fr *FileReader) AddFile(path string, source io.Reader) error {
 	}
 	content := fr.source.Bytes()[curLen:]
 	lines := bytes.Count(content, []byte("\n"))
-	startLine := 1
-	if len(fr.files) > 0 {
-		lastFile := fr.files[len(fr.files)-1]
-		startLine = lastFile.startLine + lastFile.lines
-	}
-	fr.files = append(fr.files, file{path, startLine, lines})
+	fr.files = append(fr.files, file{path, lines})
 	return nil
 }
 
 // FileLine resolves global line number in joined source to a local line number in a file (identified by path)
 func (fr *FileReader) FileLine(line int) (path string, fileLine int) {
+	startLine := 1
 	for _, f := range fr.files {
-		if line >= f.startLine && line < f.startLine+f.lines {
-			return f.path, line - f.startLine + 1
+		if line >= startLine && line < startLine+f.lines {
+			return f.path, line - startLine + 1
 		}
+		startLine += f.lines
 	}
 	return "", 0
 }
