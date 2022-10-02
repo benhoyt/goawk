@@ -3,9 +3,12 @@ package cover
 import (
 	"fmt"
 	"github.com/benhoyt/goawk/internal/ast"
-	. "github.com/benhoyt/goawk/internal/resolver"
 	. "github.com/benhoyt/goawk/parser"
 	"os"
+)
+
+const (
+	ARR_COVER = "__COVER" // TODO make parameterizable
 )
 
 type annotator struct {

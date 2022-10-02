@@ -103,10 +103,6 @@ func (r *resolver) Visit(node ast.Node) ast.Visitor {
 
 type varType int
 
-const (
-	ARR_COVER = "__COVER" // TODO make parameterizable
-)
-
 //var (
 //	IDX_COVER int
 //)
