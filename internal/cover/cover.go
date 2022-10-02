@@ -19,7 +19,7 @@ func NewAnnotator(covermode string) *annotator {
 	return &annotator{covermode, 0, map[int]ast.Boundary{}, map[int]int{}}
 }
 
-func (annotator *annotator) Annotate(prog *Program) {
+func (annotator *annotator) Annotate(prog *ast.Program) {
 	//IDX_COVER = len(prog.Arrays)
 	prog.Begin = annotator.annotateStmtsList(prog.Begin)
 	prog.Actions = annotator.annotateActions(prog.Actions)

@@ -273,15 +273,17 @@ argsLoop:
 
 	annotator := cover.NewAnnotator(covermode)
 	if covermode != "" {
-		annotator.Annotate(prog)
+		astProgram := &prog.ResolvedProgram.Program
+		annotator.Annotate(astProgram)
+		prog, err = parser.ResolveAndCompile(astProgram, parserConfig)
+		if err != nil {
+			errorExitf("%s", err)
+		}
 		if coverprofile == "" {
 			fmt.Fprintln(os.Stdout, prog)
 			os.Exit(0)
 		}
-		err := prog.Compile() // recompile for annotations to take an effect
-		if err != nil {
-			errorExitf("%s", err)
-		}
+		//err := prog.Compile() // recompile for annotations to take an effect
 	}
 
 	if debug {
