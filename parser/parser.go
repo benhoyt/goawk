@@ -163,17 +163,14 @@ type parser struct {
 	debugWriter io.Writer // where the debug output goes
 
 	// Coverage report functionality
-	// TODO cleanup
-	startPos        Position // The start position of each parser node that is a subject of the coverage analysis. Needed to capture the boundary data for such nodes.
-	currentFileName string   // The name of a file (passed via -f, multiple files can be provided) being processed by parser
-	fileStartPos    Position // We keep the position where each file content starts in the joined AWK source
+	startPos Position // The start position of each parser node that is a subject of the coverage analysis. Needed to capture the boundary data for such nodes.
 }
 
 func (p *parser) markStartPos() {
 	p.startPos = p.pos
 }
 func (p *parser) GetBoundary() ast.Boundary {
-	return ast.Boundary{p.startPos.RelativeTo(p.fileStartPos), p.pos.RelativeTo(p.fileStartPos), p.currentFileName}
+	return ast.Boundary{p.startPos, p.pos, "TODO remove"}
 }
 
 // Parse an entire AWK program.
@@ -238,12 +235,6 @@ func (p *parser) program() *ast.Program {
 	p.checkMultiExprs()
 
 	return prog
-}
-
-// TODO rm
-func (p *parser) markFileStarted() {
-	p.currentFileName = p.val
-	p.fileStartPos = p.pos
 }
 
 // Parse a list of statements.
