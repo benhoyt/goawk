@@ -47,17 +47,17 @@ func TestCover(t *testing.T) {
 			}
 			for _, run := range test.runs {
 				var args []string
+				args = append(args, "goawk")
 				for _, file := range run {
 					args = append(args, "-f", "testdata/cover/"+file)
 				}
 				args = append(args, "-coverprofile", coverprofile)
 				args = append(args, "-covermode", test.mode)
-				//_, stderr, err := runGoAWK(args, "")
 				os.Args = args
-				main()
-				//if err != nil || stderr != "" {
-				//	t.Fatalf("expected no error, got %v (%q)", err, stderr)
-				//}
+				status := mainLogic()
+				if status != 0 {
+					t.Fatalf("expected exit status 0, got: %d", status)
+				}
 			}
 
 			{

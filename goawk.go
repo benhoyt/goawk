@@ -72,6 +72,9 @@ Additional GoAWK arguments:
 )
 
 func main() {
+	os.Exit(mainLogic())
+}
+func mainLogic() (exitStatus int) {
 	// Parse command line arguments manually rather than using the
 	// "flag" package, so we can support flags with no space between
 	// flag and argument, like '-F:' (allowed by POSIX)
@@ -377,7 +380,7 @@ argsLoop:
 		_ = f.Close()
 	}
 
-	os.Exit(status)
+	return status
 }
 
 func validateCovermode(covermode string) {

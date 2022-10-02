@@ -154,7 +154,7 @@ func (annotator *annotator) trackStatement(statements []ast.Stmt) ast.Stmt {
 	firstStmtBoundary := statements[0].(ast.SimpleStmt).GetBoundary()
 	lastStmtBoundary := statements[len(statements)-1].(ast.SimpleStmt).GetBoundary()
 	path, startLine := annotator.fileReader.FileLine(firstStmtBoundary.Start.Line)
-	_, endLine := annotator.fileReader.FileLine(firstStmtBoundary.End.Line)
+	_, endLine := annotator.fileReader.FileLine(lastStmtBoundary.End.Line)
 	annotator.boundaries[annotator.annotationIdx] = ast.Boundary{
 		Start:    lexer.Position{startLine, firstStmtBoundary.Start.Column},
 		End:      lexer.Position{endLine, lastStmtBoundary.End.Column},
