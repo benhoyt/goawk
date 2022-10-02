@@ -31,7 +31,6 @@ import (
 	"fmt"
 	"github.com/benhoyt/goawk/cover"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -39,6 +38,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/benhoyt/goawk/internal/parseutil"
 	"github.com/benhoyt/goawk/interp"
 	"github.com/benhoyt/goawk/lexer"
 	"github.com/benhoyt/goawk/parser"
@@ -220,51 +220,37 @@ argsLoop:
 	// Any remaining args are program and input files
 	args := os.Args[i:]
 
-	var src []byte
-	var stdinBytes []byte // used if there's a parse error
+	fileReader := &parseutil.FileReader{}
 	if len(progFiles) > 0 {
 		// Read source: the concatenation of all source files specified
-		buf := &bytes.Buffer{}
 		progFiles = expandWildcardsOnWindows(progFiles)
 		for _, progFile := range progFiles {
 			if progFile == "-" {
-				b, err := ioutil.ReadAll(os.Stdin)
+				err := fileReader.AddFile("<stdin>", os.Stdin)
 				if err != nil {
 					errorExit(err)
 				}
-				stdinBytes = b
-				_, _ = buf.Write(b)
 			} else {
 				f, err := os.Open(progFile)
 				if err != nil {
 					errorExit(err)
 				}
-				if covermode != "" {
-					// Inserting fake token that captures the file name we'll need it for coverage report.
-					buf.WriteByte(lexer.FILENAME_QUOTE)
-					absPath, err := filepath.Abs(progFile)
-					if err != nil {
-						errorExit(err)
-					}
-					buf.WriteString(absPath)
-					buf.WriteByte(lexer.FILENAME_QUOTE)
-				}
-				_, err = buf.ReadFrom(f)
+				err = fileReader.AddFile(progFile, f)
 				if err != nil {
 					_ = f.Close()
 					errorExit(err)
 				}
 				_ = f.Close()
 			}
-			// Append newline to file in case it doesn't end with one
-			_ = buf.WriteByte('\n')
 		}
-		src = buf.Bytes()
 	} else {
 		if len(args) < 1 {
 			errorExitf(shortUsage)
 		}
-		src = []byte(args[0])
+		err := fileReader.AddFile("<cmdline>", strings.NewReader(args[0]))
+		if err != nil {
+			errorExit(err)
+		}
 		args = args[1:]
 	}
 
@@ -273,13 +259,13 @@ argsLoop:
 		DebugTypes:  debugTypes,
 		DebugWriter: os.Stderr,
 	}
-	prog, err := parser.ParseProgram(src, parserConfig)
+	prog, err := parser.ParseProgram(fileReader.Source(), parserConfig)
 	if err != nil {
 		if err, ok := err.(*parser.ParseError); ok {
-			name, line := errorFileLine(progFiles, stdinBytes, err.Position.Line)
+			name, line := fileReader.FileLine(err.Position.Line)
 			fmt.Fprintf(os.Stderr, "%s:%d:%d: %s\n",
 				name, line, err.Position.Column, err.Message)
-			showSourceLine(src, err.Position)
+			showSourceLine(fileReader.Source(), err.Position)
 			os.Exit(1)
 		}
 		errorExitf("%s", err)
@@ -409,36 +395,6 @@ func showSourceLine(src []byte, pos lexer.Position) {
 	runeColumn := utf8.RuneCountInString(srcLine[:pos.Column-1])
 	fmt.Fprintln(os.Stderr, strings.Replace(srcLine, "\t", "    ", -1))
 	fmt.Fprintln(os.Stderr, strings.Repeat(" ", runeColumn)+strings.Repeat("   ", numTabs)+"^")
-}
-
-// Determine which filename and line number to display for the overall
-// error line number.
-func errorFileLine(progFiles []string, stdinBytes []byte, errorLine int) (string, int) {
-	if len(progFiles) == 0 {
-		return "<cmdline>", errorLine
-	}
-	startLine := 1
-	for _, progFile := range progFiles {
-		var content []byte
-		if progFile == "-" {
-			progFile = "<stdin>"
-			content = stdinBytes
-		} else {
-			b, err := ioutil.ReadFile(progFile)
-			if err != nil {
-				return "<unknown>", errorLine
-			}
-			content = b
-		}
-		content = append(content, '\n')
-
-		numLines := bytes.Count(content, []byte{'\n'})
-		if errorLine >= startLine && errorLine < startLine+numLines {
-			return progFile, errorLine - startLine + 1
-		}
-		startLine += numLines
-	}
-	return "<unknown>", errorLine
 }
 
 func errorExit(err error) {
