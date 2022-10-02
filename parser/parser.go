@@ -149,6 +149,7 @@ type parser struct {
 	debugWriter io.Writer // where the debug output goes
 
 	// Coverage report functionality
+	// TODO cleanup
 	startPos        Position // The start position of each parser node that is a subject of the coverage analysis. Needed to capture the boundary data for such nodes.
 	currentFileName string   // The name of a file (passed via -f, multiple files can be provided) being processed by parser
 	fileStartPos    Position // We keep the position where each file content starts in the joined AWK source
@@ -186,9 +187,6 @@ func (p *parser) program() *ast.Program {
 		}
 		p.optionalNewlines()
 		switch p.tok {
-		case FILENAME:
-			p.markFileStarted()
-			p.next()
 		case EOF:
 			break
 		case BEGIN:
@@ -228,6 +226,7 @@ func (p *parser) program() *ast.Program {
 	return prog
 }
 
+// TODO rm
 func (p *parser) markFileStarted() {
 	p.currentFileName = p.val
 	p.fileStartPos = p.pos
