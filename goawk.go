@@ -29,7 +29,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/benhoyt/goawk/cover"
 	"io"
 	"os"
 	"path/filepath"
@@ -38,6 +37,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/benhoyt/goawk/internal/cover"
 	"github.com/benhoyt/goawk/internal/parseutil"
 	"github.com/benhoyt/goawk/interp"
 	"github.com/benhoyt/goawk/lexer"
