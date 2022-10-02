@@ -87,20 +87,10 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	// Parse into abstract syntax tree
 	astProg := p.program()
 
-	//prog = &Program{}
-
-	// Resolve step
-	//prog.ResolvedProgram = *resolver.Resolve(astProg, config.toResolverConfig())
-
-	// Compile to virtual machine code
-	//err = prog.Compile()
-	//prog.Compiled, err = compiler.Compile(&prog.ResolvedProgram)
-
-	//return prog, err
 	return ResolveAndCompile(astProg, config)
 }
 
-// Compile compiles to virtual machine code
+// ResolveAndCompile Resolves AST program and then compiles to virtual machine code
 func ResolveAndCompile(astProg *ast.Program, config *ParserConfig) (prog *Program, err error) {
 	prog = &Program{}
 
@@ -112,12 +102,6 @@ func ResolveAndCompile(astProg *ast.Program, config *ParserConfig) (prog *Progra
 
 	return prog, err
 }
-
-// Compile compiles to virtual machine code
-//func (p *Program) Compile() (err error) {
-//	p.Compiled, err = compiler.Compile(&p.ResolvedProgram)
-//	return
-//}
 
 // Program is the parsed and compiled representation of an entire AWK program.
 type Program struct {

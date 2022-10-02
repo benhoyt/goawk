@@ -32,12 +32,10 @@ func NewAnnotator(covermode string, fileReader *parseutil.FileReader) *annotator
 }
 
 func (annotator *annotator) Annotate(prog *ast.Program) {
-	//IDX_COVER = len(prog.Arrays)
 	prog.Begin = annotator.annotateStmtsList(prog.Begin)
 	prog.Actions = annotator.annotateActions(prog.Actions)
 	prog.End = annotator.annotateStmtsList(prog.End)
 	prog.Functions = annotator.annotateFunctions(prog.Functions)
-	//prog.Arrays[ARR_COVER] = IDX_COVER
 }
 
 func (annotator *annotator) AppendCoverData(coverprofile string, coverData map[int]int64) error {

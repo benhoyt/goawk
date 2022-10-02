@@ -103,10 +103,6 @@ func (r *resolver) Visit(node ast.Node) ast.Visitor {
 
 type varType int
 
-//var (
-//	IDX_COVER int
-//)
-
 const (
 	typeUnknown varType = iota
 	typeScalar
@@ -494,11 +490,7 @@ func (r *resolver) resolveVars(prog *ast.ResolvedProgram) {
 		if info.typ == typeScalar {
 			panic(ast.PosErrorf(arrayRef.ref.Pos, "can't use scalar %q as array", arrayRef.ref.Name))
 		}
-		//if arrayRef.ref.Name == ARR_COVER {
-		//	arrayRef.ref.Index = IDX_COVER
-		//} else {
 		arrayRef.ref.Index = info.index
-		//}
 	}
 }
 
