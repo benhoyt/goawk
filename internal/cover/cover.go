@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/internal/parseutil"
-	"github.com/benhoyt/goawk/lexer"
+	. "github.com/benhoyt/goawk/lexer"
 	. "github.com/benhoyt/goawk/parser"
 	"os"
 )
@@ -17,8 +17,14 @@ type annotator struct {
 	covermode     string
 	fileReader    *parseutil.FileReader
 	annotationIdx int
-	boundaries    map[int]ast.Boundary
+	boundaries    map[int]boundary
 	stmtsCnt      map[int]int
+}
+
+type boundary struct {
+	start    Position
+	end      Position
+	fileName string
 }
 
 func NewAnnotator(covermode string, fileReader *parseutil.FileReader) *annotator {
@@ -26,7 +32,7 @@ func NewAnnotator(covermode string, fileReader *parseutil.FileReader) *annotator
 		covermode,
 		fileReader,
 		0,
-		map[int]ast.Boundary{},
+		map[int]boundary{},
 		map[int]int{},
 	}
 }
@@ -149,14 +155,14 @@ func (annotator *annotator) trackStatement(statements []ast.Stmt) ast.Stmt {
 		op = "++"
 	}
 	annotator.annotationIdx++
-	firstStmtBoundary := statements[0].(ast.SimpleStmt).GetBoundary()
-	lastStmtBoundary := statements[len(statements)-1].(ast.SimpleStmt).GetBoundary()
-	path, startLine := annotator.fileReader.FileLine(firstStmtBoundary.Start.Line)
-	_, endLine := annotator.fileReader.FileLine(lastStmtBoundary.End.Line)
-	annotator.boundaries[annotator.annotationIdx] = ast.Boundary{
-		Start:    lexer.Position{startLine, firstStmtBoundary.Start.Column},
-		End:      lexer.Position{endLine, lastStmtBoundary.End.Column},
-		FileName: path,
+	start1, _ := statements[0].(ast.BoundaryProvider).GetBoundary()
+	_, end2 := statements[len(statements)-1].(ast.BoundaryProvider).GetBoundary()
+	path, startLine := annotator.fileReader.FileLine(start1.Line)
+	_, endLine := annotator.fileReader.FileLine(end2.Line)
+	annotator.boundaries[annotator.annotationIdx] = boundary{
+		start:    Position{startLine, start1.Column},
+		end:      Position{endLine, end2.Column},
+		fileName: path,
 	}
 	annotator.stmtsCnt[annotator.annotationIdx] = len(statements)
 	return parseProg(fmt.Sprintf(`BEGIN { %s[%d]%s }`, ARR_COVER, annotator.annotationIdx, op)).Begin[0][0]
@@ -170,11 +176,11 @@ func parseProg(code string) *Program {
 	return prog
 }
 
-func renderCoverDataLine(boundary ast.Boundary, stmtsCnt int, cnt int64) string {
+func renderCoverDataLine(boundary boundary, stmtsCnt int, cnt int64) string {
 	return fmt.Sprintf("%s:%d.%d,%d.%d %d %d\n",
-		boundary.FileName,
-		boundary.Start.Line, boundary.Start.Column,
-		boundary.End.Line, boundary.End.Column,
+		boundary.fileName,
+		boundary.start.Line, boundary.start.Column,
+		boundary.end.Line, boundary.end.Column,
 		stmtsCnt, cnt,
 	)
 }

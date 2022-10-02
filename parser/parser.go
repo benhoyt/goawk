@@ -153,9 +153,6 @@ type parser struct {
 func (p *parser) markStartPos() {
 	p.startPos = p.pos
 }
-func (p *parser) GetBoundary() ast.Boundary {
-	return ast.Boundary{p.startPos, p.pos, "TODO remove"}
-}
 
 // Parse an entire AWK program.
 func (p *parser) program() *ast.Program {
@@ -274,12 +271,12 @@ func (p *parser) simpleStmt() ast.Stmt {
 			dest = p.expr()
 		}
 		if op == PRINT {
-			return &ast.PrintStmt{args, redirect, dest, p.GetBoundary()}
+			return &ast.PrintStmt{args, redirect, dest, p.startPos, p.pos}
 		} else {
 			if len(args) == 0 {
 				panic(p.errorf("expected printf args, got none"))
 			}
-			return &ast.PrintfStmt{args, redirect, dest, p.GetBoundary()}
+			return &ast.PrintfStmt{args, redirect, dest, p.startPos, p.pos}
 		}
 	case DELETE:
 		p.next()
@@ -294,11 +291,11 @@ func (p *parser) simpleStmt() ast.Stmt {
 			}
 			p.expect(RBRACKET)
 		}
-		return &ast.DeleteStmt{ref, index, p.GetBoundary()}
+		return &ast.DeleteStmt{ref, index, p.startPos, p.pos}
 	case IF, FOR, WHILE, DO, BREAK, CONTINUE, NEXT, EXIT, RETURN:
 		panic(p.errorf("expected print/printf, delete, or expression"))
 	default:
-		return &ast.ExprStmt{p.expr(), p.GetBoundary()}
+		return &ast.ExprStmt{p.expr(), p.startPos, p.pos}
 	}
 }
 
@@ -401,26 +398,26 @@ func (p *parser) stmt() ast.Stmt {
 			panic(p.errorf("break must be inside a loop body"))
 		}
 		p.next()
-		s = &ast.BreakStmt{p.GetBoundary()}
+		s = &ast.BreakStmt{p.startPos, p.pos}
 	case CONTINUE:
 		if p.loopDepth == 0 {
 			panic(p.errorf("continue must be inside a loop body"))
 		}
 		p.next()
-		s = &ast.ContinueStmt{p.GetBoundary()}
+		s = &ast.ContinueStmt{p.startPos, p.pos}
 	case NEXT:
 		if !p.inAction && p.funcName == "" {
 			panic(p.errorf("next can't be inside BEGIN or END"))
 		}
 		p.next()
-		s = &ast.NextStmt{p.GetBoundary()}
+		s = &ast.NextStmt{p.startPos, p.pos}
 	case EXIT:
 		p.next()
 		var status ast.Expr
 		if !p.matches(NEWLINE, SEMICOLON, RBRACE) {
 			status = p.expr()
 		}
-		s = &ast.ExitStmt{status, p.GetBoundary()}
+		s = &ast.ExitStmt{status, p.startPos, p.pos}
 	case RETURN:
 		if p.funcName == "" {
 			panic(p.errorf("return must be inside a function"))
@@ -430,7 +427,7 @@ func (p *parser) stmt() ast.Stmt {
 		if !p.matches(NEWLINE, SEMICOLON, RBRACE) {
 			value = p.expr()
 		}
-		s = &ast.ReturnStmt{value, p.GetBoundary()}
+		s = &ast.ReturnStmt{value, p.startPos, p.pos}
 	case LBRACE:
 		body := p.stmtsBrace()
 		s = &ast.BlockStmt{body}

@@ -438,29 +438,19 @@ type Stmt interface {
 	String() string
 }
 
-type SimpleStmt interface {
-	GetBoundary() Boundary
+type BoundaryProvider interface {
+	GetBoundary() (start Position, end Position)
 }
 
-func (s *PrintStmt) GetBoundary() Boundary    { return s.Boundary }
-func (s *PrintfStmt) GetBoundary() Boundary   { return s.Boundary }
-func (s *ExprStmt) GetBoundary() Boundary     { return s.Boundary }
-func (s *BreakStmt) GetBoundary() Boundary    { return s.Boundary }
-func (s *ContinueStmt) GetBoundary() Boundary { return s.Boundary }
-func (s *NextStmt) GetBoundary() Boundary     { return s.Boundary }
-func (s *ExitStmt) GetBoundary() Boundary     { return s.Boundary }
-func (s *DeleteStmt) GetBoundary() Boundary   { return s.Boundary }
-func (s *ReturnStmt) GetBoundary() Boundary   { return s.Boundary }
-
-type Boundary struct {
-	Start    Position
-	End      Position
-	FileName string
-}
-
-func (pos *Boundary) String() string {
-	return pos.Start.String() + "-" + pos.End.String()
-}
+func (s *PrintStmt) GetBoundary() (start Position, end Position)    { return s.Start, s.End }
+func (s *PrintfStmt) GetBoundary() (start Position, end Position)   { return s.Start, s.End }
+func (s *ExprStmt) GetBoundary() (start Position, end Position)     { return s.Start, s.End }
+func (s *BreakStmt) GetBoundary() (start Position, end Position)    { return s.Start, s.End }
+func (s *ContinueStmt) GetBoundary() (start Position, end Position) { return s.Start, s.End }
+func (s *NextStmt) GetBoundary() (start Position, end Position)     { return s.Start, s.End }
+func (s *ExitStmt) GetBoundary() (start Position, end Position)     { return s.Start, s.End }
+func (s *DeleteStmt) GetBoundary() (start Position, end Position)   { return s.Start, s.End }
+func (s *ReturnStmt) GetBoundary() (start Position, end Position)   { return s.Start, s.End }
 
 // All these types implement the Stmt interface.
 func (s *PrintStmt) stmt()    {}
@@ -484,7 +474,8 @@ type PrintStmt struct {
 	Args     []Expr
 	Redirect Token
 	Dest     Expr
-	Boundary
+	Start    Position
+	End      Position
 }
 
 func (s *PrintStmt) String() string {
@@ -508,7 +499,8 @@ type PrintfStmt struct {
 	Args     []Expr
 	Redirect Token
 	Dest     Expr
-	Boundary
+	Start    Position
+	End      Position
 }
 
 func (s *PrintfStmt) String() string {
@@ -517,8 +509,9 @@ func (s *PrintfStmt) String() string {
 
 // ExprStmt is statement like a bare function call: my_func(x).
 type ExprStmt struct {
-	Expr Expr
-	Boundary
+	Expr  Expr
+	Start Position
+	End   Position
 }
 
 func (s *ExprStmt) String() string {
@@ -597,7 +590,8 @@ func (s *DoWhileStmt) String() string {
 
 // BreakStmt is a break statement.
 type BreakStmt struct {
-	Boundary
+	Start Position
+	End   Position
 }
 
 func (s *BreakStmt) String() string {
@@ -606,7 +600,8 @@ func (s *BreakStmt) String() string {
 
 // ContinueStmt is a continue statement.
 type ContinueStmt struct {
-	Boundary
+	Start Position
+	End   Position
 }
 
 func (s *ContinueStmt) String() string {
@@ -615,7 +610,8 @@ func (s *ContinueStmt) String() string {
 
 // NextStmt is a next statement.
 type NextStmt struct {
-	Boundary
+	Start Position
+	End   Position
 }
 
 func (s *NextStmt) String() string {
@@ -625,7 +621,8 @@ func (s *NextStmt) String() string {
 // ExitStmt is an exit statement.
 type ExitStmt struct {
 	Status Expr
-	Boundary
+	Start  Position
+	End    Position
 }
 
 func (s *ExitStmt) String() string {
@@ -640,7 +637,8 @@ func (s *ExitStmt) String() string {
 type DeleteStmt struct {
 	Array *ArrayExpr
 	Index []Expr
-	Boundary
+	Start Position
+	End   Position
 }
 
 func (s *DeleteStmt) String() string {
@@ -654,7 +652,8 @@ func (s *DeleteStmt) String() string {
 // ReturnStmt is a return statement.
 type ReturnStmt struct {
 	Value Expr
-	Boundary
+	Start Position
+	End   Position
 }
 
 func (s *ReturnStmt) String() string {
