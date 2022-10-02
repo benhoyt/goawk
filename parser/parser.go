@@ -90,7 +90,7 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	return ResolveAndCompile(astProg, config)
 }
 
-// ResolveAndCompile Resolves AST program and then compiles to virtual machine code
+// ResolveAndCompile resolves AST program and then compiles to virtual machine code
 func ResolveAndCompile(astProg *ast.Program, config *ParserConfig) (prog *Program, err error) {
 	prog = &Program{}
 
