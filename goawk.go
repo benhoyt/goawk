@@ -271,7 +271,7 @@ argsLoop:
 		errorExitf("%s", err)
 	}
 
-	annotator := cover.NewAnnotator(covermode)
+	annotator := cover.NewAnnotator(covermode, fileReader)
 	if covermode != "" {
 		astProgram := &prog.ResolvedProgram.Program
 		annotator.Annotate(astProgram)

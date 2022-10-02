@@ -3,6 +3,8 @@ package cover
 import (
 	"fmt"
 	"github.com/benhoyt/goawk/internal/ast"
+	"github.com/benhoyt/goawk/internal/parseutil"
+	"github.com/benhoyt/goawk/lexer"
 	. "github.com/benhoyt/goawk/parser"
 	"os"
 )
@@ -13,13 +15,20 @@ const (
 
 type annotator struct {
 	covermode     string
+	fileReader    *parseutil.FileReader
 	annotationIdx int
 	boundaries    map[int]ast.Boundary
 	stmtsCnt      map[int]int
 }
 
-func NewAnnotator(covermode string) *annotator {
-	return &annotator{covermode, 0, map[int]ast.Boundary{}, map[int]int{}}
+func NewAnnotator(covermode string, fileReader *parseutil.FileReader) *annotator {
+	return &annotator{
+		covermode,
+		fileReader,
+		0,
+		map[int]ast.Boundary{},
+		map[int]int{},
+	}
 }
 
 func (annotator *annotator) Annotate(prog *ast.Program) {
@@ -144,10 +153,12 @@ func (annotator *annotator) trackStatement(statements []ast.Stmt) ast.Stmt {
 	annotator.annotationIdx++
 	firstStmtBoundary := statements[0].(ast.SimpleStmt).GetBoundary()
 	lastStmtBoundary := statements[len(statements)-1].(ast.SimpleStmt).GetBoundary()
+	path, startLine := annotator.fileReader.FileLine(firstStmtBoundary.Start.Line)
+	_, endLine := annotator.fileReader.FileLine(firstStmtBoundary.End.Line)
 	annotator.boundaries[annotator.annotationIdx] = ast.Boundary{
-		Start:    firstStmtBoundary.Start,
-		End:      lastStmtBoundary.End,
-		FileName: firstStmtBoundary.FileName,
+		Start:    lexer.Position{startLine, firstStmtBoundary.Start.Column},
+		End:      lexer.Position{endLine, lastStmtBoundary.End.Column},
+		FileName: path,
 	}
 	annotator.stmtsCnt[annotator.annotationIdx] = len(statements)
 	return parseProg(fmt.Sprintf(`BEGIN { %s[%d]%s }`, ARR_COVER, annotator.annotationIdx, op)).Begin[0][0]
