@@ -10,9 +10,7 @@ import (
 	"strconv"
 )
 
-const (
-	ARR_COVER = "__COVER" // TODO make parameterizable
-)
+const ArrCover = "__COVER"
 
 type annotator struct {
 	covermode     string
@@ -69,7 +67,7 @@ func (annotator *annotator) AppendCoverData(coverprofile string, coverData map[s
 	coverDataInts := convertCoverData(coverData)
 
 	var f *os.File
-	if _, err := os.Stat(coverprofile); os.IsNotExist(err) { // TODO error if exists and is folder
+	if _, err := os.Stat(coverprofile); os.IsNotExist(err) {
 		f, err = os.OpenFile(coverprofile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 		if err != nil {
 			return err
@@ -184,7 +182,7 @@ func (annotator *annotator) trackStatement(statements []ast.Stmt) ast.Stmt {
 		fileName: path,
 	}
 	annotator.stmtsCnt[annotator.annotationIdx] = len(statements)
-	return parseProg(fmt.Sprintf(`BEGIN { %s[%d]%s }`, ARR_COVER, annotator.annotationIdx, op)).Begin[0][0]
+	return parseProg(fmt.Sprintf(`BEGIN { %s[%d]%s }`, ArrCover, annotator.annotationIdx, op)).Begin[0][0]
 }
 
 func parseProg(code string) *Program {
