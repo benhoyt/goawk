@@ -5,11 +5,8 @@ package interp
 import (
 	"context"
 	"github.com/benhoyt/goawk/internal/ast"
-	"github.com/benhoyt/goawk/internal/cover"
-	"math"
-	"strconv"
-
 	"github.com/benhoyt/goawk/parser"
+	"math"
 )
 
 const checkContextOps = 1000 // for efficiency, only check context every N instructions
@@ -63,15 +60,11 @@ func (p *Interpreter) Execute(config *Config) (int, error) {
 	return p.interp.executeAll()
 }
 
-func (p *Interpreter) GetCoverData() (res map[int]int64) { // TODO make more generic
-	res = map[int]int64{}
-	array := p.interp.array(ast.ScopeGlobal, p.interp.program.Arrays[cover.ARR_COVER])
+func (p *Interpreter) GetArray(name string) (res map[string]string) {
+	res = map[string]string{}
+	array := p.interp.array(ast.ScopeGlobal, p.interp.program.Arrays[name])
 	for k, v := range array {
-		ki, err := strconv.Atoi(k)
-		if err != nil {
-			panic(err)
-		}
-		res[ki] = int64(v.num())
+		res[k] = v.str("%.6g")
 	}
 	return
 }

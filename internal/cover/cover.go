@@ -7,6 +7,7 @@ import (
 	. "github.com/benhoyt/goawk/lexer"
 	. "github.com/benhoyt/goawk/parser"
 	"os"
+	"strconv"
 )
 
 const (
@@ -44,10 +45,28 @@ func (annotator *annotator) Annotate(prog *ast.Program) {
 	prog.Functions = annotator.annotateFunctions(prog.Functions)
 }
 
-func (annotator *annotator) AppendCoverData(coverprofile string, coverData map[int]int64) error {
+func convertCoverData(coverData map[string]string) map[int]int {
+	res := map[int]int{}
+	for k, v := range coverData {
+		ki, err := strconv.Atoi(k)
+		if err != nil {
+			panic("non-int index in coverData: " + k)
+		}
+		vi, err := strconv.Atoi(v)
+		if err != nil {
+			panic("non-int value in coverData: " + v)
+		}
+		res[ki] = vi
+	}
+	return res
+}
+
+func (annotator *annotator) AppendCoverData(coverprofile string, coverData map[string]string) error {
 	// 1a. If file doesn't exist - create and write covermode line
 	// 1b. If file exists - open it for writing in append mode
 	// 2.  Write all coverData lines
+
+	coverDataInts := convertCoverData(coverData)
 
 	var f *os.File
 	if _, err := os.Stat(coverprofile); os.IsNotExist(err) { // TODO error if exists and is folder
@@ -69,7 +88,7 @@ func (annotator *annotator) AppendCoverData(coverprofile string, coverData map[i
 		panic(err)
 	}
 	for i := 1; i <= annotator.annotationIdx; i++ {
-		_, err := f.WriteString(renderCoverDataLine(annotator.boundaries[i], annotator.stmtsCnt[i], coverData[i]))
+		_, err := f.WriteString(renderCoverDataLine(annotator.boundaries[i], annotator.stmtsCnt[i], coverDataInts[i]))
 		if err != nil {
 			return err
 		}
@@ -176,7 +195,7 @@ func parseProg(code string) *Program {
 	return prog
 }
 
-func renderCoverDataLine(boundary boundary, stmtsCnt int, cnt int64) string {
+func renderCoverDataLine(boundary boundary, stmtsCnt int, cnt int) string {
 	return fmt.Sprintf("%s:%d.%d,%d.%d %d %d\n",
 		boundary.fileName,
 		boundary.start.Line, boundary.start.Column,
