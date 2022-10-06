@@ -759,6 +759,22 @@ func TestMandelbrot(t *testing.T) {
 	}
 }
 
+func equalAwkSources(code1, code2 string) bool {
+	normalizeAwkSource := func(code string) []byte {
+		p, err := parser.ParseProgram([]byte(code), nil)
+		if err != nil {
+			panic(err)
+		}
+		b := bytes.Buffer{}
+		err = p.Disassemble(&b)
+		if err != nil {
+			panic(err)
+		}
+		return b.Bytes()
+	}
+	return bytes.Equal(normalizeAwkSource(code1), normalizeAwkSource(code2))
+}
+
 func TestCoverPrintAnnotatedSource(t *testing.T) {
 	tests := []struct {
 		sourceFiles        []string
@@ -784,27 +800,34 @@ func TestCoverPrintAnnotatedSource(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			expected = normalizeNewlines(expected)
 			if !equalAwkSources(stdout, string(expected)) {
 				t.Fatalf("output differs, got:\n%s\nexpected:\n%s", stdout, expected)
 			}
 		})
 	}
-
 }
 
-func equalAwkSources(code1, code2 string) bool {
-	normalizeAwkSource := func(code string) []byte {
-		p, err := parser.ParseProgram([]byte(code), nil)
-		if err != nil {
-			panic(err)
-		}
-		b := bytes.Buffer{}
-		err = p.Disassemble(&b)
-		if err != nil {
-			panic(err)
-		}
-		return b.Bytes()
+func TestCoverWrongArgsHandling(t *testing.T) {
+	tests := []struct {
+		args          []string
+		expectedError string
+	}{
+		{[]string{"-coverprofile"}, "flag needs an argument: -coverprofile"},
+		{[]string{"-covermode"}, "flag needs an argument: -covermode"},
+		{[]string{"-covermode", "wrong"}, "covermode can only be one of: set, count"},
+		{[]string{"-covermode=wrong"}, "covermode can only be one of: set, count"},
 	}
-	return bytes.Equal(normalizeAwkSource(code1), normalizeAwkSource(code2))
+
+	for _, test := range tests {
+		t.Run("TestCoverWrongArgsHandling/"+test.expectedError, func(t *testing.T) {
+			_, stderr, err := runGoAWK(test.args, "")
+			if err == nil {
+				t.Fatalf("expected error")
+			}
+			stderr = strings.TrimSpace(stderr)
+			if stderr != test.expectedError {
+				t.Fatalf("error differs, got:\n%s\nexpected:\n%s", stderr, test.expectedError)
+			}
+		})
+	}
 }
