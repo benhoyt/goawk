@@ -51,6 +51,7 @@ func (annotator *annotator) AppendCoverData(coverprofile string, coverData map[s
 	// 2.  Write all coverData lines
 
 	coverDataInts := convertCoverData(coverData)
+	isNewFile := true
 
 	var f *os.File
 	if _, err := os.Stat(coverprofile); os.IsNotExist(err) {
@@ -58,14 +59,11 @@ func (annotator *annotator) AppendCoverData(coverprofile string, coverData map[s
 		if err != nil {
 			return err
 		}
-		_, err := f.WriteString("mode: " + annotator.covermode + "\n")
-		if err != nil {
-			return err
-		}
 	} else if err == nil {
 		// file exists
 		fileOpt := os.O_TRUNC
 		if annotator.coverappend {
+			isNewFile = false
 			fileOpt = os.O_APPEND
 		}
 		f, err = os.OpenFile(coverprofile, os.O_WRONLY|fileOpt, 0644)
@@ -75,6 +73,14 @@ func (annotator *annotator) AppendCoverData(coverprofile string, coverData map[s
 	} else {
 		panic(err)
 	}
+
+	if isNewFile {
+		_, err := f.WriteString("mode: " + annotator.covermode + "\n")
+		if err != nil {
+			return err
+		}
+	}
+
 	for i := 1; i <= annotator.annotationIdx; i++ {
 		_, err := f.WriteString(renderCoverDataLine(annotator.boundaries[i], annotator.stmtsCnt[i], coverDataInts[i]))
 		if err != nil {

@@ -16,22 +16,29 @@ func TestCover(t *testing.T) {
 	tests := []struct {
 		name                string
 		mode                string
+		coverappend         bool
 		runs                [][]string
 		expectedCoverReport string
 	}{
-		{"1File,set", "set", [][]string{{"a1.awk"}}, "test_set.cov"},
-		{"1File,count", "count", [][]string{{"a1.awk"}}, "test_count.cov"},
-		{"2Files,set", "set", [][]string{{"a2.awk", "a1.awk"}}, "test_a2a1_set.cov"},
-		{"2Files,count", "count", [][]string{{"a2.awk", "a1.awk"}}, "test_a2a1_count.cov"},
-		{"1File2Runs,set", "set", [][]string{{"a1.awk"}, {"a1.awk"}}, "test_1file2runs_set.cov"},
-		{"2Files2Runs,set", "count", [][]string{{"a2.awk", "a1.awk"}, {"a2.awk", "a1.awk"}}, "test_2file2runs_count.cov"},
+		{"1File", "set", true, [][]string{{"a1.awk"}}, "test_set.cov"},
+		{"1File", "count", true, [][]string{{"a1.awk"}}, "test_count.cov"},
+		{"2Files", "set", true, [][]string{{"a2.awk", "a1.awk"}}, "test_a2a1_set.cov"},
+		{"2Files", "count", true, [][]string{{"a2.awk", "a1.awk"}}, "test_a2a1_count.cov"},
+		{"1File2Runs", "set", true, [][]string{{"a1.awk"}, {"a1.awk"}}, "test_1file2runs_set.cov"},
+		{"2Files2Runs", "count", true, [][]string{{"a2.awk", "a1.awk"}, {"a2.awk", "a1.awk"}}, "test_2file2runs_count.cov"},
+		{"1File2Runs", "set", false, [][]string{{"a1.awk"}, {"a1.awk"}}, "test_1file2runs_set_truncated.cov"},
+		{"2Files2Runs", "count", false, [][]string{{"a2.awk", "a1.awk"}, {"a2.awk", "a1.awk"}}, "test_2file2runs_count_truncated.cov"},
 	}
 
 	coverprofile := "/tmp/testCov.txt"
 	coverprofileFixed := "/tmp/testCov_fixed.txt"
 
 	for _, test := range tests {
-		t.Run("TestCover"+test.name, func(t *testing.T) {
+		coverappend := ""
+		if test.coverappend {
+			coverappend = ",coverappend"
+		}
+		t.Run("TestCover"+test.name+","+test.mode+coverappend, func(t *testing.T) {
 
 			// make sure file doesn't exist
 			if _, err := os.Stat(coverprofile); os.IsNotExist(err) {
@@ -53,6 +60,9 @@ func TestCover(t *testing.T) {
 				}
 				args = append(args, "-coverprofile", coverprofile)
 				args = append(args, "-covermode", test.mode)
+				if test.coverappend {
+					args = append(args, "-coverappend")
+				}
 				os.Args = args
 				status := mainLogic()
 				if status != 0 {
