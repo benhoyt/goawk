@@ -439,18 +439,18 @@ type Stmt interface {
 }
 
 type BoundaryProvider interface {
-	GetBoundary() (start Position, end Position)
+	Boundary() (start Position, end Position)
 }
 
-func (s *PrintStmt) GetBoundary() (start Position, end Position)    { return s.Start, s.End }
-func (s *PrintfStmt) GetBoundary() (start Position, end Position)   { return s.Start, s.End }
-func (s *ExprStmt) GetBoundary() (start Position, end Position)     { return s.Start, s.End }
-func (s *BreakStmt) GetBoundary() (start Position, end Position)    { return s.Start, s.End }
-func (s *ContinueStmt) GetBoundary() (start Position, end Position) { return s.Start, s.End }
-func (s *NextStmt) GetBoundary() (start Position, end Position)     { return s.Start, s.End }
-func (s *ExitStmt) GetBoundary() (start Position, end Position)     { return s.Start, s.End }
-func (s *DeleteStmt) GetBoundary() (start Position, end Position)   { return s.Start, s.End }
-func (s *ReturnStmt) GetBoundary() (start Position, end Position)   { return s.Start, s.End }
+func (s *PrintStmt) Boundary() (start Position, end Position)    { return s.Start, s.End }
+func (s *PrintfStmt) Boundary() (start Position, end Position)   { return s.Start, s.End }
+func (s *ExprStmt) Boundary() (start Position, end Position)     { return s.Start, s.End }
+func (s *BreakStmt) Boundary() (start Position, end Position)    { return s.Start, s.End }
+func (s *ContinueStmt) Boundary() (start Position, end Position) { return s.Start, s.End }
+func (s *NextStmt) Boundary() (start Position, end Position)     { return s.Start, s.End }
+func (s *ExitStmt) Boundary() (start Position, end Position)     { return s.Start, s.End }
+func (s *DeleteStmt) Boundary() (start Position, end Position)   { return s.Start, s.End }
+func (s *ReturnStmt) Boundary() (start Position, end Position)   { return s.Start, s.End }
 
 // All these types implement the Stmt interface.
 func (s *PrintStmt) stmt()    {}

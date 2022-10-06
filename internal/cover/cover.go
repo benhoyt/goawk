@@ -184,8 +184,8 @@ func (annotator *annotator) trackStatement(statements []ast.Stmt) ast.Stmt {
 		op = "++"
 	}
 	annotator.annotationIdx++
-	start1, _ := statements[0].(ast.BoundaryProvider).GetBoundary()
-	_, end2 := statements[len(statements)-1].(ast.BoundaryProvider).GetBoundary()
+	start1, _ := statements[0].(ast.BoundaryProvider).Boundary()
+	_, end2 := statements[len(statements)-1].(ast.BoundaryProvider).Boundary()
 	path, startLine := annotator.fileReader.FileLine(start1.Line)
 	_, endLine := annotator.fileReader.FileLine(end2.Line)
 	annotator.boundaries[annotator.annotationIdx] = boundary{
