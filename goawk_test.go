@@ -794,23 +794,17 @@ func TestCoverPrintAnnotatedSource(t *testing.T) {
 }
 
 func equalAwkSources(code1, code2 string) bool {
-	p1, err := parser.ParseProgram([]byte(code1), nil)
-	if err != nil {
-		panic(err)
+	normalizeAwkSource := func(code string) []byte {
+		p, err := parser.ParseProgram([]byte(code), nil)
+		if err != nil {
+			panic(err)
+		}
+		b := bytes.Buffer{}
+		err = p.Disassemble(&b)
+		if err != nil {
+			panic(err)
+		}
+		return b.Bytes()
 	}
-	p2, err := parser.ParseProgram([]byte(code2), nil)
-	if err != nil {
-		panic(err)
-	}
-	b1 := bytes.Buffer{}
-	err = p1.Disassemble(&b1)
-	if err != nil {
-		panic(err)
-	}
-	b2 := bytes.Buffer{}
-	err = p2.Disassemble(&b2)
-	if err != nil {
-		panic(err)
-	}
-	return bytes.Equal(b1.Bytes(), b2.Bytes())
+	return bytes.Equal(normalizeAwkSource(code1), normalizeAwkSource(code2))
 }
