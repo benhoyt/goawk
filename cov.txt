@@ -3,7 +3,7 @@ TODO:
 - [x] generalize `GetCoverData`
 - [x] add flag to create/update cover profile by default
 - [x] more complete tests set for cover
-- [ ] better naming instead of annotator
+- [x] better naming instead of annotator
 - [x] TODO error if exists and is folder
 - [ ] documentation
 - print annotated to stdout or err?

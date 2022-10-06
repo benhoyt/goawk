@@ -278,10 +278,10 @@ argsLoop:
 		errorExitf("%s", err)
 	}
 
-	annotator := cover.NewAnnotator(covermode, coverappend, fileReader)
+	coverageHelper := cover.New(covermode, coverappend, fileReader)
 	if covermode != "" {
 		astProgram := &prog.ResolvedProgram.Program
-		annotator.Annotate(astProgram)
+		coverageHelper.Annotate(astProgram)
 		prog, err = parser.ResolveAndCompile(astProgram, parserConfig)
 		if err != nil {
 			errorExitf("%s", err)
@@ -362,7 +362,7 @@ argsLoop:
 	}
 
 	if coverprofile != "" {
-		err := annotator.StoreCoverData(coverprofile, interpreter.GetArray(cover.ArrCover))
+		err := coverageHelper.StoreCoverData(coverprofile, interpreter.GetArray(cover.ArrCover))
 		if err != nil {
 			errorExitf("unable to save coverprofile: %v", err)
 		}
