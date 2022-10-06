@@ -796,7 +796,7 @@ func TestCoverPrintAnnotatedSource(t *testing.T) {
 			if err != nil {
 				t.Fatalf("expected no error, got %v (%q)", err, stderr)
 			}
-			expected, err := os.ReadFile("testdata/cover/" + test.expectedResultFile)
+			expected, err := ioutil.ReadFile("testdata/cover/" + test.expectedResultFile)
 			if err != nil {
 				t.Fatal(err)
 			}
