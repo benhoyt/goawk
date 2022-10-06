@@ -362,7 +362,7 @@ argsLoop:
 	}
 
 	if coverprofile != "" {
-		err := annotator.AppendCoverData(coverprofile, interpreter.GetArray(cover.ArrCover))
+		err := annotator.StoreCoverData(coverprofile, interpreter.GetArray(cover.ArrCover))
 		if err != nil {
 			errorExitf("unable to save coverprofile: %v", err)
 		}

@@ -2,6 +2,7 @@
 TODO:
 - [x] generalize `GetCoverData`
 - [x] add flag to create/update cover profile by default
+- [ ] more complete tests set for cover
 - [ ] better naming instead of annotator
 - [x] TODO error if exists and is folder
 - [ ] documentation

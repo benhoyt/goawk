@@ -45,7 +45,7 @@ func (annotator *annotator) Annotate(prog *ast.Program) {
 	prog.Functions = annotator.annotateFunctions(prog.Functions)
 }
 
-func (annotator *annotator) AppendCoverData(coverprofile string, coverData map[string]string) error {
+func (annotator *annotator) StoreCoverData(coverprofile string, coverData map[string]string) error {
 	// 1a. If file doesn't exist - create and write covermode line
 	// 1b. If file exists - open it for writing in append mode
 	// 2.  Write all coverData lines
