@@ -758,3 +758,37 @@ func TestMandelbrot(t *testing.T) {
 		t.Fatalf("expected:\n%s\ngot:\n%s", expected, stdout)
 	}
 }
+
+func TestCoverPrintAnnotatedSource(t *testing.T) {
+	tests := []struct {
+		sourceFiles        []string
+		mode               string
+		expectedResultFile string
+	}{
+		{[]string{"a1.awk"}, "set", "a1_covermode_set.awk"},
+		{[]string{"a2.awk"}, "count", "a2_covermode_count.awk"},
+		{[]string{"a1.awk", "a2.awk"}, "count", "a1_a2_covermode_count.awk"},
+	}
+
+	for _, test := range tests {
+		t.Run("TestCoverPrintAnnotatedSource/"+test.expectedResultFile, func(t *testing.T) {
+			args := []string{"-covermode", test.mode}
+			for _, file := range test.sourceFiles {
+				args = append(args, "-f", "testdata/cover/"+file)
+			}
+			stdout, stderr, err := runGoAWK(args, "")
+			if err != nil {
+				t.Fatalf("expected no error, got %v (%q)", err, stderr)
+			}
+			expected, err := os.ReadFile("testdata/cover/" + test.expectedResultFile)
+			if err != nil {
+				t.Fatal(err)
+			}
+			expected = normalizeNewlines(expected)
+			if stdout != string(expected) {
+				t.Fatalf("output differs, got:\n%s\nexpected:\n%s", stdout, expected)
+			}
+		})
+	}
+
+}
