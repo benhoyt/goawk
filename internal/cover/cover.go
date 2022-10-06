@@ -14,6 +14,7 @@ const ArrCover = "__COVER"
 
 type annotator struct {
 	covermode     string
+	coverappend   bool
 	fileReader    *parseutil.FileReader
 	annotationIdx int
 	boundaries    map[int]boundary
@@ -26,9 +27,10 @@ type boundary struct {
 	fileName string
 }
 
-func NewAnnotator(covermode string, fileReader *parseutil.FileReader) *annotator {
+func NewAnnotator(covermode string, coverappend bool, fileReader *parseutil.FileReader) *annotator {
 	return &annotator{
 		covermode,
+		coverappend,
 		fileReader,
 		0,
 		map[int]boundary{},
@@ -41,22 +43,6 @@ func (annotator *annotator) Annotate(prog *ast.Program) {
 	prog.Actions = annotator.annotateActions(prog.Actions)
 	prog.End = annotator.annotateStmtsList(prog.End)
 	prog.Functions = annotator.annotateFunctions(prog.Functions)
-}
-
-func convertCoverData(coverData map[string]string) map[int]int {
-	res := map[int]int{}
-	for k, v := range coverData {
-		ki, err := strconv.Atoi(k)
-		if err != nil {
-			panic("non-int index in coverData: " + k)
-		}
-		vi, err := strconv.Atoi(v)
-		if err != nil {
-			panic("non-int value in coverData: " + v)
-		}
-		res[ki] = vi
-	}
-	return res
 }
 
 func (annotator *annotator) AppendCoverData(coverprofile string, coverData map[string]string) error {
@@ -78,7 +64,11 @@ func (annotator *annotator) AppendCoverData(coverprofile string, coverData map[s
 		}
 	} else if err == nil {
 		// file exists
-		f, err = os.OpenFile(coverprofile, os.O_WRONLY|os.O_APPEND, 0644)
+		fileOpt := os.O_TRUNC
+		if annotator.coverappend {
+			fileOpt = os.O_APPEND
+		}
+		f, err = os.OpenFile(coverprofile, os.O_WRONLY|fileOpt, 0644)
 		if err != nil {
 			return err
 		}
@@ -92,6 +82,22 @@ func (annotator *annotator) AppendCoverData(coverprofile string, coverData map[s
 		}
 	}
 	return nil
+}
+
+func convertCoverData(coverData map[string]string) map[int]int {
+	res := map[int]int{}
+	for k, v := range coverData {
+		ki, err := strconv.Atoi(k)
+		if err != nil {
+			panic("non-int index in coverData: " + k)
+		}
+		vi, err := strconv.Atoi(v)
+		if err != nil {
+			panic("non-int value in coverData: " + v)
+		}
+		res[ki] = vi
+	}
+	return res
 }
 
 func (annotator *annotator) annotateActions(actions []*ast.Action) (res []*ast.Action) {

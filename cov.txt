@@ -2,6 +2,7 @@
 TODO:
 - [x] generalize `GetCoverData`
 - [ ] add flag to create/update cover profile by default
+- [ ] better naming instead of annotator
 - [x] TODO error if exists and is folder
 - [ ] documentation
 - print annotated to stdout or err?
@@ -32,6 +33,9 @@ Options:
     Can have one of two values:
         set: did each statement run?
         count: how many times did each statement run?
+-coverappend
+    if this option is provided the profile data will append to existing, otherwise the profile file
+    will be truncated first
 
 todo:
 -coverreport

@@ -56,6 +56,7 @@ const (
 Additional GoAWK arguments:
   -covermode mode   set the coverage report mode (set/count)
   -coverprofile file set the coverage report filename
+  -coverappend      do not truncate coverage report file
   -cpuprofile file  write CPU profile to file
   -d                print parsed syntax tree to stderr (debug mode)
   -da               print virtual machine assembly instructions to stderr
@@ -92,6 +93,7 @@ func mainLogic() (exitStatus int) {
 	noArgVars := false
 	covermode := ""
 	coverprofile := ""
+	coverappend := false
 
 	var i int
 argsLoop:
@@ -120,6 +122,8 @@ argsLoop:
 			}
 			i++
 			coverprofile = os.Args[i]
+		case "-coverappend":
+			coverappend = true
 		case "-E":
 			if i+1 >= len(os.Args) {
 				errorExitf("flag needs an argument: -E")
@@ -274,7 +278,7 @@ argsLoop:
 		errorExitf("%s", err)
 	}
 
-	annotator := cover.NewAnnotator(covermode, fileReader)
+	annotator := cover.NewAnnotator(covermode, coverappend, fileReader)
 	if covermode != "" {
 		astProgram := &prog.ResolvedProgram.Program
 		annotator.Annotate(astProgram)
