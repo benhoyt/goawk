@@ -15,9 +15,14 @@ This generates `c.out` file with coverage profile data for the `a.awk` program e
 Now it's time to visualize the coverage report `c.out` by rendering it to HTML.
 
 Please note. The code coverage functionality of GoAWK relies on Golang toolset.
-So to generate the HTML coverage report (like on the screenshot above):
+So to generate the HTML coverage report (like on the screenshot above) use the command below. This opens a web browser displaying annotated source code:
 ```
 go tool cover -html=c.out
+```
+
+Write out an HTML file instead of launching a web browser:
+```
+go tool cover -html=c.out -o coverage.html
 ```
 
 Please note. At the moment it's not possible to generate coverage report for AWK functions, similar to what is possible for Go:
