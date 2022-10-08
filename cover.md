@@ -47,7 +47,8 @@ If this option is omitted, but the `-covermode` is set - outputs the annotated a
 
 ## Future work
 
-TODO
+- Add a way to support per-function coverage report similar to `go tool cover -func=c.out`
+- More complete handling for coverage cases for `if/else`. That is not only we want to check if `if` body was visited but also we want to make sure the case where `if` body was *not* visited is also covered. In other words we want to make sure that both variants of `if` condition is covered. 
 
 ## Feedback
 
