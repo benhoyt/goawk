@@ -39,16 +39,15 @@ goawk -f a.awk -covermode set
 
 ## CLI options for coverage
 
-- `-coverprofile`
+- `-coverprofile <file>`
   - sets the cover report filename to put collected coverage profile data.
 If this option is omitted, but the `-covermode` is set - outputs the annotated awk source to stdout.
-- `-covermode`
-  - Can have one of two values:
-    - `set`: did each statement run?
-    - `count`: how many times did each statement run? Produces heat maps report.
+- `-covermode <mode>`
+  - `mode` can be one of:
+    - `set` - did each statement run?
+    - `count` - how many times did each statement run? (Produces heat maps report).
 - `-coverappend`
-  - if this option is provided the profile data will append to existing, otherwise the profile file
-  will be truncated first
+  - if this option is provided the profile data will append to existing, otherwise the profile file will be first truncated.
 
 ## Future work
 
