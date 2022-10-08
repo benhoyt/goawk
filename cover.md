@@ -2,7 +2,7 @@
 
 GoAWK implements code coverage functionality, similar to the one built in the Golang itself (https://go.dev/blog/cover).
 
-![screenshot](https://user-images.githubusercontent.com/11706893/185683039-e4d99308-264e-4410-83e4-6f04e20aba8c.png)
+![screenshot](cover.png)
 
 ## How to use
 
