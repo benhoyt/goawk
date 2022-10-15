@@ -314,7 +314,7 @@ func (p *parser) stmt() ast.Stmt {
 			p.optionalNewlines()
 			elseBody = p.stmts()
 		}
-		s = &ast.IfStmt{cond, body, elseBody}
+		s = &ast.IfStmt{cond, body, elseBody, startPos, p.pos}
 	case FOR:
 		// Parse for statement, either "for in" or C-like for loop.
 		//
@@ -349,7 +349,7 @@ func (p *parser) stmt() ast.Stmt {
 				panic(p.errorf("expected 'for (var in array) ...'"))
 			}
 			body := p.loopStmts()
-			s = &ast.ForInStmt{varExpr, inExpr.Array, body}
+			s = &ast.ForInStmt{varExpr, inExpr.Array, body, startPos, p.pos}
 		} else {
 			// Match: for ([pre]; [cond]; [post]) body
 			p.expect(SEMICOLON)
@@ -367,7 +367,7 @@ func (p *parser) stmt() ast.Stmt {
 			p.expect(RPAREN)
 			p.optionalNewlines()
 			body := p.loopStmts()
-			s = &ast.ForStmt{pre, cond, post, body}
+			s = &ast.ForStmt{pre, cond, post, body, startPos, p.pos}
 		}
 	case WHILE:
 		p.next()
@@ -376,7 +376,7 @@ func (p *parser) stmt() ast.Stmt {
 		p.expect(RPAREN)
 		p.optionalNewlines()
 		body := p.loopStmts()
-		s = &ast.WhileStmt{cond, body}
+		s = &ast.WhileStmt{cond, body, startPos, p.pos}
 	case DO:
 		p.next()
 		p.optionalNewlines()
@@ -385,7 +385,7 @@ func (p *parser) stmt() ast.Stmt {
 		p.expect(LPAREN)
 		cond := p.expr()
 		p.expect(RPAREN)
-		s = &ast.DoWhileStmt{body, cond}
+		s = &ast.DoWhileStmt{body, cond, startPos, p.pos}
 	case BREAK:
 		if p.loopDepth == 0 {
 			panic(p.errorf("break must be inside a loop body"))
@@ -423,7 +423,7 @@ func (p *parser) stmt() ast.Stmt {
 		s = &ast.ReturnStmt{value, startPos, p.pos}
 	case LBRACE:
 		body := p.stmtsBrace()
-		s = &ast.BlockStmt{body}
+		s = &ast.BlockStmt{body, startPos, p.pos}
 	default:
 		s = p.simpleStmt()
 	}

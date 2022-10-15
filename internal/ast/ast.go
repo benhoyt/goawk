@@ -434,23 +434,11 @@ func IsLValue(expr Expr) bool {
 // Stmt is the abstract syntax tree for any AWK statement.
 type Stmt interface {
 	Node
+	StartPos() Position // position of first character belonging to the node
+	EndPos() Position   // position of first character immediately after the node
 	stmt()
 	String() string
 }
-
-type BoundaryProvider interface {
-	Boundary() (start Position, end Position)
-}
-
-func (s *PrintStmt) Boundary() (start Position, end Position)    { return s.Start, s.End }
-func (s *PrintfStmt) Boundary() (start Position, end Position)   { return s.Start, s.End }
-func (s *ExprStmt) Boundary() (start Position, end Position)     { return s.Start, s.End }
-func (s *BreakStmt) Boundary() (start Position, end Position)    { return s.Start, s.End }
-func (s *ContinueStmt) Boundary() (start Position, end Position) { return s.Start, s.End }
-func (s *NextStmt) Boundary() (start Position, end Position)     { return s.Start, s.End }
-func (s *ExitStmt) Boundary() (start Position, end Position)     { return s.Start, s.End }
-func (s *DeleteStmt) Boundary() (start Position, end Position)   { return s.Start, s.End }
-func (s *ReturnStmt) Boundary() (start Position, end Position)   { return s.Start, s.End }
 
 // All these types implement the Stmt interface.
 func (s *PrintStmt) stmt()    {}
@@ -468,6 +456,38 @@ func (s *ExitStmt) stmt()     {}
 func (s *DeleteStmt) stmt()   {}
 func (s *ReturnStmt) stmt()   {}
 func (s *BlockStmt) stmt()    {}
+
+func (s *PrintStmt) StartPos() Position    { return s.Start }
+func (s *PrintfStmt) StartPos() Position   { return s.Start }
+func (s *ExprStmt) StartPos() Position     { return s.Start }
+func (s *IfStmt) StartPos() Position       { return s.Start }
+func (s *ForStmt) StartPos() Position      { return s.Start }
+func (s *ForInStmt) StartPos() Position    { return s.Start }
+func (s *WhileStmt) StartPos() Position    { return s.Start }
+func (s *DoWhileStmt) StartPos() Position  { return s.Start }
+func (s *BreakStmt) StartPos() Position    { return s.Start }
+func (s *ContinueStmt) StartPos() Position { return s.Start }
+func (s *NextStmt) StartPos() Position     { return s.Start }
+func (s *ExitStmt) StartPos() Position     { return s.Start }
+func (s *DeleteStmt) StartPos() Position   { return s.Start }
+func (s *ReturnStmt) StartPos() Position   { return s.Start }
+func (s *BlockStmt) StartPos() Position    { return s.Start }
+
+func (s *PrintStmt) EndPos() Position    { return s.End }
+func (s *PrintfStmt) EndPos() Position   { return s.End }
+func (s *ExprStmt) EndPos() Position     { return s.End }
+func (s *IfStmt) EndPos() Position       { return s.End }
+func (s *ForStmt) EndPos() Position      { return s.End }
+func (s *ForInStmt) EndPos() Position    { return s.End }
+func (s *WhileStmt) EndPos() Position    { return s.End }
+func (s *DoWhileStmt) EndPos() Position  { return s.End }
+func (s *BreakStmt) EndPos() Position    { return s.End }
+func (s *ContinueStmt) EndPos() Position { return s.End }
+func (s *NextStmt) EndPos() Position     { return s.End }
+func (s *ExitStmt) EndPos() Position     { return s.End }
+func (s *DeleteStmt) EndPos() Position   { return s.End }
+func (s *ReturnStmt) EndPos() Position   { return s.End }
+func (s *BlockStmt) EndPos() Position    { return s.End }
 
 // PrintStmt is a statement like print $1, $3.
 type PrintStmt struct {
@@ -520,9 +540,11 @@ func (s *ExprStmt) String() string {
 
 // IfStmt is an if or if-else statement.
 type IfStmt struct {
-	Cond Expr
-	Body Stmts
-	Else Stmts
+	Cond  Expr
+	Body  Stmts
+	Else  Stmts
+	Start Position
+	End   Position
 }
 
 func (s *IfStmt) String() string {
@@ -535,10 +557,12 @@ func (s *IfStmt) String() string {
 
 // ForStmt is a C-like for loop: for (i=0; i<10; i++) print i.
 type ForStmt struct {
-	Pre  Stmt
-	Cond Expr
-	Post Stmt
-	Body Stmts
+	Pre   Stmt
+	Cond  Expr
+	Post  Stmt
+	Body  Stmts
+	Start Position
+	End   Position
 }
 
 func (s *ForStmt) String() string {
@@ -562,6 +586,8 @@ type ForInStmt struct {
 	Var   *VarExpr
 	Array *ArrayExpr
 	Body  Stmts
+	Start Position
+	End   Position
 }
 
 func (s *ForInStmt) String() string {
@@ -570,8 +596,10 @@ func (s *ForInStmt) String() string {
 
 // WhileStmt is a while loop.
 type WhileStmt struct {
-	Cond Expr
-	Body Stmts
+	Cond  Expr
+	Body  Stmts
+	Start Position
+	End   Position
 }
 
 func (s *WhileStmt) String() string {
@@ -580,8 +608,10 @@ func (s *WhileStmt) String() string {
 
 // DoWhileStmt is a do-while loop.
 type DoWhileStmt struct {
-	Body Stmts
-	Cond Expr
+	Body  Stmts
+	Cond  Expr
+	Start Position
+	End   Position
 }
 
 func (s *DoWhileStmt) String() string {
@@ -666,7 +696,9 @@ func (s *ReturnStmt) String() string {
 
 // BlockStmt is a stand-alone block like { print "x" }.
 type BlockStmt struct {
-	Body Stmts
+	Body  Stmts
+	Start Position
+	End   Position
 }
 
 func (s *BlockStmt) String() string {

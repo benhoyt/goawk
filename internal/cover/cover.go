@@ -188,8 +188,8 @@ func (cov *coverageHelper) trackStatement(statements []ast.Stmt) ast.Stmt {
 		op = "++"
 	}
 	cov.annotationIdx++
-	start1, _ := statements[0].(ast.BoundaryProvider).Boundary()
-	_, end2 := statements[len(statements)-1].(ast.BoundaryProvider).Boundary()
+	start1 := statements[0].StartPos()
+	end2 := statements[len(statements)-1].EndPos()
 	path, startLine := cov.fileReader.FileLine(start1.Line)
 	_, endLine := cov.fileReader.FileLine(end2.Line)
 	cov.boundaries[cov.annotationIdx] = boundary{
