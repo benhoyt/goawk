@@ -145,13 +145,6 @@ type parser struct {
 	// Configuration and debugging
 	debugTypes  bool      // show variable types for debugging
 	debugWriter io.Writer // where the debug output goes
-
-	// Coverage report functionality
-	startPos Position // The start position of each parser node that is a subject of the coverage analysis. Needed to capture the boundary data for such nodes.
-}
-
-func (p *parser) markStartPos() {
-	p.startPos = p.pos
 }
 
 // Parse an entire AWK program.
@@ -250,7 +243,7 @@ func (p *parser) stmtsBrace() ast.Stmts {
 
 // Parse a "simple" statement (eg: allowed in a for loop init clause).
 func (p *parser) simpleStmt() ast.Stmt {
-	p.markStartPos()
+	startPos := p.pos
 	switch p.tok {
 	case PRINT, PRINTF:
 		op := p.tok
@@ -271,12 +264,12 @@ func (p *parser) simpleStmt() ast.Stmt {
 			dest = p.expr()
 		}
 		if op == PRINT {
-			return &ast.PrintStmt{args, redirect, dest, p.startPos, p.pos}
+			return &ast.PrintStmt{args, redirect, dest, startPos, p.pos}
 		} else {
 			if len(args) == 0 {
 				panic(p.errorf("expected printf args, got none"))
 			}
-			return &ast.PrintfStmt{args, redirect, dest, p.startPos, p.pos}
+			return &ast.PrintfStmt{args, redirect, dest, startPos, p.pos}
 		}
 	case DELETE:
 		p.next()
@@ -291,11 +284,11 @@ func (p *parser) simpleStmt() ast.Stmt {
 			}
 			p.expect(RBRACKET)
 		}
-		return &ast.DeleteStmt{ref, index, p.startPos, p.pos}
+		return &ast.DeleteStmt{ref, index, startPos, p.pos}
 	case IF, FOR, WHILE, DO, BREAK, CONTINUE, NEXT, EXIT, RETURN:
 		panic(p.errorf("expected print/printf, delete, or expression"))
 	default:
-		return &ast.ExprStmt{p.expr(), p.startPos, p.pos}
+		return &ast.ExprStmt{p.expr(), startPos, p.pos}
 	}
 }
 
@@ -305,7 +298,7 @@ func (p *parser) stmt() ast.Stmt {
 		p.next()
 	}
 	var s ast.Stmt
-	p.markStartPos()
+	startPos := p.pos
 	switch p.tok {
 	case IF:
 		p.next()
@@ -398,26 +391,26 @@ func (p *parser) stmt() ast.Stmt {
 			panic(p.errorf("break must be inside a loop body"))
 		}
 		p.next()
-		s = &ast.BreakStmt{p.startPos, p.pos}
+		s = &ast.BreakStmt{startPos, p.pos}
 	case CONTINUE:
 		if p.loopDepth == 0 {
 			panic(p.errorf("continue must be inside a loop body"))
 		}
 		p.next()
-		s = &ast.ContinueStmt{p.startPos, p.pos}
+		s = &ast.ContinueStmt{startPos, p.pos}
 	case NEXT:
 		if !p.inAction && p.funcName == "" {
 			panic(p.errorf("next can't be inside BEGIN or END"))
 		}
 		p.next()
-		s = &ast.NextStmt{p.startPos, p.pos}
+		s = &ast.NextStmt{startPos, p.pos}
 	case EXIT:
 		p.next()
 		var status ast.Expr
 		if !p.matches(NEWLINE, SEMICOLON, RBRACE) {
 			status = p.expr()
 		}
-		s = &ast.ExitStmt{status, p.startPos, p.pos}
+		s = &ast.ExitStmt{status, startPos, p.pos}
 	case RETURN:
 		if p.funcName == "" {
 			panic(p.errorf("return must be inside a function"))
@@ -427,7 +420,7 @@ func (p *parser) stmt() ast.Stmt {
 		if !p.matches(NEWLINE, SEMICOLON, RBRACE) {
 			value = p.expr()
 		}
-		s = &ast.ReturnStmt{value, p.startPos, p.pos}
+		s = &ast.ReturnStmt{value, startPos, p.pos}
 	case LBRACE:
 		body := p.stmtsBrace()
 		s = &ast.BlockStmt{body}
