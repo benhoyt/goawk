@@ -7,6 +7,7 @@ import (
 	. "github.com/benhoyt/goawk/lexer"
 	. "github.com/benhoyt/goawk/parser"
 	"os"
+	"path/filepath"
 	"strconv"
 )
 
@@ -210,9 +211,17 @@ func parseProg(code string) *Program {
 
 func renderCoverDataLine(boundary boundary, stmtsCnt int, cnt int) string {
 	return fmt.Sprintf("%s:%d.%d,%d.%d %d %d\n",
-		boundary.fileName,
+		toAbsolutePath(boundary.fileName),
 		boundary.start.Line, boundary.start.Column,
 		boundary.end.Line, boundary.end.Column,
 		stmtsCnt, cnt,
 	)
+}
+
+func toAbsolutePath(path string) string {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return path
+	}
+	return absPath
 }

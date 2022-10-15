@@ -71,6 +71,7 @@ func TestCover(t *testing.T) {
 			}
 
 			{
+				// TODO: check that absolute paths are generated
 				err := exec.Command("awk", "-v", "OUT="+coverprofileFixed,
 					"-f", "testdata/cover/_fixForCompareWithExpected.awk", coverprofile).Run()
 				if err != nil {
