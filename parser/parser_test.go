@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/parser"
 )
 
@@ -215,6 +216,107 @@ func TestResolveLargeCallGraph(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
+}
+
+func TestPositions(t *testing.T) {
+	source := strings.TrimSpace(`
+function AddNums(n,   sum,i) {
+  sum = 0
+  if (n%2 == 0) {
+    for (i = 0; i < n; i++) {
+      sum += i * 2
+    }
+  } else if (n%3 == 0) {
+    print "Divides by 3"
+  } else {
+    sum = -1
+  }
+  while(1) { do { print 123 } while(1) }
+  return sum
+}`)
+	expectedAst := strings.TrimSpace(`
+*ast.Program
+ *ast.Function
+  *ast.ExprStmt [2:3-2:10)
+   *ast.AssignExpr
+    *ast.VarExpr
+    *ast.NumExpr
+  *ast.IfStmt [3:3-12:3)
+   *ast.BinaryExpr
+    *ast.BinaryExpr
+     *ast.VarExpr
+     *ast.NumExpr
+    *ast.NumExpr
+   *ast.ForStmt [4:5-6:6)
+    *ast.ExprStmt [4:10-4:15)
+     *ast.AssignExpr
+      *ast.VarExpr
+      *ast.NumExpr
+    *ast.BinaryExpr
+     *ast.VarExpr
+     *ast.VarExpr
+    *ast.ExprStmt [4:24-4:27)
+     *ast.IncrExpr
+      *ast.VarExpr
+    *ast.ExprStmt [5:7-5:19)
+     *ast.AugAssignExpr
+      *ast.VarExpr
+      *ast.BinaryExpr
+       *ast.VarExpr
+       *ast.NumExpr
+   *ast.IfStmt [7:10-11:4)
+    *ast.BinaryExpr
+     *ast.BinaryExpr
+      *ast.VarExpr
+      *ast.NumExpr
+     *ast.NumExpr
+    *ast.PrintStmt [8:5-8:25)
+     *ast.StrExpr
+    *ast.ExprStmt [10:5-10:13)
+     *ast.AssignExpr
+      *ast.VarExpr
+      *ast.UnaryExpr
+       *ast.NumExpr
+  *ast.WhileStmt [12:3-12:41)
+   *ast.NumExpr
+   *ast.DoWhileStmt [12:14-12:40)
+    *ast.PrintStmt [12:19-12:29)
+     *ast.NumExpr
+    *ast.NumExpr
+  *ast.ReturnStmt [13:3-13:13)
+   *ast.VarExpr
+`)
+	prog, err := parser.ParseProgram([]byte(source), nil)
+	if err != nil {
+		t.Fatalf("error parsing program: %v", err)
+	}
+	code := &code{}
+	ast.Walk(code, &prog.ResolvedProgram.Program)
+	result := strings.TrimSpace(code.buf.String())
+	if expectedAst != result {
+		t.Fatalf("Wrong AST and/or positions:\n%s", result)
+	}
+}
+
+type code struct {
+	indent int
+	buf    strings.Builder
+}
+
+func (c *code) Visit(node ast.Node) ast.Visitor {
+	indent := strings.Repeat(" ", c.indent)
+	if node != nil {
+		c.buf.WriteString(indent)
+		c.buf.WriteString(fmt.Sprintf("%T", node))
+		if stmt, ok := node.(ast.Stmt); ok {
+			c.buf.WriteString(fmt.Sprintf(" [%s-%s)", stmt.StartPos(), stmt.EndPos()))
+		}
+		c.buf.WriteString("\n")
+		c.indent++
+	} else {
+		c.indent--
+	}
+	return c
 }
 
 func Example_valid() {
