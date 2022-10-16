@@ -75,7 +75,7 @@ func (cov *coverageHelper) StoreCoverData(coverprofile string, coverData map[str
 			return err
 		}
 	} else {
-		panic(err)
+		return err
 	}
 
 	if isNewFile {
