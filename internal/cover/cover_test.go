@@ -45,7 +45,7 @@ func TestAnnotatingLogicCorrectness(t *testing.T) {
 			for i := 1; i <= coverage.annotationIdx; i++ {
 				boundary := coverage.boundaries[i]
 				actualAnnotationData.WriteString(fmt.Sprintf("%d %s %s-%s %d\n", i,
-					boundary.fileName, boundary.start, boundary.end,
+					boundary.path, boundary.start, boundary.end,
 					coverage.stmtsCnt[i]))
 			}
 

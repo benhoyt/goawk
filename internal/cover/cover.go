@@ -23,9 +23,9 @@ type coverageHelper struct {
 }
 
 type boundary struct {
-	start    Position
-	end      Position
-	fileName string
+	start Position
+	end   Position
+	path  string
 }
 
 func New(covermode string, coverappend bool, fileReader *parseutil.FileReader) *coverageHelper {
@@ -205,9 +205,9 @@ func (cov *coverageHelper) trackStatement(stmts []ast.Stmt) ast.Stmt {
 	path, startLine := cov.fileReader.FileLine(start1.Line)
 	_, endLine := cov.fileReader.FileLine(end2.Line)
 	cov.boundaries[cov.annotationIdx] = boundary{
-		start:    Position{startLine, start1.Column},
-		end:      Position{endLine, end2.Column},
-		fileName: path,
+		start: Position{startLine, start1.Column},
+		end:   Position{endLine, end2.Column},
+		path:  path,
 	}
 	cov.stmtsCnt[cov.annotationIdx] = len(stmts)
 	return parseProg(fmt.Sprintf(`BEGIN { %s[%d]%s }`, ArrCover, cov.annotationIdx, op)).Begin[0][0]
@@ -223,7 +223,7 @@ func parseProg(code string) *Program {
 
 func renderCoverDataLine(boundary boundary, stmtsCnt int, cnt int) string {
 	return fmt.Sprintf("%s:%d.%d,%d.%d %d %d\n",
-		toAbsolutePath(boundary.fileName),
+		toAbsolutePath(boundary.path),
 		boundary.start.Line, boundary.start.Column,
 		boundary.end.Line, boundary.end.Column,
 		stmtsCnt, cnt,
