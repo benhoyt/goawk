@@ -79,7 +79,7 @@ func (cov *coverageHelper) StoreCoverData(coverprofile string, coverData map[str
 	}
 
 	if isNewFile {
-		_, err := f.WriteString("mode: " + cov.covermode + "\n")
+		_, err := fmt.Fprintf(f, "mode: %s\n", cov.covermode)
 		if err != nil {
 			return err
 		}
