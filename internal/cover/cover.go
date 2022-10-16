@@ -6,7 +6,6 @@ import (
 	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/internal/parseutil"
 	. "github.com/benhoyt/goawk/lexer"
-	. "github.com/benhoyt/goawk/parser"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -196,10 +195,6 @@ func endPos(stmt ast.Stmt) Position {
 }
 
 func (cov *coverageHelper) trackStatement(stmts []ast.Stmt) ast.Stmt {
-	op := "=1"
-	if cov.covermode == "count" {
-		op = "++"
-	}
 	cov.annotationIdx++
 	start1 := stmts[0].StartPos()
 	end2 := endPos(stmts[len(stmts)-1])
@@ -211,15 +206,16 @@ func (cov *coverageHelper) trackStatement(stmts []ast.Stmt) ast.Stmt {
 		path:  path,
 	}
 	cov.stmtsCnt[cov.annotationIdx] = len(stmts)
-	return parseProg(fmt.Sprintf(`BEGIN { %s[%d]%s }`, ArrCover, cov.annotationIdx, op)).Begin[0][0]
-}
-
-func parseProg(code string) *Program {
-	prog, err := ParseProgram([]byte(code), nil)
-	if err != nil {
-		panic(err)
+	left := &ast.IndexExpr{
+		Array: ast.ArrayRef(ArrCover, Position{}),
+		Index: []ast.Expr{&ast.NumExpr{Value: float64(cov.annotationIdx)}},
 	}
-	return prog
+	if cov.covermode == "count" {
+		// AST for __COVER[index]++
+		return &ast.ExprStmt{Expr: &ast.IncrExpr{Expr: left, Op: INCR}}
+	}
+	// AST for __COVER[index] = 1
+	return &ast.ExprStmt{Expr: &ast.AssignExpr{Left: left, Right: &ast.NumExpr{Value: 1}}}
 }
 
 func renderCoverDataLine(boundary boundary, stmtsCnt int, cnt int) string {
