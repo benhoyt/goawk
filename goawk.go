@@ -203,13 +203,13 @@ argsLoop:
 			case strings.HasPrefix(arg, "-v"):
 				vars = append(vars, arg[2:])
 			case strings.HasPrefix(arg, "-cpuprofile="):
-				cpuProfile = arg[12:]
+				cpuProfile = arg[len("-cpuprofile="):]
 			case strings.HasPrefix(arg, "-memprofile="):
-				memProfile = arg[12:]
+				memProfile = arg[len("-memprofile="):]
 			case strings.HasPrefix(arg, "-covermode="):
-				coverMode = arg[11:]
+				coverMode = arg[len("-covermode="):]
 			case strings.HasPrefix(arg, "-coverprofile="):
-				coverProfile = arg[14:]
+				coverProfile = arg[len("-coverprofile="):]
 			default:
 				errorExitf("flag provided but not defined: %s", arg)
 			}
