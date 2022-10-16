@@ -33,6 +33,7 @@ type Position struct {
 	Column int
 }
 
+// String returns the position in "line:col" format.
 func (p Position) String() string {
 	return fmt.Sprintf("%d:%d", p.Line, p.Column)
 }
