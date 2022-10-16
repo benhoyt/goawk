@@ -115,7 +115,6 @@ argsLoop:
 			}
 			i++
 			coverMode = os.Args[i]
-			validateCovermode(coverMode)
 		case "-coverprofile":
 			if i+1 >= len(os.Args) {
 				errorExitf("flag needs an argument: -coverprofile")
@@ -212,13 +211,15 @@ argsLoop:
 				memProfile = arg[12:]
 			case strings.HasPrefix(arg, "-covermode="):
 				coverMode = arg[11:]
-				validateCovermode(coverMode)
 			case strings.HasPrefix(arg, "-coverprofile="):
 				coverProfile = arg[14:]
 			default:
 				errorExitf("flag provided but not defined: %s", arg)
 			}
 		}
+	}
+	if coverMode != "" && coverMode != "set" && coverMode != "count" {
+		errorExitf("covermode can only be one of: set, count")
 	}
 	if coverProfile != "" && coverMode == "" {
 		coverMode = "set"
@@ -384,12 +385,6 @@ argsLoop:
 	}
 
 	return status
-}
-
-func validateCovermode(covermode string) {
-	if covermode != "set" && covermode != "count" {
-		errorExitf("covermode can only be one of: set, count")
-	}
 }
 
 // Show source line and position of error, for example:
