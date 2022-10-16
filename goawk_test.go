@@ -784,6 +784,7 @@ func TestCoverPrintAnnotatedSource(t *testing.T) {
 		{[]string{"a1.awk"}, "set", "a1_covermode_set.awk"},
 		{[]string{"a2.awk"}, "count", "a2_covermode_count.awk"},
 		{[]string{"a1.awk", "a2.awk"}, "count", "a1_a2_covermode_count.awk"},
+		{[]string{"a3.awk"}, "set", "a3_covermode_set.awk"},
 	}
 
 	for _, test := range tests {
