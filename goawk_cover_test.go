@@ -1,56 +1,44 @@
 package main
 
 import (
+	"io/ioutil"
 	"os"
-	"os/exec"
-	"runtime"
+	"strings"
 	"testing"
 )
 
 func TestCover(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		// we use *nix-specific tools for this test
-		return
-	}
-
 	tests := []struct {
-		name                string
 		mode                string
 		coverappend         bool
 		runs                [][]string
 		expectedCoverReport string
 	}{
-		{"1File", "set", true, [][]string{{"a1.awk"}}, "test_set.cov"},
-		{"1File", "count", true, [][]string{{"a1.awk"}}, "test_count.cov"},
-		{"2Files", "set", true, [][]string{{"a2.awk", "a1.awk"}}, "test_a2a1_set.cov"},
-		{"2Files", "count", true, [][]string{{"a2.awk", "a1.awk"}}, "test_a2a1_count.cov"},
-		{"1File2Runs", "set", true, [][]string{{"a1.awk"}, {"a1.awk"}}, "test_1file2runs_set.cov"},
-		{"2Files2Runs", "count", true, [][]string{{"a2.awk", "a1.awk"}, {"a2.awk", "a1.awk"}}, "test_2file2runs_count.cov"},
-		{"1File2Runs", "set", false, [][]string{{"a1.awk"}, {"a1.awk"}}, "test_1file2runs_set_truncated.cov"},
-		{"2Files2Runs", "count", false, [][]string{{"a2.awk", "a1.awk"}, {"a2.awk", "a1.awk"}}, "test_2file2runs_count_truncated.cov"},
+		{"set", true, [][]string{{"a1.awk"}}, "test_set.cov"},
+		{"count", true, [][]string{{"a1.awk"}}, "test_count.cov"},
+		{"set", true, [][]string{{"a2.awk", "a1.awk"}}, "test_a2a1_set.cov"},
+		{"count", true, [][]string{{"a2.awk", "a1.awk"}}, "test_a2a1_count.cov"},
+		{"set", true, [][]string{{"a1.awk"}, {"a1.awk"}}, "test_1file2runs_set.cov"},
+		{"count", true, [][]string{{"a2.awk", "a1.awk"}, {"a2.awk", "a1.awk"}}, "test_2file2runs_count.cov"},
+		{"set", false, [][]string{{"a1.awk"}, {"a1.awk"}}, "test_1file2runs_set_truncated.cov"},
+		{"count", false, [][]string{{"a2.awk", "a1.awk"}, {"a2.awk", "a1.awk"}}, "test_2file2runs_count_truncated.cov"},
 	}
 
 	coverprofile := "/tmp/testCov.txt"
-	coverprofileFixed := "/tmp/testCov_fixed.txt"
 
 	for _, test := range tests {
-		coverappend := ""
-		if test.coverappend {
-			coverappend = ",coverappend"
-		}
-		t.Run("TestCover"+test.name+","+test.mode+coverappend, func(t *testing.T) {
-
+		t.Run(test.expectedCoverReport, func(t *testing.T) {
 			// make sure file doesn't exist
 			if _, err := os.Stat(coverprofile); os.IsNotExist(err) {
-
+				// file already doesn't exist
 			} else if err == nil {
 				// file exists
 				err := os.Remove(coverprofile)
 				if err != nil {
-					panic(err)
+					t.Fatalf("%v", err)
 				}
 			} else {
-				panic(err)
+				t.Fatalf("%v", err)
 			}
 			for _, run := range test.runs {
 				var args []string
@@ -70,21 +58,38 @@ func TestCover(t *testing.T) {
 				}
 			}
 
-			{
-				// TODO: check that absolute paths are generated
-				err := exec.Command("awk", "-v", "OUT="+coverprofileFixed,
-					"-f", "testdata/cover/_fixForCompareWithExpected.awk", coverprofile).Run()
-				if err != nil {
-					panic(err)
-				}
+			result, err := ioutil.ReadFile(coverprofile)
+			if err != nil {
+				t.Fatalf("%v", err)
 			}
-			{
-				expected := "testdata/cover/" + test.expectedCoverReport
-				diff, err := exec.Command("diff", coverprofileFixed, expected).CombinedOutput()
-				if err != nil {
-					t.Fatalf("Coverage (%s) differs from expected (%s):\n%s\n", coverprofile, expected, string(diff))
-				}
+			resultStr := string(result)
+			resultStr = strings.TrimSpace(convertPathsToFilenames(t, resultStr))
+			expected, err := ioutil.ReadFile("testdata/cover/" + test.expectedCoverReport)
+			if err != nil {
+				t.Fatalf("%v", err)
+			}
+			expectedStr := strings.TrimSpace(string(expected))
+			if resultStr != expectedStr {
+				t.Fatalf("wrong coverage report, expected:\n%s\n\nactual:\n\n%s", expectedStr, resultStr)
 			}
 		})
 	}
+}
+
+func convertPathsToFilenames(t *testing.T, str string) string {
+	lines := strings.Split(str, "\n")
+	for i, line := range lines {
+		if i == 0 {
+			continue // skip mode line
+		}
+		if line == "" {
+			continue // skip empty line
+		}
+		if !strings.HasPrefix(line, "/") {
+			t.Fatalf("must be absolute path in coverage report: %s", line)
+		}
+		parts := strings.Split(line, "/")
+		lines[i] = parts[len(parts)-1] // leave only the part with name
+	}
+	return strings.Join(lines, "\n")
 }
