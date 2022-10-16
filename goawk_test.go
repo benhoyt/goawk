@@ -808,7 +808,7 @@ func TestCoverPrintAnnotatedSource(t *testing.T) {
 	}
 }
 
-func TestCoverWrongArgsHandling(t *testing.T) {
+func TestCoverInvalidArgs(t *testing.T) {
 	tests := []struct {
 		args          []string
 		expectedError string
