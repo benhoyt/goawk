@@ -1,3 +1,4 @@
+// Package cover implements AWK code coverage and reporting.
 package cover
 
 import (
