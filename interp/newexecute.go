@@ -4,9 +4,10 @@ package interp
 
 import (
 	"context"
+	"math"
+
 	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/parser"
-	"math"
 )
 
 const checkContextOps = 1000 // for efficiency, only check context every N instructions
