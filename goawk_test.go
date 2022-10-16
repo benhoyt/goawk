@@ -828,7 +828,7 @@ func TestCoverInvalidArgs(t *testing.T) {
 func TestCover(t *testing.T) {
 	tests := []struct {
 		mode                string
-		coverappend         bool
+		coverAppend         bool
 		runs                [][]string
 		expectedCoverReport string
 	}{
@@ -846,17 +846,17 @@ func TestCover(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	coverprofile := tempFile.Name()
-	defer os.Remove(coverprofile)
+	coverProfile := tempFile.Name()
+	defer os.Remove(coverProfile)
 
 	for _, test := range tests {
 		t.Run(test.expectedCoverReport, func(t *testing.T) {
 			// make sure file doesn't exist
-			if _, err := os.Stat(coverprofile); os.IsNotExist(err) {
+			if _, err := os.Stat(coverProfile); os.IsNotExist(err) {
 				// file already doesn't exist
 			} else if err == nil {
 				// file exists
-				err := os.Remove(coverprofile)
+				err := os.Remove(coverProfile)
 				if err != nil {
 					t.Fatalf("%v", err)
 				}
@@ -868,9 +868,9 @@ func TestCover(t *testing.T) {
 				for _, file := range run {
 					args = append(args, "-f", "testdata/cover/"+file)
 				}
-				args = append(args, "-coverprofile", coverprofile)
+				args = append(args, "-coverprofile", coverProfile)
 				args = append(args, "-covermode", test.mode)
-				if test.coverappend {
+				if test.coverAppend {
 					args = append(args, "-coverappend")
 				}
 				_, _, err := runGoAWK(args, "")
@@ -879,7 +879,7 @@ func TestCover(t *testing.T) {
 				}
 			}
 
-			result, err := ioutil.ReadFile(coverprofile)
+			result, err := ioutil.ReadFile(coverProfile)
 			if err != nil {
 				t.Fatalf("%v", err)
 			}
