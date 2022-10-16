@@ -759,22 +759,6 @@ func TestMandelbrot(t *testing.T) {
 	}
 }
 
-func equalAwkSources(code1, code2 string) bool {
-	normalizeAwkSource := func(code string) []byte {
-		p, err := parser.ParseProgram([]byte(code), nil)
-		if err != nil {
-			panic(err)
-		}
-		b := bytes.Buffer{}
-		err = p.Disassemble(&b)
-		if err != nil {
-			panic(err)
-		}
-		return b.Bytes()
-	}
-	return bytes.Equal(normalizeAwkSource(code1), normalizeAwkSource(code2))
-}
-
 func TestCoverPrintAnnotatedSource(t *testing.T) {
 	tests := []struct {
 		sourceFiles        []string
@@ -801,11 +785,19 @@ func TestCoverPrintAnnotatedSource(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !equalAwkSources(stdout, string(expected)) {
+			if normalizeAwkSource(stdout) != normalizeAwkSource(string(expected)) {
 				t.Fatalf("output differs, got:\n%s\nexpected:\n%s", stdout, expected)
 			}
 		})
 	}
+}
+
+func normalizeAwkSource(source string) string {
+	p, err := parser.ParseProgram([]byte(source), nil)
+	if err != nil {
+		panic(err)
+	}
+	return p.String()
 }
 
 func TestCoverInvalidArgs(t *testing.T) {
