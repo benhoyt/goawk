@@ -1,5 +1,5 @@
 BEGIN {
-  __COVER[1] = 1
+  __COVER["1"] = 1
   print "hello"
   callF()
   callF()
@@ -8,11 +8,11 @@ BEGIN {
 }
 
 END {
-  __COVER[2] = 1
+  __COVER["2"] = 1
   print "END"
 }
 
 function callF() {
-  __COVER[3] = 1
+  __COVER["3"] = 1
   print "world"
 }

@@ -208,7 +208,7 @@ func (cov *coverageHelper) trackStatement(stmts []ast.Stmt) ast.Stmt {
 	cov.stmtsCnt[cov.annotationIdx] = len(stmts)
 	left := &ast.IndexExpr{
 		Array: ast.ArrayRef(ArrCover, Position{}),
-		Index: []ast.Expr{&ast.NumExpr{Value: float64(cov.annotationIdx)}},
+		Index: []ast.Expr{&ast.StrExpr{Value: strconv.Itoa(cov.annotationIdx)}},
 	}
 	if cov.covermode == "count" {
 		// AST for __COVER[index]++
