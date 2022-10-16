@@ -24,7 +24,12 @@ func TestCover(t *testing.T) {
 		{"count", false, [][]string{{"a2.awk", "a1.awk"}, {"a2.awk", "a1.awk"}}, "test_2file2runs_count_truncated.cov"},
 	}
 
-	coverprofile := "/tmp/testCov.txt"
+	tempFile, err := ioutil.TempFile("", "testCov*.txt")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	coverprofile := tempFile.Name()
+	defer os.Remove(coverprofile)
 
 	for _, test := range tests {
 		t.Run(test.expectedCoverReport, func(t *testing.T) {
