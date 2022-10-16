@@ -87,7 +87,13 @@ func (cover *Cover) StoreCoverData(coverprofile string, coverData map[string]str
 	}
 
 	for i := 1; i <= cover.annotationIdx; i++ {
-		_, err := f.WriteString(renderCoverDataLine(cover.boundaries[i], cover.stmtsCnt[i], coverDataInts[i]))
+		boundary := cover.boundaries[i]
+		_, err := fmt.Fprintf(f, "%s:%d.%d,%d.%d %d %d\n",
+			toAbsolutePath(boundary.path),
+			boundary.start.Line, boundary.start.Column,
+			boundary.end.Line, boundary.end.Column,
+			cover.stmtsCnt[i], coverDataInts[i],
+		)
 		if err != nil {
 			return err
 		}
@@ -217,15 +223,6 @@ func (cover *Cover) trackStatement(stmts []ast.Stmt) ast.Stmt {
 	}
 	// AST for __COVER[index] = 1
 	return &ast.ExprStmt{Expr: &ast.AssignExpr{Left: left, Right: &ast.NumExpr{Value: 1}}}
-}
-
-func renderCoverDataLine(boundary boundary, stmtsCnt int, cnt int) string {
-	return fmt.Sprintf("%s:%d.%d,%d.%d %d %d\n",
-		toAbsolutePath(boundary.path),
-		boundary.start.Line, boundary.start.Column,
-		boundary.end.Line, boundary.end.Column,
-		stmtsCnt, cnt,
-	)
 }
 
 func toAbsolutePath(path string) string {
