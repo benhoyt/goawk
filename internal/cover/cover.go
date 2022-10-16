@@ -39,7 +39,7 @@ func New(covermode string, coverappend bool, fileReader *parseutil.FileReader) *
 	}
 }
 
-// Annotate annotates program AST with pieces of coverage tracking code
+// Annotate annotates the program with coverage tracking code.
 func (cov *coverageHelper) Annotate(prog *ast.Program) {
 	prog.Begin = cov.annotateStmtsList(prog.Begin)
 	prog.Actions = cov.annotateActions(prog.Actions)
