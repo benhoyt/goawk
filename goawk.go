@@ -73,9 +73,6 @@ Additional GoAWK arguments:
 )
 
 func main() {
-	os.Exit(mainLogic())
-}
-func mainLogic() (exitStatus int) {
 	// Parse command line arguments manually rather than using the
 	// "flag" package, so we can support flags with no space between
 	// flag and argument, like '-F:' (allowed by POSIX)
@@ -384,7 +381,7 @@ argsLoop:
 		_ = f.Close()
 	}
 
-	return status
+	os.Exit(status)
 }
 
 // Show source line and position of error, for example:
