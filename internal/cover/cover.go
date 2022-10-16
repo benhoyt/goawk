@@ -15,8 +15,8 @@ import (
 const ArrayName = "__COVER"
 
 type Cover struct {
-	covermode     string
-	coverappend   bool
+	mode          string
+	append        bool
 	fileReader    *parseutil.FileReader
 	annotationIdx int
 	boundaries    map[int]boundary
@@ -29,10 +29,10 @@ type boundary struct {
 	path  string
 }
 
-func New(covermode string, coverappend bool, fileReader *parseutil.FileReader) *Cover {
+func New(mode string, append bool, fileReader *parseutil.FileReader) *Cover {
 	return &Cover{
-		covermode,
-		coverappend,
+		mode,
+		append,
 		fileReader,
 		0,
 		map[int]boundary{},
@@ -50,7 +50,7 @@ func (cov *Cover) Annotate(prog *ast.Program) {
 
 // StoreCoverData writes result coverage report data to coverprofile file
 func (cov *Cover) StoreCoverData(coverprofile string, coverData map[string]string) error {
-	// 1a. If file doesn't exist - create and write covermode line
+	// 1a. If file doesn't exist - create and write cover mode line
 	// 1b. If file exists and coverappend=true  - open it for writing in append mode
 	// 1c. If file exists and coverappend=false - truncate it and follow 1a.
 	// 2.  Write all coverData lines
@@ -67,7 +67,7 @@ func (cov *Cover) StoreCoverData(coverprofile string, coverData map[string]strin
 	} else if err == nil {
 		// file exists
 		fileOpt := os.O_TRUNC
-		if cov.coverappend {
+		if cov.append {
 			isNewFile = false
 			fileOpt = os.O_APPEND
 		}
@@ -80,7 +80,7 @@ func (cov *Cover) StoreCoverData(coverprofile string, coverData map[string]strin
 	}
 
 	if isNewFile {
-		_, err := fmt.Fprintf(f, "mode: %s\n", cov.covermode)
+		_, err := fmt.Fprintf(f, "mode: %s\n", cov.mode)
 		if err != nil {
 			return err
 		}
@@ -211,7 +211,7 @@ func (cov *Cover) trackStatement(stmts []ast.Stmt) ast.Stmt {
 		Array: ast.ArrayRef(ArrayName, lexer.Position{}),
 		Index: []ast.Expr{&ast.StrExpr{Value: strconv.Itoa(cov.annotationIdx)}},
 	}
-	if cov.covermode == "count" {
+	if cov.mode == "count" {
 		// AST for __COVER[index]++
 		return &ast.ExprStmt{Expr: &ast.IncrExpr{Expr: left, Op: lexer.INCR}}
 	}
