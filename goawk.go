@@ -279,10 +279,10 @@ argsLoop:
 		errorExitf("%s", err)
 	}
 
-	coverageHelper := cover.New(coverMode, coverAppend, fileReader)
+	coverage := cover.New(coverMode, coverAppend, fileReader)
 	if coverMode != "" {
 		astProgram := &prog.ResolvedProgram.Program
-		coverageHelper.Annotate(astProgram)
+		coverage.Annotate(astProgram)
 		prog, err = parser.ResolveAndCompile(astProgram, parserConfig)
 		if err != nil {
 			errorExitf("%s", err)
@@ -363,7 +363,7 @@ argsLoop:
 	}
 
 	if coverProfile != "" {
-		err := coverageHelper.StoreCoverData(coverProfile, interpreter.GetArray(cover.ArrCover))
+		err := coverage.StoreCoverData(coverProfile, interpreter.GetArray(cover.ArrCover))
 		if err != nil {
 			errorExitf("unable to write coverage profile: %v", err)
 		}
