@@ -14,7 +14,7 @@ import (
 
 const ArrayName = "__COVER"
 
-type coverageHelper struct {
+type Cover struct {
 	covermode     string
 	coverappend   bool
 	fileReader    *parseutil.FileReader
@@ -29,8 +29,8 @@ type boundary struct {
 	path  string
 }
 
-func New(covermode string, coverappend bool, fileReader *parseutil.FileReader) *coverageHelper {
-	return &coverageHelper{
+func New(covermode string, coverappend bool, fileReader *parseutil.FileReader) *Cover {
+	return &Cover{
 		covermode,
 		coverappend,
 		fileReader,
@@ -41,7 +41,7 @@ func New(covermode string, coverappend bool, fileReader *parseutil.FileReader) *
 }
 
 // Annotate annotates the program with coverage tracking code.
-func (cov *coverageHelper) Annotate(prog *ast.Program) {
+func (cov *Cover) Annotate(prog *ast.Program) {
 	prog.Begin = cov.annotateStmtsList(prog.Begin)
 	prog.Actions = cov.annotateActions(prog.Actions)
 	prog.End = cov.annotateStmtsList(prog.End)
@@ -49,7 +49,7 @@ func (cov *coverageHelper) Annotate(prog *ast.Program) {
 }
 
 // StoreCoverData writes result coverage report data to coverprofile file
-func (cov *coverageHelper) StoreCoverData(coverprofile string, coverData map[string]string) error {
+func (cov *Cover) StoreCoverData(coverprofile string, coverData map[string]string) error {
 	// 1a. If file doesn't exist - create and write covermode line
 	// 1b. If file exists and coverappend=true  - open it for writing in append mode
 	// 1c. If file exists and coverappend=false - truncate it and follow 1a.
@@ -111,7 +111,7 @@ func prepareCoverData(coverData map[string]string) map[int]int {
 	return res
 }
 
-func (cov *coverageHelper) annotateActions(actions []*ast.Action) (res []*ast.Action) {
+func (cov *Cover) annotateActions(actions []*ast.Action) (res []*ast.Action) {
 	for _, action := range actions {
 		action.Stmts = cov.annotateStmts(action.Stmts)
 		res = append(res, action)
@@ -119,7 +119,7 @@ func (cov *coverageHelper) annotateActions(actions []*ast.Action) (res []*ast.Ac
 	return
 }
 
-func (cov *coverageHelper) annotateFunctions(functions []*ast.Function) (res []*ast.Function) {
+func (cov *Cover) annotateFunctions(functions []*ast.Function) (res []*ast.Function) {
 	for _, function := range functions {
 		function.Body = cov.annotateStmts(function.Body)
 		res = append(res, function)
@@ -127,7 +127,7 @@ func (cov *coverageHelper) annotateFunctions(functions []*ast.Function) (res []*
 	return
 }
 
-func (cov *coverageHelper) annotateStmtsList(stmtsList []ast.Stmts) (res []ast.Stmts) {
+func (cov *Cover) annotateStmtsList(stmtsList []ast.Stmts) (res []ast.Stmts) {
 	for _, stmts := range stmtsList {
 		res = append(res, cov.annotateStmts(stmts))
 	}
@@ -144,7 +144,7 @@ func (cov *coverageHelper) annotateStmtsList(stmtsList []ast.Stmts) (res []ast.S
 //	S3
 //
 // counters will be added before S1,S2,S3.
-func (cov *coverageHelper) annotateStmts(stmts ast.Stmts) (res ast.Stmts) {
+func (cov *Cover) annotateStmts(stmts ast.Stmts) (res ast.Stmts) {
 	var trackedBlockStmts []ast.Stmt
 	for _, stmt := range stmts {
 		blockEnds := true
@@ -195,7 +195,7 @@ func endPos(stmt ast.Stmt) lexer.Position {
 	}
 }
 
-func (cov *coverageHelper) trackStatement(stmts []ast.Stmt) ast.Stmt {
+func (cov *Cover) trackStatement(stmts []ast.Stmt) ast.Stmt {
 	cov.annotationIdx++
 	start1 := stmts[0].StartPos()
 	end2 := endPos(stmts[len(stmts)-1])
