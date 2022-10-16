@@ -185,6 +185,10 @@ func endPos(stmt ast.Stmt) Position {
 		return s.BodyStart
 	case *ast.ForStmt:
 		return s.BodyStart
+	case *ast.ForInStmt:
+		return s.BodyStart
+	case *ast.WhileStmt:
+		return s.BodyStart
 	default:
 		return s.EndPos()
 	}

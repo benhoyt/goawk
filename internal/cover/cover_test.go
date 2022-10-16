@@ -57,7 +57,7 @@ func TestAnnotatingLogicCorrectness(t *testing.T) {
 			}
 
 			if strings.TrimSpace(string(expected)) != result {
-				t.Fatalf("Annotation data is wrong:\n%s", result)
+				t.Errorf("Annotation data is wrong:\n%s", result)
 			}
 		})
 	}

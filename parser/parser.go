@@ -349,8 +349,9 @@ func (p *parser) stmt() ast.Stmt {
 			if !ok {
 				panic(p.errorf("expected 'for (var in array) ...'"))
 			}
+			bodyStart := p.pos
 			body := p.loopStmts()
-			s = &ast.ForInStmt{varExpr, inExpr.Array, body, startPos, p.pos}
+			s = &ast.ForInStmt{varExpr, inExpr.Array, bodyStart, body, startPos, p.pos}
 		} else {
 			// Match: for ([pre]; [cond]; [post]) body
 			p.expect(SEMICOLON)
@@ -377,8 +378,9 @@ func (p *parser) stmt() ast.Stmt {
 		cond := p.expr()
 		p.expect(RPAREN)
 		p.optionalNewlines()
+		bodyStart := p.pos
 		body := p.loopStmts()
-		s = &ast.WhileStmt{cond, body, startPos, p.pos}
+		s = &ast.WhileStmt{cond, bodyStart, body, startPos, p.pos}
 	case DO:
 		p.next()
 		p.optionalNewlines()

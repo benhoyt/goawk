@@ -585,11 +585,12 @@ func (s *ForStmt) String() string {
 
 // ForInStmt is a for loop like for (k in a) print k, a[k].
 type ForInStmt struct {
-	Var   *VarExpr
-	Array *ArrayExpr
-	Body  Stmts
-	Start Position
-	End   Position
+	Var       *VarExpr
+	Array     *ArrayExpr
+	BodyStart Position
+	Body      Stmts
+	Start     Position
+	End       Position
 }
 
 func (s *ForInStmt) String() string {
@@ -598,10 +599,11 @@ func (s *ForInStmt) String() string {
 
 // WhileStmt is a while loop.
 type WhileStmt struct {
-	Cond  Expr
-	Body  Stmts
-	Start Position
-	End   Position
+	Cond      Expr
+	BodyStart Position
+	Body      Stmts
+	Start     Position
+	End       Position
 }
 
 func (s *WhileStmt) String() string {
