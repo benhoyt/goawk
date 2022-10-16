@@ -788,7 +788,7 @@ func TestCoverPrintAnnotatedSource(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run("TestCoverPrintAnnotatedSource/"+test.expectedResultFile, func(t *testing.T) {
+		t.Run(test.expectedResultFile, func(t *testing.T) {
 			args := []string{"-covermode", test.mode}
 			for _, file := range test.sourceFiles {
 				args = append(args, "-f", "testdata/cover/"+file)
@@ -820,7 +820,7 @@ func TestCoverWrongArgsHandling(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run("TestCoverWrongArgsHandling/"+test.expectedError, func(t *testing.T) {
+		t.Run(test.expectedError, func(t *testing.T) {
 			_, stderr, err := runGoAWK(test.args, "")
 			if err == nil {
 				t.Fatalf("expected error")
