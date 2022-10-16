@@ -364,7 +364,7 @@ argsLoop:
 	if coverprofile != "" {
 		err := coverageHelper.StoreCoverData(coverprofile, interpreter.GetArray(cover.ArrCover))
 		if err != nil {
-			errorExitf("unable to save coverprofile: %v", err)
+			errorExitf("unable to write coverage profile: %v", err)
 		}
 	}
 
