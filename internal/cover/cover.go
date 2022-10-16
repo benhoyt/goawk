@@ -12,7 +12,7 @@ import (
 	"github.com/benhoyt/goawk/lexer"
 )
 
-const ArrCover = "__COVER"
+const ArrayName = "__COVER"
 
 type coverageHelper struct {
 	covermode     string
@@ -208,7 +208,7 @@ func (cov *coverageHelper) trackStatement(stmts []ast.Stmt) ast.Stmt {
 	}
 	cov.stmtsCnt[cov.annotationIdx] = len(stmts)
 	left := &ast.IndexExpr{
-		Array: ast.ArrayRef(ArrCover, lexer.Position{}),
+		Array: ast.ArrayRef(ArrayName, lexer.Position{}),
 		Index: []ast.Expr{&ast.StrExpr{Value: strconv.Itoa(cov.annotationIdx)}},
 	}
 	if cov.covermode == "count" {

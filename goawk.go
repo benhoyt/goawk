@@ -360,7 +360,7 @@ argsLoop:
 	}
 
 	if coverProfile != "" {
-		err := coverage.StoreCoverData(coverProfile, interpreter.GetArray(cover.ArrCover))
+		err := coverage.StoreCoverData(coverProfile, interpreter.GetArray(cover.ArrayName))
 		if err != nil {
 			errorExitf("unable to write coverage profile: %v", err)
 		}
