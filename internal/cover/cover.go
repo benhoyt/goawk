@@ -41,15 +41,15 @@ func New(mode string, append bool, fileReader *parseutil.FileReader) *Cover {
 }
 
 // Annotate annotates the program with coverage tracking code.
-func (cov *Cover) Annotate(prog *ast.Program) {
-	prog.Begin = cov.annotateStmtsList(prog.Begin)
-	prog.Actions = cov.annotateActions(prog.Actions)
-	prog.End = cov.annotateStmtsList(prog.End)
-	prog.Functions = cov.annotateFunctions(prog.Functions)
+func (cover *Cover) Annotate(prog *ast.Program) {
+	prog.Begin = cover.annotateStmtsList(prog.Begin)
+	prog.Actions = cover.annotateActions(prog.Actions)
+	prog.End = cover.annotateStmtsList(prog.End)
+	prog.Functions = cover.annotateFunctions(prog.Functions)
 }
 
 // StoreCoverData writes result coverage report data to coverprofile file
-func (cov *Cover) StoreCoverData(coverprofile string, coverData map[string]string) error {
+func (cover *Cover) StoreCoverData(coverprofile string, coverData map[string]string) error {
 	// 1a. If file doesn't exist - create and write cover mode line
 	// 1b. If file exists and coverappend=true  - open it for writing in append mode
 	// 1c. If file exists and coverappend=false - truncate it and follow 1a.
@@ -67,7 +67,7 @@ func (cov *Cover) StoreCoverData(coverprofile string, coverData map[string]strin
 	} else if err == nil {
 		// file exists
 		fileOpt := os.O_TRUNC
-		if cov.append {
+		if cover.append {
 			isNewFile = false
 			fileOpt = os.O_APPEND
 		}
@@ -80,14 +80,14 @@ func (cov *Cover) StoreCoverData(coverprofile string, coverData map[string]strin
 	}
 
 	if isNewFile {
-		_, err := fmt.Fprintf(f, "mode: %s\n", cov.mode)
+		_, err := fmt.Fprintf(f, "mode: %s\n", cover.mode)
 		if err != nil {
 			return err
 		}
 	}
 
-	for i := 1; i <= cov.annotationIdx; i++ {
-		_, err := f.WriteString(renderCoverDataLine(cov.boundaries[i], cov.stmtsCnt[i], coverDataInts[i]))
+	for i := 1; i <= cover.annotationIdx; i++ {
+		_, err := f.WriteString(renderCoverDataLine(cover.boundaries[i], cover.stmtsCnt[i], coverDataInts[i]))
 		if err != nil {
 			return err
 		}
@@ -111,25 +111,25 @@ func prepareCoverData(coverData map[string]string) map[int]int {
 	return res
 }
 
-func (cov *Cover) annotateActions(actions []*ast.Action) (res []*ast.Action) {
+func (cover *Cover) annotateActions(actions []*ast.Action) (res []*ast.Action) {
 	for _, action := range actions {
-		action.Stmts = cov.annotateStmts(action.Stmts)
+		action.Stmts = cover.annotateStmts(action.Stmts)
 		res = append(res, action)
 	}
 	return
 }
 
-func (cov *Cover) annotateFunctions(functions []*ast.Function) (res []*ast.Function) {
+func (cover *Cover) annotateFunctions(functions []*ast.Function) (res []*ast.Function) {
 	for _, function := range functions {
-		function.Body = cov.annotateStmts(function.Body)
+		function.Body = cover.annotateStmts(function.Body)
 		res = append(res, function)
 	}
 	return
 }
 
-func (cov *Cover) annotateStmtsList(stmtsList []ast.Stmts) (res []ast.Stmts) {
+func (cover *Cover) annotateStmtsList(stmtsList []ast.Stmts) (res []ast.Stmts) {
 	for _, stmts := range stmtsList {
-		res = append(res, cov.annotateStmts(stmts))
+		res = append(res, cover.annotateStmts(stmts))
 	}
 	return
 }
@@ -144,36 +144,36 @@ func (cov *Cover) annotateStmtsList(stmtsList []ast.Stmts) (res []ast.Stmts) {
 //	S3
 //
 // counters will be added before S1,S2,S3.
-func (cov *Cover) annotateStmts(stmts ast.Stmts) (res ast.Stmts) {
+func (cover *Cover) annotateStmts(stmts ast.Stmts) (res ast.Stmts) {
 	var trackedBlockStmts []ast.Stmt
 	for _, stmt := range stmts {
 		blockEnds := true
 		switch s := stmt.(type) {
 		case *ast.IfStmt:
-			s.Body = cov.annotateStmts(s.Body)
-			s.Else = cov.annotateStmts(s.Else)
+			s.Body = cover.annotateStmts(s.Body)
+			s.Else = cover.annotateStmts(s.Else)
 		case *ast.ForStmt:
-			s.Body = cov.annotateStmts(s.Body) // TODO should we do smth with pre & post?
+			s.Body = cover.annotateStmts(s.Body) // TODO should we do smth with pre & post?
 		case *ast.ForInStmt:
-			s.Body = cov.annotateStmts(s.Body)
+			s.Body = cover.annotateStmts(s.Body)
 		case *ast.WhileStmt:
-			s.Body = cov.annotateStmts(s.Body)
+			s.Body = cover.annotateStmts(s.Body)
 		case *ast.DoWhileStmt:
-			s.Body = cov.annotateStmts(s.Body)
+			s.Body = cover.annotateStmts(s.Body)
 		case *ast.BlockStmt:
-			s.Body = cov.annotateStmts(s.Body)
+			s.Body = cover.annotateStmts(s.Body)
 		default:
 			blockEnds = false
 		}
 		trackedBlockStmts = append(trackedBlockStmts, stmt)
 		if blockEnds {
-			res = append(res, cov.trackStatement(trackedBlockStmts))
+			res = append(res, cover.trackStatement(trackedBlockStmts))
 			res = append(res, trackedBlockStmts...)
 			trackedBlockStmts = []ast.Stmt{}
 		}
 	}
 	if len(trackedBlockStmts) > 0 {
-		res = append(res, cov.trackStatement(trackedBlockStmts))
+		res = append(res, cover.trackStatement(trackedBlockStmts))
 		res = append(res, trackedBlockStmts...)
 	}
 	return
@@ -195,23 +195,23 @@ func endPos(stmt ast.Stmt) lexer.Position {
 	}
 }
 
-func (cov *Cover) trackStatement(stmts []ast.Stmt) ast.Stmt {
-	cov.annotationIdx++
+func (cover *Cover) trackStatement(stmts []ast.Stmt) ast.Stmt {
+	cover.annotationIdx++
 	start1 := stmts[0].StartPos()
 	end2 := endPos(stmts[len(stmts)-1])
-	path, startLine := cov.fileReader.FileLine(start1.Line)
-	_, endLine := cov.fileReader.FileLine(end2.Line)
-	cov.boundaries[cov.annotationIdx] = boundary{
+	path, startLine := cover.fileReader.FileLine(start1.Line)
+	_, endLine := cover.fileReader.FileLine(end2.Line)
+	cover.boundaries[cover.annotationIdx] = boundary{
 		start: lexer.Position{startLine, start1.Column},
 		end:   lexer.Position{endLine, end2.Column},
 		path:  path,
 	}
-	cov.stmtsCnt[cov.annotationIdx] = len(stmts)
+	cover.stmtsCnt[cover.annotationIdx] = len(stmts)
 	left := &ast.IndexExpr{
 		Array: ast.ArrayRef(ArrayName, lexer.Position{}),
-		Index: []ast.Expr{&ast.StrExpr{Value: strconv.Itoa(cov.annotationIdx)}},
+		Index: []ast.Expr{&ast.StrExpr{Value: strconv.Itoa(cover.annotationIdx)}},
 	}
-	if cov.mode == "count" {
+	if cover.mode == "count" {
 		// AST for __COVER[index]++
 		return &ast.ExprStmt{Expr: &ast.IncrExpr{Expr: left, Op: lexer.INCR}}
 	}
