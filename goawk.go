@@ -82,18 +82,18 @@ func mainLogic() (exitStatus int) {
 	var progFiles []string
 	var vars []string
 	fieldSep := " "
-	cpuprofile := ""
+	cpuProfile := ""
 	debug := false
 	debugAsm := false
 	debugTypes := false
-	memprofile := ""
+	memProfile := ""
 	inputMode := ""
 	outputMode := ""
 	header := false
 	noArgVars := false
-	covermode := ""
-	coverprofile := ""
-	coverappend := false
+	coverMode := ""
+	coverProfile := ""
+	coverAppend := false
 
 	var i int
 argsLoop:
@@ -114,16 +114,16 @@ argsLoop:
 				errorExitf("flag needs an argument: -covermode")
 			}
 			i++
-			covermode = os.Args[i]
-			validateCovermode(covermode)
+			coverMode = os.Args[i]
+			validateCovermode(coverMode)
 		case "-coverprofile":
 			if i+1 >= len(os.Args) {
 				errorExitf("flag needs an argument: -coverprofile")
 			}
 			i++
-			coverprofile = os.Args[i]
+			coverProfile = os.Args[i]
 		case "-coverappend":
-			coverappend = true
+			coverAppend = true
 		case "-E":
 			if i+1 >= len(os.Args) {
 				errorExitf("flag needs an argument: -E")
@@ -156,7 +156,7 @@ argsLoop:
 				errorExitf("flag needs an argument: -cpuprofile")
 			}
 			i++
-			cpuprofile = os.Args[i]
+			cpuProfile = os.Args[i]
 		case "-d":
 			debug = true
 		case "-da":
@@ -179,7 +179,7 @@ argsLoop:
 				errorExitf("flag needs an argument: -memprofile")
 			}
 			i++
-			memprofile = os.Args[i]
+			memProfile = os.Args[i]
 		case "-o":
 			if i+1 >= len(os.Args) {
 				errorExitf("flag needs an argument: -o")
@@ -207,21 +207,21 @@ argsLoop:
 			case strings.HasPrefix(arg, "-v"):
 				vars = append(vars, arg[2:])
 			case strings.HasPrefix(arg, "-cpuprofile="):
-				cpuprofile = arg[12:]
+				cpuProfile = arg[12:]
 			case strings.HasPrefix(arg, "-memprofile="):
-				memprofile = arg[12:]
+				memProfile = arg[12:]
 			case strings.HasPrefix(arg, "-covermode="):
-				covermode = arg[11:]
-				validateCovermode(covermode)
+				coverMode = arg[11:]
+				validateCovermode(coverMode)
 			case strings.HasPrefix(arg, "-coverprofile="):
-				coverprofile = arg[14:]
+				coverProfile = arg[14:]
 			default:
 				errorExitf("flag provided but not defined: %s", arg)
 			}
 		}
 	}
-	if coverprofile != "" && covermode == "" {
-		covermode = "set"
+	if coverProfile != "" && coverMode == "" {
+		coverMode = "set"
 	}
 
 	// Any remaining args are program and input files
@@ -278,15 +278,15 @@ argsLoop:
 		errorExitf("%s", err)
 	}
 
-	coverageHelper := cover.New(covermode, coverappend, fileReader)
-	if covermode != "" {
+	coverageHelper := cover.New(coverMode, coverAppend, fileReader)
+	if coverMode != "" {
 		astProgram := &prog.ResolvedProgram.Program
 		coverageHelper.Annotate(astProgram)
 		prog, err = parser.ResolveAndCompile(astProgram, parserConfig)
 		if err != nil {
 			errorExitf("%s", err)
 		}
-		if coverprofile == "" {
+		if coverProfile == "" {
 			fmt.Fprintln(os.Stdout, prog)
 			os.Exit(0)
 		}
@@ -343,8 +343,8 @@ argsLoop:
 		config.Vars = append(config.Vars, name, value)
 	}
 
-	if cpuprofile != "" {
-		f, err := os.Create(cpuprofile)
+	if cpuProfile != "" {
+		f, err := os.Create(cpuProfile)
 		if err != nil {
 			errorExitf("could not create CPU profile: %v", err)
 		}
@@ -361,18 +361,18 @@ argsLoop:
 		errorExit(err)
 	}
 
-	if coverprofile != "" {
-		err := coverageHelper.StoreCoverData(coverprofile, interpreter.GetArray(cover.ArrCover))
+	if coverProfile != "" {
+		err := coverageHelper.StoreCoverData(coverProfile, interpreter.GetArray(cover.ArrCover))
 		if err != nil {
 			errorExitf("unable to write coverage profile: %v", err)
 		}
 	}
 
-	if cpuprofile != "" {
+	if cpuProfile != "" {
 		pprof.StopCPUProfile()
 	}
-	if memprofile != "" {
-		f, err := os.Create(memprofile)
+	if memProfile != "" {
+		f, err := os.Create(memProfile)
 		if err != nil {
 			errorExitf("could not create memory profile: %v", err)
 		}
