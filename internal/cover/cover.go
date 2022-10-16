@@ -193,14 +193,15 @@ func endPos(stmt ast.Stmt) Position {
 		return s.EndPos()
 	}
 }
-func (cov *coverageHelper) trackStatement(statements []ast.Stmt) ast.Stmt {
+
+func (cov *coverageHelper) trackStatement(stmts []ast.Stmt) ast.Stmt {
 	op := "=1"
 	if cov.covermode == "count" {
 		op = "++"
 	}
 	cov.annotationIdx++
-	start1 := statements[0].StartPos()
-	end2 := endPos(statements[len(statements)-1])
+	start1 := stmts[0].StartPos()
+	end2 := endPos(stmts[len(stmts)-1])
 	path, startLine := cov.fileReader.FileLine(start1.Line)
 	_, endLine := cov.fileReader.FileLine(end2.Line)
 	cov.boundaries[cov.annotationIdx] = boundary{
@@ -208,7 +209,7 @@ func (cov *coverageHelper) trackStatement(statements []ast.Stmt) ast.Stmt {
 		end:      Position{endLine, end2.Column},
 		fileName: path,
 	}
-	cov.stmtsCnt[cov.annotationIdx] = len(statements)
+	cov.stmtsCnt[cov.annotationIdx] = len(stmts)
 	return parseProg(fmt.Sprintf(`BEGIN { %s[%d]%s }`, ArrCover, cov.annotationIdx, op)).Begin[0][0]
 }
 
