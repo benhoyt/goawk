@@ -540,11 +540,12 @@ func (s *ExprStmt) String() string {
 
 // IfStmt is an if or if-else statement.
 type IfStmt struct {
-	Cond  Expr
-	Body  Stmts
-	Else  Stmts
-	Start Position
-	End   Position
+	Cond      Expr
+	BodyStart Position
+	Body      Stmts
+	Else      Stmts
+	Start     Position
+	End       Position
 }
 
 func (s *IfStmt) String() string {
@@ -557,12 +558,13 @@ func (s *IfStmt) String() string {
 
 // ForStmt is a C-like for loop: for (i=0; i<10; i++) print i.
 type ForStmt struct {
-	Pre   Stmt
-	Cond  Expr
-	Post  Stmt
-	Body  Stmts
-	Start Position
-	End   Position
+	Pre       Stmt
+	Cond      Expr
+	Post      Stmt
+	BodyStart Position
+	Body      Stmts
+	Start     Position
+	End       Position
 }
 
 func (s *ForStmt) String() string {

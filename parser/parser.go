@@ -306,6 +306,7 @@ func (p *parser) stmt() ast.Stmt {
 		cond := p.expr()
 		p.expect(RPAREN)
 		p.optionalNewlines()
+		bodyStart := p.pos
 		body := p.stmts()
 		p.optionalNewlines()
 		var elseBody ast.Stmts
@@ -314,7 +315,7 @@ func (p *parser) stmt() ast.Stmt {
 			p.optionalNewlines()
 			elseBody = p.stmts()
 		}
-		s = &ast.IfStmt{cond, body, elseBody, startPos, p.pos}
+		s = &ast.IfStmt{cond, bodyStart, body, elseBody, startPos, p.pos}
 	case FOR:
 		// Parse for statement, either "for in" or C-like for loop.
 		//
@@ -366,8 +367,9 @@ func (p *parser) stmt() ast.Stmt {
 			}
 			p.expect(RPAREN)
 			p.optionalNewlines()
+			bodyStart := p.pos
 			body := p.loopStmts()
-			s = &ast.ForStmt{pre, cond, post, body, startPos, p.pos}
+			s = &ast.ForStmt{pre, cond, post, bodyStart, body, startPos, p.pos}
 		}
 	case WHILE:
 		p.next()

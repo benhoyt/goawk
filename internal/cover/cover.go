@@ -144,9 +144,9 @@ func (cov *coverageHelper) annotateStmtsList(stmtsList []ast.Stmts) (res []ast.S
 //
 // counters will be added before S1,S2,S3.
 func (cov *coverageHelper) annotateStmts(stmts ast.Stmts) (res ast.Stmts) {
-	var simpleStatements []ast.Stmt
+	var trackedBlockStmts []ast.Stmt
 	for _, stmt := range stmts {
-		wasBlock := true
+		blockEnds := true
 		switch s := stmt.(type) {
 		case *ast.IfStmt:
 			s.Body = cov.annotateStmts(s.Body)
@@ -162,25 +162,32 @@ func (cov *coverageHelper) annotateStmts(stmts ast.Stmts) (res ast.Stmts) {
 		case *ast.BlockStmt:
 			s.Body = cov.annotateStmts(s.Body)
 		default:
-			wasBlock = false
+			blockEnds = false
 		}
-		if wasBlock {
-			if len(simpleStatements) > 0 {
-				res = append(res, cov.trackStatement(simpleStatements))
-				res = append(res, simpleStatements...)
-			}
-			res = append(res, stmt)
-			simpleStatements = []ast.Stmt{}
-		} else {
-			simpleStatements = append(simpleStatements, stmt)
+		trackedBlockStmts = append(trackedBlockStmts, stmt)
+		if blockEnds {
+			res = append(res, cov.trackStatement(trackedBlockStmts))
+			res = append(res, trackedBlockStmts...)
+			trackedBlockStmts = []ast.Stmt{}
 		}
 	}
-	if len(simpleStatements) > 0 {
-		res = append(res, cov.trackStatement(simpleStatements))
-		res = append(res, simpleStatements...)
+	if len(trackedBlockStmts) > 0 {
+		res = append(res, cov.trackStatement(trackedBlockStmts))
+		res = append(res, trackedBlockStmts...)
 	}
 	return
 	// TODO complete handling of if/else/else if
+}
+
+func endPos(stmt ast.Stmt) Position {
+	switch s := stmt.(type) {
+	case *ast.IfStmt:
+		return s.BodyStart
+	case *ast.ForStmt:
+		return s.BodyStart
+	default:
+		return s.EndPos()
+	}
 }
 func (cov *coverageHelper) trackStatement(statements []ast.Stmt) ast.Stmt {
 	op := "=1"
@@ -189,7 +196,7 @@ func (cov *coverageHelper) trackStatement(statements []ast.Stmt) ast.Stmt {
 	}
 	cov.annotationIdx++
 	start1 := statements[0].StartPos()
-	end2 := statements[len(statements)-1].EndPos()
+	end2 := endPos(statements[len(statements)-1])
 	path, startLine := cov.fileReader.FileLine(start1.Line)
 	_, endLine := cov.fileReader.FileLine(end2.Line)
 	cov.boundaries[cov.annotationIdx] = boundary{
