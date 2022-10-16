@@ -2,12 +2,13 @@ package cover
 
 import (
 	"fmt"
-	"github.com/benhoyt/goawk/internal/parseutil"
-	"github.com/benhoyt/goawk/parser"
 	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/benhoyt/goawk/internal/parseutil"
+	"github.com/benhoyt/goawk/parser"
 )
 
 func TestAnnotatingLogicCorrectness(t *testing.T) {

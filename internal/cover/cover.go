@@ -3,12 +3,13 @@ package cover
 
 import (
 	"fmt"
-	"github.com/benhoyt/goawk/internal/ast"
-	"github.com/benhoyt/goawk/internal/parseutil"
-	. "github.com/benhoyt/goawk/lexer"
 	"os"
 	"path/filepath"
 	"strconv"
+
+	"github.com/benhoyt/goawk/internal/ast"
+	"github.com/benhoyt/goawk/internal/parseutil"
+	"github.com/benhoyt/goawk/lexer"
 )
 
 const ArrCover = "__COVER"
@@ -23,8 +24,8 @@ type coverageHelper struct {
 }
 
 type boundary struct {
-	start Position
-	end   Position
+	start lexer.Position
+	end   lexer.Position
 	path  string
 }
 
@@ -179,7 +180,7 @@ func (cov *coverageHelper) annotateStmts(stmts ast.Stmts) (res ast.Stmts) {
 	// TODO complete handling of if/else/else if
 }
 
-func endPos(stmt ast.Stmt) Position {
+func endPos(stmt ast.Stmt) lexer.Position {
 	switch s := stmt.(type) {
 	case *ast.IfStmt:
 		return s.BodyStart
@@ -201,18 +202,18 @@ func (cov *coverageHelper) trackStatement(stmts []ast.Stmt) ast.Stmt {
 	path, startLine := cov.fileReader.FileLine(start1.Line)
 	_, endLine := cov.fileReader.FileLine(end2.Line)
 	cov.boundaries[cov.annotationIdx] = boundary{
-		start: Position{startLine, start1.Column},
-		end:   Position{endLine, end2.Column},
+		start: lexer.Position{startLine, start1.Column},
+		end:   lexer.Position{endLine, end2.Column},
 		path:  path,
 	}
 	cov.stmtsCnt[cov.annotationIdx] = len(stmts)
 	left := &ast.IndexExpr{
-		Array: ast.ArrayRef(ArrCover, Position{}),
+		Array: ast.ArrayRef(ArrCover, lexer.Position{}),
 		Index: []ast.Expr{&ast.StrExpr{Value: strconv.Itoa(cov.annotationIdx)}},
 	}
 	if cov.covermode == "count" {
 		// AST for __COVER[index]++
-		return &ast.ExprStmt{Expr: &ast.IncrExpr{Expr: left, Op: INCR}}
+		return &ast.ExprStmt{Expr: &ast.IncrExpr{Expr: left, Op: lexer.INCR}}
 	}
 	// AST for __COVER[index] = 1
 	return &ast.ExprStmt{Expr: &ast.AssignExpr{Left: left, Right: &ast.NumExpr{Value: 1}}}
