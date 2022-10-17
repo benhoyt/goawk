@@ -133,6 +133,9 @@ function g(arr) { arr["a"]=1.23 }`)
 	if math.Abs(arr["a"].(float64)-1.23) > 1e-9 {
 		t.Errorf("wrong value")
 	}
+	if interpreter.Array("NonExistent") != nil {
+		t.Errorf("non existent name must resolve to nil")
+	}
 }
 
 func TestExecuteContextNoError(t *testing.T) {

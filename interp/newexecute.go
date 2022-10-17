@@ -65,7 +65,11 @@ func (p *Interpreter) Execute(config *Config) (int, error) {
 // numbers are included as type float64, strings (including "numeric strings")
 // are included as type string.
 func (p *Interpreter) Array(name string) map[string]interface{} {
-	array := p.interp.array(ast.ScopeGlobal, p.interp.program.Arrays[name])
+	index, exists := p.interp.program.Arrays[name]
+	if !exists {
+		return nil
+	}
+	array := p.interp.array(ast.ScopeGlobal, index)
 	result := make(map[string]interface{}, len(array))
 	for k, v := range array {
 		switch v.typ {
