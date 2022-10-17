@@ -55,7 +55,7 @@ func (cover *Cover) WriteProfile(path string, data map[string]interface{}) error
 	// 1c. If file exists and coverappend=false - truncate it and follow 1a.
 	// 2.  Write all cover data lines
 
-	coverDataInts := prepareCoverData(data)
+	dataInts := dataToInts(data)
 	isNewFile := true
 
 	var f *os.File
@@ -92,7 +92,7 @@ func (cover *Cover) WriteProfile(path string, data map[string]interface{}) error
 			toAbsolutePath(boundary.path),
 			boundary.start.Line, boundary.start.Column,
 			boundary.end.Line, boundary.end.Column,
-			cover.stmtsCnt[i], coverDataInts[i],
+			cover.stmtsCnt[i], dataInts[i],
 		)
 		if err != nil {
 			return err
@@ -101,16 +101,16 @@ func (cover *Cover) WriteProfile(path string, data map[string]interface{}) error
 	return nil
 }
 
-func prepareCoverData(coverData map[string]interface{}) map[int]int {
+func dataToInts(data map[string]interface{}) map[int]int {
 	res := map[int]int{}
-	for k, v := range coverData {
+	for k, v := range data {
 		ki, err := strconv.Atoi(k)
 		if err != nil {
-			panic("non-int index in coverData: " + k)
+			panic("non-int index in data: " + k)
 		}
 		vf, ok := v.(float64)
 		if !ok {
-			panic(fmt.Sprintf("non-float64 value in coverData: %v", v))
+			panic(fmt.Sprintf("non-float64 value in data: %v", v))
 		}
 		res[ki] = int(vf)
 	}
