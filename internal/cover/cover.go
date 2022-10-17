@@ -49,7 +49,7 @@ func (cover *Cover) Annotate(prog *ast.Program) {
 }
 
 // StoreCoverData writes result coverage report data to coverprofile file
-func (cover *Cover) StoreCoverData(coverprofile string, coverData map[string]string) error {
+func (cover *Cover) StoreCoverData(coverprofile string, coverData map[string]interface{}) error {
 	// 1a. If file doesn't exist - create and write cover mode line
 	// 1b. If file exists and coverappend=true  - open it for writing in append mode
 	// 1c. If file exists and coverappend=false - truncate it and follow 1a.
@@ -101,18 +101,18 @@ func (cover *Cover) StoreCoverData(coverprofile string, coverData map[string]str
 	return nil
 }
 
-func prepareCoverData(coverData map[string]string) map[int]int {
+func prepareCoverData(coverData map[string]interface{}) map[int]int {
 	res := map[int]int{}
 	for k, v := range coverData {
 		ki, err := strconv.Atoi(k)
 		if err != nil {
 			panic("non-int index in coverData: " + k)
 		}
-		vi, err := strconv.Atoi(v)
-		if err != nil {
-			panic("non-int value in coverData: " + v)
+		vf, ok := v.(float64)
+		if !ok {
+			panic(fmt.Sprintf("non-float64 value in coverData: %v", v))
 		}
-		res[ki] = vi
+		res[ki] = int(vf)
 	}
 	return res
 }

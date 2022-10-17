@@ -61,13 +61,23 @@ func (p *Interpreter) Execute(config *Config) (int, error) {
 	return p.interp.executeAll()
 }
 
-func (p *Interpreter) GetArray(name string) (res map[string]string) {
-	res = map[string]string{}
+// Array returns a map representing the items in the named AWK array. AWK
+// numbers are included as type float64, strings (including "numeric strings")
+// are included as type string.
+func (p *Interpreter) Array(name string) map[string]interface{} {
 	array := p.interp.array(ast.ScopeGlobal, p.interp.program.Arrays[name])
+	result := make(map[string]interface{}, len(array))
 	for k, v := range array {
-		res[k] = v.str("%.6g")
+		switch v.typ {
+		case typeNum:
+			result[k] = v.n
+		case typeStr, typeNumStr:
+			result[k] = v.s
+		default:
+			result[k] = ""
+		}
 	}
-	return
+	return result
 }
 
 func (p *interp) resetCore() {
