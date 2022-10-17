@@ -48,19 +48,19 @@ func (cover *Cover) Annotate(prog *ast.Program) {
 	prog.Functions = cover.annotateFunctions(prog.Functions)
 }
 
-// StoreCoverData writes result coverage report data to coverprofile file
-func (cover *Cover) StoreCoverData(coverprofile string, coverData map[string]interface{}) error {
+// WriteProfile writes coverage data to a file at the given path.
+func (cover *Cover) WriteProfile(path string, data map[string]interface{}) error {
 	// 1a. If file doesn't exist - create and write cover mode line
 	// 1b. If file exists and coverappend=true  - open it for writing in append mode
 	// 1c. If file exists and coverappend=false - truncate it and follow 1a.
-	// 2.  Write all coverData lines
+	// 2.  Write all cover data lines
 
-	coverDataInts := prepareCoverData(coverData)
+	coverDataInts := prepareCoverData(data)
 	isNewFile := true
 
 	var f *os.File
-	if _, err := os.Stat(coverprofile); os.IsNotExist(err) {
-		f, err = os.OpenFile(coverprofile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		f, err = os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 		if err != nil {
 			return err
 		}
@@ -71,7 +71,7 @@ func (cover *Cover) StoreCoverData(coverprofile string, coverData map[string]int
 			isNewFile = false
 			fileOpt = os.O_APPEND
 		}
-		f, err = os.OpenFile(coverprofile, os.O_WRONLY|fileOpt, 0644)
+		f, err = os.OpenFile(path, os.O_WRONLY|fileOpt, 0644)
 		if err != nil {
 			return err
 		}
