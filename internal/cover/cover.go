@@ -116,27 +116,30 @@ func dataToInts(data map[string]interface{}) map[int]int {
 	return res
 }
 
-func (cover *Cover) annotateActions(actions []*ast.Action) (res []*ast.Action) {
+func (cover *Cover) annotateActions(actions []*ast.Action) []*ast.Action {
+	res := make([]*ast.Action, 0, len(actions))
 	for _, action := range actions {
 		action.Stmts = cover.annotateStmts(action.Stmts)
 		res = append(res, action)
 	}
-	return
+	return res
 }
 
-func (cover *Cover) annotateFunctions(functions []*ast.Function) (res []*ast.Function) {
+func (cover *Cover) annotateFunctions(functions []*ast.Function) []*ast.Function {
+	res := make([]*ast.Function, 0, len(functions))
 	for _, function := range functions {
 		function.Body = cover.annotateStmts(function.Body)
 		res = append(res, function)
 	}
-	return
+	return res
 }
 
-func (cover *Cover) annotateStmtsList(stmtsList []ast.Stmts) (res []ast.Stmts) {
+func (cover *Cover) annotateStmtsList(stmtsList []ast.Stmts) []ast.Stmts {
+	res := make([]ast.Stmts, 0, len(stmtsList))
 	for _, stmts := range stmtsList {
 		res = append(res, cover.annotateStmts(stmts))
 	}
-	return
+	return res
 }
 
 // annotateStmts takes a list of statements and adds counters to the beginning of
@@ -149,7 +152,8 @@ func (cover *Cover) annotateStmtsList(stmtsList []ast.Stmts) (res []ast.Stmts) {
 //	S3
 //
 // counters will be added before S1,S2,S3.
-func (cover *Cover) annotateStmts(stmts ast.Stmts) (res ast.Stmts) {
+func (cover *Cover) annotateStmts(stmts ast.Stmts) ast.Stmts {
+	var res ast.Stmts
 	var trackedBlockStmts []ast.Stmt
 	for _, stmt := range stmts {
 		blockEnds := true
@@ -181,7 +185,7 @@ func (cover *Cover) annotateStmts(stmts ast.Stmts) (res ast.Stmts) {
 		res = append(res, cover.trackStatement(trackedBlockStmts))
 		res = append(res, trackedBlockStmts...)
 	}
-	return
+	return res
 	// TODO complete handling of if/else/else if
 }
 
