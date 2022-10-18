@@ -101,7 +101,7 @@ func (cover *Cover) WriteProfile(path string, data map[string]interface{}) error
 }
 
 func dataToInts(data map[string]interface{}) map[int]int {
-	res := map[int]int{}
+	res := make(map[int]int)
 	for k, v := range data {
 		ki, err := strconv.Atoi(k)
 		if err != nil {
