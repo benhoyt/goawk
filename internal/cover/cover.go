@@ -31,12 +31,11 @@ type boundary struct {
 
 func New(mode string, append bool, fileReader *parseutil.FileReader) *Cover {
 	return &Cover{
-		mode,
-		append,
-		fileReader,
-		0,
-		map[int]boundary{},
-		map[int]int{},
+		mode:       mode,
+		append:     append,
+		fileReader: fileReader,
+		boundaries: make(map[int]boundary),
+		stmtsCnt:   make(map[int]int),
 	}
 }
 
