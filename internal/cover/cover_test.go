@@ -1,6 +1,7 @@
 package cover
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -56,9 +57,13 @@ func TestAnnotatingLogicCorrectness(t *testing.T) {
 				panic(err)
 			}
 
-			if strings.TrimSpace(string(expected)) != result {
-				t.Errorf("Annotation data is wrong:\n\nactual:%s\n\nexpected:\n%s", result, expected)
+			if strings.TrimSpace(string(normalizeNewlines(expected))) != result {
+				t.Errorf("Annotation data is wrong:\n\nactual:\n\n%s\n\nexpected:\n\n%s", result, expected)
 			}
 		})
 	}
+}
+
+func normalizeNewlines(b []byte) []byte {
+	return bytes.Replace(b, []byte("\r\n"), []byte{'\n'}, -1)
 }
