@@ -87,11 +87,6 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	// Parse into abstract syntax tree
 	astProg := p.program()
 
-	return ResolveAndCompile(astProg, config)
-}
-
-// ResolveAndCompile resolves AST program and then compiles to virtual machine code
-func ResolveAndCompile(astProg *ast.Program, config *ParserConfig) (prog *Program, err error) {
 	prog = &Program{}
 
 	// Resolve step
@@ -99,7 +94,6 @@ func ResolveAndCompile(astProg *ast.Program, config *ParserConfig) (prog *Progra
 
 	// Compile to virtual machine code
 	prog.Compiled, err = compiler.Compile(&prog.ResolvedProgram)
-
 	return prog, err
 }
 

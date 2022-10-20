@@ -37,8 +37,10 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/benhoyt/goawk/internal/compiler"
 	"github.com/benhoyt/goawk/internal/cover"
 	"github.com/benhoyt/goawk/internal/parseutil"
+	"github.com/benhoyt/goawk/internal/resolver"
 	"github.com/benhoyt/goawk/interp"
 	"github.com/benhoyt/goawk/lexer"
 	"github.com/benhoyt/goawk/parser"
@@ -274,13 +276,22 @@ argsLoop:
 	}
 
 	coverage := cover.New(coverMode, coverAppend, fileReader)
+
 	if coverMode != cover.ModeUnspecified {
 		astProgram := &prog.ResolvedProgram.Program
 		coverage.Annotate(astProgram)
-		prog, err = parser.ResolveAndCompile(astProgram, parserConfig)
+
+		// re-resolve annotated program
+		prog.ResolvedProgram = *resolver.Resolve(astProgram, &resolver.Config{
+			DebugTypes:  parserConfig.DebugTypes,
+			DebugWriter: parserConfig.DebugWriter})
+
+		// re-compile it
+		prog.Compiled, err = compiler.Compile(&prog.ResolvedProgram)
 		if err != nil {
 			errorExitf("%s", err)
 		}
+
 		if coverProfile == "" {
 			fmt.Fprintln(os.Stdout, prog)
 			os.Exit(0)
