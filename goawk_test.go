@@ -881,15 +881,15 @@ func TestCover(t *testing.T) {
 			if err != nil {
 				t.Fatalf("%v", err)
 			}
-			resultStr := string(result)
+			resultStr := string(normalizeNewlines(result))
 			resultStr = strings.TrimSpace(convertPathsToFilenames(t, resultStr))
 			expected, err := ioutil.ReadFile("testdata/cover/" + test.expectedCoverReport)
 			if err != nil {
 				t.Fatalf("%v", err)
 			}
-			expectedStr := strings.TrimSpace(string(expected))
+			expectedStr := strings.TrimSpace(string(normalizeNewlines(expected)))
 			if resultStr != expectedStr {
-				t.Fatalf("wrong coverage report, expected:\n%s\n\nactual:\n\n%s", expectedStr, resultStr)
+				t.Fatalf("wrong coverage report, expected:\n\n%s\n\nactual:\n\n%s", expectedStr, resultStr)
 			}
 		})
 	}
