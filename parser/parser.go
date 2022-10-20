@@ -76,10 +76,6 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	}()
 	lexer := NewLexer(src)
 	p := parser{lexer: lexer}
-	if config != nil {
-		p.debugTypes = config.DebugTypes
-		p.debugWriter = config.DebugWriter
-	}
 	p.multiExprs = make(map[*ast.MultiExpr]Position, 3)
 
 	p.next() // initialize p.tok
@@ -136,10 +132,6 @@ type parser struct {
 
 	// Variable tracking and resolving
 	multiExprs map[*ast.MultiExpr]Position // tracks comma-separated expressions
-
-	// Configuration and debugging
-	debugTypes  bool      // show variable types for debugging
-	debugWriter io.Writer // where the debug output goes
 }
 
 // Parse an entire AWK program.
