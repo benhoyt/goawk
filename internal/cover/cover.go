@@ -73,7 +73,10 @@ func (cover *Cover) WriteProfile(path string, data map[string]interface{}) error
 	// 1c. If file exists and coverappend=false - truncate it and follow 1a.
 	// 2.  Write all cover data lines
 
-	dataInts := dataToInts(data)
+	dataInts, err := dataToInts(data)
+	if err != nil {
+		return err
+	}
 	isNewFile := true
 
 	var f *os.File
@@ -119,20 +122,20 @@ func (cover *Cover) WriteProfile(path string, data map[string]interface{}) error
 	return nil
 }
 
-func dataToInts(data map[string]interface{}) map[int]int {
+func dataToInts(data map[string]interface{}) (map[int]int, error) {
 	res := make(map[int]int)
 	for k, v := range data {
 		ki, err := strconv.Atoi(k)
 		if err != nil {
-			panic("non-int index in data: " + k)
+			return nil, fmt.Errorf("non-int index in data: %s", k)
 		}
 		vf, ok := v.(float64)
 		if !ok {
-			panic(fmt.Sprintf("non-float64 value in data: %v", v))
+			return nil, fmt.Errorf("non-float64 value in data: %v", v)
 		}
 		res[ki] = int(vf)
 	}
-	return res
+	return res, nil
 }
 
 func (cover *Cover) annotateActions(actions []*ast.Action) []*ast.Action {
