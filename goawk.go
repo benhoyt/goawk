@@ -259,6 +259,10 @@ argsLoop:
 		}
 	}
 
+	if debug || debugAsm || debugTypes {
+		os.Exit(0)
+	}
+
 	if header {
 		if inputMode == "" {
 			errorExitf("-H only allowed together with -i")
