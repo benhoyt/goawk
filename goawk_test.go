@@ -848,6 +848,10 @@ func TestCover(t *testing.T) {
 			if err != nil {
 				t.Fatalf("%v", err)
 			}
+			err = tempFile.Close()
+			if err != nil {
+				t.Fatalf("%v", err)
+			}
 			coverProfile := tempFile.Name()
 			defer os.Remove(coverProfile)
 
