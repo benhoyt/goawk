@@ -904,11 +904,14 @@ func convertPathsToFilenames(t *testing.T, str string) string {
 		if line == "" {
 			continue // skip empty line
 		}
-		if !strings.HasPrefix(line, "/") {
+		parts := strings.Split(line, ":") // on win line can be `D:\a\goawk\goawk\testdata\cover\a1.awk:2.3,6.30 5 1`
+		path := strings.Join(parts[:len(parts)-1], ":")
+		data := parts[len(parts)-1]
+		if !filepath.IsAbs(path) {
 			t.Fatalf("must be absolute path in coverage report: %s", line)
 		}
-		parts := strings.Split(line, "/")
-		lines[i] = parts[len(parts)-1] // leave only the part with name
+		// leave only the part with name
+		lines[i] = filepath.Base(path) + ":" + data
 	}
 	return strings.Join(lines, "\n")
 }
