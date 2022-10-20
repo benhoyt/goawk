@@ -851,18 +851,12 @@ func TestCover(t *testing.T) {
 			coverProfile := tempFile.Name()
 			defer os.Remove(coverProfile)
 
-			// make sure file doesn't exist
-			if _, err := os.Stat(coverProfile); os.IsNotExist(err) {
-				// file already doesn't exist
-			} else if err == nil {
-				// file exists
-				err := os.Remove(coverProfile)
-				if err != nil {
-					t.Fatalf("%v", err)
-				}
-			} else {
+			// make sure file doesn't exist - delete the temp file first, but use its name
+			err = os.Remove(coverProfile)
+			if err != nil {
 				t.Fatalf("%v", err)
 			}
+
 			for _, run := range test.runs {
 				var args []string
 				for _, file := range run {
