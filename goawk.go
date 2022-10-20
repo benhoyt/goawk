@@ -234,7 +234,7 @@ argsLoop:
 	// Parse source code and setup interpreter
 	parserConfig := &parser.ParserConfig{
 		DebugTypes:  debugTypes,
-		DebugWriter: os.Stderr,
+		DebugWriter: os.Stdout,
 	}
 	prog, err := parser.ParseProgram(fileReader.Source(), parserConfig)
 	if err != nil {
@@ -249,11 +249,11 @@ argsLoop:
 	}
 
 	if debug {
-		fmt.Fprintln(os.Stderr, prog)
+		fmt.Fprintln(os.Stdout, prog)
 	}
 
 	if debugAsm {
-		err := prog.Disassemble(os.Stderr)
+		err := prog.Disassemble(os.Stdout)
 		if err != nil {
 			errorExitf("could not disassemble program: %v", err)
 		}
