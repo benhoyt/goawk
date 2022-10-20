@@ -43,11 +43,10 @@ func TestAnnotatingLogicCorrectness(t *testing.T) {
 
 			var actualAnnotationData strings.Builder
 
-			for i := 1; i <= coverage.annotationIdx; i++ {
-				boundary := coverage.boundaries[i]
-				actualAnnotationData.WriteString(fmt.Sprintf("%d %s %s-%s %d\n", i,
-					boundary.path, boundary.start, boundary.end,
-					coverage.stmtsCnt[i]))
+			for i, block := range coverage.trackedBlocks {
+				actualAnnotationData.WriteString(fmt.Sprintf("%d %s %s-%s %d\n", i+1,
+					block.path, block.start, block.end,
+					block.numStmts))
 			}
 
 			result := strings.TrimSpace(actualAnnotationData.String())

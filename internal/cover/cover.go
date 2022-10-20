@@ -37,15 +37,14 @@ type Cover struct {
 	mode          Mode
 	append        bool
 	fileReader    *parseutil.FileReader
-	annotationIdx int
-	boundaries    map[int]boundary
-	stmtsCnt      map[int]int
+	trackedBlocks []trackedBlock
 }
 
-type boundary struct {
-	start lexer.Position
-	end   lexer.Position
-	path  string
+type trackedBlock struct {
+	start    lexer.Position
+	end      lexer.Position
+	path     string
+	numStmts int
 }
 
 func New(mode Mode, append bool, fileReader *parseutil.FileReader) *Cover {
@@ -53,8 +52,6 @@ func New(mode Mode, append bool, fileReader *parseutil.FileReader) *Cover {
 		mode:       mode,
 		append:     append,
 		fileReader: fileReader,
-		boundaries: make(map[int]boundary),
-		stmtsCnt:   make(map[int]int),
 	}
 }
 
@@ -107,13 +104,12 @@ func (cover *Cover) WriteProfile(path string, data map[string]interface{}) error
 		}
 	}
 
-	for i := 1; i <= cover.annotationIdx; i++ {
-		boundary := cover.boundaries[i]
+	for i, block := range cover.trackedBlocks {
 		_, err := fmt.Fprintf(f, "%s:%d.%d,%d.%d %d %d\n",
-			toAbsolutePath(boundary.path),
-			boundary.start.Line, boundary.start.Column,
-			boundary.end.Line, boundary.end.Column,
-			cover.stmtsCnt[i], dataInts[i],
+			toAbsolutePath(block.path),
+			block.start.Line, block.start.Column,
+			block.end.Line, block.end.Column,
+			block.numStmts, dataInts[i+1],
 		)
 		if err != nil {
 			return err
@@ -227,20 +223,19 @@ func endPos(stmt ast.Stmt) lexer.Position {
 }
 
 func (cover *Cover) trackStatement(stmts []ast.Stmt) ast.Stmt {
-	cover.annotationIdx++
 	start1 := stmts[0].StartPos()
 	end2 := endPos(stmts[len(stmts)-1])
 	path, startLine := cover.fileReader.FileLine(start1.Line)
 	_, endLine := cover.fileReader.FileLine(end2.Line)
-	cover.boundaries[cover.annotationIdx] = boundary{
-		start: lexer.Position{startLine, start1.Column},
-		end:   lexer.Position{endLine, end2.Column},
-		path:  path,
-	}
-	cover.stmtsCnt[cover.annotationIdx] = len(stmts)
+	cover.trackedBlocks = append(cover.trackedBlocks, trackedBlock{
+		start:    lexer.Position{startLine, start1.Column},
+		end:      lexer.Position{endLine, end2.Column},
+		path:     path,
+		numStmts: len(stmts),
+	})
 	left := &ast.IndexExpr{
 		Array: ast.ArrayRef(ArrayName, lexer.Position{}),
-		Index: []ast.Expr{&ast.StrExpr{Value: strconv.Itoa(cover.annotationIdx)}},
+		Index: []ast.Expr{&ast.StrExpr{Value: strconv.Itoa(len(cover.trackedBlocks))}},
 	}
 	if cover.mode == ModeCount {
 		// AST for __COVER[index]++
