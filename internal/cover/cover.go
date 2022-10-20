@@ -14,8 +14,27 @@ import (
 
 const ArrayName = "__COVER"
 
+type Mode int
+
+const (
+	ModeUnspecified Mode = iota
+	ModeSet
+	ModeCount
+)
+
+func (m Mode) String() string {
+	switch m {
+	case ModeSet:
+		return "set"
+	case ModeCount:
+		return "count"
+	default:
+		panic(fmt.Sprintf("unknown mode constant: %d", m))
+	}
+}
+
 type Cover struct {
-	mode          string
+	mode          Mode
 	append        bool
 	fileReader    *parseutil.FileReader
 	annotationIdx int
@@ -29,7 +48,7 @@ type boundary struct {
 	path  string
 }
 
-func New(mode string, append bool, fileReader *parseutil.FileReader) *Cover {
+func New(mode Mode, append bool, fileReader *parseutil.FileReader) *Cover {
 	return &Cover{
 		mode:       mode,
 		append:     append,
@@ -220,7 +239,7 @@ func (cover *Cover) trackStatement(stmts []ast.Stmt) ast.Stmt {
 		Array: ast.ArrayRef(ArrayName, lexer.Position{}),
 		Index: []ast.Expr{&ast.StrExpr{Value: strconv.Itoa(cover.annotationIdx)}},
 	}
-	if cover.mode == "count" {
+	if cover.mode == ModeCount {
 		// AST for __COVER[index]++
 		return &ast.ExprStmt{Expr: &ast.IncrExpr{Expr: left, Op: lexer.INCR}}
 	}

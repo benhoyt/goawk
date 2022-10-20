@@ -34,7 +34,7 @@ func TestAnnotatingLogicCorrectness(t *testing.T) {
 			if err != nil {
 				panic(err)
 			}
-			coverage := New("set", false, fileReader)
+			coverage := New(ModeSet, false, fileReader)
 			prog, err := parser.ParseProgram(fileReader.Source(), nil)
 			if err != nil {
 				panic(err)

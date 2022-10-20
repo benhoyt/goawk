@@ -88,7 +88,7 @@ func main() {
 	outputMode := ""
 	header := false
 	noArgVars := false
-	coverMode := ""
+	coverMode := cover.ModeUnspecified
 	coverProfile := ""
 	coverAppend := false
 
@@ -111,7 +111,7 @@ argsLoop:
 				errorExitf("flag needs an argument: -covermode")
 			}
 			i++
-			coverMode = os.Args[i]
+			coverMode = coverModeFromString(os.Args[i])
 		case "-coverprofile":
 			if i+1 >= len(os.Args) {
 				errorExitf("flag needs an argument: -coverprofile")
@@ -207,7 +207,7 @@ argsLoop:
 			case strings.HasPrefix(arg, "-memprofile="):
 				memProfile = arg[len("-memprofile="):]
 			case strings.HasPrefix(arg, "-covermode="):
-				coverMode = arg[len("-covermode="):]
+				coverMode = coverModeFromString(arg[len("-covermode="):])
 			case strings.HasPrefix(arg, "-coverprofile="):
 				coverProfile = arg[len("-coverprofile="):]
 			default:
@@ -215,11 +215,8 @@ argsLoop:
 			}
 		}
 	}
-	if coverMode != "" && coverMode != "set" && coverMode != "count" {
-		errorExitf("covermode can only be one of: set, count")
-	}
-	if coverProfile != "" && coverMode == "" {
-		coverMode = "set"
+	if coverProfile != "" && coverMode == cover.ModeUnspecified {
+		coverMode = cover.ModeSet
 	}
 
 	// Any remaining args are program and input files
@@ -277,7 +274,7 @@ argsLoop:
 	}
 
 	coverage := cover.New(coverMode, coverAppend, fileReader)
-	if coverMode != "" {
+	if coverMode != cover.ModeUnspecified {
 		astProgram := &prog.ResolvedProgram.Program
 		coverage.Annotate(astProgram)
 		prog, err = parser.ResolveAndCompile(astProgram, parserConfig)
@@ -382,6 +379,18 @@ argsLoop:
 	}
 
 	os.Exit(status)
+}
+
+func coverModeFromString(mode string) cover.Mode {
+	switch mode {
+	case "set":
+		return cover.ModeSet
+	case "count":
+		return cover.ModeCount
+	default:
+		errorExitf("covermode can only be one of: set, count")
+		return cover.ModeUnspecified
+	}
 }
 
 // Show source line and position of error, for example:
