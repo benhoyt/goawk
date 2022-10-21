@@ -55,14 +55,7 @@ const (
   -f progfile       load AWK source from progfile (multiple allowed)
   -v var=value      variable assignment (multiple allowed)
 
-Additional GoAWK arguments:
-  -covermode mode   set the coverage report mode (set/count)
-  -coverprofile file set the coverage report filename
-  -coverappend      do not truncate coverage report file
-  -cpuprofile file  write CPU profile to file
-  -d                print parsed syntax tree to stderr (debug mode)
-  -da               print virtual machine assembly instructions to stderr
-  -dt               print variable type information to stderr
+Additional GoAWK features:
   -E progfile       load program, treat as last option, disable var=value args
   -H                parse header row and enable @"field" in CSV input mode
   -h, --help        show this help message
@@ -71,6 +64,15 @@ Additional GoAWK arguments:
   -o mode           use CSV output for print with args (ignore OFS and ORS)
                     'csv|tsv [separator=<char>]'
   -version          show GoAWK version and exit
+
+GoAWK debugging arguments:
+  -covermode mode   set coverage mode: set, count (default "set")
+  -coverprofile fn  write coverage profile to file
+  -cpuprofile fn    write CPU profile to file
+  -d                print parsed syntax tree to stdout and exit
+  -da               print VM assembly instructions to stdout and exit
+  -dt               print variable type information to stdout and exit
+  -memprofile fn    write memory profile to file
 `
 )
 
@@ -261,7 +263,7 @@ argsLoop:
 	// Parse source code and setup interpreter
 	parserConfig := &parser.ParserConfig{
 		DebugTypes:  debugTypes,
-		DebugWriter: os.Stderr,
+		DebugWriter: os.Stdout,
 	}
 	prog, err := parser.ParseProgram(fileReader.Source(), parserConfig)
 	if err != nil {
@@ -299,14 +301,18 @@ argsLoop:
 	}
 
 	if debug {
-		fmt.Fprintln(os.Stderr, prog)
+		fmt.Fprintln(os.Stdout, prog)
 	}
 
 	if debugAsm {
-		err := prog.Disassemble(os.Stderr)
+		err := prog.Disassemble(os.Stdout)
 		if err != nil {
 			errorExitf("could not disassemble program: %v", err)
 		}
+	}
+
+	if debug || debugAsm || debugTypes {
+		os.Exit(0)
 	}
 
 	if header {
