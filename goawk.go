@@ -66,6 +66,7 @@ Additional GoAWK features:
   -version          show GoAWK version and exit
 
 GoAWK debugging arguments:
+  -coverappend      append to coverage profile instead of overwriting
   -covermode mode   set coverage mode: set, count (default "set")
   -coverprofile fn  write coverage profile to file
   -cpuprofile fn    write CPU profile to file
