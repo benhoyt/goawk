@@ -29,7 +29,7 @@ func (m Mode) String() string {
 	case ModeCount:
 		return "count"
 	default:
-		panic(fmt.Sprintf("unknown mode constant: %d", m))
+		return fmt.Sprintf("<unknown mode %d>", m)
 	}
 }
 
