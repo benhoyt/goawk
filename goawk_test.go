@@ -807,8 +807,8 @@ func TestCoverInvalidArgs(t *testing.T) {
 	}{
 		{[]string{"-coverprofile"}, "flag needs an argument: -coverprofile"},
 		{[]string{"-covermode"}, "flag needs an argument: -covermode"},
-		{[]string{"-covermode", "wrong"}, "covermode can only be one of: set, count"},
-		{[]string{"-covermode=wrong"}, "covermode can only be one of: set, count"},
+		{[]string{"-covermode", "wrong"}, "-covermode can only be one of: set, count"},
+		{[]string{"-covermode=wrong"}, "-covermode can only be one of: set, count"},
 	}
 
 	for _, test := range tests {

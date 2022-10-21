@@ -406,7 +406,7 @@ func coverModeFromString(mode string) cover.Mode {
 	case "count":
 		return cover.ModeCount
 	default:
-		errorExitf("covermode can only be one of: set, count")
+		errorExitf("-covermode can only be one of: set, count")
 		return cover.ModeUnspecified
 	}
 }
