@@ -122,16 +122,16 @@ function g(arr) { arr["a"]=1.23 }`)
 	}
 	arr := interpreter.Array("Arr")
 	if len(arr) != 3 {
-		t.Errorf("wrong Arr len: %d", len(arr))
+		t.Errorf("expected length 3, got %d", len(arr))
 	}
 	if arr["key"] != "" {
-		t.Errorf("wrong value")
+		t.Errorf("expected value \"\", got %q", arr["key"])
 	}
 	if arr["hello"] != "world" {
-		t.Errorf("wrong value")
+		t.Errorf("expected value \"world\", got %q", arr["hello"])
 	}
 	if math.Abs(arr["a"].(float64)-1.23) > 1e-9 {
-		t.Errorf("wrong value")
+		t.Errorf("expected value 1.23, got %f", arr["a"])
 	}
 	if interpreter.Array("NonExistent") != nil {
 		t.Errorf("non existent name must resolve to nil")
