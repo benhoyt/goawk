@@ -180,7 +180,7 @@ func (cover *Cover) annotateStmts(stmts ast.Stmts) ast.Stmts {
 			s.Body = cover.annotateStmts(s.Body)
 			s.Else = cover.annotateStmts(s.Else)
 		case *ast.ForStmt:
-			s.Body = cover.annotateStmts(s.Body) // TODO should we do smth with pre & post?
+			s.Body = cover.annotateStmts(s.Body)
 		case *ast.ForInStmt:
 			s.Body = cover.annotateStmts(s.Body)
 		case *ast.WhileStmt:
@@ -204,7 +204,6 @@ func (cover *Cover) annotateStmts(stmts ast.Stmts) ast.Stmts {
 		res = append(res, trackedBlockStmts...)
 	}
 	return res
-	// TODO complete handling of if/else/else if
 }
 
 func endPos(stmt ast.Stmt) lexer.Position {
