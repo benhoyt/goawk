@@ -37,7 +37,10 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/benhoyt/goawk/internal/compiler"
+	"github.com/benhoyt/goawk/internal/cover"
 	"github.com/benhoyt/goawk/internal/parseutil"
+	"github.com/benhoyt/goawk/internal/resolver"
 	"github.com/benhoyt/goawk/interp"
 	"github.com/benhoyt/goawk/lexer"
 	"github.com/benhoyt/goawk/parser"
@@ -63,11 +66,14 @@ Additional GoAWK features:
   -version          show GoAWK version and exit
 
 GoAWK debugging arguments:
-  -cpuprofile file  write CPU profile to file
+  -coverappend      append to coverage profile instead of overwriting
+  -covermode mode   set coverage mode: set, count (default "set")
+  -coverprofile fn  write coverage profile to file
+  -cpuprofile fn    write CPU profile to file
   -d                print parsed syntax tree to stdout and exit
   -da               print VM assembly instructions to stdout and exit
   -dt               print variable type information to stdout and exit
-  -memprofile file  write memory profile to file
+  -memprofile fn    write memory profile to file
 `
 )
 
@@ -78,15 +84,18 @@ func main() {
 	var progFiles []string
 	var vars []string
 	fieldSep := " "
-	cpuprofile := ""
+	cpuProfile := ""
 	debug := false
 	debugAsm := false
 	debugTypes := false
-	memprofile := ""
+	memProfile := ""
 	inputMode := ""
 	outputMode := ""
 	header := false
 	noArgVars := false
+	coverMode := cover.ModeUnspecified
+	coverProfile := ""
+	coverAppend := false
 
 	var i int
 argsLoop:
@@ -102,6 +111,20 @@ argsLoop:
 		}
 
 		switch arg {
+		case "-covermode":
+			if i+1 >= len(os.Args) {
+				errorExitf("flag needs an argument: -covermode")
+			}
+			i++
+			coverMode = coverModeFromString(os.Args[i])
+		case "-coverprofile":
+			if i+1 >= len(os.Args) {
+				errorExitf("flag needs an argument: -coverprofile")
+			}
+			i++
+			coverProfile = os.Args[i]
+		case "-coverappend":
+			coverAppend = true
 		case "-E":
 			if i+1 >= len(os.Args) {
 				errorExitf("flag needs an argument: -E")
@@ -134,7 +157,7 @@ argsLoop:
 				errorExitf("flag needs an argument: -cpuprofile")
 			}
 			i++
-			cpuprofile = os.Args[i]
+			cpuProfile = os.Args[i]
 		case "-d":
 			debug = true
 		case "-da":
@@ -157,7 +180,7 @@ argsLoop:
 				errorExitf("flag needs an argument: -memprofile")
 			}
 			i++
-			memprofile = os.Args[i]
+			memProfile = os.Args[i]
 		case "-o":
 			if i+1 >= len(os.Args) {
 				errorExitf("flag needs an argument: -o")
@@ -185,13 +208,20 @@ argsLoop:
 			case strings.HasPrefix(arg, "-v"):
 				vars = append(vars, arg[2:])
 			case strings.HasPrefix(arg, "-cpuprofile="):
-				cpuprofile = arg[12:]
+				cpuProfile = arg[len("-cpuprofile="):]
 			case strings.HasPrefix(arg, "-memprofile="):
-				memprofile = arg[12:]
+				memProfile = arg[len("-memprofile="):]
+			case strings.HasPrefix(arg, "-covermode="):
+				coverMode = coverModeFromString(arg[len("-covermode="):])
+			case strings.HasPrefix(arg, "-coverprofile="):
+				coverProfile = arg[len("-coverprofile="):]
 			default:
 				errorExitf("flag provided but not defined: %s", arg)
 			}
 		}
+	}
+	if coverProfile != "" && coverMode == cover.ModeUnspecified {
+		coverMode = cover.ModeSet
 	}
 
 	// Any remaining args are program and input files
@@ -246,6 +276,29 @@ argsLoop:
 			os.Exit(1)
 		}
 		errorExitf("%s", err)
+	}
+
+	coverage := cover.New(coverMode, coverAppend, fileReader)
+
+	if coverMode != cover.ModeUnspecified {
+		astProgram := &prog.ResolvedProgram.Program
+		coverage.Annotate(astProgram)
+
+		// re-resolve annotated program
+		prog.ResolvedProgram = *resolver.Resolve(astProgram, &resolver.Config{
+			DebugTypes:  parserConfig.DebugTypes,
+			DebugWriter: parserConfig.DebugWriter})
+
+		// re-compile it
+		prog.Compiled, err = compiler.Compile(&prog.ResolvedProgram)
+		if err != nil {
+			errorExitf("%s", err)
+		}
+
+		if coverProfile == "" {
+			fmt.Fprintln(os.Stdout, prog)
+			os.Exit(0)
+		}
 	}
 
 	if debug {
@@ -303,8 +356,8 @@ argsLoop:
 		config.Vars = append(config.Vars, name, value)
 	}
 
-	if cpuprofile != "" {
-		f, err := os.Create(cpuprofile)
+	if cpuProfile != "" {
+		f, err := os.Create(cpuProfile)
 		if err != nil {
 			errorExitf("could not create CPU profile: %v", err)
 		}
@@ -314,16 +367,25 @@ argsLoop:
 	}
 
 	// Run the program!
-	status, err := interp.ExecProgram(prog, config)
+	interpreter, err := interp.New(prog)
+	status, err := interpreter.Execute(config)
+
 	if err != nil {
 		errorExit(err)
 	}
 
-	if cpuprofile != "" {
+	if coverProfile != "" {
+		err := coverage.WriteProfile(coverProfile, interpreter.Array(cover.ArrayName))
+		if err != nil {
+			errorExitf("unable to write coverage profile: %v", err)
+		}
+	}
+
+	if cpuProfile != "" {
 		pprof.StopCPUProfile()
 	}
-	if memprofile != "" {
-		f, err := os.Create(memprofile)
+	if memProfile != "" {
+		f, err := os.Create(memProfile)
 		if err != nil {
 			errorExitf("could not create memory profile: %v", err)
 		}
@@ -335,6 +397,18 @@ argsLoop:
 	}
 
 	os.Exit(status)
+}
+
+func coverModeFromString(mode string) cover.Mode {
+	switch mode {
+	case "set":
+		return cover.ModeSet
+	case "count":
+		return cover.ModeCount
+	default:
+		errorExitf("-covermode can only be one of: set, count")
+		return cover.ModeUnspecified
+	}
 }
 
 // Show source line and position of error, for example:

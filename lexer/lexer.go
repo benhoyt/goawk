@@ -9,6 +9,7 @@ package lexer
 
 import (
 	"errors"
+	"fmt"
 )
 
 // Lexer tokenizes a byte string of AWK source code. Use NewLexer to
@@ -30,6 +31,11 @@ type Position struct {
 	// Column on the line (starts at 1). Note that this is the byte
 	// offset into the line, not rune offset.
 	Column int
+}
+
+// String returns the position in "line:col" format.
+func (p Position) String() string {
+	return fmt.Sprintf("%d:%d", p.Line, p.Column)
 }
 
 // NewLexer creates a new lexer that will tokenize the given source

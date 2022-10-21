@@ -90,7 +90,6 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 
 	// Compile to virtual machine code
 	prog.Compiled, err = compiler.Compile(&prog.ResolvedProgram)
-
 	return prog, err
 }
 
@@ -230,6 +229,7 @@ func (p *parser) stmtsBrace() ast.Stmts {
 
 // Parse a "simple" statement (eg: allowed in a for loop init clause).
 func (p *parser) simpleStmt() ast.Stmt {
+	startPos := p.pos
 	switch p.tok {
 	case PRINT, PRINTF:
 		op := p.tok
@@ -250,12 +250,12 @@ func (p *parser) simpleStmt() ast.Stmt {
 			dest = p.expr()
 		}
 		if op == PRINT {
-			return &ast.PrintStmt{args, redirect, dest}
+			return &ast.PrintStmt{args, redirect, dest, startPos, p.pos}
 		} else {
 			if len(args) == 0 {
 				panic(p.errorf("expected printf args, got none"))
 			}
-			return &ast.PrintfStmt{args, redirect, dest}
+			return &ast.PrintfStmt{args, redirect, dest, startPos, p.pos}
 		}
 	case DELETE:
 		p.next()
@@ -270,11 +270,11 @@ func (p *parser) simpleStmt() ast.Stmt {
 			}
 			p.expect(RBRACKET)
 		}
-		return &ast.DeleteStmt{ref, index}
+		return &ast.DeleteStmt{ref, index, startPos, p.pos}
 	case IF, FOR, WHILE, DO, BREAK, CONTINUE, NEXT, EXIT, RETURN:
 		panic(p.errorf("expected print/printf, delete, or expression"))
 	default:
-		return &ast.ExprStmt{p.expr()}
+		return &ast.ExprStmt{p.expr(), startPos, p.pos}
 	}
 }
 
@@ -284,6 +284,7 @@ func (p *parser) stmt() ast.Stmt {
 		p.next()
 	}
 	var s ast.Stmt
+	startPos := p.pos
 	switch p.tok {
 	case IF:
 		p.next()
@@ -291,6 +292,7 @@ func (p *parser) stmt() ast.Stmt {
 		cond := p.expr()
 		p.expect(RPAREN)
 		p.optionalNewlines()
+		bodyStart := p.pos
 		body := p.stmts()
 		p.optionalNewlines()
 		var elseBody ast.Stmts
@@ -299,7 +301,7 @@ func (p *parser) stmt() ast.Stmt {
 			p.optionalNewlines()
 			elseBody = p.stmts()
 		}
-		s = &ast.IfStmt{cond, body, elseBody}
+		s = &ast.IfStmt{cond, bodyStart, body, elseBody, startPos, p.pos}
 	case FOR:
 		// Parse for statement, either "for in" or C-like for loop.
 		//
@@ -333,8 +335,9 @@ func (p *parser) stmt() ast.Stmt {
 			if !ok {
 				panic(p.errorf("expected 'for (var in array) ...'"))
 			}
+			bodyStart := p.pos
 			body := p.loopStmts()
-			s = &ast.ForInStmt{varExpr, inExpr.Array, body}
+			s = &ast.ForInStmt{varExpr, inExpr.Array, bodyStart, body, startPos, p.pos}
 		} else {
 			// Match: for ([pre]; [cond]; [post]) body
 			p.expect(SEMICOLON)
@@ -351,8 +354,9 @@ func (p *parser) stmt() ast.Stmt {
 			}
 			p.expect(RPAREN)
 			p.optionalNewlines()
+			bodyStart := p.pos
 			body := p.loopStmts()
-			s = &ast.ForStmt{pre, cond, post, body}
+			s = &ast.ForStmt{pre, cond, post, bodyStart, body, startPos, p.pos}
 		}
 	case WHILE:
 		p.next()
@@ -360,8 +364,9 @@ func (p *parser) stmt() ast.Stmt {
 		cond := p.expr()
 		p.expect(RPAREN)
 		p.optionalNewlines()
+		bodyStart := p.pos
 		body := p.loopStmts()
-		s = &ast.WhileStmt{cond, body}
+		s = &ast.WhileStmt{cond, bodyStart, body, startPos, p.pos}
 	case DO:
 		p.next()
 		p.optionalNewlines()
@@ -370,32 +375,32 @@ func (p *parser) stmt() ast.Stmt {
 		p.expect(LPAREN)
 		cond := p.expr()
 		p.expect(RPAREN)
-		s = &ast.DoWhileStmt{body, cond}
+		s = &ast.DoWhileStmt{body, cond, startPos, p.pos}
 	case BREAK:
 		if p.loopDepth == 0 {
 			panic(p.errorf("break must be inside a loop body"))
 		}
 		p.next()
-		s = &ast.BreakStmt{}
+		s = &ast.BreakStmt{startPos, p.pos}
 	case CONTINUE:
 		if p.loopDepth == 0 {
 			panic(p.errorf("continue must be inside a loop body"))
 		}
 		p.next()
-		s = &ast.ContinueStmt{}
+		s = &ast.ContinueStmt{startPos, p.pos}
 	case NEXT:
 		if !p.inAction && p.funcName == "" {
 			panic(p.errorf("next can't be inside BEGIN or END"))
 		}
 		p.next()
-		s = &ast.NextStmt{}
+		s = &ast.NextStmt{startPos, p.pos}
 	case EXIT:
 		p.next()
 		var status ast.Expr
 		if !p.matches(NEWLINE, SEMICOLON, RBRACE) {
 			status = p.expr()
 		}
-		s = &ast.ExitStmt{status}
+		s = &ast.ExitStmt{status, startPos, p.pos}
 	case RETURN:
 		if p.funcName == "" {
 			panic(p.errorf("return must be inside a function"))
@@ -405,10 +410,10 @@ func (p *parser) stmt() ast.Stmt {
 		if !p.matches(NEWLINE, SEMICOLON, RBRACE) {
 			value = p.expr()
 		}
-		s = &ast.ReturnStmt{value}
+		s = &ast.ReturnStmt{value, startPos, p.pos}
 	case LBRACE:
 		body := p.stmtsBrace()
-		s = &ast.BlockStmt{body}
+		s = &ast.BlockStmt{body, startPos, p.pos}
 	default:
 		s = p.simpleStmt()
 	}

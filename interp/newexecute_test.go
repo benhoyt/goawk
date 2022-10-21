@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"math"
 	"strings"
 	"testing"
 	"time"
@@ -107,6 +108,33 @@ func TestResetRand(t *testing.T) {
 	withResetRand := output.String()
 	if original != withResetRand {
 		t.Fatalf("expected same random numbers (%q) as original (%q)", withResetRand, original)
+	}
+}
+
+func TestGetArrayValue(t *testing.T) {
+	interpreter := newInterp(t, `
+BEGIN { Arr["key"]; f(); g(Arr) }
+function f() { Arr["hello"]="world" }
+function g(arr) { arr["a"]=1.23 }`)
+	_, err := interpreter.Execute(nil)
+	if err != nil {
+		t.Fatalf("error executing: %v", err)
+	}
+	arr := interpreter.Array("Arr")
+	if len(arr) != 3 {
+		t.Errorf("expected length 3, got %d", len(arr))
+	}
+	if arr["key"] != "" {
+		t.Errorf("expected value \"\", got %q", arr["key"])
+	}
+	if arr["hello"] != "world" {
+		t.Errorf("expected value \"world\", got %q", arr["hello"])
+	}
+	if math.Abs(arr["a"].(float64)-1.23) > 1e-9 {
+		t.Errorf("expected value 1.23, got %f", arr["a"])
+	}
+	if interpreter.Array("NonExistent") != nil {
+		t.Errorf("non existent name must resolve to nil")
 	}
 }
 

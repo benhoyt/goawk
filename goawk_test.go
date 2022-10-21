@@ -448,7 +448,7 @@ func TestCommandLine(t *testing.T) {
 
 func TestDevStdout(t *testing.T) {
 	if runtime.GOOS == "windows" {
-		t.Skip("/dev/stdout not presnt on Windows")
+		t.Skip("/dev/stdout not present on Windows")
 	}
 	runAWKs(t, []string{`BEGIN { print "1"; print "2">"/dev/stdout" }`}, "", "1\n2\n", "")
 }
@@ -757,4 +757,161 @@ func TestMandelbrot(t *testing.T) {
 	if stdout != expected {
 		t.Fatalf("expected:\n%s\ngot:\n%s", expected, stdout)
 	}
+}
+
+func TestCoverPrintAnnotatedSource(t *testing.T) {
+	tests := []struct {
+		sourceFiles        []string
+		mode               string
+		expectedResultFile string
+	}{
+		{[]string{"a1.awk"}, "set", "a1_covermode_set.awk"},
+		{[]string{"a2.awk"}, "count", "a2_covermode_count.awk"},
+		{[]string{"a1.awk", "a2.awk"}, "count", "a1_a2_covermode_count.awk"},
+		{[]string{"a3.awk"}, "set", "a3_covermode_set.awk"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.expectedResultFile, func(t *testing.T) {
+			args := []string{"-covermode", test.mode}
+			for _, file := range test.sourceFiles {
+				args = append(args, "-f", "testdata/cover/"+file)
+			}
+			stdout, stderr, err := runGoAWK(args, "")
+			if err != nil {
+				t.Fatalf("expected no error, got %v (%q)", err, stderr)
+			}
+			expected, err := ioutil.ReadFile("testdata/cover/" + test.expectedResultFile)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if normalizeAwkSource(stdout) != normalizeAwkSource(string(expected)) {
+				t.Fatalf("output differs, got:\n%s\nexpected:\n%s", stdout, expected)
+			}
+		})
+	}
+}
+
+func normalizeAwkSource(source string) string {
+	p, err := parser.ParseProgram([]byte(source), nil)
+	if err != nil {
+		panic(err)
+	}
+	return p.String()
+}
+
+func TestCoverInvalidArgs(t *testing.T) {
+	tests := []struct {
+		args          []string
+		expectedError string
+	}{
+		{[]string{"-coverprofile"}, "flag needs an argument: -coverprofile"},
+		{[]string{"-covermode"}, "flag needs an argument: -covermode"},
+		{[]string{"-covermode", "wrong"}, "-covermode can only be one of: set, count"},
+		{[]string{"-covermode=wrong"}, "-covermode can only be one of: set, count"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.expectedError, func(t *testing.T) {
+			_, stderr, err := runGoAWK(test.args, "")
+			if err == nil {
+				t.Fatalf("expected error")
+			}
+			stderr = strings.TrimSpace(stderr)
+			if stderr != test.expectedError {
+				t.Fatalf("error differs, got:\n%s\nexpected:\n%s", stderr, test.expectedError)
+			}
+		})
+	}
+}
+
+func TestCover(t *testing.T) {
+	tests := []struct {
+		mode                string
+		coverAppend         bool
+		runs                [][]string
+		expectedCoverReport string
+	}{
+		{"set", true, [][]string{{"a1.awk"}}, "test_set.cov"},
+		{"count", true, [][]string{{"a1.awk"}}, "test_count.cov"},
+		{"set", true, [][]string{{"a2.awk", "a1.awk"}}, "test_a2a1_set.cov"},
+		{"count", true, [][]string{{"a2.awk", "a1.awk"}}, "test_a2a1_count.cov"},
+		{"set", true, [][]string{{"a1.awk"}, {"a1.awk"}}, "test_1file2runs_set.cov"},
+		{"count", true, [][]string{{"a2.awk", "a1.awk"}, {"a2.awk", "a1.awk"}}, "test_2file2runs_count.cov"},
+		{"set", false, [][]string{{"a1.awk"}, {"a1.awk"}}, "test_1file2runs_set_truncated.cov"},
+		{"count", false, [][]string{{"a2.awk", "a1.awk"}, {"a2.awk", "a1.awk"}}, "test_2file2runs_count_truncated.cov"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.expectedCoverReport, func(t *testing.T) {
+			tempFile, err := ioutil.TempFile("", "testCov*.txt")
+			if err != nil {
+				t.Fatalf("%v", err)
+			}
+			err = tempFile.Close()
+			if err != nil {
+				t.Fatalf("%v", err)
+			}
+			coverProfile := tempFile.Name()
+			defer os.Remove(coverProfile)
+
+			// make sure file doesn't exist - delete the temp file first, but use its name
+			err = os.Remove(coverProfile)
+			if err != nil {
+				t.Fatalf("%v", err)
+			}
+
+			for _, run := range test.runs {
+				var args []string
+				for _, file := range run {
+					args = append(args, "-f", "testdata/cover/"+file)
+				}
+				args = append(args, "-coverprofile", coverProfile)
+				args = append(args, "-covermode", test.mode)
+				if test.coverAppend {
+					args = append(args, "-coverappend")
+				}
+				_, _, err := runGoAWK(args, "")
+				if err != nil {
+					t.Fatalf("%v", err)
+				}
+			}
+
+			result, err := ioutil.ReadFile(coverProfile)
+			if err != nil {
+				t.Fatalf("%v", err)
+			}
+			resultStr := string(normalizeNewlines(result))
+			resultStr = strings.TrimSpace(convertPathsToFilenames(t, resultStr))
+			expected, err := ioutil.ReadFile("testdata/cover/" + test.expectedCoverReport)
+			if err != nil {
+				t.Fatalf("%v", err)
+			}
+			expectedStr := strings.TrimSpace(string(normalizeNewlines(expected)))
+			if resultStr != expectedStr {
+				t.Fatalf("wrong coverage report, expected:\n\n%s\n\nactual:\n\n%s", expectedStr, resultStr)
+			}
+		})
+	}
+}
+
+func convertPathsToFilenames(t *testing.T, str string) string {
+	lines := strings.Split(str, "\n")
+	for i, line := range lines {
+		if i == 0 {
+			continue // skip mode line
+		}
+		if line == "" {
+			continue // skip empty line
+		}
+		parts := strings.Split(line, ":") // on win line can be `D:\a\goawk\goawk\testdata\cover\a1.awk:2.3,6.30 5 1`
+		path := strings.Join(parts[:len(parts)-1], ":")
+		data := parts[len(parts)-1]
+		if !filepath.IsAbs(path) {
+			t.Fatalf("must be absolute path in coverage report: %s", line)
+		}
+		// leave only the part with name
+		lines[i] = filepath.Base(path) + ":" + data
+	}
+	return strings.Join(lines, "\n")
 }
