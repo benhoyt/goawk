@@ -63,7 +63,7 @@ func (p *Interpreter) Execute(config *Config) (int, error) {
 
 // Array returns a map representing the items in the named AWK array. AWK
 // numbers are included as type float64, strings (including "numeric strings")
-// are included as type string.
+// are included as type string. If the named array does not exist, return nil.
 func (p *Interpreter) Array(name string) map[string]interface{} {
 	index, exists := p.interp.program.Arrays[name]
 	if !exists {
