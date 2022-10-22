@@ -135,6 +135,9 @@ func dataToInts(data map[string]interface{}) (map[int]int, error) {
 }
 
 func (cover *Cover) annotateActions(actions []*ast.Action) []*ast.Action {
+	if actions == nil {
+		return nil
+	}
 	res := make([]*ast.Action, 0, len(actions))
 	for _, action := range actions {
 		action.Stmts = cover.annotateStmts(action.Stmts)
@@ -144,6 +147,9 @@ func (cover *Cover) annotateActions(actions []*ast.Action) []*ast.Action {
 }
 
 func (cover *Cover) annotateFunctions(functions []*ast.Function) []*ast.Function {
+	if functions == nil {
+		return nil
+	}
 	res := make([]*ast.Function, 0, len(functions))
 	for _, function := range functions {
 		function.Body = cover.annotateStmts(function.Body)
@@ -153,6 +159,9 @@ func (cover *Cover) annotateFunctions(functions []*ast.Function) []*ast.Function
 }
 
 func (cover *Cover) annotateStmtsList(stmtsList []ast.Stmts) []ast.Stmts {
+	if stmtsList == nil {
+		return nil
+	}
 	res := make([]ast.Stmts, 0, len(stmtsList))
 	for _, stmts := range stmtsList {
 		res = append(res, cover.annotateStmts(stmts))
