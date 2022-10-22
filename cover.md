@@ -31,9 +31,9 @@ go tool cover -func=c.out                # this will not work :(
 ```
 This won't work because the `go tool cover` functionality for `-func` is only capable of processing the Go code. Luckily, the `-html` report option is generic enough to process any source code! 
 
-If you don't provide the `coverprofile` argument for `goawk` but you do provide `-covermode`, it just prints to stdout the coverage-annotated source code (this might be useful for debug purposes):
+If you want to see coverage-annotated source code (this might be useful for debug purposes), just add `-d` flag in addition to `-covermode`:
 ```
-goawk -f a.awk -covermode set
+goawk -f a.awk -covermode set -d
 ```
 
 
@@ -41,7 +41,6 @@ goawk -f a.awk -covermode set
 
 - `-coverprofile <file>`
   - sets the cover report filename to put collected coverage profile data.
-If this option is omitted, but the `-covermode` is set - outputs the annotated awk source to stdout.
 - `-covermode <mode>`
   - `mode` can be one of:
     - `set` - did each statement run?
