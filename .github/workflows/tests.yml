@@ -76,12 +76,7 @@ jobs:
 
     - name: Build and Test
       run: |
+        set -x
         gawk --version
         gawk 'BEGIN { print 2/3 }'
-        gawk 'BEGIN { print 2/3/4 }'
-        gawk 'BEGIN { print 2/-3 }'
-        gawk 'BEGIN { print -2/3 }'
         gawk 'BEGIN { print "2"/"3" }'
-        gawk 'BEGIN { print 3/.14 }'
-        gawk 'BEGIN { print 2/3, 2/3/4, 2/-3, -2/3, "2"/"3", 3/.14 }'
-        go test -race ./...
