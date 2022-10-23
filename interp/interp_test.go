@@ -247,8 +247,8 @@ BEGIN {
 	{`BEGIN { print 1+2, 1+2+3, 1+-2, -1+2, "1"+"2", 3+.14 }`, "", "3 6 -1 1 3 3.14\n", "", ""},
 	{`BEGIN { print 1-2, 1-2-3, 1-+2, -1-2, "1"-"2", 3-.14 }`, "", "-1 -4 -1 -3 -1 2.86\n", "", ""},
 	{`BEGIN { print 2*3, 2*3*4, 2*-3, -2*3, "2"*"3", 3*.14 }`, "", "6 24 -6 -6 6 0.42\n", "", ""},
-	{`BEGIN { print 2/3, 2/3/4, 2/-3, -2/3, "2"/"3", 3/.14 }`, "", "0.666667 0.166667 -0.666667 -0.666667 0.666667 21.4286\n", "", ""},
-	{`BEGIN { print 2%3, 2%3%4, 2%-3, -2%3, "2"%"3", 3%.14 }`, "", "2 2 2 -2 2 0.06\n", "", ""},
+	{`BEGIN { print 2/3, 2/3/4, 2/-3, -2/3, "2"/"3", 3/.14 }  # !darwin-gawk`, "", "0.666667 0.166667 -0.666667 -0.666667 0.666667 21.4286\n", "", ""},
+	{`BEGIN { print 2%3, 2%3%4, 2%-3, -2%3, "2"%"3", 3%.14 }  # !darwin-gawk`, "", "2 2 2 -2 2 0.06\n", "", ""},
 	{`BEGIN { print 2^3, 2^3^3, 2^-3, -2^3, "2"^"3", 3^.14 }`, "", "8 134217728 0.125 -8 8 1.16626\n", "", ""},
 	{`BEGIN { print 2**3, 2**3**3, 2**-3, -2**3, "2"**"3", 3**.14 }  # !posix`, "", "8 134217728 0.125 -8 8 1.16626\n", "", ""},
 	{`BEGIN { print 1 2, "x" "yz", 1+2 3+4 }`, "", "12 xyz 37\n", "", ""},
@@ -262,7 +262,7 @@ BEGIN {
 
 	// Number, string, and regex expressions
 	{`BEGIN { print 1, 1., .1, 1e0, -1, 1e }`, "", "1 1 0.1 1 -1 1\n", "", ""},
-	{`BEGIN { print '\"' '\'' 'xy' "z" "'" '\"' }`, "", "\"'xyz'\"\n", "", "syntax error"}, // Check support for single-quoted strings
+	{`BEGIN { print '\"' '\'' 'xy' "z" "'" '\"' }`, "", "\"'xyz'\"\n", "", "invalid char"}, // Check support for single-quoted strings
 	{`BEGIN { print "0\n1\t2\r3\a4\b5\f6\v7\x408\xf" }  # !posix`, "", "0\n1\t2\r3\a4\b5\f6\v7@8\x0f\n", "", ""},
 	{`{ print /foo/ }`, "food\nfoo\nxfooz\nbar\n", "1\n1\n1\n0\n", "", ""},
 	{`/[a-/`, "foo", "", "parse error at 1:1: error parsing regexp: missing closing ]: `[a-`", "terminated"},
@@ -839,7 +839,7 @@ BEGIN { foo(5); bar(10) }
 	{"/foo\n", "", "", "parse error at 1:5: can't have newline in regex", "unterminated regexp"},
 	{`BEGIN { print "\x" }  # !gawk`, "", "", "parse error at 1:18: 1 or 2 hex digits expected", ""},
 	{`BEGIN { print 1&*2 }`, "", "", "parse error at 1:17: unexpected char after '&'", "syntax"},
-	{"BEGIN { ` }", "", "", "parse error at 1:9: unexpected char", "syntax"},
+	{"BEGIN { ` }", "", "", "parse error at 1:9: unexpected char", "invalid char"},
 
 	// Hex floating point and other number conversions
 	{`{ print $1+0 }  # +posix`, `
