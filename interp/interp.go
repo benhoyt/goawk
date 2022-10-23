@@ -548,7 +548,7 @@ func (p *interp) executeAll() (int, error) {
 		}
 		return 0, err
 	}
-	if p.program.Actions == nil && p.program.End == nil {
+	if len(p.program.Compiled.Actions) == 0 && len(p.program.Compiled.End) == 0 {
 		return p.exitStatus, nil // only BEGIN specified, don't process input
 	}
 	if err != errExit {

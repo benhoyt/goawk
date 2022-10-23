@@ -294,11 +294,6 @@ argsLoop:
 		if err != nil {
 			errorExitf("%s", err)
 		}
-
-		if coverProfile == "" {
-			fmt.Fprintln(os.Stdout, prog)
-			os.Exit(0)
-		}
 	}
 
 	if debug {

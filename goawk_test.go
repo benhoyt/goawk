@@ -773,7 +773,7 @@ func TestCoverPrintAnnotatedSource(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.expectedResultFile, func(t *testing.T) {
-			args := []string{"-covermode", test.mode}
+			args := []string{"-d", "-covermode", test.mode}
 			for _, file := range test.sourceFiles {
 				args = append(args, "-f", "testdata/cover/"+file)
 			}
