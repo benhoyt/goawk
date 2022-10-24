@@ -588,13 +588,14 @@ func normalizeNewlines(b []byte) []byte {
 	return bytes.Replace(b, []byte("\r\n"), []byte{'\n'}, -1)
 }
 
-func TestInputOutputMode(t *testing.T) {
+func TestGoAWKSpecificOptions(t *testing.T) {
 	tests := []struct {
 		args   []string
 		input  string
 		output string
 		error  string
 	}{
+		// CSV-related options
 		{[]string{"-icsv", "-H", `{ print @"age", @"name" }`}, "name,age\nBob,42\nJane,37", "42 Bob\n37 Jane\n", ""},
 		{[]string{"-i", "csv", "-H", `{ print @"age", @"name" }`}, "name,age\nBob,42\nJane,37", "42 Bob\n37 Jane\n", ""},
 		{[]string{"-icsv", `{ print $2, $1 }`}, "Bob,42\nJane,37", "42 Bob\n37 Jane\n", ""},
@@ -604,6 +605,38 @@ func TestInputOutputMode(t *testing.T) {
 		{[]string{"-iabc", `{}`}, "", "", "invalid input mode \"abc\"\n"},
 		{[]string{"-oxyz", `{}`}, "", "", "invalid output mode \"xyz\"\n"},
 		{[]string{"-H", `{}`}, "", "", "-H only allowed together with -i\n"},
+
+		// Debug options (don't test -dt as its output is not stable)
+		{[]string{"-d", `$1 { print 1+1 }`}, "", `
+$1 {
+    print (1 + 1)
+}
+`[1:], ""},
+		{[]string{"-da", `$1 { print 1+1 }`}, "", `
+        // pattern
+0000    FieldInt 1
+
+        // { body }
+0000    Num 1 (0)
+0002    Num 1 (0)
+0004    Add
+0005    Print 1
+
+`[1:], ""},
+		{[]string{"-d", "-da", `$1 { print 1+1 }`}, "", `
+$1 {
+    print (1 + 1)
+}
+        // pattern
+0000    FieldInt 1
+
+        // { body }
+0000    Num 1 (0)
+0002    Num 1 (0)
+0004    Add
+0005    Print 1
+
+`[1:], ""},
 	}
 
 	for _, test := range tests {
@@ -618,7 +651,7 @@ func TestInputOutputMode(t *testing.T) {
 				}
 			}
 			if stdout != test.output {
-				t.Fatalf("expected %q, got %q", test.output, stdout)
+				t.Fatalf("output differs, got:\n%s\nexpected:\n%s", stdout, test.output)
 			}
 		})
 	}
