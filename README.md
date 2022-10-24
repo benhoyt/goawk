@@ -93,6 +93,7 @@ The intention is for GoAWK to conform to `awk`'s behavior and to the [POSIX AWK 
 Additional features GoAWK has over AWK:
 
 * It has proper support for CSV and TSV files ([read the documentation](https://github.com/benhoyt/goawk/blob/master/docs/csv.md)).
+* It's the only AWK implementation we know with a code coverage feature ([read the documentation](https://github.com/benhoyt/goawk/blob/master/docs/cover.md)).
 * It supports negative field indexes to access fields from the right, for example, `$-1` refers to the last field.
 * It's embeddable in your Go programs! You can even call custom Go functions from your AWK scripts.
 * Most AWK scripts are faster than `awk` and on a par with `gawk`, though usually slower than `mawk`. (See [recent benchmarks](https://benhoyt.com/writings/goawk-compiler-vm/#virtual-machine-results).)
