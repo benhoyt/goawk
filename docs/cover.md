@@ -20,7 +20,7 @@ should run
 
 This generates a file `cover.out` with coverage profile data for the execution of `prog.awk`.
 
-We rely on the Go tool chain to visualize the coverage report, specifically the `go tool cover` command. This command renders a coverage report to HTML. If you don't have Go installed, [install it now](TODO).
+We rely on the Go toolchain to visualize the coverage report, specifically the `go tool cover` command. This command renders a coverage report to HTML. If you don't have Go installed, [install it now](https://go.dev/doc/install).
 
 To write the HTML coverage report (like the one shown in the screenshot above) to a temporary file and open a web browser displaying it, run the following:
 
@@ -34,7 +34,7 @@ To write the HTML file to a specified file instead of launching a web browser, u
 $ go tool cover -html=cover.out -o cover.html
 ```
 
-If you want to see coverage-annotated source code, use the `-d` option in addition to `-covermode`. This might be useful for debugging, or to see how GoAWK's coverage support works under the hood:
+If you want to see coverage-annotated source code, use the `-d` option in addition to `-covermode`. This might be useful for debugging, or to see how GoAWK's coverage feature works under the hood:
 
 ```
 $ goawk -f prog.awk -covermode set -d
