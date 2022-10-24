@@ -1,57 +1,71 @@
-# Code coverage for GoAWK
 
-GoAWK implements code coverage functionality, similar to the one built in the Golang itself (https://go.dev/blog/cover).
+# GoAWK's code coverage feature
 
-![screenshot](cover.png)
+GoAWK implements code coverage functionality, similar to the [code coverage built into Go](https://go.dev/blog/cover). This feature was implemented by Volodymyr Gubarkov ([xonixx](https://github.com/xonixx)), primarily in [PR #154](https://github.com/benhoyt/goawk/pull/154).
 
-## How to use
+Here is a screenshot using GoAWK's coverage feature on a simple AWK program (`prog.awk`):
 
-To generate coverage report:
+![Example code coverage screenshot](cover.png)
+
+
+## Basic usage
+
+The simplest way to generate a coverage report is to run your AWK program with the `-coverprofile` option. To run the program in the default coverage mode and write the coverage report to `cover.out`, run the following:
+
 ```
-goawk -f a.awk -coverprofile c.out -covermode set    
-```
-This generates `c.out` file with coverage profile data for the `a.awk` program execution.
-          
-Now it's time to visualize the coverage report `c.out` by rendering it to HTML.
-
-Please note. The code coverage functionality of GoAWK relies on Golang toolset.
-So to generate the HTML coverage report (like on the screenshot above) use the command below. This opens a web browser displaying annotated source code:
-```
-go tool cover -html=c.out
+$ goawk -f prog.awk -coverprofile cover.out
+will always run
+should run
 ```
 
-Write out an HTML file instead of launching a web browser:
+This generates a file `cover.out` with coverage profile data for the execution of `prog.awk`.
+
+We rely on the Go toolchain to visualize the coverage report, specifically the `go tool cover` command. This command renders a coverage report to HTML. If you don't have Go installed, [install it now](https://go.dev/doc/install).
+
+To write the HTML coverage report (like the one shown in the screenshot above) to a temporary file and open a web browser displaying it, run the following:
+
 ```
-go tool cover -html=c.out -o coverage.html
+$ go tool cover -html=cover.out
 ```
 
-Please note. At the moment it's not possible to generate coverage report for AWK functions, similar to what is possible for Go:
-```
-go tool cover -func=c.out                # this will not work :(
-```
-This won't work because the `go tool cover` functionality for `-func` is only capable of processing the Go code. Luckily, the `-html` report option is generic enough to process any source code! 
+To write the HTML file to a specified file instead of launching a web browser, use `-o`:
 
-If you want to see coverage-annotated source code (this might be useful for debug purposes), just add `-d` flag in addition to `-covermode`:
 ```
-goawk -f a.awk -covermode set -d
+$ go tool cover -html=cover.out -o cover.html
 ```
 
+If you want to see coverage-annotated source code, use the `-d` option in addition to `-covermode`. This might be useful for debugging, or to see how GoAWK's coverage feature works under the hood:
 
-## CLI options for coverage
+```
+$ goawk -f prog.awk -covermode set -d
+BEGIN {
+    __COVER["3"] = 1
+    print "will always run"
+    if ((1 + 1) == 2) {
+        __COVER["1"] = 1
+        print "should run"
+    } else {
+        __COVER["2"] = 1
+        print "won't run"
+    }
+}
+```
 
-- `-coverprofile <file>`
-  - sets the cover report filename to put collected coverage profile data.
-- `-covermode <mode>`
-  - `mode` can be one of:
-    - `set` - did each statement run?
-    - `count` - how many times did each statement run? (Produces heat maps report).
-- `-coverappend`
-  - if this option is provided the profile data will append to existing, otherwise the profile file will be first truncated.
+
+## All command-line options
+
+- `-coverprofile fn`: set the coverage report filename to `fn`. If this option is specified but `-covermode` is not, the coverage mode defaults to `set`.
+- `-covermode mode`: set the coverage mode to `mode`, which can be one of:
+  - `set`: did each statement run?
+  - `count`: how many times did each statement run? (produces a heat map report)
+- `-coverappend`: append to coverage profile instead of overwriting it. This allows you to accumulate coverage data across several different runs of the program.
+
 
 ## Future work
 
-- Add a way to support per-function coverage report similar to `go tool cover -func=c.out`
-- More complete handling for coverage cases for `if/else`. That is not only we want to check if `if` body was visited but also we want to make sure the case where `if` body was *not* visited is also covered. In other words we want to make sure that both variants of `if` condition is covered. 
+- Add a way to support per-function coverage reporting, similar to `go tool cover -func=cover.out`.
+- More complete handling for coverage of `if`/`else` (see [details](https://github.com/benhoyt/goawk/pull/154#discussion_r996465307)).
+
 
 ## Feedback
 
