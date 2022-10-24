@@ -652,7 +652,7 @@ age,email,name Sarah 25
 }
 
 func TestCSVDocExamples(t *testing.T) {
-	f, err := os.Open("csv.md")
+	f, err := os.Open("docs/csv.md")
 	if err != nil {
 		t.Fatalf("error opening examples file: %v", err)
 	}

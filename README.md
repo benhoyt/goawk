@@ -6,7 +6,7 @@
 
 AWK is a fascinating text-processing language, and somehow after reading the delightfully-terse [*The AWK Programming Language*](https://ia802309.us.archive.org/25/items/pdfy-MgN0H1joIoDVoIC7/The_AWK_Programming_Language.pdf) I was inspired to write an interpreter for it in Go. So here it is, feature-complete and tested against "the one true AWK" and GNU AWK test suites.
 
-GoAWK is a POSIX-compatible version of AWK, and additionally has a CSV mode for reading and writing CSV and TSV files. This feature was sponsored by the [library of the University of Antwerp](https://www.uantwerpen.be/en/library/). Read the [CSV documentation](https://github.com/benhoyt/goawk/blob/master/csv.md).
+GoAWK is a POSIX-compatible version of AWK, and additionally has a CSV mode for reading and writing CSV and TSV files. This feature was sponsored by the [library of the University of Antwerp](https://www.uantwerpen.be/en/library/). Read the [CSV documentation](https://github.com/benhoyt/goawk/blob/master/docs/csv.md).
 
 You can also read one of the articles I've written about GoAWK:
 
@@ -92,7 +92,7 @@ The intention is for GoAWK to conform to `awk`'s behavior and to the [POSIX AWK 
 
 Additional features GoAWK has over AWK:
 
-* It has proper support for CSV and TSV files ([read the documentation](https://github.com/benhoyt/goawk/blob/master/csv.md)).
+* It has proper support for CSV and TSV files ([read the documentation](https://github.com/benhoyt/goawk/blob/master/docs/csv.md)).
 * It supports negative field indexes to access fields from the right, for example, `$-1` refers to the last field.
 * It's embeddable in your Go programs! You can even call custom Go functions from your AWK scripts.
 * Most AWK scripts are faster than `awk` and on a par with `gawk`, though usually slower than `mawk`. (See [recent benchmarks](https://benhoyt.com/writings/goawk-compiler-vm/#virtual-machine-results).)
