@@ -64,7 +64,7 @@ BEGIN {
 ## Future work
 
 - Add a way to support per-function coverage reporting, similar to `go tool cover -func=cover.out`.
-- More complete handling for coverage of `if`/`else`. Not only do we want to check if the `if` body was visited, but we also want to handle the case where the `if` body was *not* visited.
+- More complete handling for coverage of `if`/`else` (see [details](https://github.com/benhoyt/goawk/pull/154#discussion_r996465307)).
 
 
 ## Feedback
