@@ -224,13 +224,13 @@ United Plates
 
 ### Example: use the `FIELDS` array
 
-A somewhat contrived example showing use of the `FIELDS` array:
+A somewhat contrived example showing use of the `FIELDS` array to show a numbered list of all fields:
 
 ```
 $ cat testdata/csv/fields.csv
 id,name,email
 1,Bob,b@bob.com
-$ goawk -i csv -H '{ for (i=1; i in FIELDS; i++) print i, FIELDS[i] }' testdata/csv/fields.csv
+$ goawk -i csv -H '{ for (i=1; i in FIELDS; i++) print i, FIELDS[i]; exit }' testdata/csv/fields.csv
 1 id
 2 name
 3 email
