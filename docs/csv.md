@@ -25,7 +25,7 @@ Links to sections:
 
 When in CSV input mode, GoAWK ignores the regular field and record separators (`FS` and `RS`), instead parsing input into records and fields using the CSV or TSV format. Fields can be accessed using the standard AWK numbered field syntax (for example, `$1` or `$5`), or using the GoAWK-specific [named field syntax](#named-field-syntax).
 
-To enable CSV input mode when using the `goawk` program, use the `-i mode` command line argument. You can also enable CSV input mode by setting the `INPUTMODE` special variable in the `BEGIN` block, or by using the [Go API](#go-api). The full syntax of `mode` is as follows:
+To enable CSV input mode when using the `goawk` program, use the `-i mode` command line argument (`mode` must be quoted if it has spaces in it). You can also enable CSV input mode by setting the `INPUTMODE` special variable in the `BEGIN` block, or by using the [Go API](#go-api). The full syntax of `mode` is as follows:
 
 ```
 csv|tsv [separator=<char>] [comment=<char>] [header]
@@ -45,7 +45,7 @@ When in CSV output mode, the GoAWK `print` statement with one or more arguments 
 
 **NOTE:** The behaviour of `print` without arguments remains unchanged. This means you can print the input line (`$0`) without further quoting by using a bare `print` statement, but `print $0` will print the input line as a single CSV field, which is probably not what you want. See the [example](#example-convert-between-formats-all-fields) below.
 
-To enable CSV output mode when using the `goawk` program, use the `-o mode` command line argument. You can also enable CSV output mode by setting the `OUTPUTMODE` special variable in the `BEGIN` block, or by using the [Go API](#go-api). The full syntax of `mode` is as follows:
+To enable CSV output mode when using the `goawk` program, use the `-o mode` command line argument (`mode` must be quoted if it has spaces in it). You can also enable CSV output mode by setting the `OUTPUTMODE` special variable in the `BEGIN` block, or by using the [Go API](#go-api). The full syntax of `mode` is as follows:
 
 ```
 csv|tsv [separator=<char>]
@@ -116,6 +116,16 @@ To output a field by name (in this case the state's abbreviation):
 
 ```
 $ goawk -i csv -H '{ print @"Abbreviation" }' testdata/csv/states.csv
+AL
+AK
+AZ
+...
+```
+
+You can also use `-i 'csv header'` to specify "header mode" instead of `-i csv -H` -- using `-H` is slightly less typing, but they're equivalent:
+
+```
+$ goawk -i 'csv header' '{ print @"Abbreviation" }' testdata/csv/states.csv
 AL
 AK
 AZ
