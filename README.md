@@ -34,13 +34,6 @@ $ echo -e 'name,amount\nBob,17.50\nJill,20\n"Boba Fett",100.00' | \
 137.5
 ```
 
-On Windows, `"` is the shell quoting character, so use `"` around the entire AWK program on the command line, and use `'` around AWK strings -- this is a non-POSIX extension to make GoAWK easier to use on Windows:
-
-```powershell
-C:\> goawk "BEGIN { print 'foo', 42 }"
-foo 42
-```
-
 To use it in your Go programs, you can call `interp.Exec()` directly for simple needs:
 
 ```go
@@ -97,7 +90,7 @@ Additional features GoAWK has over AWK:
 * It supports negative field indexes to access fields from the right, for example, `$-1` refers to the last field.
 * It's embeddable in your Go programs! You can even call custom Go functions from your AWK scripts.
 * Most AWK scripts are faster than `awk` and on a par with `gawk`, though usually slower than `mawk`. (See [recent benchmarks](https://benhoyt.com/writings/goawk-compiler-vm/#virtual-machine-results).)
-* The parser supports `'single-quoted strings'` in addition to `"double-quoted strings"`, primarily to make Windows one-liners easier (the Windows `cmd.exe` shell uses `"` as the quote character).
+* The parser supports `'single-quoted strings'` in addition to `"double-quoted strings"`, primarily to make Windows one-liners easier when using the `cmd.exe` shell (which uses `"` as the quote character).
 
 Things AWK has over GoAWK:
 
