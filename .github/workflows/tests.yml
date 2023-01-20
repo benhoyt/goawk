@@ -77,4 +77,5 @@ jobs:
     - name: Build and Test
       run: |
         gawk --version
+        export MallocNanoZone=0  # Fix SIGABRT with -race on macOS: https://github.com/golang/go/issues/49138
         go test -race ./...
