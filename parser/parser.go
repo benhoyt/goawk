@@ -664,27 +664,13 @@ func (p *parser) mul() ast.Expr {
 
 func (p *parser) pow() ast.Expr {
 	// Note that pow (expr ^ expr) is right-associative
-	expr := p.preIncr()
+	expr := p.postIncr()
 	if p.tok == POW {
 		p.next()
 		right := p.pow()
 		return &ast.BinaryExpr{expr, POW, right}
 	}
 	return expr
-}
-
-func (p *parser) preIncr() ast.Expr {
-	if p.tok == INCR || p.tok == DECR {
-		op := p.tok
-		p.next()
-		exprPos := p.pos
-		expr := p.preIncr()
-		if !ast.IsLValue(expr) {
-			panic(ast.PosErrorf(exprPos, "expected lvalue after ++ or --"))
-		}
-		return &ast.IncrExpr{expr, op, true}
-	}
-	return p.postIncr()
 }
 
 func (p *parser) postIncr() ast.Expr {
@@ -724,6 +710,15 @@ func (p *parser) primary() ast.Expr {
 		op := p.tok
 		p.next()
 		return &ast.UnaryExpr{op, p.pow()}
+	case INCR, DECR:
+		op := p.tok
+		p.next()
+		exprPos := p.pos
+		expr := p.optionalLValue()
+		if expr == nil {
+			panic(ast.PosErrorf(exprPos, "expected lvalue after %s", op))
+		}
+		return &ast.IncrExpr{expr, op, true}
 	case NAME:
 		name := p.val
 		namePos := p.pos
