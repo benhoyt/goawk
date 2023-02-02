@@ -430,7 +430,7 @@ func TestCommandLine(t *testing.T) {
 		{[]string{"`"}, "", "", "<cmdline>:1:1: unexpected char\n`\n^"},
 		{[]string{"BEGIN {\n\tx*;\n}"}, "", "", "<cmdline>:2:4: expected expression instead of ;\n    x*;\n      ^"},
 		{[]string{"BEGIN {\n\tx*\r\n}"}, "", "", "<cmdline>:2:4: expected expression instead of <newline>\n    x*\n      ^"},
-		{[]string{"-f", "-"}, "\n ++", "", "<stdin>:2:4: expected expression instead of <newline>\n ++\n   ^"},
+		{[]string{"-f", "-"}, "\n $", "", "<stdin>:2:3: expected expression instead of <newline>\n $\n  ^"},
 		{[]string{"-f", "testdata/parseerror/good.awk", "-f", "testdata/parseerror/bad.awk"},
 			"", "", "testdata/parseerror/bad.awk:2:3: expected expression instead of <newline>\nx*\n  ^"},
 		{[]string{"-f", "testdata/parseerror/bad.awk", "-f", "testdata/parseerror/good.awk"},
@@ -467,7 +467,10 @@ func runGoAWK(args []string, stdin string) (stdout, stderr string, err error) {
 }
 
 func runAWKs(t *testing.T, testArgs []string, testStdin, testOutput, testError string) {
+	t.Helper()
+
 	t.Run("awk", func(t *testing.T) {
+		t.Helper()
 		var args []string
 		if strings.Contains(awkExe, "gawk") {
 			args = append(args, "--posix")
@@ -496,6 +499,7 @@ func runAWKs(t *testing.T, testArgs []string, testStdin, testOutput, testError s
 	})
 
 	t.Run("goawk", func(t *testing.T) {
+		t.Helper()
 		stdout, stderr, err := runGoAWK(testArgs, testStdin)
 		if err != nil {
 			stderr = strings.TrimSpace(stderr)
