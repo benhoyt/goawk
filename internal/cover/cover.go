@@ -243,7 +243,7 @@ func (cover *Cover) trackStatement(stmts []ast.Stmt) ast.Stmt {
 	})
 	left := &ast.IndexExpr{
 		Array: ast.ArrayRef(ArrayName, lexer.Position{}),
-		Index: []ast.Expr{&ast.StrExpr{Value: strconv.Itoa(len(cover.trackedBlocks))}},
+		Index: []ast.Expr{&ast.NumExpr{Value: float64(len(cover.trackedBlocks))}},
 	}
 	if cover.mode == ModeCount {
 		// AST for __COVER[index]++
