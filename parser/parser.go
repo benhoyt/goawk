@@ -530,35 +530,55 @@ func (p *parser) getLine() ast.Expr {
 // An lvalue is a variable name, an array[expr] index expression, or
 // an $expr field expression.
 func (p *parser) _assign(higher func() ast.Expr) ast.Expr {
+	leftPos := p.pos
 	expr := higher()
-	_, isNamedField := expr.(*ast.NamedFieldExpr)
-	if (isNamedField || ast.IsLValue(expr)) && p.matches(ASSIGN, ADD_ASSIGN, DIV_ASSIGN,
-		MOD_ASSIGN, MUL_ASSIGN, POW_ASSIGN, SUB_ASSIGN) {
+	if p.matches(ASSIGN, ADD_ASSIGN, DIV_ASSIGN, MOD_ASSIGN, MUL_ASSIGN, POW_ASSIGN, SUB_ASSIGN) {
+		_, isNamedField := expr.(*ast.NamedFieldExpr)
 		if isNamedField {
 			panic(p.errorf("assigning @ expression not supported"))
 		}
 		op := p.tok
 		p.next()
 		right := p._assign(higher)
-		switch op {
-		case ASSIGN:
-			return &ast.AssignExpr{expr, right}
-		case ADD_ASSIGN:
-			op = ADD
-		case DIV_ASSIGN:
-			op = DIV
-		case MOD_ASSIGN:
-			op = MOD
-		case MUL_ASSIGN:
-			op = MUL
-		case POW_ASSIGN:
-			op = POW
-		case SUB_ASSIGN:
-			op = SUB
+		if !ast.IsLValue(expr) {
+			// Partial backtracking to allow expressions like "1 && x=1",
+			// which isn't really valid, as assignments are lower-precedence
+			// than binary operators, but onetrueawk, Gawk, and mawk all
+			// support this for logical, match and comparison operators. See
+			// issue #166.
+			binary, isBinary := expr.(*ast.BinaryExpr)
+			if isBinary && ast.IsLValue(binary.Right) {
+				switch binary.Op {
+				case AND, OR, MATCH, NOT_MATCH, EQUALS, NOT_EQUALS, LESS, LTE, GTE, GREATER:
+					assign := makeAssign(binary.Right, op, right)
+					return &ast.BinaryExpr{binary.Left, binary.Op, assign}
+				}
+			}
+			panic(ast.PosErrorf(leftPos, "expected lvalue before %s", op))
 		}
-		return &ast.AugAssignExpr{expr, op, right}
+		return makeAssign(expr, op, right)
 	}
 	return expr
+}
+
+func makeAssign(left ast.Expr, op Token, right ast.Expr) ast.Expr {
+	switch op {
+	case ASSIGN:
+		return &ast.AssignExpr{left, right}
+	case ADD_ASSIGN:
+		op = ADD
+	case DIV_ASSIGN:
+		op = DIV
+	case MOD_ASSIGN:
+		op = MOD
+	case MUL_ASSIGN:
+		op = MUL
+	case POW_ASSIGN:
+		op = POW
+	case SUB_ASSIGN:
+		op = SUB
+	}
+	return &ast.AugAssignExpr{left, op, right}
 }
 
 // Parse a ?: conditional expression:
