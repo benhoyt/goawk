@@ -1,1 +1,1 @@
-parse error at 1:14: expected ; or newline between statements
+parse error at 1:9: expected lvalue before =

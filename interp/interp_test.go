@@ -470,6 +470,10 @@ BEGIN {
 	{`function inca(a, k, n) { a[k] += n }  BEGIN { b["x"]=7; inca(b, "x", 2); print b["x"] }`, "", "9\n", "", ""},
 	{`BEGIN { NF += 3; print NF }`, "", "3\n", "", ""},
 	{`BEGIN { x=1; x += x+=3; print x }`, "", "8\n", "", ""},
+	{`BEGIN { if (1&&x=2) print "t", x }`, "", "t 2\n", "", ""},
+	{`BEGIN { if (0||x+=2) print "t", x }`, "", "t 2\n", "", ""},
+	{`BEGIN { print(1&&x=2, 1||x=2, 1~x=2, 1!~x=2, 1==x=2, 1!=x=2, 1<x=2, 1<=x=2, 1>x=2, 1>=x=2); print x }`,
+		"", "1 1 0 1 0 1 1 1 0 0\n2\n", "", ""},
 
 	// Incr/decr expressions
 	{`BEGIN { print x++; print x }`, "", "0\n1\n", "", ""},
@@ -843,6 +847,8 @@ BEGIN { foo(5); bar(10) }
 	{`BEGIN { print 1&*2 }`, "", "", "parse error at 1:17: unexpected char after '&'", "syntax"},
 	{"BEGIN { ` }", "", "", "parse error at 1:9: unexpected char", "invalid char"},
 	{"BEGIN { ++3 }", "", "", "parse error at 1:11: expected lvalue after ++", "syntax"},
+	{"BEGIN { rand() = 1 }", "", "", "parse error at 1:9: expected lvalue before =", "syntax"},
+	{"BEGIN { 1 && rand()=1 }", "", "", "parse error at 1:9: expected lvalue before =", "syntax"},
 
 	// Hex floating point and other number conversions
 	{`{ print $1+0 }  # +posix`, `
