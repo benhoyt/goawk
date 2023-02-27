@@ -98,6 +98,9 @@ func Walk(v Visitor, node Node) {
 		Walk(v, n.Target)
 		Walk(v, n.File)
 
+	case *GroupingExpr:
+		Walk(v, n.Expr)
+
 	// statements
 	case *PrintStmt:
 		WalkExprList(v, n.Args)

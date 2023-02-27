@@ -110,6 +110,7 @@ func (e *CallExpr) node()       {}
 func (e *UserCallExpr) node()   {}
 func (e *MultiExpr) node()      {}
 func (e *GetlineExpr) node()    {}
+func (e *GroupingExpr) node()   {}
 func (s *PrintStmt) node()      {}
 func (s *PrintfStmt) node()     {}
 func (s *ExprStmt) node()       {}
@@ -129,30 +130,89 @@ func (s *BlockStmt) node()      {}
 // Expr is the abstract syntax tree for any AWK expression.
 type Expr interface {
 	Node
-	expr()
+	precedence() int
 	String() string
 }
 
+// Table of operator precedence, lowest to highest
+const (
+	precAssign = iota
+	precCond
+	precOr
+	precAnd
+	precIn
+	precMatch
+	precCompare
+	precConcat
+	precAdd
+	precMul
+	precUnary
+	precPower
+	precPreIncr
+	precPostIncr
+	precField
+	precPrimary
+	precGrouping
+)
+
 // All these types implement the Expr interface.
-func (e *FieldExpr) expr()      {}
-func (e *NamedFieldExpr) expr() {}
-func (e *UnaryExpr) expr()      {}
-func (e *BinaryExpr) expr()     {}
-func (e *ArrayExpr) expr()      {}
-func (e *InExpr) expr()         {}
-func (e *CondExpr) expr()       {}
-func (e *NumExpr) expr()        {}
-func (e *StrExpr) expr()        {}
-func (e *RegExpr) expr()        {}
-func (e *VarExpr) expr()        {}
-func (e *IndexExpr) expr()      {}
-func (e *AssignExpr) expr()     {}
-func (e *AugAssignExpr) expr()  {}
-func (e *IncrExpr) expr()       {}
-func (e *CallExpr) expr()       {}
-func (e *UserCallExpr) expr()   {}
-func (e *MultiExpr) expr()      {}
-func (e *GetlineExpr) expr()    {}
+func (e *FieldExpr) precedence() int      { return precField }
+func (e *NamedFieldExpr) precedence() int { return precField }
+func (e *UnaryExpr) precedence() int      { return precUnary }
+func (e *ArrayExpr) precedence() int      { return precPrimary }
+func (e *InExpr) precedence() int         { return precIn }
+func (e *CondExpr) precedence() int       { return precCond }
+func (e *NumExpr) precedence() int        { return precPrimary }
+func (e *StrExpr) precedence() int        { return precPrimary }
+func (e *RegExpr) precedence() int        { return precPrimary }
+func (e *VarExpr) precedence() int        { return precPrimary }
+func (e *IndexExpr) precedence() int      { return precPrimary }
+func (e *AssignExpr) precedence() int     { return precAssign }
+func (e *AugAssignExpr) precedence() int  { return precAssign }
+func (e *CallExpr) precedence() int       { return precPrimary }
+func (e *UserCallExpr) precedence() int   { return precPrimary }
+func (e *MultiExpr) precedence() int      { return precPrimary }
+func (e *GetlineExpr) precedence() int    { return precPrimary }
+func (e *GroupingExpr) precedence() int   { return precGrouping }
+
+func (e *IncrExpr) precedence() int {
+	if e.Pre {
+		return precPreIncr
+	}
+	return precPostIncr
+}
+
+func (e *BinaryExpr) precedence() int {
+	switch e.Op {
+	case AND:
+		return precAnd
+	case OR:
+		return precOr
+	case CONCAT:
+		return precConcat
+	case ADD, SUB:
+		return precAdd
+	case MUL, DIV, MOD:
+		return precMul
+	case EQUALS, LESS, LTE, GREATER, GTE, NOT_EQUALS:
+		return precCompare
+	case MATCH, NOT_MATCH:
+		return precMatch
+	case POW:
+		return precPower
+	default:
+		return precPrimary
+	}
+}
+
+// parenthesize returns the string version of e, surrounding it in
+// parentheses if e's precedence is lower than that of other.
+func parenthesize(e, other Expr) string {
+	if e.precedence() < other.precedence() {
+		return "(" + e.String() + ")"
+	}
+	return e.String()
+}
 
 // FieldExpr is an expression like $0.
 type FieldExpr struct {
@@ -160,7 +220,7 @@ type FieldExpr struct {
 }
 
 func (e *FieldExpr) String() string {
-	return "$" + e.Index.String()
+	return "$" + parenthesize(e.Index, e)
 }
 
 // NamedFieldExpr is an expression like @"name".
@@ -169,7 +229,7 @@ type NamedFieldExpr struct {
 }
 
 func (e *NamedFieldExpr) String() string {
-	return "@" + e.Field.String()
+	return "@" + parenthesize(e.Field, e)
 }
 
 // UnaryExpr is an expression like -1234.
@@ -179,7 +239,7 @@ type UnaryExpr struct {
 }
 
 func (e *UnaryExpr) String() string {
-	return e.Op.String() + e.Value.String()
+	return e.Op.String() + parenthesize(e.Value, e)
 }
 
 // BinaryExpr is an expression like 1 + 2.
@@ -190,13 +250,13 @@ type BinaryExpr struct {
 }
 
 func (e *BinaryExpr) String() string {
-	var opStr string
+	var op string
 	if e.Op == CONCAT {
-		opStr = " "
+		op = " "
 	} else {
-		opStr = " " + e.Op.String() + " "
+		op = " " + e.Op.String() + " "
 	}
-	return "(" + e.Left.String() + opStr + e.Right.String() + ")"
+	return parenthesize(e.Left, e) + op + parenthesize(e.Right, e)
 }
 
 // ArrayExpr is an array reference. Not really a stand-alone
@@ -221,13 +281,13 @@ type InExpr struct {
 
 func (e *InExpr) String() string {
 	if len(e.Index) == 1 {
-		return "(" + e.Index[0].String() + " in " + e.Array.String() + ")"
+		return parenthesize(e.Index[0], e) + " in " + e.Array.String()
 	}
 	indices := make([]string, len(e.Index))
 	for i, index := range e.Index {
 		indices[i] = index.String()
 	}
-	return "((" + strings.Join(indices, ", ") + ") in " + e.Array.String() + ")"
+	return "(" + strings.Join(indices, ", ") + ") in " + e.Array.String()
 }
 
 // CondExpr is an expression like cond ? 1 : 0.
@@ -238,7 +298,7 @@ type CondExpr struct {
 }
 
 func (e *CondExpr) String() string {
-	return "(" + e.Cond.String() + " ? " + e.True.String() + " : " + e.False.String() + ")"
+	return parenthesize(e.Cond, e) + " ? " + parenthesize(e.True, e) + " : " + parenthesize(e.False, e)
 }
 
 // NumExpr is a literal number like 1234.
@@ -320,7 +380,7 @@ type AssignExpr struct {
 }
 
 func (e *AssignExpr) String() string {
-	return e.Left.String() + " = " + e.Right.String()
+	return parenthesize(e.Left, e) + " = " + parenthesize(e.Right, e)
 }
 
 // AugAssignExpr is an assignment expression like x += 5.
@@ -331,7 +391,7 @@ type AugAssignExpr struct {
 }
 
 func (e *AugAssignExpr) String() string {
-	return e.Left.String() + " " + e.Op.String() + "= " + e.Right.String()
+	return parenthesize(e.Left, e) + " " + e.Op.String() + "= " + parenthesize(e.Right, e)
 }
 
 // IncrExpr is an increment or decrement expression like x++ or --y.
@@ -343,9 +403,9 @@ type IncrExpr struct {
 
 func (e *IncrExpr) String() string {
 	if e.Pre {
-		return e.Op.String() + e.Expr.String()
+		return e.Op.String() + parenthesize(e.Expr, e)
 	} else {
-		return e.Expr.String() + e.Op.String()
+		return parenthesize(e.Expr, e) + e.Op.String()
 	}
 }
 
@@ -407,16 +467,25 @@ type GetlineExpr struct {
 func (e *GetlineExpr) String() string {
 	s := ""
 	if e.Command != nil {
-		s += e.Command.String() + " |"
+		s += parenthesize(e.Command, e) + " |"
 	}
 	s += "getline"
 	if e.Target != nil {
 		s += " " + e.Target.String()
 	}
 	if e.File != nil {
-		s += " <" + e.File.String()
+		s += " <" + parenthesize(e.File, e)
 	}
 	return s
+}
+
+// GroupingExpr is a parenthesized grouping expression.
+type GroupingExpr struct {
+	Expr Expr
+}
+
+func (e *GroupingExpr) String() string {
+	return "(" + e.Expr.String() + ")"
 }
 
 // IsLValue returns true if the given expression can be used as an
