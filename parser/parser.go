@@ -768,7 +768,7 @@ func (p *parser) primary() ast.Expr {
 			panic(p.errorf("expected expression, not %s", p.tok))
 		case 1:
 			p.expect(RPAREN)
-			return exprs[0]
+			return &ast.GroupingExpr{exprs[0]}
 		default:
 			// Multi-dimensional array "in" requires parens around index
 			p.expect(RPAREN)

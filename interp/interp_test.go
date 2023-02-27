@@ -490,6 +490,7 @@ BEGIN {
 	{`BEGIN { NF++; print NF }`, "", "1\n", "", ""},
 	{"{ print $++n; print $--n }", "x y", "x\nx y\n", "", ""},
 	{"{ print $++a }", "1 2 3\na b c\nd e f\n", "1\nb\nf\n", "", ""},
+	{"BEGIN{ a = 3; b = 7; c = (a)++b; print a, b, c }", "", "3 8 38\n", "", ""},
 
 	// Builtin functions
 	{`BEGIN { print sin(0), sin(0.5), sin(1), sin(-1) }`, "", "0 0.479426 0.841471 -0.841471\n", "", ""},
@@ -847,6 +848,7 @@ BEGIN { foo(5); bar(10) }
 	{`BEGIN { print 1&*2 }`, "", "", "parse error at 1:17: unexpected char after '&'", "syntax"},
 	{"BEGIN { ` }", "", "", "parse error at 1:9: unexpected char", "invalid char"},
 	{"BEGIN { ++3 }", "", "", "parse error at 1:11: expected lvalue after ++", "syntax"},
+	{"BEGIN { ($i)++ }", "", "", "parse error at 1:16: expected lvalue after ++", "syntax"},
 	{"BEGIN { rand() = 1 }", "", "", "parse error at 1:9: expected lvalue before =", "syntax"},
 	{"BEGIN { 1 && rand()=1 }", "", "", "parse error at 1:9: expected lvalue before =", "syntax"},
 

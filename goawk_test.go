@@ -613,7 +613,7 @@ func TestGoAWKSpecificOptions(t *testing.T) {
 		// Debug options (don't test -dt as its output is not stable)
 		{[]string{"-d", `$1 { print 1+1 }`}, "", `
 $1 {
-    print (1 + 1)
+    print 1 + 1
 }
 `[1:], ""},
 		{[]string{"-da", `$1 { print 1+1 }`}, "", `
@@ -629,7 +629,7 @@ $1 {
 `[1:], ""},
 		{[]string{"-d", "-da", `$1 { print 1+1 }`}, "", `
 $1 {
-    print (1 + 1)
+    print 1 + 1
 }
         // pattern
 0000    FieldInt 1

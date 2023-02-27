@@ -881,6 +881,9 @@ func (c *compiler) expr(expr ast.Expr) {
 			c.add(Getline, redirect())
 		}
 
+	case *ast.GroupingExpr:
+		c.expr(e.Expr)
+
 	default:
 		// Should never happen
 		panic(fmt.Sprintf("unexpected expr type: %T", expr))
