@@ -271,7 +271,7 @@ func (p *parser) simpleStmt() ast.Stmt {
 			p.expect(RBRACKET)
 		}
 		return &ast.DeleteStmt{ref, index, startPos, p.pos}
-	case IF, FOR, WHILE, DO, BREAK, CONTINUE, NEXT, EXIT, RETURN:
+	case IF, FOR, WHILE, DO, BREAK, CONTINUE, NEXT, NEXTFILE, EXIT, RETURN:
 		panic(p.errorf("expected print/printf, delete, or expression"))
 	default:
 		return &ast.ExprStmt{p.expr(), startPos, p.pos}
@@ -394,6 +394,12 @@ func (p *parser) stmt() ast.Stmt {
 		}
 		p.next()
 		s = &ast.NextStmt{startPos, p.pos}
+	case NEXTFILE:
+		if !p.inAction && p.funcName == "" {
+			panic(p.errorf("nextfile can't be inside BEGIN or END"))
+		}
+		p.next()
+		s = &ast.NextfileStmt{startPos, p.pos}
 	case EXIT:
 		p.next()
 		var status ast.Expr

@@ -63,6 +63,7 @@ $0 {
         exit status
     } while (x)
     next
+    nextfile
     "cmd" |getline
     "cmd" |getline x
     "cmd" |getline a[1]

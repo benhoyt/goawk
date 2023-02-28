@@ -416,6 +416,9 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 	case *ast.NextStmt:
 		c.add(Next)
 
+	case *ast.NextfileStmt:
+		c.add(Nextfile)
+
 	case *ast.ExitStmt:
 		if s.Status != nil {
 			c.expr(s.Status)

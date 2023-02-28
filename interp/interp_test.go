@@ -170,11 +170,15 @@ BEGIN {
 }
 `, "", "0 0\n", "", ""},
 
-	// next statement
+	// next and nextfile statements (more tests of nextfile in goawk_test.go)
 	{`{ if (NR==2) next; print }`, "a\nb\nc", "a\nc\n", "", ""},
 	{`{ if (NR==2) f(); print }  function f() { next }`, "a\nb\nc", "a\nc\n", "", ""},
 	{`BEGIN { next }`, "", "", "parse error at 1:9: next can't be inside BEGIN or END", "BEGIN"},
 	{`END { next }`, "", "", "parse error at 1:7: next can't be inside BEGIN or END", "END"},
+	{`{ if (NR==2) nextfile; print }`, "a\nb\nc", "a\n", "", ""},
+	{`{ if (NR==2) f(); print }  function f() { nextfile }`, "a\nb\nc", "a\n", "", ""},
+	{`BEGIN { nextfile }`, "", "", "parse error at 1:9: nextfile can't be inside BEGIN or END", "BEGIN"},
+	{`END { nextfile }`, "", "", "parse error at 1:7: nextfile can't be inside BEGIN or END", "END"},
 
 	// Arrays, "in", and delete
 	{`BEGIN { a["x"] = 3; print "x" in a, "y" in a }`, "", "1 0\n", "", ""},

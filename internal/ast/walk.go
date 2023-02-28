@@ -140,6 +140,7 @@ func Walk(v Visitor, node Node) {
 	case *BreakStmt: // leaf
 	case *ContinueStmt: // leaf
 	case *NextStmt: // leaf
+	case *NextfileStmt: // leaf
 	case *ExitStmt:
 		Walk(v, n.Status)
 

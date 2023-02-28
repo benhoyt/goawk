@@ -122,6 +122,7 @@ func (s *DoWhileStmt) node()    {}
 func (s *BreakStmt) node()      {}
 func (s *ContinueStmt) node()   {}
 func (s *NextStmt) node()       {}
+func (s *NextfileStmt) node()   {}
 func (s *ExitStmt) node()       {}
 func (s *DeleteStmt) node()     {}
 func (s *ReturnStmt) node()     {}
@@ -521,6 +522,7 @@ func (s *DoWhileStmt) stmt()  {}
 func (s *BreakStmt) stmt()    {}
 func (s *ContinueStmt) stmt() {}
 func (s *NextStmt) stmt()     {}
+func (s *NextfileStmt) stmt() {}
 func (s *ExitStmt) stmt()     {}
 func (s *DeleteStmt) stmt()   {}
 func (s *ReturnStmt) stmt()   {}
@@ -537,6 +539,7 @@ func (s *DoWhileStmt) StartPos() Position  { return s.Start }
 func (s *BreakStmt) StartPos() Position    { return s.Start }
 func (s *ContinueStmt) StartPos() Position { return s.Start }
 func (s *NextStmt) StartPos() Position     { return s.Start }
+func (s *NextfileStmt) StartPos() Position { return s.Start }
 func (s *ExitStmt) StartPos() Position     { return s.Start }
 func (s *DeleteStmt) StartPos() Position   { return s.Start }
 func (s *ReturnStmt) StartPos() Position   { return s.Start }
@@ -553,6 +556,7 @@ func (s *DoWhileStmt) EndPos() Position  { return s.End }
 func (s *BreakStmt) EndPos() Position    { return s.End }
 func (s *ContinueStmt) EndPos() Position { return s.End }
 func (s *NextStmt) EndPos() Position     { return s.End }
+func (s *NextfileStmt) EndPos() Position { return s.End }
 func (s *ExitStmt) EndPos() Position     { return s.End }
 func (s *DeleteStmt) EndPos() Position   { return s.End }
 func (s *ReturnStmt) EndPos() Position   { return s.End }
@@ -719,6 +723,16 @@ type NextStmt struct {
 
 func (s *NextStmt) String() string {
 	return "next"
+}
+
+// NextfileStmt is a nextfile statement.
+type NextfileStmt struct {
+	Start Position
+	End   Position
+}
+
+func (s *NextfileStmt) String() string {
+	return "nextfile"
 }
 
 // ExitStmt is an exit statement.

@@ -426,6 +426,18 @@ func TestCommandLine(t *testing.T) {
 		{[]string{`BEGIN { print "1"; print "2"|"cat" }`}, "", "1\n2\n", ""},
 		{[]string{`BEGIN { print "1"; "echo 2" | getline x; print x }`}, "", "1\n2\n", ""},
 
+		// The "nextfile" statement
+		{[]string{`{ print FILENAME ":" FNR "/" NR ": " $0 }  FNR==2 { nextfile }`,
+			"testdata/g.5", "-", "testdata/g.6"},
+			"a\nb\nc\n", `
+testdata/g.5:1/1: one
+testdata/g.5:2/2: two 2
+-:1/3: a
+-:2/4: b
+testdata/g.6:1/5: Uno
+testdata/g.6:2/6: Duo
+`[1:], ""},
+
 		// Parse error formatting
 		{[]string{"`"}, "", "", "<cmdline>:1:1: unexpected char\n`\n^"},
 		{[]string{"BEGIN {\n\tx*;\n}"}, "", "", "<cmdline>:2:4: expected expression instead of ;\n    x*;\n      ^"},

@@ -34,9 +34,10 @@ import (
 )
 
 var (
-	errExit  = errors.New("exit")
-	errBreak = errors.New("break")
-	errNext  = errors.New("next")
+	errExit     = errors.New("exit")
+	errBreak    = errors.New("break")
+	errNext     = errors.New("next")
+	errNextfile = errors.New("nextfile")
 
 	errCSVSeparator = errors.New("invalid CSV field separator or comment delimiter")
 
@@ -662,11 +663,15 @@ lineLoop:
 
 			// Execute the body statements
 			err := p.execute(action.Body)
-			if err == errNext {
+			switch {
+			case err == errNext:
 				// "next" statement skips straight to next line
 				continue lineLoop
-			}
-			if err != nil {
+			case err == errNextfile:
+				// Tell nextLine to move on to next file
+				p.scanner = nil
+				continue lineLoop
+			case err != nil:
 				return err
 			}
 		}
