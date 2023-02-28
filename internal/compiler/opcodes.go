@@ -107,6 +107,7 @@ const (
 	JumpLessOrEqual    // offset
 	JumpGreaterOrEqual // offset
 	Next
+	Nextfile
 	Exit
 	ForIn // varScope varIndex arrayScope arrayIndex offset
 	BreakForIn

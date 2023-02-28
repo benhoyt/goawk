@@ -70,6 +70,7 @@ const (
 	IF
 	IN
 	NEXT
+	NEXTFILE
 	PRINT
 	PRINTF
 	RETURN
@@ -127,6 +128,7 @@ var keywordTokens = map[string]Token{
 	"if":       IF,
 	"in":       IN,
 	"next":     NEXT,
+	"nextfile": NEXTFILE,
 	"print":    PRINT,
 	"printf":   PRINTF,
 	"return":   RETURN,
@@ -223,6 +225,7 @@ var tokenNames = map[Token]string{
 	IF:       "if",
 	IN:       "in",
 	NEXT:     "next",
+	NEXTFILE: "nextfile",
 	PRINT:    "print",
 	PRINTF:   "printf",
 	RETURN:   "return",
