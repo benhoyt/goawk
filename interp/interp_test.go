@@ -973,6 +973,7 @@ func TestInterp(t *testing.T) {
 				}
 				args = append(args, test.src, "-")
 				cmd := exec.Command(awkExe, args...)
+				cmd.Env = []string{"LC_ALL=en_US.UTF-8"}
 				if test.in != "" {
 					cmd.Stdin = strings.NewReader(test.in)
 				}

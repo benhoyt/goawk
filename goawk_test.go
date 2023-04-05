@@ -489,6 +489,7 @@ func runAWKs(t *testing.T, testArgs []string, testStdin, testOutput, testError s
 		}
 		args = append(args, testArgs...)
 		cmd := exec.Command(awkExe, testArgs...)
+		cmd.Env = []string{"LC_ALL=en_US.UTF-8"}
 		if testStdin != "" {
 			cmd.Stdin = strings.NewReader(testStdin)
 		}
