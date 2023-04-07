@@ -12,6 +12,8 @@ GOOS=linux GOARCH=386 go build -ldflags="-w"
 tar -cvzf "goawk_${VERSION}_linux_386.tar.gz" goawk README.md LICENSE.txt docs/*
 GOOS=linux GOARCH=amd64 go build -ldflags="-w"
 tar -cvzf "goawk_${VERSION}_linux_amd64.tar.gz" goawk README.md LICENSE.txt docs/*
+GOOS=linux GOARCH=arm64 go build -ldflags="-w"
+tar -cvzf "goawk_${VERSION}_linux_arm64.tar.gz" goawk README.md LICENSE.txt docs/*
 
 GOOS=darwin GOARCH=amd64 go build -ldflags="-w"
 tar -cvzf "goawk_${VERSION}_darwin_amd64.tar.gz" goawk README.md LICENSE.txt docs/*
