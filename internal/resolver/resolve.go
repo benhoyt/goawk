@@ -404,6 +404,18 @@ func (v *mainVisitor) Visit(node ast.Node) ast.Visitor {
 			varExpr := n.Args[1].(*ast.VarExpr) // split()'s 2nd arg is always an array
 			v.r.recordVar(v.curFunc, varExpr.Name, Array, varExpr.Pos)
 			ast.WalkExprList(v, n.Args[2:])
+
+		case lexer.F_LENGTH:
+			if len(n.Args) > 0 {
+				if varExpr, ok := n.Args[0].(*ast.VarExpr); ok {
+					// In a call to length(x), x may be a scalar or an array,
+					// so set it to unknown for now.
+					v.r.recordVar(v.curFunc, varExpr.Name, unknown, varExpr.Pos)
+					return nil
+				}
+			}
+			ast.WalkExprList(v, n.Args)
+
 		default:
 			ast.WalkExprList(v, n.Args)
 		}

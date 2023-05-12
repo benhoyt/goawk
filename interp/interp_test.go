@@ -513,6 +513,11 @@ BEGIN {
 	{`BEGIN { print match("x food y", /[fod]+/), RSTART, RLENGTH }`, "", "3 3 4\n", "", ""},
 	{`BEGIN { print match("a\nb\nc", /^a.*c$/), RSTART, RLENGTH }`, "", "1 1 5\n", "", ""},
 	{`{ print length, length(), length("buzz"), length("") }`, "foo bar", "7 7 4 0\n", "", ""},
+	{`{ a[$0]++ } END { print length(a) }  # !posix`, "a\nc\nb\na\na\nb", "3\n", "", ""},
+	{`BEGIN { 1 in a; print length(a); a[1]; a[2]=2; a[2]=3; print length(a) }  # !gawk !posix`, "", "0\n2\n", "", ""},
+	// There's a quirk in Gawk where "a" has to be referenced as an array first, so skip Gawk for now:
+	{`BEGIN { print length(a); a[1]; a[2]=2; a[2]=3; print length(a) }  # !gawk !posix`, "", "0\n2\n", "", ""},
+	{`BEGIN { a[1]=1; a[2]=2; a[3]=3; print len(a) } function len(x) { return length(x) }  # !posix`, "", "3\n", "", ""},
 	{`BEGIN { print index("foo", "f"), index("foo0", 0), index("foo", "o"), index("foo", "x") }`, "", "1 4 2 0\n", "", ""},
 	{`BEGIN { print atan2(1, 0.5), atan2(-1, 0) }`, "", "1.10715 -1.5708\n", "", ""},
 	{`BEGIN { print sprintf("%3d", 42) }`, "", " 42\n", "", ""},
