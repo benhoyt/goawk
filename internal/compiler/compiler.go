@@ -785,6 +785,7 @@ func (c *compiler) expr(expr ast.Expr) {
 			return
 		case lexer.F_LENGTH:
 			if len(e.Args) > 0 {
+				// Determine if the call is length(arrayVar) or length(stringExpr).
 				if varExpr, ok := e.Args[0].(*ast.VarExpr); ok {
 					scope, info, _ := c.resolved.LookupVar(c.funcName, varExpr.Name)
 					if info.Type == resolver.Array {
