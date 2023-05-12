@@ -722,7 +722,6 @@ type DeleteStmt struct {
 
 func (s *DeleteStmt) String() string {
 	if len(s.Index) == 0 {
-		// TODO: add test for this missing case
 		return "delete " + s.Array
 	}
 	indices := make([]string, len(s.Index))
