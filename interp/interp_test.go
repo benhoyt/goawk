@@ -137,6 +137,8 @@ NR==3, NR==5 { print NR }
 	{`BEGIN { a[1]=1; a[2]=1; a[3]=1; for (k in a) { if (k==2) continue; s++ } print s }`, "", "2\n", "", ""},
 	{`function alen(a, k, n) { n=0; for (k in a) n++; return n }  BEGIN { a[1]=1; a[2]=1; print alen(a) }`, "", "2\n", "", ""},
 	{`BEGIN { a["x"]=1; for (SUBSEP in a) print SUBSEP, a[SUBSEP] }`, "", "x 1\n", "", ""},
+	// TODO: this doesn't work in GoAWK yet
+	// {`BEGIN { a["x"]=1; for (NR in a) print NR, a[NR] }`, "", "x 1\n", "", ""},
 	{`BEGIN { while (i<3) { i++; s++; break } print s }`, "", "1\n", "", ""},
 	{`BEGIN { while (i<3) { i++; if (i==2) continue; s++ } print s }`, "", "2\n", "", ""},
 	{`BEGIN { do { i++; s++; break } while (i<3); print s }`, "", "1\n", "", ""},

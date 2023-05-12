@@ -14,8 +14,6 @@ import (
 	"github.com/benhoyt/goawk/lexer"
 )
 
-// TODO: bug: goawk 'BEGIN { a["x"]=1; for (NR in a) print NR, a[NR] }'
-
 // ResolvedProgram is a parsed AWK program plus variable scope and type data
 // prepared by the resolver that is needed for subsequent interpretation.
 type ResolvedProgram struct {
