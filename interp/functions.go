@@ -12,7 +12,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/benhoyt/goawk/internal/ast"
+	"github.com/benhoyt/goawk/internal/resolver"
 	. "github.com/benhoyt/goawk/lexer"
 )
 
@@ -242,7 +242,7 @@ func validNativeType(typ reflect.Type) bool {
 }
 
 // Guts of the split() function
-func (p *interp) split(s string, scope ast.VarScope, index int, fs string) (int, error) {
+func (p *interp) split(s string, scope resolver.Scope, index int, fs string) (int, error) {
 	var parts []string
 	if fs == " " {
 		parts = strings.Fields(s)

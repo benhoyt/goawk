@@ -10,20 +10,12 @@ import (
 	. "github.com/benhoyt/goawk/lexer"
 )
 
-// Program is an entire AWK program.
+// Program is a parsed AWK program.
 type Program struct {
 	Begin     []Stmts
 	Actions   []*Action
 	End       []Stmts
 	Functions []*Function
-}
-
-// ResolvedProgram is a parsed AWK program + additional data prepared by resolve step
-// needed for subsequent interpretation
-type ResolvedProgram struct {
-	Program
-	Scalars map[string]int
-	Arrays  map[string]int
 }
 
 // String returns an indented, pretty-printed version of the parsed
@@ -95,7 +87,6 @@ func (e *FieldExpr) node()      {}
 func (e *NamedFieldExpr) node() {}
 func (e *UnaryExpr) node()      {}
 func (e *BinaryExpr) node()     {}
-func (e *ArrayExpr) node()      {}
 func (e *InExpr) node()         {}
 func (e *CondExpr) node()       {}
 func (e *NumExpr) node()        {}
@@ -160,7 +151,6 @@ const (
 func (e *FieldExpr) precedence() int      { return precField }
 func (e *NamedFieldExpr) precedence() int { return precField }
 func (e *UnaryExpr) precedence() int      { return precUnary }
-func (e *ArrayExpr) precedence() int      { return precPrimary }
 func (e *InExpr) precedence() int         { return precIn }
 func (e *CondExpr) precedence() int       { return precCond }
 func (e *NumExpr) precedence() int        { return precPrimary }
@@ -260,35 +250,22 @@ func (e *BinaryExpr) String() string {
 	return parenthesize(e.Left, e) + op + parenthesize(e.Right, e)
 }
 
-// ArrayExpr is an array reference. Not really a stand-alone
-// expression, except as an argument to split() or a user function
-// call.
-type ArrayExpr struct {
-	Scope VarScope
-	Index int
-	Name  string
-	Pos   Position
-}
-
-func (e *ArrayExpr) String() string {
-	return e.Name
-}
-
 // InExpr is an expression like (index in array).
 type InExpr struct {
-	Index []Expr
-	Array *ArrayExpr
+	Index    []Expr
+	Array    string
+	ArrayPos Position
 }
 
 func (e *InExpr) String() string {
 	if len(e.Index) == 1 {
-		return parenthesize(e.Index[0], e) + " in " + e.Array.String()
+		return parenthesize(e.Index[0], e) + " in " + e.Array
 	}
 	indices := make([]string, len(e.Index))
 	for i, index := range e.Index {
 		indices[i] = index.String()
 	}
-	return "(" + strings.Join(indices, ", ") + ") in " + e.Array.String()
+	return "(" + strings.Join(indices, ", ") + ") in " + e.Array
 }
 
 // CondExpr is an expression like cond ? 1 : 0.
@@ -335,25 +312,10 @@ func (e *RegExpr) String() string {
 	return "/" + escaped + "/"
 }
 
-// meaning it will be set during resolve step
-const resolvedLater = -1
-
-type VarScope int
-
-const (
-	ScopeSpecial VarScope = iota
-	ScopeGlobal
-	ScopeLocal
-)
-
 // VarExpr is a variable reference (special var, global, or local).
-// Index is the resolved variable index used by the interpreter; Name
-// is the original name used by String().
 type VarExpr struct {
-	Scope VarScope
-	Index int
-	Name  string
-	Pos   Position
+	Name string
+	Pos  Position
 }
 
 func (e *VarExpr) String() string {
@@ -362,8 +324,9 @@ func (e *VarExpr) String() string {
 
 // IndexExpr is an expression like a[k] (rvalue or lvalue).
 type IndexExpr struct {
-	Array *ArrayExpr
-	Index []Expr
+	Array    string
+	ArrayPos Position
+	Index    []Expr
 }
 
 func (e *IndexExpr) String() string {
@@ -371,7 +334,7 @@ func (e *IndexExpr) String() string {
 	for i, index := range e.Index {
 		indices[i] = index.String()
 	}
-	return e.Array.String() + "[" + strings.Join(indices, ", ") + "]"
+	return e.Array + "[" + strings.Join(indices, ", ") + "]"
 }
 
 // AssignExpr is an expression like x = 1234.
@@ -424,16 +387,12 @@ func (e *CallExpr) String() string {
 	return e.Func.String() + "(" + strings.Join(args, ", ") + ")"
 }
 
-// UserCallExpr is a user-defined function call like my_func(1, 2, 3)
-//
-// Index is the resolved function index used by the interpreter; Name
-// is the original name used by String().
+// UserCallExpr is a user-defined function call like my_func(1, 2, 3),
+// where my_func is either AWK-defined or a native Go function.
 type UserCallExpr struct {
-	Native bool // false = AWK-defined function, true = native Go func
-	Index  int
-	Name   string
-	Args   []Expr
-	Pos    Position
+	Name string
+	Args []Expr
+	Pos  Position
 }
 
 func (e *UserCallExpr) String() string {
@@ -658,8 +617,10 @@ func (s *ForStmt) String() string {
 
 // ForInStmt is a for loop like for (k in a) print k, a[k].
 type ForInStmt struct {
-	Var       *VarExpr
-	Array     *ArrayExpr
+	Var       string
+	VarPos    Position
+	Array     string
+	ArrayPos  Position
 	BodyStart Position
 	Body      Stmts
 	Start     Position
@@ -667,7 +628,7 @@ type ForInStmt struct {
 }
 
 func (s *ForInStmt) String() string {
-	return "for (" + s.Var.String() + " in " + s.Array.String() + ") {\n" + s.Body.String() + "}"
+	return "for (" + s.Var + " in " + s.Array + ") {\n" + s.Body.String() + "}"
 }
 
 // WhileStmt is a while loop.
@@ -752,18 +713,23 @@ func (s *ExitStmt) String() string {
 
 // DeleteStmt is a statement like delete a[k].
 type DeleteStmt struct {
-	Array *ArrayExpr
-	Index []Expr
-	Start Position
-	End   Position
+	Array    string
+	ArrayPos Position
+	Index    []Expr
+	Start    Position
+	End      Position
 }
 
 func (s *DeleteStmt) String() string {
+	if len(s.Index) == 0 {
+		// TODO: add test for this missing case
+		return "delete " + s.Array
+	}
 	indices := make([]string, len(s.Index))
 	for i, index := range s.Index {
 		indices[i] = index.String()
 	}
-	return "delete " + s.Array.String() + "[" + strings.Join(indices, ", ") + "]"
+	return "delete " + s.Array + "[" + strings.Join(indices, ", ") + "]"
 }
 
 // ReturnStmt is a return statement.
@@ -796,7 +762,6 @@ func (s *BlockStmt) String() string {
 type Function struct {
 	Name   string
 	Params []string
-	Arrays []bool
 	Body   Stmts
 	Pos    Position
 }
@@ -806,26 +771,12 @@ func (f *Function) String() string {
 		f.Body.String() + "}"
 }
 
+// TODO: do we still need this with how we doing parenthesize() now?
 func trimParens(s string) string {
 	if strings.HasPrefix(s, "(") && strings.HasSuffix(s, ")") {
 		s = s[1 : len(s)-1]
 	}
 	return s
-}
-
-// VarRef is a constructor for *VarExpr
-func VarRef(name string, pos Position) *VarExpr {
-	return &VarExpr{resolvedLater, resolvedLater, name, pos}
-}
-
-// ArrayRef is a constructor for *ArrayExpr
-func ArrayRef(name string, pos Position) *ArrayExpr {
-	return &ArrayExpr{resolvedLater, resolvedLater, name, pos}
-}
-
-// UserCall is a constructor for *UserCallExpr
-func UserCall(name string, args []Expr, pos Position) *UserCallExpr {
-	return &UserCallExpr{false, resolvedLater, name, args, pos}
 }
 
 // PositionError represents an error bound to specific position in source.

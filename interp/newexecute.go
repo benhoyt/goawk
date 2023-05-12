@@ -6,7 +6,7 @@ import (
 	"context"
 	"math"
 
-	"github.com/benhoyt/goawk/internal/ast"
+	"github.com/benhoyt/goawk/internal/resolver"
 	"github.com/benhoyt/goawk/parser"
 )
 
@@ -65,11 +65,11 @@ func (p *Interpreter) Execute(config *Config) (int, error) {
 // numbers are included as type float64, strings (including "numeric strings")
 // are included as type string. If the named array does not exist, return nil.
 func (p *Interpreter) Array(name string) map[string]interface{} {
-	index, exists := p.interp.program.Arrays[name]
+	index, exists := p.interp.arrayIndexes[name]
 	if !exists {
 		return nil
 	}
-	array := p.interp.array(ast.ScopeGlobal, index)
+	array := p.interp.array(resolver.Global, index)
 	result := make(map[string]interface{}, len(array))
 	for k, v := range array {
 		switch v.typ {

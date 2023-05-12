@@ -1,36 +1,114 @@
-// Resolve function calls and variable types
+// Package resolver assigns integer indexes to functions and variables, as
+// well as determining and checking their types (scalar or array).
 package resolver
 
 import (
 	"fmt"
 	"io"
+	"math"
 	"reflect"
 	"sort"
+	"strings"
 
 	"github.com/benhoyt/goawk/internal/ast"
-	. "github.com/benhoyt/goawk/lexer"
+	"github.com/benhoyt/goawk/lexer"
 )
 
-type resolver struct {
-	// Resolving state
-	funcName string // function name if parsing a func, else ""
+// TODO: bug: goawk 'BEGIN { a["x"]=1; for (NR in a) print NR, a[NR] }'
 
-	// Variable tracking and resolving
-	locals    map[string]bool                // current function's locals (for determining scope)
-	varTypes  map[string]map[string]typeInfo // map of func name to var name to type
-	varRefs   []varRef                       // all variable references (usually scalars)
-	arrayRefs []arrayRef                     // all array references
-
-	// Function tracking
-	functions   map[string]int // map of function name to index
-	userCalls   []userCall     // record calls so we can resolve them later
-	nativeFuncs map[string]interface{}
-
-	// Configuration and debugging
-	debugTypes  bool      // show variable types for debugging
-	debugWriter io.Writer // where the debug output goes
+// ResolvedProgram is a parsed AWK program plus variable scope and type data
+// prepared by the resolver that is needed for subsequent interpretation.
+type ResolvedProgram struct {
+	ast.Program
+	resolver *resolver
 }
 
+// LookupVar looks up a (possibly-local) variable by function name and
+// variable name, returning its scope, info, and whether it exists.
+func (r *ResolvedProgram) LookupVar(funcName, name string) (Scope, VarInfo, bool) {
+	scope, info, _, exists := r.resolver.lookupVar(funcName, name)
+	return scope, info, exists
+}
+
+// IterVars iterates over the variables from the given function ("" to iterate
+// globals), calling f for each variable.
+func (r *ResolvedProgram) IterVars(funcName string, f func(name string, info VarInfo)) {
+	for name, info := range r.resolver.varInfo[funcName] {
+		f(name, info)
+	}
+}
+
+// LookupFunc looks up a function by name, returning its info and whether it
+// exists.
+func (r *ResolvedProgram) LookupFunc(name string) (FuncInfo, bool) {
+	info, ok := r.resolver.funcInfo[name]
+	return info, ok
+}
+
+// IterFuncs iterates over all the functions, including native (Go-defined)
+// ones, calling f for each function.
+func (r *ResolvedProgram) IterFuncs(f func(name string, info FuncInfo)) {
+	for name, info := range r.resolver.funcInfo {
+		f(name, info)
+	}
+}
+
+// VarInfo holds resolved information about a variable.
+type VarInfo struct {
+	Type  Type
+	Index int
+}
+
+// FuncInfo holds resolved information about a function.
+type FuncInfo struct {
+	Native bool // true if function is a native (Go-defined) function
+	Index  int
+	Params []string // list of parameter names
+}
+
+// Scope represents the scope of a variable.
+type Scope int
+
+const (
+	Local   Scope = iota + 1 // locals (function parameters)
+	Special                  // special variables (such as NF)
+	Global                   // globals
+)
+
+func (s Scope) String() string {
+	switch s {
+	case Local:
+		return "local"
+	case Special:
+		return "special"
+	case Global:
+		return "global"
+	default:
+		return "unknown scope"
+	}
+}
+
+// Type represents the type of a variable: scalar or array.
+type Type int
+
+const (
+	unknown Type = iota
+	Scalar
+	Array
+)
+
+func (t Type) String() string {
+	switch t {
+	case Scalar:
+		return "scalar"
+	case Array:
+		return "array"
+	default:
+		return "unknown type"
+	}
+}
+
+// Config holds resolver configuration.
 type Config struct {
 	// Enable printing of type information
 	DebugTypes bool
@@ -43,467 +121,365 @@ type Config struct {
 	Funcs map[string]interface{}
 }
 
-func Resolve(prog *ast.Program, config *Config) *ast.ResolvedProgram {
-	r := newResolver(config)
-
-	resolvedProg := &ast.ResolvedProgram{Program: *prog}
-
-	ast.Walk(r, prog)
-
-	r.resolveUserCalls(prog)
-	r.resolveVars(resolvedProg)
-
-	return resolvedProg
-}
-
-func (r *resolver) Visit(node ast.Node) ast.Visitor {
-	switch n := node.(type) {
-
-	case *ast.Function:
-		function := n
-		name := function.Name
-		if _, ok := r.functions[name]; ok {
-			panic(ast.PosErrorf(function.Pos, "function %q already defined", name))
-		}
-		r.functions[name] = len(r.functions)
-		r.locals = make(map[string]bool, 7)
-		for _, param := range function.Params {
-			r.locals[param] = true
-		}
-		r.funcName = name
-		r.varTypes[name] = make(map[string]typeInfo)
-
-		ast.WalkStmtList(r, function.Body)
-
-		r.funcName = ""
-		r.locals = nil
-
-	case *ast.VarExpr:
-		r.recordVarRef(n)
-
-	case *ast.ArrayExpr:
-		r.recordArrayRef(n)
-
-	case *ast.UserCallExpr:
-		name := n.Name
-		if r.locals[name] {
-			panic(ast.PosErrorf(n.Pos, "can't call local variable %q as function", name))
-		}
-		for i, arg := range n.Args {
-			ast.Walk(r, arg)
-			r.processUserCallArg(name, arg, i)
-		}
-		r.userCalls = append(r.userCalls, userCall{n, n.Pos, r.funcName})
-	default:
-		return r
+// Resolve assigns integer indexes to functions and variables, as well as
+// determining and checking their types (scalar or array).
+func Resolve(prog *ast.Program, config *Config) *ResolvedProgram {
+	if config == nil {
+		config = &Config{}
 	}
 
-	return nil
-}
-
-type varType int
-
-const (
-	typeUnknown varType = iota
-	typeScalar
-	typeArray
-)
-
-func (t varType) String() string {
-	switch t {
-	case typeScalar:
-		return "Scalar"
-	case typeArray:
-		return "Array"
-	default:
-		return "Unknown"
+	// First pass determines call graph so we can process functions in
+	// topological order: e.g., if f() calls g(), process g first, then f.
+	callGraph := callGraphVisitor{
+		calls:       make(map[string]map[string]struct{}),
+		funcs:       make(map[string]*ast.Function),
+		funcIndexes: make(map[string]int),
 	}
-}
+	ast.Walk(&callGraph, prog)
+	orderedFuncs := topoSort(callGraph.calls)
 
-// typeInfo records type information for a single variable
-type typeInfo struct {
-	typ      varType
-	ref      *ast.VarExpr
-	scope    ast.VarScope
-	index    int
-	callName string
-	argIndex int
-}
-
-// Used by printVarTypes when debugTypes is turned on
-func (t typeInfo) String() string {
-	var scope string
-	switch t.scope {
-	case ast.ScopeGlobal:
-		scope = "Global"
-	case ast.ScopeLocal:
-		scope = "Local"
-	default:
-		scope = "Special"
+	// Ensure functions that weren't called are added to the orderedFuncs list
+	// (order of those doesn't matter, so add them at the end).
+	called := make(map[string]struct{}, len(orderedFuncs))
+	for _, name := range orderedFuncs {
+		called[name] = struct{}{}
 	}
-	return fmt.Sprintf("typ=%s ref=%p scope=%s index=%d callName=%q argIndex=%d",
-		t.typ, t.ref, scope, t.index, t.callName, t.argIndex)
-}
-
-// A single variable reference (normally scalar)
-type varRef struct {
-	funcName string
-	ref      *ast.VarExpr
-	isArg    bool
-}
-
-// A single array reference
-type arrayRef struct {
-	funcName string
-	ref      *ast.ArrayExpr
-}
-
-// Constructs the resolver
-func newResolver(config *Config) *resolver {
-	r := &resolver{}
-	if config != nil {
-		r.nativeFuncs = config.Funcs
-		r.debugTypes = config.DebugTypes
-		r.debugWriter = config.DebugWriter
+	for name := range callGraph.funcs {
+		if _, ok := called[name]; !ok {
+			orderedFuncs = append(orderedFuncs, name)
+		}
 	}
-	r.varTypes = make(map[string]map[string]typeInfo)
-	r.varTypes[""] = make(map[string]typeInfo) // globals
-	r.functions = make(map[string]int)
-	initialPos := Position{1, 1}
-	r.recordArrayRef(ast.ArrayRef("ARGV", initialPos))    // interpreter relies on ARGV being present
-	r.recordArrayRef(ast.ArrayRef("ENVIRON", initialPos)) // and other built-in arrays
-	r.recordArrayRef(ast.ArrayRef("FIELDS", initialPos))
-	return r
-}
 
-// Records a call to a user function (for resolving indexes later)
-type userCall struct {
-	call   *ast.UserCallExpr
-	pos    Position
-	inFunc string
-}
+	// Create our type resolver.
+	r := resolver{
+		varInfo:  make(map[string]map[string]VarInfo),
+		funcInfo: make(map[string]FuncInfo),
+		funcs:    callGraph.funcs,
+	}
+	r.varInfo[""] = make(map[string]VarInfo) // func of "" stores global vars
 
-// After parsing, resolve all user calls to their indexes. Also
-// ensures functions called have actually been defined, and that
-// they're not being called with too many arguments.
-func (r *resolver) resolveUserCalls(prog *ast.Program) {
-	// Number the native funcs (order by name to get consistent order)
-	nativeNames := make([]string, 0, len(r.nativeFuncs))
-	for name := range r.nativeFuncs {
+	// Interpreter relies on ARGV and other built-in arrays being present.
+	r.recordVar("", "ARGV", Array, lexer.Position{1, 1})
+	r.recordVar("", "ENVIRON", Array, lexer.Position{1, 1})
+	r.recordVar("", "FIELDS", Array, lexer.Position{1, 1})
+
+	// Assign indexes to native (Go-defined) functions, in order of name.
+	var nativeNames []string
+	for name := range config.Funcs {
 		nativeNames = append(nativeNames, name)
 	}
 	sort.Strings(nativeNames)
-	nativeIndexes := make(map[string]int, len(nativeNames))
 	for i, name := range nativeNames {
-		nativeIndexes[name] = i
+		r.funcInfo[name] = FuncInfo{Native: true, Index: i}
 	}
 
-	for _, c := range r.userCalls {
-		// AWK-defined functions take precedence over native Go funcs
-		index, ok := r.functions[c.call.Name]
-		if !ok {
-			f, haveNative := r.nativeFuncs[c.call.Name]
-			if !haveNative {
-				panic(ast.PosErrorf(c.pos, "undefined function %q", c.call.Name))
-			}
-			typ := reflect.TypeOf(f)
-			if !typ.IsVariadic() && len(c.call.Args) > typ.NumIn() {
-				panic(ast.PosErrorf(c.pos, "%q called with more arguments than declared", c.call.Name))
-			}
-			c.call.Native = true
-			c.call.Index = nativeIndexes[c.call.Name]
+	// Main resolver pass: determine types of variables and find function
+	// information. Can't call ast.Walk on prog directly, as it will not
+	// iterate through functions in topological (call graph) order.
+	main := mainVisitor{r: &r, nativeFuncs: config.Funcs}
+	for _, funcName := range orderedFuncs {
+		if funcName == "" {
+			continue // BEGIN, END, and actions are processed below
+		}
+		function, exists := callGraph.funcs[funcName]
+		if !exists {
+			// Happens in the case where someone tries to call a local
+			// variable as a function: function f(x) { x() }. That is checked
+			// and flagged as an error in the visitor.
 			continue
 		}
-		function := prog.Functions[index]
-		if len(c.call.Args) > len(function.Params) {
-			panic(ast.PosErrorf(c.pos, "%q called with more arguments than declared", c.call.Name))
+		r.defineFunc(callGraph.funcIndexes[funcName], funcName, function.Params)
+		main.curFunc = funcName
+		ast.WalkStmtList(&main, function.Body)
+		main.curFunc = ""
+	}
+	for _, stmts := range prog.Begin {
+		ast.WalkStmtList(&main, stmts)
+	}
+	for _, action := range prog.Actions {
+		ast.Walk(&main, action)
+	}
+	for _, stmts := range prog.End {
+		ast.WalkStmtList(&main, stmts)
+	}
+
+	// For any variables that are still unknown, set their type to scalar.
+	// This can happen for unused variables, such as in the following:
+	//  { f(z) }  function f(x) { print NR }
+	for _, infos := range r.varInfo {
+		for varName, info := range infos {
+			if info.Type == unknown {
+				infos[varName] = VarInfo{Type: Scalar, Index: info.Index}
+			}
 		}
-		c.call.Index = index
 	}
-}
 
-// For arguments that are variable references, we don't know the
-// type based on context, so mark the types for these as unknown.
-func (r *resolver) processUserCallArg(funcName string, arg ast.Expr, index int) {
-	if varExpr, ok := arg.(*ast.VarExpr); ok {
-		scope, varFuncName := r.getScope(varExpr.Name)
-		ref := r.varTypes[varFuncName][varExpr.Name].ref
-		if ref == varExpr {
-			// Only applies if this is the first reference to this
-			// variable (otherwise we know the type already)
-			r.varTypes[varFuncName][varExpr.Name] = typeInfo{typeUnknown, ref, scope, 0, funcName, index}
+	// Assign indexes to globals and locals (separate for scalars and arrays).
+	for funcName, infos := range r.varInfo {
+		var names []string
+		if funcName == "" {
+			// For global vars, order indexes by name.
+			for name := range infos {
+				names = append(names, name)
+			}
+			sort.Strings(names)
+		} else {
+			// For local vars, order indexes by parameter order.
+			names = r.funcInfo[funcName].Params
 		}
-		// Mark the last related varRef (the most recent one) as a
-		// call argument for later error handling
-		r.varRefs[len(r.varRefs)-1].isArg = true
+		scalar := 0
+		array := 0
+		for _, name := range names {
+			info := infos[name]
+			if info.Type == Array {
+				infos[name] = VarInfo{Type: info.Type, Index: array}
+				array++
+			} else {
+				infos[name] = VarInfo{Type: info.Type, Index: scalar}
+				scalar++
+			}
+		}
+	}
+
+	if config.DebugTypes {
+		printVarTypes(config.DebugWriter, r.varInfo, r.funcInfo)
+	}
+
+	return &ResolvedProgram{
+		Program:  *prog,
+		resolver: &r,
 	}
 }
 
-// Determine scope of given variable reference (and funcName if it's
-// a local, otherwise empty string)
-func (r *resolver) getScope(name string) (ast.VarScope, string) {
-	switch {
-	case r.locals[name]:
-		return ast.ScopeLocal, r.funcName
-	case ast.SpecialVarIndex(name) > 0:
-		return ast.ScopeSpecial, ""
-	default:
-		return ast.ScopeGlobal, ""
-	}
-}
-
-// Record a variable (scalar) reference and return the *VarExpr (but
-// VarExpr.Index won't be set till later)
-func (r *resolver) recordVarRef(expr *ast.VarExpr) {
-	name := expr.Name
-	scope, funcName := r.getScope(name)
-	expr.Scope = scope
-	r.varRefs = append(r.varRefs, varRef{funcName, expr, false})
-	info := r.varTypes[funcName][name]
-	if info.typ == typeUnknown {
-		r.varTypes[funcName][name] = typeInfo{typeScalar, expr, scope, 0, info.callName, 0}
-	}
-}
-
-// Record an array reference and return the *ArrayExpr (but
-// ArrayExpr.Index won't be set till later)
-func (r *resolver) recordArrayRef(expr *ast.ArrayExpr) {
-	name := expr.Name
-	scope, funcName := r.getScope(name)
-	if scope == ast.ScopeSpecial {
-		panic(ast.PosErrorf(expr.Pos, "can't use scalar %q as array", name))
-	}
-	expr.Scope = scope
-	r.arrayRefs = append(r.arrayRefs, arrayRef{funcName, expr})
-	info := r.varTypes[funcName][name]
-	if info.typ == typeUnknown {
-		r.varTypes[funcName][name] = typeInfo{typeArray, nil, scope, 0, info.callName, 0}
-	}
-}
-
-// Print variable type information (for debugging) on p.debugWriter
-func (r *resolver) printVarTypes(prog *ast.ResolvedProgram) {
-	fmt.Fprintf(r.debugWriter, "scalars: %v\n", prog.Scalars)
-	fmt.Fprintf(r.debugWriter, "arrays: %v\n", prog.Arrays)
-	funcNames := []string{}
-	for funcName := range r.varTypes {
+// Print variable type information (for debugging) on given writer.
+func printVarTypes(w io.Writer, varInfo map[string]map[string]VarInfo, funcInfo map[string]FuncInfo) {
+	var funcNames []string
+	for funcName := range varInfo {
 		funcNames = append(funcNames, funcName)
 	}
 	sort.Strings(funcNames)
 	for _, funcName := range funcNames {
 		if funcName != "" {
-			fmt.Fprintf(r.debugWriter, "function %s\n", funcName)
+			info := funcInfo[funcName]
+			fmt.Fprintf(w, "function %s(%s)  # index %d\n",
+				funcName, strings.Join(info.Params, ", "), info.Index)
 		} else {
-			fmt.Fprintf(r.debugWriter, "globals\n")
+			fmt.Fprintln(w, "globals")
 		}
-		varNames := []string{}
-		for name := range r.varTypes[funcName] {
+		var varNames []string
+		for name := range varInfo[funcName] {
 			varNames = append(varNames, name)
 		}
 		sort.Strings(varNames)
 		for _, name := range varNames {
-			info := r.varTypes[funcName][name]
-			fmt.Fprintf(r.debugWriter, "  %s: %s\n", name, info)
+			info := varInfo[funcName][name]
+			fmt.Fprintf(w, "  %s: %s %d\n", name, info.Type, info.Index)
 		}
 	}
 }
 
-// Resolve unknown variables types and generate variable indexes and
-// name-to-index mappings for interpreter
-func (r *resolver) resolveVars(prog *ast.ResolvedProgram) {
-	// First go through all unknown types and try to determine the
-	// type from the parameter type in that function definition.
-	// Iterate through functions in topological order, for example
-	// if f() calls g(), process g first, then f.
-	callGraph := make(map[string]map[string]struct{})
-	for _, call := range r.userCalls {
-		if _, ok := callGraph[call.inFunc]; !ok {
-			callGraph[call.inFunc] = make(map[string]struct{})
-		}
-		callGraph[call.inFunc][call.call.Name] = struct{}{}
-	}
-	sortedFuncs := topoSort(callGraph)
-	for _, funcName := range sortedFuncs {
-		infos := r.varTypes[funcName]
-		for name, info := range infos {
-			if info.scope == ast.ScopeSpecial || info.typ != typeUnknown {
-				// It's a special var or type is already known
-				continue
-			}
-			funcIndex, ok := r.functions[info.callName]
-			if !ok {
-				// Function being called is a native function
-				continue
-			}
-			// Determine var type based on type of this parameter
-			// in the called function (if we know that)
-			paramName := prog.Functions[funcIndex].Params[info.argIndex]
-			typ := r.varTypes[info.callName][paramName].typ
-			if typ != typeUnknown {
-				if r.debugTypes {
-					fmt.Fprintf(r.debugWriter, "resolving %s:%s to %s\n",
-						funcName, name, typ)
-				}
-				info.typ = typ
-				r.varTypes[funcName][name] = info
-			}
-		}
-	}
+// resolver tracks variable scopes and types as well as function information.
+type resolver struct {
+	varInfo  map[string]map[string]VarInfo
+	funcInfo map[string]FuncInfo
+	funcs    map[string]*ast.Function
+}
 
-	// Resolve global variables (iteration order is undefined, so
-	// assign indexes basically randomly)
-	prog.Scalars = make(map[string]int)
-	prog.Arrays = make(map[string]int)
-	for name, info := range r.varTypes[""] {
-		_, isFunc := r.functions[name]
-		if isFunc {
-			// Global var can't also be the name of a function
-			pos := Position{1, 1} // Ideally it'd be the position of the global var.
-			panic(ast.PosErrorf(pos, "global var %q can't also be a function", name))
-		}
-		var index int
-		if info.scope == ast.ScopeSpecial {
-			index = ast.SpecialVarIndex(name)
-		} else if info.typ == typeArray {
-			index = len(prog.Arrays)
-			prog.Arrays[name] = index
-		} else {
-			index = len(prog.Scalars)
-			prog.Scalars[name] = index
-		}
-		info.index = index
-		r.varTypes[""][name] = info
-	}
-
-	// Fill in unknown parameter types that are being called with arrays,
-	// for example, as in the following code:
-	//
-	// BEGIN { arr[0]; f(arr) }
-	// function f(a) { }
-	for _, c := range r.userCalls {
-		if c.call.Native {
-			continue
-		}
-		function := prog.Functions[c.call.Index]
-		for i, arg := range c.call.Args {
-			varExpr, ok := arg.(*ast.VarExpr)
-			if !ok {
-				continue
-			}
-			funcName := r.getVarFuncName(prog, varExpr.Name, c.inFunc)
-			argType := r.varTypes[funcName][varExpr.Name]
-			paramType := r.varTypes[function.Name][function.Params[i]]
-			if argType.typ == typeArray && paramType.typ == typeUnknown {
-				paramType.typ = argType.typ
-				r.varTypes[function.Name][function.Params[i]] = paramType
-			}
+// Look up variable from function funcName and return its scope and type
+// information, the function it was defined in, and whether it exists.
+func (r *resolver) lookupVar(funcName, varName string) (scope Scope, info VarInfo, varFunc string, exists bool) {
+	// If inside a function, try looking for a local variable first.
+	if funcName != "" {
+		if info, exists = r.varInfo[funcName][varName]; exists {
+			return Local, info, funcName, true
 		}
 	}
-
-	// Resolve local variables (assign indexes in order of params).
-	// Also patch up Function.Arrays (tells interpreter which args
-	// are arrays).
-	for funcName, infos := range r.varTypes {
-		if funcName == "" {
-			continue
-		}
-		scalarIndex := 0
-		arrayIndex := 0
-		functionIndex := r.functions[funcName]
-		function := prog.Functions[functionIndex]
-		arrays := make([]bool, len(function.Params))
-		for i, name := range function.Params {
-			info := infos[name]
-			var index int
-			if info.typ == typeArray {
-				index = arrayIndex
-				arrayIndex++
-				arrays[i] = true
-			} else {
-				// typeScalar or typeUnknown: variables may still be
-				// of unknown type if they've never been referenced --
-				// default to scalar in that case
-				index = scalarIndex
-				scalarIndex++
-			}
-			info.index = index
-			r.varTypes[funcName][name] = info
-		}
-		prog.Functions[functionIndex].Arrays = arrays
+	// Next try looking for a special variable (such as NR).
+	index := ast.SpecialVarIndex(varName)
+	if index > 0 {
+		// Special variables are all scalar (ARGV and similar are done as
+		// regular arrays).
+		return Special, VarInfo{Type: Scalar, Index: index}, "", true
 	}
-
-	// Check that variables passed to functions are the correct type
-	for _, c := range r.userCalls {
-		// Check native function calls
-		if c.call.Native {
-			for _, arg := range c.call.Args {
-				varExpr, ok := arg.(*ast.VarExpr)
-				if !ok {
-					// Non-variable expression, must be scalar
-					continue
-				}
-				funcName := r.getVarFuncName(prog, varExpr.Name, c.inFunc)
-				info := r.varTypes[funcName][varExpr.Name]
-				if info.typ == typeArray {
-					panic(ast.PosErrorf(c.pos, "can't pass array %q to native function", varExpr.Name))
-				}
-			}
-			continue
-		}
-
-		// Check AWK function calls
-		function := prog.Functions[c.call.Index]
-		for i, arg := range c.call.Args {
-			varExpr, ok := arg.(*ast.VarExpr)
-			if !ok {
-				if function.Arrays[i] {
-					panic(ast.PosErrorf(c.pos, "can't pass scalar %s as array param", arg))
-				}
-				continue
-			}
-			funcName := r.getVarFuncName(prog, varExpr.Name, c.inFunc)
-			info := r.varTypes[funcName][varExpr.Name]
-			if info.typ == typeArray && !function.Arrays[i] {
-				panic(ast.PosErrorf(c.pos, "can't pass array %q as scalar param", varExpr.Name))
-			}
-			if info.typ != typeArray && function.Arrays[i] {
-				panic(ast.PosErrorf(c.pos, "can't pass scalar %q as array param", varExpr.Name))
-			}
-		}
+	// Then try looking for a global variable.
+	if info, exists = r.varInfo[""][varName]; exists {
+		return Global, info, "", true
 	}
+	return 0, VarInfo{}, "", false // not defined at all
+}
 
-	if r.debugTypes {
-		r.printVarTypes(prog)
-	}
-
-	// Patch up variable indexes (interpreter uses an index instead
-	// of name for more efficient lookups)
-	for _, varRef := range r.varRefs {
-		info := r.varTypes[varRef.funcName][varRef.ref.Name]
-		if info.typ == typeArray && !varRef.isArg {
-			panic(ast.PosErrorf(varRef.ref.Pos, "can't use array %q as scalar", varRef.ref.Name))
+// Record that the given variable (in function funcName) is of the given type.
+func (r *resolver) recordVar(funcName, varName string, typ Type, pos lexer.Position) {
+	_, info, varFunc, exists := r.lookupVar(funcName, varName)
+	if !exists {
+		// Doesn't exist as a local or a global, add it as a new global.
+		r.varInfo[""][varName] = VarInfo{Type: typ}
+		if _, isFunc := r.funcs[varName]; isFunc {
+			panic(ast.PosErrorf(pos, "global var %q can't also be a function", varName))
 		}
-		varRef.ref.Index = info.index
+		return
 	}
-	for _, arrayRef := range r.arrayRefs {
-		info := r.varTypes[arrayRef.funcName][arrayRef.ref.Name]
-		if info.typ == typeScalar {
-			panic(ast.PosErrorf(arrayRef.ref.Pos, "can't use scalar %q as array", arrayRef.ref.Name))
-		}
-		arrayRef.ref.Index = info.index
+	if info.Type != typ && info.Type != unknown && typ != unknown {
+		panic(ast.PosErrorf(pos, "can't use %s %q as %s", info.Type, varName, typ))
+	}
+	if info.Type == unknown {
+		r.varInfo[varFunc][varName] = VarInfo{Type: typ, Index: info.Index}
 	}
 }
 
-// If name refers to a local (in function inFunc), return that
-// function's name, otherwise return "" (meaning global).
-func (r *resolver) getVarFuncName(prog *ast.ResolvedProgram, name, inFunc string) string {
-	if inFunc == "" {
-		return ""
+// Define a function and its local variables.
+func (r *resolver) defineFunc(index int, name string, params []string) {
+	r.funcInfo[name] = FuncInfo{Native: false, Index: index, Params: params}
+	// Define the local variable names (we don't know their types yet).
+	r.varInfo[name] = make(map[string]VarInfo)
+	for _, param := range params {
+		r.varInfo[name][param] = VarInfo{}
 	}
-	for _, param := range prog.Functions[r.functions[inFunc]].Params {
-		if name == param {
-			return inFunc
+}
+
+// callGraphVisitor records what functions are called by the current function
+// to build our call graph.
+type callGraphVisitor struct {
+	calls       map[string]map[string]struct{} // map of current function to called function
+	funcs       map[string]*ast.Function
+	funcIndexes map[string]int
+	curFunc     string
+}
+
+func (v *callGraphVisitor) Visit(node ast.Node) ast.Visitor {
+	switch n := node.(type) {
+	case *ast.Function:
+		if _, ok := v.funcs[n.Name]; ok {
+			panic(ast.PosErrorf(n.Pos, "function %q already defined", n.Name))
 		}
+		v.funcs[n.Name] = n
+		v.funcIndexes[n.Name] = len(v.funcIndexes)
+		v.curFunc = n.Name
+		ast.WalkStmtList(v, n.Body)
+		v.curFunc = ""
+
+	case *ast.UserCallExpr:
+		if _, ok := v.calls[v.curFunc]; !ok {
+			v.calls[v.curFunc] = make(map[string]struct{})
+		}
+		v.calls[v.curFunc][n.Name] = struct{}{}
+		ast.WalkExprList(v, n.Args)
+
+	default:
+		return v
 	}
-	return ""
+	return nil
+}
+
+// mainVisitor records types of variables and performs various checks.
+type mainVisitor struct {
+	r           *resolver
+	nativeFuncs map[string]interface{}
+	curFunc     string
+}
+
+func (v *mainVisitor) Visit(node ast.Node) ast.Visitor {
+	switch n := node.(type) {
+	case *ast.VarExpr:
+		v.r.recordVar(v.curFunc, n.Name, Scalar, n.Pos)
+
+	case *ast.ForInStmt:
+		v.r.recordVar(v.curFunc, n.Var, Scalar, n.VarPos)
+		v.r.recordVar(v.curFunc, n.Array, Array, n.ArrayPos)
+		ast.WalkStmtList(v, n.Body)
+
+	case *ast.IndexExpr:
+		ast.WalkExprList(v, n.Index)
+		v.r.recordVar(v.curFunc, n.Array, Array, n.ArrayPos)
+
+	case *ast.InExpr:
+		ast.WalkExprList(v, n.Index)
+		v.r.recordVar(v.curFunc, n.Array, Array, n.ArrayPos)
+
+	case *ast.DeleteStmt:
+		v.r.recordVar(v.curFunc, n.Array, Array, n.ArrayPos)
+		ast.WalkExprList(v, n.Index)
+
+	case *ast.CallExpr:
+		switch n.Func {
+		case lexer.F_SPLIT:
+			ast.Walk(v, n.Args[0])
+			varExpr := n.Args[1].(*ast.VarExpr) // split()'s 2nd arg is always an array
+			v.r.recordVar(v.curFunc, varExpr.Name, Array, varExpr.Pos)
+			ast.WalkExprList(v, n.Args[2:])
+		default:
+			ast.WalkExprList(v, n.Args)
+		}
+
+	case *ast.UserCallExpr:
+		_, _, varFunc, exists := v.r.lookupVar(v.curFunc, n.Name)
+		if varFunc != "" && exists {
+			panic(ast.PosErrorf(n.Pos, "can't call local variable %q as function", n.Name))
+		}
+
+		funcInfo, exists := v.r.funcInfo[n.Name]
+		if !exists {
+			panic(ast.PosErrorf(n.Pos, "undefined function %q", n.Name))
+		}
+
+		numParams := len(funcInfo.Params)
+		if funcInfo.Native {
+			typ := reflect.TypeOf(v.nativeFuncs[n.Name])
+			numParams = typ.NumIn()
+			if typ.IsVariadic() {
+				numParams = math.MaxInt
+			}
+		}
+		if len(n.Args) > numParams {
+			panic(ast.PosErrorf(n.Pos, "%q called with more arguments than declared", n.Name))
+		}
+
+		for i, arg := range n.Args {
+			varExpr, ok := arg.(*ast.VarExpr)
+			if !ok {
+				// Argument is not a variable, process normally.
+				if !funcInfo.Native {
+					paramInfo := v.r.varInfo[n.Name][funcInfo.Params[i]] // type info of corresponding parameter
+					if paramInfo.Type == Array {
+						panic(ast.PosErrorf(n.Pos, "can't pass scalar %s as array param", arg))
+					}
+				}
+				ast.Walk(v, arg)
+				continue
+			}
+
+			if funcInfo.Native {
+				// Arguments to native function can only be scalar.
+				v.r.recordVar(v.curFunc, varExpr.Name, Scalar, varExpr.Pos)
+				continue
+			}
+
+			// Variable passed to AWK-defined function may be scalar or array,
+			// determine from how it was used elsewhere.
+			paramName := funcInfo.Params[i]             // name of corresponding parameter
+			paramInfo := v.r.varInfo[n.Name][paramName] // type info of parameter
+			_, varInfo, _, _ := v.r.lookupVar(v.curFunc, varExpr.Name)
+			switch {
+			case varInfo.Type == unknown && paramInfo.Type != unknown:
+				// Variable's type is not known but param type is, set variable type.
+				v.r.recordVar(v.curFunc, varExpr.Name, paramInfo.Type, varExpr.Pos)
+			case varInfo.Type != unknown && paramInfo.Type == unknown:
+				// Variable's type is known but param type is not, set param type.
+				funcPos := v.r.funcs[n.Name].Pos // best position we have at this point
+				v.r.recordVar(n.Name, paramName, varInfo.Type, funcPos)
+			case varInfo.Type != paramInfo.Type && varInfo.Type != unknown && paramInfo.Type != unknown:
+				// Both types are known but don't match -- type error!
+				panic(ast.PosErrorf(varExpr.Pos, "can't pass %s %q as %s param",
+					varInfo.Type, varExpr.Name, paramInfo.Type))
+			default:
+				// Ensure variable references are recorded, even if the type
+				// is not yet known.
+				v.r.recordVar(v.curFunc, varExpr.Name, unknown, varExpr.Pos)
+			}
+		}
+
+	default:
+		return v
+	}
+	return nil
 }

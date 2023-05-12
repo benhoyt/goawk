@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/benhoyt/goawk/internal/ast"
+	"github.com/benhoyt/goawk/internal/resolver"
 	"github.com/benhoyt/goawk/lexer"
 )
 
@@ -200,12 +201,12 @@ func (d *disassembler) disassemble(prefix string) error {
 			d.writeOpf("AssignArrayLocal %s", d.localArrayName(arrayIndex))
 
 		case Delete:
-			arrayScope := ast.VarScope(d.fetch())
+			arrayScope := resolver.Scope(d.fetch())
 			arrayIndex := int(d.fetch())
 			d.writeOpf("Delete %s", d.arrayName(arrayScope, arrayIndex))
 
 		case DeleteAll:
-			arrayScope := ast.VarScope(d.fetch())
+			arrayScope := resolver.Scope(d.fetch())
 			arrayIndex := int(d.fetch())
 			d.writeOpf("DeleteAll %s", d.arrayName(arrayScope, arrayIndex))
 
@@ -316,9 +317,9 @@ func (d *disassembler) disassemble(prefix string) error {
 			d.writeOpf("JumpGreaterOrEqual 0x%04x", d.ip+int(offset))
 
 		case ForIn:
-			varScope := ast.VarScope(d.fetch())
+			varScope := resolver.Scope(d.fetch())
 			varIndex := int(d.fetch())
-			arrayScope := ast.VarScope(d.fetch())
+			arrayScope := resolver.Scope(d.fetch())
 			arrayIndex := int(d.fetch())
 			offset := d.fetch()
 			d.writeOpf("ForIn %s %s 0x%04x", d.varName(varScope, varIndex), d.arrayName(arrayScope, arrayIndex), d.ip+int(offset))
@@ -328,12 +329,12 @@ func (d *disassembler) disassemble(prefix string) error {
 			d.writeOpf("CallBuiltin %s", builtinOp)
 
 		case CallSplit:
-			arrayScope := ast.VarScope(d.fetch())
+			arrayScope := resolver.Scope(d.fetch())
 			arrayIndex := int(d.fetch())
 			d.writeOpf("CallSplit %s", d.arrayName(arrayScope, arrayIndex))
 
 		case CallSplitSep:
-			arrayScope := ast.VarScope(d.fetch())
+			arrayScope := resolver.Scope(d.fetch())
 			arrayIndex := int(d.fetch())
 			d.writeOpf("CallSplitSep %s", d.arrayName(arrayScope, arrayIndex))
 
@@ -346,7 +347,7 @@ func (d *disassembler) disassemble(prefix string) error {
 			numArrayArgs := int(d.fetch())
 			var arrayArgs []string
 			for i := 0; i < numArrayArgs; i++ {
-				arrayScope := ast.VarScope(d.fetch())
+				arrayScope := resolver.Scope(d.fetch())
 				arrayIndex := int(d.fetch())
 				arrayArgs = append(arrayArgs, d.arrayName(arrayScope, arrayIndex))
 			}
@@ -404,7 +405,7 @@ func (d *disassembler) disassemble(prefix string) error {
 
 		case GetlineArray:
 			redirect := lexer.Token(d.fetch())
-			arrayScope := ast.VarScope(d.fetch())
+			arrayScope := resolver.Scope(d.fetch())
 			arrayIndex := int(d.fetch())
 			d.writeOpf("GetlineArray %s %s", redirect, d.arrayName(arrayScope, arrayIndex))
 
@@ -443,13 +444,13 @@ func (d *disassembler) writeOpf(format string, args ...interface{}) {
 }
 
 // Return the scalar variable name described by scope and index.
-func (d *disassembler) varName(scope ast.VarScope, index int) string {
+func (d *disassembler) varName(scope resolver.Scope, index int) string {
 	switch scope {
-	case ast.ScopeGlobal:
+	case resolver.Global:
 		return d.program.scalarNames[index]
-	case ast.ScopeLocal:
+	case resolver.Local:
 		return d.localName(index)
-	default: // ScopeSpecial
+	default: // resolver.Special
 		return ast.SpecialVarName(index)
 	}
 }
@@ -471,8 +472,8 @@ func (d *disassembler) localName(index int) string {
 }
 
 // Return the array variable name describes by scope and index.
-func (d *disassembler) arrayName(scope ast.VarScope, index int) string {
-	if scope == ast.ScopeLocal {
+func (d *disassembler) arrayName(scope resolver.Scope, index int) string {
+	if scope == resolver.Local {
 		return d.localArrayName(index)
 	}
 	return d.program.arrayNames[index]
