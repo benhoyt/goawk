@@ -113,10 +113,11 @@ const (
 	BreakForIn
 
 	// Builtin functions
-	CallBuiltin  // builtinOp
-	CallSplit    // arrayScope arrayIndex
-	CallSplitSep // arrayScope arrayIndex
-	CallSprintf  // numArgs
+	CallBuiltin     // builtinOp
+	CallLengthArray // arrayScope arrayIndex
+	CallSplit       // arrayScope arrayIndex
+	CallSplitSep    // arrayScope arrayIndex
+	CallSprintf     // numArgs
 
 	// User and native functions
 	CallUser   // funcIndex numArrayArgs [arrayScope1 arrayIndex1 ...]

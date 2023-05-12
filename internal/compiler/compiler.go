@@ -783,6 +783,22 @@ func (c *compiler) expr(expr ast.Expr) {
 			c.add(CallBuiltin, Opcode(op))
 			c.assign(target)
 			return
+		case lexer.F_LENGTH:
+			if len(e.Args) > 0 {
+				// Determine if the call is length(arrayVar) or length(stringExpr).
+				if varExpr, ok := e.Args[0].(*ast.VarExpr); ok {
+					scope, info, _ := c.resolved.LookupVar(c.funcName, varExpr.Name)
+					if info.Type == resolver.Array {
+						c.add(CallLengthArray, Opcode(scope), opcodeInt(info.Index))
+						return
+					}
+				}
+				c.expr(e.Args[0])
+				c.add(CallBuiltin, Opcode(BuiltinLengthArg))
+			} else {
+				c.add(CallBuiltin, Opcode(BuiltinLength))
+			}
+			return
 		}
 
 		for _, arg := range e.Args {
@@ -807,12 +823,6 @@ func (c *compiler) expr(expr ast.Expr) {
 			c.add(CallBuiltin, Opcode(BuiltinIndex))
 		case lexer.F_INT:
 			c.add(CallBuiltin, Opcode(BuiltinInt))
-		case lexer.F_LENGTH:
-			if len(e.Args) > 0 {
-				c.add(CallBuiltin, Opcode(BuiltinLengthArg))
-			} else {
-				c.add(CallBuiltin, Opcode(BuiltinLength))
-			}
 		case lexer.F_LOG:
 			c.add(CallBuiltin, Opcode(BuiltinLog))
 		case lexer.F_MATCH:

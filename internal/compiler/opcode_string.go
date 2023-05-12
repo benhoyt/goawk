@@ -82,28 +82,29 @@ func _() {
 	_ = x[ForIn-71]
 	_ = x[BreakForIn-72]
 	_ = x[CallBuiltin-73]
-	_ = x[CallSplit-74]
-	_ = x[CallSplitSep-75]
-	_ = x[CallSprintf-76]
-	_ = x[CallUser-77]
-	_ = x[CallNative-78]
-	_ = x[Return-79]
-	_ = x[ReturnNull-80]
-	_ = x[Nulls-81]
-	_ = x[Print-82]
-	_ = x[Printf-83]
-	_ = x[Getline-84]
-	_ = x[GetlineField-85]
-	_ = x[GetlineGlobal-86]
-	_ = x[GetlineLocal-87]
-	_ = x[GetlineSpecial-88]
-	_ = x[GetlineArray-89]
-	_ = x[EndOpcode-90]
+	_ = x[CallLengthArray-74]
+	_ = x[CallSplit-75]
+	_ = x[CallSplitSep-76]
+	_ = x[CallSprintf-77]
+	_ = x[CallUser-78]
+	_ = x[CallNative-79]
+	_ = x[Return-80]
+	_ = x[ReturnNull-81]
+	_ = x[Nulls-82]
+	_ = x[Print-83]
+	_ = x[Printf-84]
+	_ = x[Getline-85]
+	_ = x[GetlineField-86]
+	_ = x[GetlineGlobal-87]
+	_ = x[GetlineLocal-88]
+	_ = x[GetlineSpecial-89]
+	_ = x[GetlineArray-90]
+	_ = x[EndOpcode-91]
 }
 
-const _Opcode_name = "NopNumStrDupeDropSwapFieldFieldIntFieldByNameFieldByNameStrGlobalLocalSpecialArrayGlobalArrayLocalInGlobalInLocalAssignFieldAssignGlobalAssignLocalAssignSpecialAssignArrayGlobalAssignArrayLocalDeleteDeleteAllIncrFieldIncrGlobalIncrLocalIncrSpecialIncrArrayGlobalIncrArrayLocalAugAssignFieldAugAssignGlobalAugAssignLocalAugAssignSpecialAugAssignArrayGlobalAugAssignArrayLocalRegexIndexMultiConcatMultiAddSubtractMultiplyDividePowerModuloEqualsNotEqualsLessGreaterLessOrEqualGreaterOrEqualConcatMatchNotMatchNotUnaryMinusUnaryPlusBooleanJumpJumpFalseJumpTrueJumpEqualsJumpNotEqualsJumpLessJumpGreaterJumpLessOrEqualJumpGreaterOrEqualNextNextfileExitForInBreakForInCallBuiltinCallSplitCallSplitSepCallSprintfCallUserCallNativeReturnReturnNullNullsPrintPrintfGetlineGetlineFieldGetlineGlobalGetlineLocalGetlineSpecialGetlineArrayEndOpcode"
+const _Opcode_name = "NopNumStrDupeDropSwapFieldFieldIntFieldByNameFieldByNameStrGlobalLocalSpecialArrayGlobalArrayLocalInGlobalInLocalAssignFieldAssignGlobalAssignLocalAssignSpecialAssignArrayGlobalAssignArrayLocalDeleteDeleteAllIncrFieldIncrGlobalIncrLocalIncrSpecialIncrArrayGlobalIncrArrayLocalAugAssignFieldAugAssignGlobalAugAssignLocalAugAssignSpecialAugAssignArrayGlobalAugAssignArrayLocalRegexIndexMultiConcatMultiAddSubtractMultiplyDividePowerModuloEqualsNotEqualsLessGreaterLessOrEqualGreaterOrEqualConcatMatchNotMatchNotUnaryMinusUnaryPlusBooleanJumpJumpFalseJumpTrueJumpEqualsJumpNotEqualsJumpLessJumpGreaterJumpLessOrEqualJumpGreaterOrEqualNextNextfileExitForInBreakForInCallBuiltinCallLengthArrayCallSplitCallSplitSepCallSprintfCallUserCallNativeReturnReturnNullNullsPrintPrintfGetlineGetlineFieldGetlineGlobalGetlineLocalGetlineSpecialGetlineArrayEndOpcode"
 
-var _Opcode_index = [...]uint16{0, 3, 6, 9, 13, 17, 21, 26, 34, 45, 59, 65, 70, 77, 88, 98, 106, 113, 124, 136, 147, 160, 177, 193, 199, 208, 217, 227, 236, 247, 262, 276, 290, 305, 319, 335, 355, 374, 379, 389, 400, 403, 411, 419, 425, 430, 436, 442, 451, 455, 462, 473, 487, 493, 498, 506, 509, 519, 528, 535, 539, 548, 556, 566, 579, 587, 598, 613, 631, 635, 643, 647, 652, 662, 673, 682, 694, 705, 713, 723, 729, 739, 744, 749, 755, 762, 774, 787, 799, 813, 825, 834}
+var _Opcode_index = [...]uint16{0, 3, 6, 9, 13, 17, 21, 26, 34, 45, 59, 65, 70, 77, 88, 98, 106, 113, 124, 136, 147, 160, 177, 193, 199, 208, 217, 227, 236, 247, 262, 276, 290, 305, 319, 335, 355, 374, 379, 389, 400, 403, 411, 419, 425, 430, 436, 442, 451, 455, 462, 473, 487, 493, 498, 506, 509, 519, 528, 535, 539, 548, 556, 566, 579, 587, 598, 613, 631, 635, 643, 647, 652, 662, 673, 688, 697, 709, 720, 728, 738, 744, 754, 759, 764, 770, 777, 789, 802, 814, 828, 840, 849}
 
 func (i Opcode) String() string {
 	if i < 0 || i >= Opcode(len(_Opcode_index)-1) {
