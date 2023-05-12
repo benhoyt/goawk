@@ -17,7 +17,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/benhoyt/goawk/internal/ast"
+	"github.com/benhoyt/goawk/internal/resolver"
 	. "github.com/benhoyt/goawk/lexer"
 )
 
@@ -294,7 +294,7 @@ func (p *interp) setFieldNames(names []string) {
 	p.fieldIndexes = nil // clear name-to-index cache
 
 	// Populate FIELDS array (mapping of field indexes to field names).
-	fieldsArray := p.array(ast.ScopeGlobal, p.program.Arrays["FIELDS"])
+	fieldsArray := p.array(resolver.Global, p.arrayIndexes["FIELDS"])
 	for k := range fieldsArray {
 		delete(fieldsArray, k)
 	}
@@ -732,8 +732,8 @@ func (p *interp) nextLine() (string, error) {
 				// getArrayValue() here as it would set the value if
 				// not present
 				index := strconv.Itoa(p.filenameIndex)
-				argvIndex := p.program.Arrays["ARGV"]
-				argvArray := p.array(ast.ScopeGlobal, argvIndex)
+				argvIndex := p.arrayIndexes["ARGV"]
+				argvArray := p.array(resolver.Global, argvIndex)
 				filename := p.toString(argvArray[index])
 				p.filenameIndex++
 

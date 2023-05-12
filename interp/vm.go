@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/internal/compiler"
+	"github.com/benhoyt/goawk/internal/resolver"
 	"github.com/benhoyt/goawk/lexer"
 )
 
@@ -180,7 +180,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			arrayScope := code[ip]
 			arrayIndex := code[ip+1]
 			ip += 2
-			array := p.array(ast.VarScope(arrayScope), int(arrayIndex))
+			array := p.array(resolver.Scope(arrayScope), int(arrayIndex))
 			index := p.toString(p.pop())
 			delete(array, index)
 
@@ -188,7 +188,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			arrayScope := code[ip]
 			arrayIndex := code[ip+1]
 			ip += 2
-			array := p.array(ast.VarScope(arrayScope), int(arrayIndex))
+			array := p.array(resolver.Scope(arrayScope), int(arrayIndex))
 			for k := range array {
 				delete(array, k)
 			}
@@ -602,15 +602,15 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			arrayIndex := code[ip+3]
 			offset := code[ip+4]
 			ip += 5
-			array := p.array(ast.VarScope(arrayScope), int(arrayIndex))
+			array := p.array(resolver.Scope(arrayScope), int(arrayIndex))
 			loopCode := code[ip : ip+int(offset)]
 			for index := range array {
-				switch ast.VarScope(varScope) {
-				case ast.ScopeGlobal:
+				switch resolver.Scope(varScope) {
+				case resolver.Global:
 					p.globals[varIndex] = str(index)
-				case ast.ScopeLocal:
+				case resolver.Local:
 					p.frame[varIndex] = str(index)
-				default: // ScopeSpecial
+				default: // resolver.Special
 					err := p.setSpecial(int(varIndex), str(index))
 					if err != nil {
 						return err
@@ -642,7 +642,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			arrayIndex := code[ip+1]
 			ip += 2
 			s := p.toString(p.peekTop())
-			n, err := p.split(s, ast.VarScope(arrayScope), int(arrayIndex), p.fieldSep)
+			n, err := p.split(s, resolver.Scope(arrayScope), int(arrayIndex), p.fieldSep)
 			if err != nil {
 				return err
 			}
@@ -653,7 +653,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			arrayIndex := code[ip+1]
 			ip += 2
 			s, fieldSep := p.peekPop()
-			n, err := p.split(p.toString(s), ast.VarScope(arrayScope), int(arrayIndex), p.toString(fieldSep))
+			n, err := p.split(p.toString(s), resolver.Scope(arrayScope), int(arrayIndex), p.toString(fieldSep))
 			if err != nil {
 				return err
 			}
@@ -686,7 +686,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			// Handle array arguments
 			var arrays []int
 			for j := 0; j < numArrayArgs; j++ {
-				arrayScope := ast.VarScope(code[ip])
+				arrayScope := resolver.Scope(code[ip])
 				arrayIndex := int(code[ip+1])
 				ip += 2
 				arrays = append(arrays, p.arrayIndex(arrayScope, arrayIndex))
@@ -883,7 +883,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			}
 			index := p.toString(p.peekTop())
 			if ret == 1 {
-				array := p.array(ast.VarScope(arrayScope), int(arrayIndex))
+				array := p.array(resolver.Scope(arrayScope), int(arrayIndex))
 				array[index] = numStr(line)
 			}
 			p.replaceTop(num(ret))

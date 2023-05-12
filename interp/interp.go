@@ -30,6 +30,7 @@ import (
 
 	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/internal/compiler"
+	"github.com/benhoyt/goawk/internal/resolver"
 	"github.com/benhoyt/goawk/parser"
 )
 
@@ -91,14 +92,16 @@ type interp struct {
 	noArgVars     bool
 
 	// Scalars, arrays, and function state
-	globals     []value
-	stack       []value
-	sp          int
-	frame       []value
-	arrays      []map[string]value
-	localArrays [][]int
-	callDepth   int
-	nativeFuncs []nativeFunc
+	globals       []value
+	stack         []value
+	sp            int
+	frame         []value
+	arrays        []map[string]value
+	localArrays   [][]int
+	callDepth     int
+	nativeFuncs   []nativeFunc
+	scalarIndexes map[string]int
+	arrayIndexes  map[string]int
 
 	// File, line, and field handling
 	filename        value
@@ -359,10 +362,19 @@ func newInterp(program *parser.Program) *interp {
 	}
 
 	// Allocate memory for variables and virtual machine stack
-	p.globals = make([]value, len(program.Scalars))
+	p.scalarIndexes = make(map[string]int)
+	p.arrayIndexes = make(map[string]int)
+	program.IterVars("", func(name string, info resolver.VarInfo) {
+		if info.Type == resolver.Array {
+			p.arrayIndexes[name] = info.Index
+		} else {
+			p.scalarIndexes[name] = info.Index
+		}
+	})
+	p.globals = make([]value, len(p.scalarIndexes))
 	p.stack = make([]value, initialStackSize)
-	p.arrays = make([]map[string]value, len(program.Arrays), len(program.Arrays)+initialStackSize)
-	for i := 0; i < len(program.Arrays); i++ {
+	p.arrays = make([]map[string]value, len(p.arrayIndexes), len(p.arrayIndexes)+initialStackSize)
+	for i := 0; i < len(p.arrayIndexes); i++ {
 		p.arrays[i] = make(map[string]value)
 	}
 
@@ -434,11 +446,11 @@ func (p *interp) setExecuteConfig(config *Config) error {
 	}
 
 	// Set up ARGV and other variables from config
-	argvIndex := p.program.Arrays["ARGV"]
-	p.setArrayValue(ast.ScopeGlobal, argvIndex, "0", str(config.Argv0))
+	argvIndex := p.arrayIndexes["ARGV"]
+	p.setArrayValue(resolver.Global, argvIndex, "0", str(config.Argv0))
 	p.argc = len(config.Args) + 1
 	for i, arg := range config.Args {
-		p.setArrayValue(ast.ScopeGlobal, argvIndex, strconv.Itoa(i+1), numStr(arg))
+		p.setArrayValue(resolver.Global, argvIndex, strconv.Itoa(i+1), numStr(arg))
 	}
 	p.noArgVars = config.NoArgVars
 	p.filenameIndex = 1
@@ -461,16 +473,16 @@ func (p *interp) setExecuteConfig(config *Config) error {
 	}
 
 	// Set up ENVIRON from config or environment variables
-	environIndex := p.program.Arrays["ENVIRON"]
+	environIndex := p.arrayIndexes["ENVIRON"]
 	if config.Environ != nil {
 		for i := 0; i < len(config.Environ); i += 2 {
-			p.setArrayValue(ast.ScopeGlobal, environIndex, config.Environ[i], numStr(config.Environ[i+1]))
+			p.setArrayValue(resolver.Global, environIndex, config.Environ[i], numStr(config.Environ[i+1]))
 		}
 	} else {
 		for _, kv := range os.Environ() {
 			eq := strings.IndexByte(kv, '=')
 			if eq >= 0 {
-				p.setArrayValue(ast.ScopeGlobal, environIndex, kv[:eq], numStr(kv[eq+1:]))
+				p.setArrayValue(resolver.Global, environIndex, kv[:eq], numStr(kv[eq+1:]))
 			}
 		}
 	}
@@ -728,7 +740,7 @@ func (p *interp) setVarByName(name, value string) error {
 	if index > 0 {
 		return p.setSpecial(index, numStr(value))
 	}
-	index, ok := p.program.Scalars[name]
+	index, ok := p.scalarIndexes[name]
 	if ok {
 		p.globals[index] = numStr(value)
 		return nil
@@ -838,8 +850,8 @@ func (p *interp) setSpecial(index int, v value) error {
 // Determine the index of given array into the p.arrays slice. Global
 // arrays are just at p.arrays[index], local arrays have to be looked
 // up indirectly.
-func (p *interp) arrayIndex(scope ast.VarScope, index int) int {
-	if scope == ast.ScopeGlobal {
+func (p *interp) arrayIndex(scope resolver.Scope, index int) int {
+	if scope == resolver.Global {
 		return index
 	} else {
 		return p.localArrays[len(p.localArrays)-1][index]
@@ -847,7 +859,7 @@ func (p *interp) arrayIndex(scope ast.VarScope, index int) int {
 }
 
 // Return array with given scope and index.
-func (p *interp) array(scope ast.VarScope, index int) map[string]value {
+func (p *interp) array(scope resolver.Scope, index int) map[string]value {
 	return p.arrays[p.arrayIndex(scope, index)]
 }
 
@@ -857,7 +869,7 @@ func (p *interp) localArray(index int) map[string]value {
 }
 
 // Set a value in given array by key (index)
-func (p *interp) setArrayValue(scope ast.VarScope, arrayIndex int, index string, v value) {
+func (p *interp) setArrayValue(scope resolver.Scope, arrayIndex int, index string, v value) {
 	array := p.array(scope, arrayIndex)
 	array[index] = v
 }

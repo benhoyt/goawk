@@ -137,6 +137,8 @@ NR==3, NR==5 { print NR }
 	{`BEGIN { a[1]=1; a[2]=1; a[3]=1; for (k in a) { if (k==2) continue; s++ } print s }`, "", "2\n", "", ""},
 	{`function alen(a, k, n) { n=0; for (k in a) n++; return n }  BEGIN { a[1]=1; a[2]=1; print alen(a) }`, "", "2\n", "", ""},
 	{`BEGIN { a["x"]=1; for (SUBSEP in a) print SUBSEP, a[SUBSEP] }`, "", "x 1\n", "", ""},
+	// TODO: this doesn't work in GoAWK yet
+	// {`BEGIN { a["x"]=1; for (NR in a) print NR, a[NR] }`, "", "x 1\n", "", ""},
 	{`BEGIN { while (i<3) { i++; s++; break } print s }`, "", "1\n", "", ""},
 	{`BEGIN { while (i<3) { i++; if (i==2) continue; s++ } print s }`, "", "2\n", "", ""},
 	{`BEGIN { do { i++; s++; break } while (i<3); print s }`, "", "1\n", "", ""},
@@ -711,12 +713,12 @@ BEGIN { a[1]=2; f1(a); print f2(a, 1) }
 	{`BEGIN { a[x]; a=42 }`, "", "", `parse error at 1:15: can't use array "a" as scalar`, "array"},
 	{`BEGIN { s=42; s[x] }`, "", "", `parse error at 1:15: can't use scalar "s" as array`, "array"},
 	{`function get(a, k) { return a[k] }  BEGIN { a = 42; print get(a, 1); }  # !awk - doesn't error in awk`,
-		"", "", `parse error at 1:59: can't pass scalar "a" as array param`, "attempt to use scalar parameter `a' as an array"},
+		"", "", `parse error at 1:63: can't pass scalar "a" as array param`, "attempt to use scalar parameter `a' as an array"},
 	{`function get(a, k) { return a+k } BEGIN { a[42]; print get(a, 1); }`,
-		"", "", `parse error at 1:56: can't pass array "a" as scalar param`, "array"},
+		"", "", `parse error at 1:60: can't pass array "a" as scalar param`, "array"},
 	{`{ f(z) }  function f(x) { print NR }`, "abc", "1\n", "", ""},
 	{`function f() { f() }  BEGIN { f() }  # !awk !gawk`, "", "", `calling "f" exceeded maximum call depth of 1000`, ""},
-	{`function f(x) { 0 in x }  BEGIN { f(FS) }  # !awk`, "", "", `parse error at 1:35: can't pass scalar "FS" as array param`, "attempt to use scalar parameter `x' as an array"},
+	{`function f(x) { 0 in x }  BEGIN { f(FS) }  # !awk`, "", "", `parse error at 1:37: can't pass scalar "FS" as array param`, "attempt to use scalar parameter `x' as an array"},
 	{`
 function foo(x) { print "foo", x }
 function bar(foo) { print "bar", foo }
@@ -729,8 +731,10 @@ function bar(foo) { print "bar", foo }
 BEGIN { foo(5); bar(10) }
 `, "", "", `parse error at 2:14: can't use function name as parameter name`, "function name"},
 	{`function foo() { print foo }  BEGIN { foo() }`,
-		"", "", `parse error at 1:1: global var "foo" can't also be a function`, "function"},
+		"", "", `parse error at 1:24: global var "foo" can't also be a function`, "function"},
 	{`function f(x) { print x, x(); }  BEGIN { f() }`, "", "", `parse error at 1:26: can't call local variable "x" as function`, "function"},
+	{`function f(x) { print x } BEGIN { print f(1, 2) }  # !gawk`, // only a warning in Gawk
+		"", "", `parse error at 1:41: "f" called with more arguments than declared`, ""},
 
 	// Redirected I/O
 	{`BEGIN { getline x; print x }`, "foo", "foo\n", "", ""},
@@ -1286,17 +1290,22 @@ BEGIN { x=4; y=5; print foo(x), bar(y) }
 				"foo": func(n int) int { return n * n },
 			}},
 		{`BEGIN { a["x"]=1; print foo(a) }`, "", "",
-			`parse error at 1:25: can't pass array "a" to native function`,
+			`parse error at 1:29: can't use array "a" as scalar`,
+			map[string]interface{}{
+				"foo": func(n int) int { return n * n },
+			}},
+		{`BEGIN { print foo(a); a["x"]=1 }`, "", "",
+			`parse error at 1:23: can't use scalar "a" as array`,
 			map[string]interface{}{
 				"foo": func(n int) int { return n * n },
 			}},
 		{`BEGIN { x["x"]=1; print f(x) }  function f(a) { return foo(a) }`, "", "",
-			`parse error at 1:56: can't pass array "a" to native function`,
+			`parse error at 1:27: can't pass array "x" as scalar param`,
 			map[string]interface{}{
 				"foo": func(n int) int { return n * n },
 			}},
 		{`function f(a) { return foo(a) }  BEGIN { x["x"]=1; print f(x) }`, "", "",
-			`parse error at 1:24: can't pass array "a" to native function`,
+			`parse error at 1:60: can't pass array "x" as scalar param`,
 			map[string]interface{}{
 				"foo": func(n int) int { return n * n },
 			}},

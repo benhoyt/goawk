@@ -1,1 +1,1 @@
-parse error at 6:2: can't pass scalar "a" as array param
+parse error at 6:4: can't pass scalar "a" as array param

@@ -83,9 +83,8 @@ func ParseProgram(src []byte, config *ParserConfig) (prog *Program, err error) {
 	// Parse into abstract syntax tree
 	astProg := p.program()
 
+	// Resolve variable scopes and types
 	prog = &Program{}
-
-	// Resolve step
 	prog.ResolvedProgram = *resolver.Resolve(astProg, config.toResolverConfig())
 
 	// Compile to virtual machine code
@@ -99,7 +98,7 @@ type Program struct {
 	// but are exported for the interpreter (Program itself needs to
 	// be exported in package "parser", otherwise these could live in
 	// "internal/ast".)
-	ast.ResolvedProgram
+	resolver.ResolvedProgram
 	Compiled *compiler.Program
 }
 
@@ -259,8 +258,7 @@ func (p *parser) simpleStmt() ast.Stmt {
 		}
 	case DELETE:
 		p.next()
-		ref := ast.ArrayRef(p.val, p.pos)
-		p.expect(NAME)
+		name, namePos := p.expectName()
 		var index []ast.Expr
 		if p.tok == LBRACKET {
 			p.next()
@@ -270,7 +268,7 @@ func (p *parser) simpleStmt() ast.Stmt {
 			}
 			p.expect(RBRACKET)
 		}
-		return &ast.DeleteStmt{ref, index, startPos, p.pos}
+		return &ast.DeleteStmt{name, namePos, index, startPos, p.pos}
 	case IF, FOR, WHILE, DO, BREAK, CONTINUE, NEXT, NEXTFILE, EXIT, RETURN:
 		panic(p.errorf("expected print/printf, delete, or expression"))
 	default:
@@ -337,7 +335,16 @@ func (p *parser) stmt() ast.Stmt {
 			}
 			bodyStart := p.pos
 			body := p.loopStmts()
-			s = &ast.ForInStmt{varExpr, inExpr.Array, bodyStart, body, startPos, p.pos}
+			s = &ast.ForInStmt{
+				Var:       varExpr.Name,
+				VarPos:    varExpr.Pos,
+				Array:     inExpr.Array,
+				ArrayPos:  inExpr.ArrayPos,
+				BodyStart: bodyStart,
+				Body:      body,
+				Start:     startPos,
+				End:       p.pos,
+			}
 		} else {
 			// Match: for ([pre]; [cond]; [post]) body
 			p.expect(SEMICOLON)
@@ -453,9 +460,7 @@ func (p *parser) function() *ast.Function {
 		panic(p.errorf("can't nest functions"))
 	}
 	p.next()
-	name := p.val
-	funcNamePos := p.pos
-	p.expect(NAME)
+	name, funcNamePos := p.expectName()
 	p.expect(LPAREN)
 	first := true
 	params := make([]string, 0, 7) // pre-allocate some to reduce allocations
@@ -486,7 +491,7 @@ func (p *parser) function() *ast.Function {
 
 	p.funcName = ""
 
-	return &ast.Function{name, params, nil, body, funcNamePos}
+	return &ast.Function{name, params, body, funcNamePos}
 }
 
 // Parse expressions separated by commas: args to print[f] or user
@@ -629,9 +634,8 @@ func (p *parser) _in(higher func() ast.Expr) ast.Expr {
 	expr := higher()
 	for p.tok == IN {
 		p.next()
-		ref := ast.ArrayRef(p.val, p.pos)
-		p.expect(NAME)
-		expr = &ast.InExpr{[]ast.Expr{expr}, ref}
+		name, namePos := p.expectName()
+		expr = &ast.InExpr{[]ast.Expr{expr}, name, namePos}
 	}
 	return expr
 }
@@ -746,9 +750,7 @@ func (p *parser) primary() ast.Expr {
 		}
 		return &ast.IncrExpr{expr, op, true}
 	case NAME:
-		name := p.val
-		namePos := p.pos
-		p.next()
+		name, namePos := p.expectName()
 		if p.tok == LBRACKET {
 			// a[x] or a[x, y] array index expression
 			p.next()
@@ -757,14 +759,14 @@ func (p *parser) primary() ast.Expr {
 				panic(p.errorf("expected expression instead of ]"))
 			}
 			p.expect(RBRACKET)
-			return &ast.IndexExpr{ast.ArrayRef(name, namePos), index}
+			return &ast.IndexExpr{name, namePos, index}
 		} else if p.tok == LPAREN && !p.lexer.HadSpace() {
 			// Grammar requires no space between function name and
 			// left paren for user function calls, hence the funky
 			// lexer.HadSpace() method.
 			return p.userCall(name, namePos)
 		}
-		return ast.VarRef(name, namePos)
+		return &ast.VarExpr{name, namePos}
 	case LPAREN:
 		parenPos := p.pos
 		p.next()
@@ -780,9 +782,8 @@ func (p *parser) primary() ast.Expr {
 			p.expect(RPAREN)
 			if p.tok == IN {
 				p.next()
-				ref := ast.ArrayRef(p.val, p.pos)
-				p.expect(NAME)
-				return &ast.InExpr{exprs, ref}
+				name, namePos := p.expectName()
+				return &ast.InExpr{exprs, name, namePos}
 			}
 			// MultiExpr is used as a pseudo-expression for print[f] parsing.
 			return p.multiExpr(exprs, parenPos)
@@ -824,9 +825,8 @@ func (p *parser) primary() ast.Expr {
 		p.expect(LPAREN)
 		str := p.expr()
 		p.commaNewlines()
-		ref := ast.ArrayRef(p.val, p.pos)
-		p.expect(NAME)
-		args := []ast.Expr{str, ref}
+		name, namePos := p.expectName()
+		args := []ast.Expr{str, &ast.VarExpr{name, namePos}}
 		if p.tok == COMMA {
 			p.commaNewlines()
 			args = append(args, p.regexStr(p.expr))
@@ -930,9 +930,7 @@ func (p *parser) optionalLValue() ast.Expr {
 			// User function call, e.g., foo() not lvalue.
 			return nil
 		}
-		name := p.val
-		namePos := p.pos
-		p.next()
+		name, namePos := p.expectName()
 		if p.tok == LBRACKET {
 			// a[x] or a[x, y] array index expression
 			p.next()
@@ -941,9 +939,9 @@ func (p *parser) optionalLValue() ast.Expr {
 				panic(p.errorf("expected expression instead of ]"))
 			}
 			p.expect(RBRACKET)
-			return &ast.IndexExpr{ast.ArrayRef(name, namePos), index}
+			return &ast.IndexExpr{name, namePos, index}
 		}
-		return ast.VarRef(name, namePos)
+		return &ast.VarExpr{name, namePos}
 	case DOLLAR:
 		p.next()
 		return &ast.FieldExpr{p.primary()}
@@ -1031,6 +1029,13 @@ func (p *parser) expect(tok Token) {
 	p.next()
 }
 
+// Ensure current token is a name, parse it, and return name and position.
+func (p *parser) expectName() (string, Position) {
+	name, pos := p.val, p.pos
+	p.expect(NAME)
+	return name, pos
+}
+
 // Return true iff current token matches one of the given operators,
 // but don't parse next token.
 func (p *parser) matches(operators ...Token) bool {
@@ -1063,7 +1068,7 @@ func (p *parser) userCall(name string, pos Position) *ast.UserCallExpr {
 		i++
 	}
 	p.expect(RPAREN)
-	return ast.UserCall(name, args, pos)
+	return &ast.UserCallExpr{name, args, pos}
 }
 
 // Record a "multi expression" (comma-separated pseudo-expression

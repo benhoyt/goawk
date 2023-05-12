@@ -625,7 +625,25 @@ func TestGoAWKSpecificOptions(t *testing.T) {
 		{[]string{"-oxyz", `{}`}, "", "", "invalid output mode \"xyz\"\n"},
 		{[]string{"-H", `{}`}, "", "", "-H only allowed together with -i\n"},
 
-		// Debug options (don't test -dt as its output is not stable)
+		// Debug options
+		{[]string{"-dt", `
+BEGIN { x=42; a[1]=x; print f(a, 1) }
+function f(b, y, z) { return b[y+z] }
+function hi(x) { print "hi " x }
+`}, "", `
+globals
+  ARGV: array 0
+  ENVIRON: array 1
+  FIELDS: array 2
+  a: array 3
+  x: scalar 0
+function f(b, y, z)  # index 0
+  b: array 0
+  y: scalar 0
+  z: scalar 1
+function hi(x)  # index 1
+  x: scalar 0
+`[1:], ""},
 		{[]string{"-d", `$1 { print 1+1 }`}, "", `
 $1 {
     print 1 + 1

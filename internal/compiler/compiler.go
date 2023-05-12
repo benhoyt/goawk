@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/benhoyt/goawk/internal/ast"
+	"github.com/benhoyt/goawk/internal/resolver"
 	"github.com/benhoyt/goawk/lexer"
 )
 
@@ -55,7 +56,7 @@ func (e *compileError) Error() string {
 }
 
 // Compile compiles an AST (parsed program) into virtual machine instructions.
-func Compile(prog *ast.ResolvedProgram) (compiledProg *Program, err error) {
+func Compile(resolved *resolver.ResolvedProgram) (compiledProg *Program, err error) {
 	defer func() {
 		// The compiler uses panic with a *compileError to signal compile
 		// errors internally, and they're caught here. This avoids the
@@ -78,57 +79,60 @@ func Compile(prog *ast.ResolvedProgram) (compiledProg *Program, err error) {
 	// Compile functions. For functions called before they're defined or
 	// recursive functions, we have to set most p.Functions data first, then
 	// compile Body afterward.
-	p.Functions = make([]Function, len(prog.Functions))
-	for i, astFunc := range prog.Functions {
+	p.Functions = make([]Function, len(resolved.Functions))
+	for i, astFunc := range resolved.Functions {
+		arrays := make([]bool, len(astFunc.Params))
 		numArrays := 0
-		for _, a := range astFunc.Arrays {
-			if a {
+		for j, param := range astFunc.Params {
+			_, info, _ := resolved.LookupVar(astFunc.Name, param)
+			if info.Type == resolver.Array {
+				arrays[j] = true
 				numArrays++
 			}
 		}
 		compiledFunc := Function{
 			Name:       astFunc.Name,
 			Params:     astFunc.Params,
-			Arrays:     astFunc.Arrays,
-			NumScalars: len(astFunc.Arrays) - numArrays,
+			Arrays:     arrays,
+			NumScalars: len(astFunc.Params) - numArrays,
 			NumArrays:  numArrays,
 		}
 		p.Functions[i] = compiledFunc
 	}
-	for i, astFunc := range prog.Functions {
-		c := &compiler{program: p, indexes: indexes}
+	for i, astFunc := range resolved.Functions {
+		c := compiler{resolved: resolved, program: p, indexes: indexes, funcName: astFunc.Name}
 		c.stmts(astFunc.Body)
 		p.Functions[i].Body = c.finish()
 	}
 
 	// Compile BEGIN blocks.
-	for _, stmts := range prog.Begin {
-		c := &compiler{program: p, indexes: indexes}
+	for _, stmts := range resolved.Begin {
+		c := compiler{resolved: resolved, program: p, indexes: indexes}
 		c.stmts(stmts)
 		p.Begin = append(p.Begin, c.finish()...)
 	}
 
 	// Compile pattern-action blocks.
-	for _, action := range prog.Actions {
+	for _, action := range resolved.Actions {
 		var pattern [][]Opcode
 		switch len(action.Pattern) {
 		case 0:
 			// Always considered a match
 		case 1:
-			c := &compiler{program: p, indexes: indexes}
+			c := compiler{resolved: resolved, program: p, indexes: indexes}
 			c.expr(action.Pattern[0])
 			pattern = [][]Opcode{c.finish()}
 		case 2:
-			c := &compiler{program: p, indexes: indexes}
+			c := compiler{resolved: resolved, program: p, indexes: indexes}
 			c.expr(action.Pattern[0])
 			pattern = append(pattern, c.finish())
-			c = &compiler{program: p, indexes: indexes}
+			c = compiler{resolved: resolved, program: p, indexes: indexes}
 			c.expr(action.Pattern[1])
 			pattern = append(pattern, c.finish())
 		}
 		var body []Opcode
 		if len(action.Stmts) > 0 {
-			c := &compiler{program: p, indexes: indexes}
+			c := compiler{resolved: resolved, program: p, indexes: indexes}
 			c.stmts(action.Stmts)
 			body = c.finish()
 		}
@@ -139,21 +143,33 @@ func Compile(prog *ast.ResolvedProgram) (compiledProg *Program, err error) {
 	}
 
 	// Compile END blocks.
-	for _, stmts := range prog.End {
-		c := &compiler{program: p, indexes: indexes}
+	for _, stmts := range resolved.End {
+		c := compiler{resolved: resolved, program: p, indexes: indexes}
 		c.stmts(stmts)
 		p.End = append(p.End, c.finish()...)
 	}
 
+	// Build slices that map indexes to names (for variables and functions).
 	// These are only used for disassembly, but set them up here.
-	p.scalarNames = make([]string, len(prog.Scalars))
-	for name, index := range prog.Scalars {
-		p.scalarNames[index] = name
-	}
-	p.arrayNames = make([]string, len(prog.Arrays))
-	for name, index := range prog.Arrays {
-		p.arrayNames[index] = name
-	}
+	resolved.IterVars("", func(name string, info resolver.VarInfo) {
+		if info.Type == resolver.Array {
+			for len(p.arrayNames) <= info.Index {
+				p.arrayNames = append(p.arrayNames, "")
+			}
+			p.arrayNames[info.Index] = name
+		} else {
+			for len(p.scalarNames) <= info.Index {
+				p.scalarNames = append(p.scalarNames, "")
+			}
+			p.scalarNames[info.Index] = name
+		}
+	})
+	resolved.IterFuncs(func(name string, info resolver.FuncInfo) {
+		for len(p.nativeFuncNames) <= info.Index {
+			p.nativeFuncNames = append(p.nativeFuncNames, "")
+		}
+		p.nativeFuncNames[info.Index] = name
+	})
 
 	return p, nil
 }
@@ -167,11 +183,29 @@ type constantIndexes struct {
 
 // Holds the compilation state.
 type compiler struct {
+	resolved  *resolver.ResolvedProgram
 	program   *Program
 	indexes   constantIndexes
+	funcName  string
 	code      []Opcode
 	breaks    [][]int
 	continues [][]int
+}
+
+func (c *compiler) scalarInfo(name string) (scope resolver.Scope, index int) {
+	scope, info, _ := c.resolved.LookupVar(c.funcName, name)
+	if info.Type != resolver.Scalar {
+		panic(fmt.Sprintf("internal error: found %s when expecting scalar %q", info.Type, name))
+	}
+	return scope, info.Index
+}
+
+func (c *compiler) arrayInfo(name string) (scope resolver.Scope, index int) {
+	scope, info, _ := c.resolved.LookupVar(c.funcName, name)
+	if info.Type != resolver.Array {
+		panic(fmt.Sprintf("internal error: found %s when expecting array %q", info.Type, name))
+	}
+	return scope, info.Index
 }
 
 func (c *compiler) add(ops ...Opcode) {
@@ -202,24 +236,26 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 			// Pre or post doesn't matter for an assignment expression
 			switch target := expr.Expr.(type) {
 			case *ast.VarExpr:
-				switch target.Scope {
-				case ast.ScopeGlobal:
-					c.add(IncrGlobal, incrAmount(expr.Op), opcodeInt(target.Index))
-				case ast.ScopeLocal:
-					c.add(IncrLocal, incrAmount(expr.Op), opcodeInt(target.Index))
+				scope, index := c.scalarInfo(target.Name)
+				switch scope {
+				case resolver.Global:
+					c.add(IncrGlobal, incrAmount(expr.Op), opcodeInt(index))
+				case resolver.Local:
+					c.add(IncrLocal, incrAmount(expr.Op), opcodeInt(index))
 				default: // ScopeSpecial
-					c.add(IncrSpecial, incrAmount(expr.Op), opcodeInt(target.Index))
+					c.add(IncrSpecial, incrAmount(expr.Op), opcodeInt(index))
 				}
 			case *ast.FieldExpr:
 				c.expr(target.Index)
 				c.add(IncrField, incrAmount(expr.Op))
 			case *ast.IndexExpr:
 				c.index(target.Index)
-				switch target.Array.Scope {
-				case ast.ScopeGlobal:
-					c.add(IncrArrayGlobal, incrAmount(expr.Op), opcodeInt(target.Array.Index))
+				scope, index := c.arrayInfo(target.Array)
+				switch scope {
+				case resolver.Global:
+					c.add(IncrArrayGlobal, incrAmount(expr.Op), opcodeInt(index))
 				default: // ScopeLocal
-					c.add(IncrArrayLocal, incrAmount(expr.Op), opcodeInt(target.Array.Index))
+					c.add(IncrArrayLocal, incrAmount(expr.Op), opcodeInt(index))
 				}
 			}
 			return
@@ -245,24 +281,26 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 
 			switch target := expr.Left.(type) {
 			case *ast.VarExpr:
-				switch target.Scope {
-				case ast.ScopeGlobal:
-					c.add(AugAssignGlobal, Opcode(augOp), opcodeInt(target.Index))
-				case ast.ScopeLocal:
-					c.add(AugAssignLocal, Opcode(augOp), opcodeInt(target.Index))
+				scope, index := c.scalarInfo(target.Name)
+				switch scope {
+				case resolver.Global:
+					c.add(AugAssignGlobal, Opcode(augOp), opcodeInt(index))
+				case resolver.Local:
+					c.add(AugAssignLocal, Opcode(augOp), opcodeInt(index))
 				default: // ScopeSpecial
-					c.add(AugAssignSpecial, Opcode(augOp), opcodeInt(target.Index))
+					c.add(AugAssignSpecial, Opcode(augOp), opcodeInt(index))
 				}
 			case *ast.FieldExpr:
 				c.expr(target.Index)
 				c.add(AugAssignField, Opcode(augOp))
 			case *ast.IndexExpr:
 				c.index(target.Index)
-				switch target.Array.Scope {
-				case ast.ScopeGlobal:
-					c.add(AugAssignArrayGlobal, Opcode(augOp), opcodeInt(target.Array.Index))
+				scope, index := c.arrayInfo(target.Array)
+				switch scope {
+				case resolver.Global:
+					c.add(AugAssignArrayGlobal, Opcode(augOp), opcodeInt(index))
 				default: // ScopeLocal
-					c.add(AugAssignArrayLocal, Opcode(augOp), opcodeInt(target.Array.Index))
+					c.add(AugAssignArrayLocal, Opcode(augOp), opcodeInt(index))
 				}
 			}
 			return
@@ -346,8 +384,10 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		// Otherwise we'd need to build a slice of all keys rather than
 		// iterating, or write our own hash table that has a more flexible
 		// iterator.
-		mark := c.jumpForward(ForIn, opcodeInt(int(s.Var.Scope)), opcodeInt(s.Var.Index),
-			Opcode(s.Array.Scope), opcodeInt(s.Array.Index))
+		varScope, varIndex := c.scalarInfo(s.Var)
+		arrayScope, arrayIndex := c.arrayInfo(s.Array)
+		mark := c.jumpForward(ForIn, opcodeInt(int(varScope)), opcodeInt(varIndex),
+			Opcode(arrayScope), opcodeInt(arrayIndex))
 
 		c.breaks = append(c.breaks, nil) // nil tells BreakStmt it's a for-in loop
 		c.continues = append(c.continues, []int{})
@@ -428,11 +468,12 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 		c.add(Exit)
 
 	case *ast.DeleteStmt:
+		scope, index := c.arrayInfo(s.Array)
 		if len(s.Index) > 0 {
 			c.index(s.Index)
-			c.add(Delete, Opcode(s.Array.Scope), opcodeInt(s.Array.Index))
+			c.add(Delete, Opcode(scope), opcodeInt(index))
 		} else {
-			c.add(DeleteAll, Opcode(s.Array.Scope), opcodeInt(s.Array.Index))
+			c.add(DeleteAll, Opcode(scope), opcodeInt(index))
 		}
 
 	case *ast.BlockStmt:
@@ -457,24 +498,26 @@ func incrAmount(op lexer.Token) Opcode {
 func (c *compiler) assign(target ast.Expr) {
 	switch target := target.(type) {
 	case *ast.VarExpr:
-		switch target.Scope {
-		case ast.ScopeGlobal:
-			c.add(AssignGlobal, opcodeInt(target.Index))
-		case ast.ScopeLocal:
-			c.add(AssignLocal, opcodeInt(target.Index))
-		case ast.ScopeSpecial:
-			c.add(AssignSpecial, opcodeInt(target.Index))
+		scope, index := c.scalarInfo(target.Name)
+		switch scope {
+		case resolver.Global:
+			c.add(AssignGlobal, opcodeInt(index))
+		case resolver.Local:
+			c.add(AssignLocal, opcodeInt(index))
+		case resolver.Special:
+			c.add(AssignSpecial, opcodeInt(index))
 		}
 	case *ast.FieldExpr:
 		c.expr(target.Index)
 		c.add(AssignField)
 	case *ast.IndexExpr:
 		c.index(target.Index)
-		switch target.Array.Scope {
-		case ast.ScopeGlobal:
-			c.add(AssignArrayGlobal, opcodeInt(target.Array.Index))
-		case ast.ScopeLocal:
-			c.add(AssignArrayLocal, opcodeInt(target.Array.Index))
+		scope, index := c.arrayInfo(target.Array)
+		switch scope {
+		case resolver.Global:
+			c.add(AssignArrayGlobal, opcodeInt(index))
+		case resolver.Local:
+			c.add(AssignArrayLocal, opcodeInt(index))
 		}
 	}
 }
@@ -615,13 +658,14 @@ func (c *compiler) expr(expr ast.Expr) {
 		c.add(FieldByName)
 
 	case *ast.VarExpr:
-		switch e.Scope {
-		case ast.ScopeGlobal:
-			c.add(Global, opcodeInt(e.Index))
-		case ast.ScopeLocal:
-			c.add(Local, opcodeInt(e.Index))
-		case ast.ScopeSpecial:
-			c.add(Special, opcodeInt(e.Index))
+		scope, index := c.scalarInfo(e.Name)
+		switch scope {
+		case resolver.Global:
+			c.add(Global, opcodeInt(index))
+		case resolver.Local:
+			c.add(Local, opcodeInt(index))
+		case resolver.Special:
+			c.add(Special, opcodeInt(index))
 		}
 
 	case *ast.RegExpr:
@@ -702,11 +746,12 @@ func (c *compiler) expr(expr ast.Expr) {
 
 	case *ast.IndexExpr:
 		c.index(e.Index)
-		switch e.Array.Scope {
-		case ast.ScopeGlobal:
-			c.add(ArrayGlobal, opcodeInt(e.Array.Index))
-		case ast.ScopeLocal:
-			c.add(ArrayLocal, opcodeInt(e.Array.Index))
+		scope, index := c.arrayInfo(e.Array)
+		switch scope {
+		case resolver.Global:
+			c.add(ArrayGlobal, opcodeInt(index))
+		case resolver.Local:
+			c.add(ArrayLocal, opcodeInt(index))
 		}
 
 	case *ast.CallExpr:
@@ -714,12 +759,13 @@ func (c *compiler) expr(expr ast.Expr) {
 		switch e.Func {
 		case lexer.F_SPLIT:
 			c.expr(e.Args[0])
-			arrayExpr := e.Args[1].(*ast.ArrayExpr)
+			varExpr := e.Args[1].(*ast.VarExpr) // split()'s 2nd arg is always an array
+			scope, index := c.arrayInfo(varExpr.Name)
 			if len(e.Args) > 2 {
 				c.expr(e.Args[2])
-				c.add(CallSplitSep, Opcode(arrayExpr.Scope), opcodeInt(arrayExpr.Index))
+				c.add(CallSplitSep, Opcode(scope), opcodeInt(index))
 			} else {
-				c.add(CallSplit, Opcode(arrayExpr.Scope), opcodeInt(arrayExpr.Index))
+				c.add(CallSplit, Opcode(scope), opcodeInt(index))
 			}
 			return
 		case lexer.F_SUB, lexer.F_GSUB:
@@ -814,31 +860,30 @@ func (c *compiler) expr(expr ast.Expr) {
 
 	case *ast.InExpr:
 		c.index(e.Index)
-		switch e.Array.Scope {
-		case ast.ScopeGlobal:
-			c.add(InGlobal, opcodeInt(e.Array.Index))
+		scope, index := c.arrayInfo(e.Array)
+		switch scope {
+		case resolver.Global:
+			c.add(InGlobal, opcodeInt(index))
 		default: // ScopeLocal
-			c.add(InLocal, opcodeInt(e.Array.Index))
+			c.add(InLocal, opcodeInt(index))
 		}
 
 	case *ast.UserCallExpr:
-		if e.Native {
+		funcInfo, _ := c.resolved.LookupFunc(e.Name)
+		if funcInfo.Native {
 			for _, arg := range e.Args {
 				c.expr(arg)
 			}
-			c.add(CallNative, opcodeInt(e.Index), opcodeInt(len(e.Args)))
-			for len(c.program.nativeFuncNames) <= e.Index {
-				c.program.nativeFuncNames = append(c.program.nativeFuncNames, "")
-			}
-			c.program.nativeFuncNames[e.Index] = e.Name
+			c.add(CallNative, opcodeInt(funcInfo.Index), opcodeInt(len(e.Args)))
 		} else {
-			f := c.program.Functions[e.Index]
+			f := c.program.Functions[funcInfo.Index]
 			var arrayOpcodes []Opcode
 			numScalarArgs := 0
 			for i, arg := range e.Args {
 				if f.Arrays[i] {
 					a := arg.(*ast.VarExpr)
-					arrayOpcodes = append(arrayOpcodes, Opcode(a.Scope), opcodeInt(a.Index))
+					scope, index := c.arrayInfo(a.Name)
+					arrayOpcodes = append(arrayOpcodes, Opcode(scope), opcodeInt(index))
 				} else {
 					c.expr(arg)
 					numScalarArgs++
@@ -847,7 +892,7 @@ func (c *compiler) expr(expr ast.Expr) {
 			if numScalarArgs < f.NumScalars {
 				c.add(Nulls, opcodeInt(f.NumScalars-numScalarArgs))
 			}
-			c.add(CallUser, opcodeInt(e.Index), opcodeInt(len(arrayOpcodes)/2))
+			c.add(CallUser, opcodeInt(funcInfo.Index), opcodeInt(len(arrayOpcodes)/2))
 			c.add(arrayOpcodes...)
 		}
 
@@ -866,20 +911,22 @@ func (c *compiler) expr(expr ast.Expr) {
 		}
 		switch target := e.Target.(type) {
 		case *ast.VarExpr:
-			switch target.Scope {
-			case ast.ScopeGlobal:
-				c.add(GetlineGlobal, redirect(), opcodeInt(target.Index))
-			case ast.ScopeLocal:
-				c.add(GetlineLocal, redirect(), opcodeInt(target.Index))
-			case ast.ScopeSpecial:
-				c.add(GetlineSpecial, redirect(), opcodeInt(target.Index))
+			scope, index := c.scalarInfo(target.Name)
+			switch scope {
+			case resolver.Global:
+				c.add(GetlineGlobal, redirect(), opcodeInt(index))
+			case resolver.Local:
+				c.add(GetlineLocal, redirect(), opcodeInt(index))
+			case resolver.Special:
+				c.add(GetlineSpecial, redirect(), opcodeInt(index))
 			}
 		case *ast.FieldExpr:
 			c.expr(target.Index)
 			c.add(GetlineField, redirect())
 		case *ast.IndexExpr:
 			c.index(target.Index)
-			c.add(GetlineArray, redirect(), Opcode(target.Array.Scope), opcodeInt(target.Array.Index))
+			scope, index := c.arrayInfo(target.Array)
+			c.add(GetlineArray, redirect(), Opcode(scope), opcodeInt(index))
 		default:
 			c.add(Getline, redirect())
 		}

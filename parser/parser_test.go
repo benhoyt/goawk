@@ -39,6 +39,7 @@ $0 {
     print "x" >"file"
     print "x" >>"append"
     print "y" |"prog"
+    delete a
     delete a[k]
     if (c) {
         get(a, k)

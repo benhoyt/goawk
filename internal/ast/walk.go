@@ -2,7 +2,7 @@ package ast
 
 import "fmt"
 
-// A Visitor's Visit method is invoked for each node encountered by Walk.
+// Visitor has a Visit method which is invoked for each node encountered by Walk.
 // If the result visitor w is not nil, Walk visits each of the children
 // of node with the visitor w, followed by a call of w.Visit(nil).
 type Visitor interface {
@@ -55,10 +55,8 @@ func Walk(v Visitor, node Node) {
 		Walk(v, n.Left)
 		Walk(v, n.Right)
 
-	case *ArrayExpr: // leaf
 	case *InExpr:
 		WalkExprList(v, n.Index)
-		Walk(v, n.Array)
 
 	case *CondExpr:
 		Walk(v, n.Cond)
@@ -70,7 +68,6 @@ func Walk(v Visitor, node Node) {
 	case *RegExpr: // leaf
 	case *VarExpr: // leaf
 	case *IndexExpr:
-		Walk(v, n.Array)
 		WalkExprList(v, n.Index)
 
 	case *AssignExpr:
@@ -125,8 +122,6 @@ func Walk(v Visitor, node Node) {
 		WalkStmtList(v, n.Body)
 
 	case *ForInStmt:
-		Walk(v, n.Var)
-		Walk(v, n.Array)
 		WalkStmtList(v, n.Body)
 
 	case *WhileStmt:
@@ -145,7 +140,6 @@ func Walk(v Visitor, node Node) {
 		Walk(v, n.Status)
 
 	case *DeleteStmt:
-		Walk(v, n.Array)
 		WalkExprList(v, n.Index)
 
 	case *ReturnStmt:
