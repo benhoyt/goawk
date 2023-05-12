@@ -5,7 +5,6 @@ package resolver
 import (
 	"fmt"
 	"io"
-	"math"
 	"reflect"
 	"sort"
 	"strings"
@@ -437,7 +436,7 @@ func (v *mainVisitor) Visit(node ast.Node) ast.Visitor {
 			typ := reflect.TypeOf(v.nativeFuncs[n.Name])
 			numParams = typ.NumIn()
 			if typ.IsVariadic() {
-				numParams = math.MaxInt
+				numParams = 1000000000 // bigger than any reasonable len(n.Args) value!
 			}
 		}
 		if len(n.Args) > numParams {
