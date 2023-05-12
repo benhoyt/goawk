@@ -637,6 +637,13 @@ func (p *interp) execute(code []compiler.Opcode) error {
 				return err
 			}
 
+		case compiler.CallLengthArray:
+			arrayScope := code[ip]
+			arrayIndex := code[ip+1]
+			ip += 2
+			array := p.array(resolver.Scope(arrayScope), int(arrayIndex))
+			p.push(num(float64(len(array))))
+
 		case compiler.CallSplit:
 			arrayScope := code[ip]
 			arrayIndex := code[ip+1]

@@ -328,6 +328,11 @@ func (d *disassembler) disassemble(prefix string) error {
 			builtinOp := BuiltinOp(d.fetch())
 			d.writeOpf("CallBuiltin %s", builtinOp)
 
+		case CallLengthArray:
+			arrayScope := resolver.Scope(d.fetch())
+			arrayIndex := int(d.fetch())
+			d.writeOpf("CallLengthArray %s", d.arrayName(arrayScope, arrayIndex))
+
 		case CallSplit:
 			arrayScope := resolver.Scope(d.fetch())
 			arrayIndex := int(d.fetch())
