@@ -173,32 +173,13 @@ func Resolve(prog *ast.Program, config *Config) *ResolvedProgram {
 	// Main resolver pass: determine types of variables and find function
 	// information. Can't call ast.Walk on prog directly, as it will not
 	// iterate through functions in topological (call graph) order.
-	main := mainVisitor{r: &r, nativeFuncs: config.Funcs}
-	for _, funcName := range orderedFuncs {
-		if funcName == "" {
-			continue // BEGIN, END, and actions are processed below
-		}
-		function, exists := callGraph.funcs[funcName]
-		if !exists {
-			// Happens in the case where someone tries to call a local
-			// variable as a function: function f(x) { x() }. That is checked
-			// and flagged as an error in the visitor.
-			continue
-		}
-		r.defineFunc(callGraph.funcIndexes[funcName], funcName, function.Params)
-		main.curFunc = funcName
-		ast.WalkStmtList(&main, function.Body)
-		main.curFunc = ""
-	}
-	for _, stmts := range prog.Begin {
-		ast.WalkStmtList(&main, stmts)
-	}
-	for _, action := range prog.Actions {
-		ast.Walk(&main, action)
-	}
-	for _, stmts := range prog.End {
-		ast.WalkStmtList(&main, stmts)
-	}
+	main := mainVisitor{r: &r, nativeFuncs: config.Funcs, funcIndexes: callGraph.funcIndexes}
+	main.walkOrdered(prog, orderedFuncs)
+
+	// Do another pass to set parameter types in functions which don't use
+	// their parameters, such as f1's A parameter in this example:
+	//  function f1(A) {}  function f2(x, A) { x[0]; f1(a); f2(a) }
+	main.walkOrdered(prog, orderedFuncs)
 
 	// For any variables that are still unknown, set their type to scalar.
 	// This can happen for unused variables, such as in the following:
@@ -326,6 +307,10 @@ func (r *resolver) recordVar(funcName, varName string, typ Type, pos lexer.Posit
 
 // Define a function and its local variables.
 func (r *resolver) defineFunc(index int, name string, params []string) {
+	if info, ok := r.funcInfo[name]; ok && !info.Native {
+		// Function already defined in the previous pass
+		return
+	}
 	r.funcInfo[name] = FuncInfo{Native: false, Index: index, Params: params}
 	// Define the local variable names (we don't know their types yet).
 	r.varInfo[name] = make(map[string]VarInfo)
@@ -372,7 +357,37 @@ func (v *callGraphVisitor) Visit(node ast.Node) ast.Visitor {
 type mainVisitor struct {
 	r           *resolver
 	nativeFuncs map[string]interface{}
+	funcIndexes map[string]int
 	curFunc     string
+}
+
+// Walk prog's AST, with functions walked as ordered by orderedFuncs.
+func (v *mainVisitor) walkOrdered(prog *ast.Program, orderedFuncs []string) {
+	for _, funcName := range orderedFuncs {
+		if funcName == "" {
+			continue // BEGIN, END, and actions are processed below
+		}
+		function, exists := v.r.funcs[funcName]
+		if !exists {
+			// Happens in the case where someone tries to call a local
+			// variable as a function: function f(x) { x() }. That is checked
+			// and flagged as an error in the visitor.
+			continue
+		}
+		v.r.defineFunc(v.funcIndexes[funcName], funcName, function.Params)
+		v.curFunc = funcName
+		ast.WalkStmtList(v, function.Body)
+		v.curFunc = ""
+	}
+	for _, stmts := range prog.Begin {
+		ast.WalkStmtList(v, stmts)
+	}
+	for _, action := range prog.Actions {
+		ast.Walk(v, action)
+	}
+	for _, stmts := range prog.End {
+		ast.WalkStmtList(v, stmts)
+	}
 }
 
 func (v *mainVisitor) Visit(node ast.Node) ast.Visitor {
