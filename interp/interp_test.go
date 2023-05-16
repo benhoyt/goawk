@@ -271,7 +271,8 @@ BEGIN {
 	{`BEGIN { print '\"' '\'' 'xy' "z" "'" '\"' }`, "", "\"'xyz'\"\n", "", "invalid char"}, // Check support for single-quoted strings
 	{`BEGIN { print "0\n1\t2\r3\a4\b5\f6\v7\x408\xf" }  # !posix`, "", "0\n1\t2\r3\a4\b5\f6\v7@8\x0f\n", "", ""},
 	{`{ print /foo/ }`, "food\nfoo\nxfooz\nbar\n", "1\n1\n1\n0\n", "", ""},
-	{`/[a-/`, "foo", "", "parse error at 1:1: error parsing regexp: missing closing ]: `[a-`", "terminated"},
+	{`/[a-/`, "foo", "", "parse error at 1:1: error parsing regexp: invalid character class range: `a-)`", "terminated"},
+	{`/\Q/  # !gawk`, "", "", "parse error at 1:1: error parsing regexp: missing closing ): `(?s:\\Q)`", ""}, // Gawk produces a warning (not an error), so skip
 	{`/=foo/`, "=foo", "=foo\n", "", ""},
 	{`BEGIN { RS="x" } /^a.*c$/`, "a\nb\nc", "a\nb\nc\n", "", ""},
 	{`BEGIN { print "-12"+0, "+12"+0, " \t\r\n7foo"+0, ".5"+0, "5."+0, "+."+0 }`, "", "-12 12 7 0.5 5 0\n", "", ""},
