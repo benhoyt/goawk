@@ -713,6 +713,7 @@ BEGIN { a[1]=2; f1(a); print f2(a, 1) }
 `, "", "2\n", "", ""},
 	{`BEGIN { arr[0]; f(arr) } function f(a) { print "x" }`, "", "x\n", "", ""},
 	{`function add(a, b) { return a+b }  BEGIN { print add(1, 2), add(1), add() }`, "", "3 1 0\n", "", ""},
+	{`function f1(A) {}  function f2(x, A) { x[0]; f1(a); f2(a) }`, "", "", "", ""}, // found via fuzzing
 
 	// Type checking / resolver tests
 	{`BEGIN { a[x]; a=42 }`, "", "", `parse error at 1:15: can't use array "a" as scalar`, "array"},
