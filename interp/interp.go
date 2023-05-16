@@ -781,7 +781,11 @@ func (p *interp) setSpecial(index int, v value) error {
 	case ast.V_FNR:
 		p.fileLineNum = int(v.num())
 	case ast.V_ARGC:
-		p.argc = int(v.num())
+		argc := int(v.num())
+		if argc > maxFieldIndex {
+			return newError("ARGC set too large: %d", argc)
+		}
+		p.argc = argc
 	case ast.V_CONVFMT:
 		p.convertFormat = p.toString(v)
 	case ast.V_FILENAME:
