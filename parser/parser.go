@@ -1013,7 +1013,7 @@ func (p *parser) nextRegex() string {
 		panic(p.errorf("%s", p.val))
 	}
 	regex := p.val
-	_, err := regexp.Compile(regex)
+	_, err := regexp.Compile(compiler.AddRegexFlags(regex))
 	if err != nil {
 		panic(p.errorf("%v", err))
 	}
