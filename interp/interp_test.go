@@ -305,6 +305,7 @@ BEGIN {
 
 	// Built-in variables
 	{`BEGIN { print ARGC; ARGC=42; print ARGC }  # !gawk`, "", "1\n42\n", "", ""}, // ARGC is properly tested in goawk_test.go
+	{`BEGIN { ARGC=1234567 }`, "", "", "ARGC set too large: 1234567", ""},
 	{`
 BEGIN {
 	print CONVFMT, 1.2345678 ""
