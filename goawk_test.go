@@ -449,6 +449,10 @@ testdata/g.6:2/6: Duo
 			"", "", "testdata/parseerror/bad.awk:2:3: expected expression instead of <newline>\nx*\n  ^"},
 		{[]string{"-f", "testdata/parseerror/good.awk", "-f", "-", "-f", "testdata/parseerror/bad.awk"},
 			"`", "", "<stdin>:1:1: unexpected char\n`\n^"},
+
+		// Other programs
+		{[]string{"-f", "testdata/other/gron.awk"}, `{"foo":42}`,
+			"json={}\njson.foo=42\n", ""},
 	}
 	for _, test := range tests {
 		testName := strings.Join(test.args, " ")

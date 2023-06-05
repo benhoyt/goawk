@@ -125,12 +125,25 @@ func Resolve(prog *ast.Program, config *Config) *ResolvedProgram {
 		config = &Config{}
 	}
 
+	// Assign indexes to native (Go-defined) functions, in order of name.
+	// Do this before our first pass, so that AWK-defined functions override
+	// Go-defined ones and take precedence.
+	funcInfo := make(map[string]FuncInfo)
+	var nativeNames []string
+	for name := range config.Funcs {
+		nativeNames = append(nativeNames, name)
+	}
+	sort.Strings(nativeNames)
+	for i, name := range nativeNames {
+		funcInfo[name] = FuncInfo{Native: true, Index: i}
+	}
+
 	// First pass determines call graph so we can process functions in
 	// topological order: e.g., if f() calls g(), process g first, then f.
 	callGraph := callGraphVisitor{
-		calls:       make(map[string]map[string]struct{}),
-		funcs:       make(map[string]*ast.Function),
-		funcIndexes: make(map[string]int),
+		calls:    make(map[string]map[string]struct{}),
+		funcs:    make(map[string]*ast.Function),
+		funcInfo: funcInfo,
 	}
 	ast.Walk(&callGraph, prog)
 	orderedFuncs := topoSort(callGraph.calls)
@@ -147,12 +160,20 @@ func Resolve(prog *ast.Program, config *Config) *ResolvedProgram {
 		}
 	}
 
-	// Create our type resolver.
-	r := resolver{
-		varInfo:  make(map[string]map[string]VarInfo),
-		funcInfo: make(map[string]FuncInfo),
-		funcs:    callGraph.funcs,
+	// Define the local variable names (we don't know their types yet).
+	varInfo := make(map[string]map[string]VarInfo)
+	for funcName, info := range funcInfo {
+		if info.Native {
+			continue
+		}
+		varInfo[funcName] = make(map[string]VarInfo)
+		for _, param := range info.Params {
+			varInfo[funcName][param] = VarInfo{}
+		}
 	}
+
+	// Create our type resolver.
+	r := resolver{varInfo: varInfo, funcInfo: funcInfo, funcs: callGraph.funcs}
 	r.varInfo[""] = make(map[string]VarInfo) // func of "" stores global vars
 
 	// Interpreter relies on ARGV and other built-in arrays being present.
@@ -160,20 +181,10 @@ func Resolve(prog *ast.Program, config *Config) *ResolvedProgram {
 	r.recordVar("", "ENVIRON", Array, lexer.Position{1, 1})
 	r.recordVar("", "FIELDS", Array, lexer.Position{1, 1})
 
-	// Assign indexes to native (Go-defined) functions, in order of name.
-	var nativeNames []string
-	for name := range config.Funcs {
-		nativeNames = append(nativeNames, name)
-	}
-	sort.Strings(nativeNames)
-	for i, name := range nativeNames {
-		r.funcInfo[name] = FuncInfo{Native: true, Index: i}
-	}
-
 	// Main resolver pass: determine types of variables and find function
 	// information. Can't call ast.Walk on prog directly, as it will not
 	// iterate through functions in topological (call graph) order.
-	main := mainVisitor{r: &r, nativeFuncs: config.Funcs, funcIndexes: callGraph.funcIndexes}
+	main := mainVisitor{r: &r, nativeFuncs: config.Funcs}
 	main.walkOrdered(prog, orderedFuncs)
 
 	// Do another pass to set parameter types in functions which don't use
@@ -305,27 +316,13 @@ func (r *resolver) recordVar(funcName, varName string, typ Type, pos lexer.Posit
 	}
 }
 
-// Define a function and its local variables.
-func (r *resolver) defineFunc(index int, name string, params []string) {
-	if info, ok := r.funcInfo[name]; ok && !info.Native {
-		// Function already defined in the previous pass
-		return
-	}
-	r.funcInfo[name] = FuncInfo{Native: false, Index: index, Params: params}
-	// Define the local variable names (we don't know their types yet).
-	r.varInfo[name] = make(map[string]VarInfo)
-	for _, param := range params {
-		r.varInfo[name][param] = VarInfo{}
-	}
-}
-
 // callGraphVisitor records what functions are called by the current function
 // to build our call graph.
 type callGraphVisitor struct {
-	calls       map[string]map[string]struct{} // map of current function to called function
-	funcs       map[string]*ast.Function
-	funcIndexes map[string]int
-	curFunc     string
+	calls    map[string]map[string]struct{} // map of current function to called function
+	funcs    map[string]*ast.Function
+	funcInfo map[string]FuncInfo
+	curFunc  string
 }
 
 func (v *callGraphVisitor) Visit(node ast.Node) ast.Visitor {
@@ -334,8 +331,8 @@ func (v *callGraphVisitor) Visit(node ast.Node) ast.Visitor {
 		if _, ok := v.funcs[n.Name]; ok {
 			panic(ast.PosErrorf(n.Pos, "function %q already defined", n.Name))
 		}
+		v.funcInfo[n.Name] = FuncInfo{Index: len(v.funcs), Params: n.Params}
 		v.funcs[n.Name] = n
-		v.funcIndexes[n.Name] = len(v.funcIndexes)
 		v.curFunc = n.Name
 		ast.WalkStmtList(v, n.Body)
 		v.curFunc = ""
@@ -357,7 +354,6 @@ func (v *callGraphVisitor) Visit(node ast.Node) ast.Visitor {
 type mainVisitor struct {
 	r           *resolver
 	nativeFuncs map[string]interface{}
-	funcIndexes map[string]int
 	curFunc     string
 }
 
@@ -374,7 +370,6 @@ func (v *mainVisitor) walkOrdered(prog *ast.Program, orderedFuncs []string) {
 			// and flagged as an error in the visitor.
 			continue
 		}
-		v.r.defineFunc(v.funcIndexes[funcName], funcName, function.Params)
 		v.curFunc = funcName
 		ast.WalkStmtList(v, function.Body)
 		v.curFunc = ""
