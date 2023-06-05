@@ -743,6 +743,11 @@ BEGIN { foo(5); bar(10) }
 	{`function f(x) { print x, x(); }  BEGIN { f() }`, "", "", `parse error at 1:26: can't call local variable "x" as function`, "function"},
 	{`function f(x) { print x } BEGIN { print f(1, 2) }  # !gawk`, // only a warning in Gawk
 		"", "", `parse error at 1:41: "f" called with more arguments than declared`, ""},
+	{`# mutually recursive functions
+function f(n) { if (!n) return; print "f(" n ")"; g(n-1) }
+function g(n) { if (!n) return; print "g(" n ")"; f(n-1) }
+BEGIN { f(4) }
+`, "", "f(4)\ng(3)\nf(2)\ng(1)\n", "", ""},
 
 	// Redirected I/O
 	{`BEGIN { getline x; print x }`, "foo", "foo\n", "", ""},
