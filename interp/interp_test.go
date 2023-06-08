@@ -748,6 +748,22 @@ function f(n) { if (!n) return; print "f(" n ")"; g(n-1) }
 function g(n) { if (!n) return; print "g(" n ")"; f(n-1) }
 BEGIN { f(4) }
 `, "", "f(4)\ng(3)\nf(2)\ng(1)\n", "", ""},
+	{`
+function f1(a) { f2(a) }
+function f2(b) { f3(b) }
+function f3(c) { f4(c) }
+function f4(d) { f5(d) }
+function f5(i) { i[1]=42 }
+BEGIN { x[1]=3; f5(x); print x[1] }
+`, "", "42\n", "", ""},
+	{`
+function f1(a) { f2(a) }
+function f2(b) { f3(b) }
+function f5(i) { i[1]++ }
+function f4(d) { f5(d) }
+function f3(c) { f4(c) }
+BEGIN { x[1]=3; f5(x); print x[1] }
+`, "", "4\n", "", ""},
 
 	// Redirected I/O
 	{`BEGIN { getline x; print x }`, "foo", "foo\n", "", ""},
