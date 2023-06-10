@@ -764,6 +764,14 @@ function f4(d) { f5(d) }
 function f3(c) { f4(c) }
 BEGIN { x[1]=3; f5(x); print x[1] }
 `, "", "4\n", "", ""},
+	{`
+function f1(a) { if (0) f5(z1); f2(a) }
+function f2(b) { if (0) f4(z2); f3(b) }
+function f3(c) { if (0) f3(z3); f4(c) }
+function f4(d) { if (0) f2(z4); f5(d) }
+function f5(i) { if (0) f1(z5); i[1]=42 }
+BEGIN { x[1]=3; f5(x); print x[1] }
+`, "", "42\n", "", ""},
 
 	// Redirected I/O
 	{`BEGIN { getline x; print x }`, "foo", "foo\n", "", ""},
