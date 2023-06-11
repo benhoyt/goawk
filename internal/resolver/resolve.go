@@ -185,12 +185,37 @@ func Resolve(prog *ast.Program, config *Config) *ResolvedProgram {
 	// information. Can't call ast.Walk on prog directly, as it will not
 	// iterate through functions in topological (call graph) order.
 	main := mainVisitor{r: &r, nativeFuncs: config.Funcs}
+	updates := r.updates
 	main.walkOrdered(prog, orderedFuncs)
 
-	// Do another pass to set parameter types in functions which don't use
-	// their parameters, such as f1's A parameter in this example:
+	// Do additional passes while we're still making type updates. Topological
+	// sorting takes care of ordinary call graphs, but additional passes are
+	// needed for at least these two cases:
+	//
+	// 1. Functions which don't use their parameters, such as f1's A parameter
+	//    in this example:
+	//
 	//  function f1(A) {}  function f2(x, A) { x[0]; f1(a); f2(a) }
-	main.walkOrdered(prog, orderedFuncs)
+	//
+	// 2. For complex mutually-recursive functions, such as this example:
+	//
+	//  function f1(a) { if (0) f5(z1); f2(a) }
+	//  function f2(b) { if (0) f4(z2); f3(b) }
+	//  function f3(c) { if (0) f3(z3); f4(c) }
+	//  function f4(d) { if (0) f2(z4); f5(d) }
+	//  function f5(i) { if (0) f1(z5); i[1]=42 }
+	//  BEGIN { x[1]=3; f5(x); print x[1] }
+	//
+	// Limit it to a sensible maximum number of iterations that almost
+	// certainly won't happen in the real world.
+	for i := 0; r.updates != updates; i++ {
+		updates = r.updates
+		main.walkOrdered(prog, orderedFuncs)
+		if i >= 100 {
+			panic(ast.PosErrorf(lexer.Position{1, 1},
+				"too many iterations trying to resolve variable types"))
+		}
+	}
 
 	// For any variables that are still unknown, set their type to scalar.
 	// This can happen for unused variables, such as in the following:
@@ -272,6 +297,7 @@ type resolver struct {
 	varInfo  map[string]map[string]VarInfo
 	funcInfo map[string]FuncInfo
 	funcs    map[string]*ast.Function
+	updates  int
 }
 
 // Look up variable from function funcName and return its scope and type
@@ -303,6 +329,7 @@ func (r *resolver) recordVar(funcName, varName string, typ Type, pos lexer.Posit
 	if !exists {
 		// Doesn't exist as a local or a global, add it as a new global.
 		r.varInfo[""][varName] = VarInfo{Type: typ}
+		r.updates++
 		if _, isFunc := r.funcs[varName]; isFunc {
 			panic(ast.PosErrorf(pos, "global var %q can't also be a function", varName))
 		}
@@ -311,8 +338,9 @@ func (r *resolver) recordVar(funcName, varName string, typ Type, pos lexer.Posit
 	if info.Type != typ && info.Type != unknown && typ != unknown {
 		panic(ast.PosErrorf(pos, "can't use %s %q as %s", info.Type, varName, typ))
 	}
-	if info.Type == unknown {
+	if info.Type == unknown && typ != unknown {
 		r.varInfo[varFunc][varName] = VarInfo{Type: typ, Index: info.Index}
+		r.updates++
 	}
 }
 
