@@ -869,6 +869,10 @@ BEGIN { x[1]=3; f5(x); print x[1] }
 	{"{}             ;  ", "", "", "", ""},
 	{"1              ;  ", "", "", "", ""},
 
+	// Extra semicolons are allowed in blocks
+	{`BEGIN {;}`, "", "", "", ""},
+	{`BEGIN { while (0) {;;} }`, "", "", "", ""},
+
 	// Grammar should allow blocks wherever statements are allowed
 	{`BEGIN { if (1) printf "x"; else printf "y" }`, "", "x", "", ""},
 	{`BEGIN { printf "x"; { printf "y"; printf "z" } }`, "", "xyz", "", ""},

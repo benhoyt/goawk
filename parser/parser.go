@@ -217,6 +217,10 @@ func (p *parser) stmtsBrace() ast.Stmts {
 	p.optionalNewlines()
 	ss := []ast.Stmt{}
 	for p.tok != RBRACE && p.tok != EOF {
+		if p.matches(SEMICOLON, NEWLINE) {
+			p.next()
+			continue
+		}
 		ss = append(ss, p.stmt())
 	}
 	p.expect(RBRACE)
@@ -278,9 +282,6 @@ func (p *parser) simpleStmt() ast.Stmt {
 
 // Parse any top-level statement.
 func (p *parser) stmt() ast.Stmt {
-	for p.matches(SEMICOLON, NEWLINE) {
-		p.next()
-	}
 	var s ast.Stmt
 	startPos := p.pos
 	switch p.tok {
