@@ -591,8 +591,11 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			return errNextfile
 
 		case compiler.Exit:
-			p.exitStatus = int(p.pop().num())
 			// Return special errExit value "caught" by top-level executor
+			return errExit
+
+		case compiler.ExitStatus:
+			p.exitStatus = int(p.pop().num())
 			return errExit
 
 		case compiler.ForIn:

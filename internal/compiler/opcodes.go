@@ -1,6 +1,6 @@
 package compiler
 
-//go:generate go run golang.org/x/tools/cmd/stringer@v0.1.8 -type=Opcode,AugOp,BuiltinOp
+//go:generate go run golang.org/x/tools/cmd/stringer@v0.10.0 -type=Opcode,AugOp,BuiltinOp
 
 // Opcode represents a single virtual machine instruction (or argument). The
 // comments beside each opcode show any arguments that instruction consumes.
@@ -109,6 +109,7 @@ const (
 	Next
 	Nextfile
 	Exit
+	ExitStatus
 	ForIn // varScope varIndex arrayScope arrayIndex offset
 	BreakForIn
 

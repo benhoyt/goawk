@@ -462,10 +462,10 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 	case *ast.ExitStmt:
 		if s.Status != nil {
 			c.expr(s.Status)
+			c.add(ExitStatus)
 		} else {
-			c.expr(&ast.NumExpr{0})
+			c.add(Exit)
 		}
-		c.add(Exit)
 
 	case *ast.DeleteStmt:
 		scope, index := c.arrayInfo(s.Array)
