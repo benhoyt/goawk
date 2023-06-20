@@ -1607,6 +1607,9 @@ func TestExit(t *testing.T) {
 		{`{ print "x"; exit 1+2; print "y" }  END { print "z" }`, "x\nz\n", 3},
 		{`END { print "x"; exit; print "y" }`, "x\n", 0},
 		{`END { print "x"; exit 1+2; print "y" }`, "x\n", 3},
+		{`BEGIN { print "x"; exit 42 }  END { print "z"; exit }`, "x\nz\n", 42},
+		{`BEGIN { print "x"; exit }  END { print "z"; exit 43 }`, "x\nz\n", 43},
+		{`BEGIN { print "x"; exit 44 }  { print "a"; exit }`, "x\n", 44},
 	}
 	for _, test := range tests {
 		t.Run(test.src, func(t *testing.T) {
