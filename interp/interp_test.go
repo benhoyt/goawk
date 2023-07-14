@@ -827,6 +827,7 @@ BEGIN { x[1]=3; f5(x); print x[1] }
 	getline <"out"
 	print $0
 }`, "", "foo\nbar\n", "", ""},
+	{`BEGIN { print "x" | "cat"; close("cat"); print "y" }`, "", "x\ny\n", "", ""},
 
 	// Ensure data returned by getline (in various forms) is treated as numeric string
 	{`BEGIN { getline; print($0==0) }`, "0.0", "1\n", "", ""},
