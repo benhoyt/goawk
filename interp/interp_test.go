@@ -1755,6 +1755,14 @@ BEGIN {
     split("a,b c,d", a)
     for (i=1; i in a; i++) print i ": " a[i]
 }`, "", "1: foo\n2: bar baz\n3: \n4: x\n1: a\n2: b c\n3: d\n", "", nil},
+	{`
+BEGIN {
+    INPUTMODE = "tsv"
+    split("foo\tbar baz\t\tx", a)
+    for (i=1; i in a; i++) print i ": " a[i]
+    split("a\tb c\td", a)
+    for (i=1; i in a; i++) print i ": " a[i]
+}`, "", "1: foo\n2: bar baz\n3: \n4: x\n1: a\n2: b c\n3: d\n", "", nil},
 	// Three-argument split() does not parse in CSV mode
 	{`
 BEGIN {
