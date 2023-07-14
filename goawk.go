@@ -51,6 +51,7 @@ const (
 	copyright  = "GoAWK " + version + " - Copyright (c) 2022 Ben Hoyt"
 	shortUsage = "usage: goawk [-F fs] [-v var=value] [-f progfile | 'prog'] [file ...]"
 	longUsage  = `Standard AWK arguments:
+  --csv             equivalent to "-i csv"
   -F separator      field separator (default " ")
   -f progfile       load AWK source from progfile (multiple allowed)
   -v var=value      variable assignment (multiple allowed)
@@ -158,6 +159,8 @@ argsLoop:
 			}
 			i++
 			cpuProfile = os.Args[i]
+		case "-csv", "--csv":
+			inputMode = "csv"
 		case "-d":
 			debug = true
 		case "-da":

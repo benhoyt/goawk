@@ -624,6 +624,8 @@ func TestGoAWKSpecificOptions(t *testing.T) {
 		{[]string{"-icsv", `{ print $2, $1 }`}, "Bob,42\nJane,37", "42 Bob\n37 Jane\n", ""},
 		{[]string{"-i", "csv", `{ print $2, $1 }`}, "Bob,42\nJane,37", "42 Bob\n37 Jane\n", ""},
 		{[]string{"-icsv", "-H", "-ocsv", `{ print @"age", @"name" }`}, "name,age\n\"Bo,ba\",42\nJane,37", "42,\"Bo,ba\"\n37,Jane\n", ""},
+		{[]string{"-csv", `{ print $2, $1 }`}, "Bob,42\nJane,37", "42 Bob\n37 Jane\n", ""},
+		{[]string{"--csv", `{ print $2, $1 }`}, "Bob,42\nJane,37", "42 Bob\n37 Jane\n", ""},
 		{[]string{"-o", "csv", `BEGIN { print "foo,bar", 3.14, "baz" }`}, "", "\"foo,bar\",3.14,baz\n", ""},
 		{[]string{"-iabc", `{}`}, "", "", "invalid input mode \"abc\"\n"},
 		{[]string{"-oxyz", `{}`}, "", "", "invalid output mode \"xyz\"\n"},
