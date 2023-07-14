@@ -652,7 +652,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			arrayIndex := code[ip+1]
 			ip += 2
 			s := p.toString(p.peekTop())
-			n, err := p.split(s, resolver.Scope(arrayScope), int(arrayIndex), p.fieldSep)
+			n, err := p.split(s, resolver.Scope(arrayScope), int(arrayIndex), p.fieldSep, p.inputMode)
 			if err != nil {
 				return err
 			}
@@ -663,7 +663,8 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			arrayIndex := code[ip+1]
 			ip += 2
 			s, fieldSep := p.peekPop()
-			n, err := p.split(p.toString(s), resolver.Scope(arrayScope), int(arrayIndex), p.toString(fieldSep))
+			// 3-argument form of split() ignores input mode
+			n, err := p.split(p.toString(s), resolver.Scope(arrayScope), int(arrayIndex), p.toString(fieldSep), DefaultMode)
 			if err != nil {
 				return err
 			}

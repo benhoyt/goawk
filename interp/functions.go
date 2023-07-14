@@ -3,6 +3,7 @@
 package interp
 
 import (
+	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
@@ -242,15 +243,34 @@ func validNativeType(typ reflect.Type) bool {
 }
 
 // Guts of the split() function
-func (p *interp) split(s string, scope resolver.Scope, index int, fs string) (int, error) {
+func (p *interp) split(s string, scope resolver.Scope, index int, fs string, mode IOMode) (int, error) {
 	var parts []string
-	if fs == " " {
+	switch {
+	case mode == CSVMode || mode == TSVMode:
+		// Set up for parsing a CSV/TSV record
+		splitter := csvSplitter{
+			separator: p.csvInputConfig.Separator,
+			sepLen:    utf8.RuneLen(p.csvInputConfig.Separator),
+			comment:   p.csvInputConfig.Comment,
+			fields:    &parts,
+		}
+		scanner := bufio.NewScanner(strings.NewReader(s))
+		scanner.Split(splitter.scan)
+		if p.splitBuffer == nil {
+			p.splitBuffer = make([]byte, inputBufSize)
+		}
+		scanner.Buffer(p.splitBuffer, maxRecordLength)
+
+		// Parse one record. Errors shouldn't happen, but if there is one,
+		// len(parts) will be 0.
+		scanner.Scan()
+	case fs == " ":
 		parts = strings.Fields(s)
-	} else if s == "" {
+	case s == "":
 		// Leave parts 0 length on empty string
-	} else if utf8.RuneCountInString(fs) <= 1 {
+	case utf8.RuneCountInString(fs) <= 1:
 		parts = strings.Split(s, fs)
-	} else {
+	default:
 		re, err := p.compileRegex(fs)
 		if err != nil {
 			return 0, err

@@ -25,6 +25,8 @@ Links to sections:
 
 When in CSV input mode, GoAWK ignores the regular field and record separators (`FS` and `RS`), instead parsing input into records and fields using the CSV or TSV format. Fields can be accessed using the standard AWK numbered field syntax (for example, `$1` or `$5`), or using the GoAWK-specific [named field syntax](#named-field-syntax).
 
+In addition, in CSV input mode the two-argument form of `split()` uses CSV field splitting and ignores `FS`. For example, `split("x,\"y,z\"", a)` would set `a[1] = "x"` and `a[2] = "y,z"`. The three-argument form of `split()` operates as usual.
+
 To enable CSV input mode when using the `goawk` program, use the `-i mode` command line argument (`mode` must be quoted if it has spaces in it). You can also enable CSV input mode by setting the `INPUTMODE` special variable in the `BEGIN` block, or by using the [Go API](#go-api). The full syntax of `mode` is as follows:
 
 ```
