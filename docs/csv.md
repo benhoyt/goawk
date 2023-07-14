@@ -7,6 +7,8 @@ There are other workarounds, such as [Gawk's FPAT feature](https://www.gnu.org/s
 
 Since version v1.17.0, GoAWK has included CSV support, which allows you to read and write CSV and TSV files, including proper handling of quoted and multi-line fields as per [RFC 4180](https://rfc-editor.org/rfc/rfc4180.html). In addition, GoAWK supports a "named field" construct that allows you to access CSV fields by name as well as number, for example `@"Address"` rather than `$5`.
 
+In 2023, for the publication of the [second edition](https://awk.dev/) of *The AWK Programming Language*, Brian Kernighan updated the original AWK to support [proper parsing of CSV files](https://github.com/onetrueawk/awk/tree/csv) with the new `--csv` option. Gawk soon followed suit. As of version 1.24.0, GoAWK supports `--csv` as an equivalent to the GoAWK-specific `-i csv` option.
+
 **Many thanks to the [library of the University of Antwerp](https://www.uantwerpen.be/en/library/), who sponsored this feature in May 2022.** Thanks also to [Eli Rosenthal](https://github.com/ezrosent), whose frawk tool inspired aspects of the design (including the `-i` and `-o` command line arguments).
 
 Links to sections:
@@ -27,11 +29,13 @@ When in CSV input mode, GoAWK ignores the regular field and record separators (`
 
 In addition, in CSV input mode the two-argument form of `split()` uses CSV field splitting and ignores `FS`. For example, `split("x,\"y,z\"", a)` would set `a[1] = "x"` and `a[2] = "y,z"`. The three-argument form of `split()` operates as usual.
 
-To enable CSV input mode when using the `goawk` program, use the `-i mode` command line argument (`mode` must be quoted if it has spaces in it). You can also enable CSV input mode by setting the `INPUTMODE` special variable in the `BEGIN` block, or by using the [Go API](#go-api). The full syntax of `mode` is as follows:
+To enable CSV input mode when using the `goawk` program, use the `--csv` or `-i mode` command line argument (`mode` must be quoted if it has spaces in it). You can also enable CSV input mode by setting the `INPUTMODE` special variable in the `BEGIN` block, or by using the [Go API](#go-api). The full syntax of `mode` is as follows:
 
 ```
 csv|tsv [separator=<char>] [comment=<char>] [header]
 ```
+
+As of GoAWK 1.24.0, you can use `--csv` as a shortcut for `-i csv`. If you just need CSV input mode without additional configuration, `--csv` is recommended for portability, as original AWK and Gawk now support that option (as of 2023 versions).
 
 The first field in `mode` is the format: `csv` for comma-separated values or `tsv` for tab-separated values. Optionally following the mode are configuration fields, defined as follows:
 
