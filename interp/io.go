@@ -97,8 +97,8 @@ func (p *interp) writeCSV(output io.Writer, fields []string) error {
 	return nil
 }
 
-// Implement a buffered version of WriteCloser so output is buffered
-// when redirecting to a file (eg: print >"out")
+// Buffered version of WriteCloser so output is buffered when redirecting to a
+// file (eg: print >"out")
 type bufferedWriteCloser struct {
 	*bufio.Writer
 	io.Closer
@@ -115,6 +115,31 @@ func (wc *bufferedWriteCloser) Close() error {
 		return err
 	}
 	return wc.Closer.Close()
+}
+
+// Buffered version of WriteCloser for pipes so output is buffered when
+// redirecting to a command; waits for the command to finish on close.
+type commandWriteCloser struct {
+	*bufio.Writer
+	io.Closer
+	command *exec.Cmd
+}
+
+func newCommandWriteCloser(w io.WriteCloser, command *exec.Cmd) *commandWriteCloser {
+	writer := bufio.NewWriterSize(w, outputBufSize)
+	return &commandWriteCloser{writer, w, command}
+}
+
+func (wc *commandWriteCloser) Close() error {
+	err := wc.Writer.Flush()
+	if err != nil {
+		return err
+	}
+	err = wc.Closer.Close()
+	if err != nil {
+		return err
+	}
+	return wc.command.Wait()
 }
 
 // Determine the output stream for given redirect token and
@@ -172,7 +197,7 @@ func (p *interp) getOutputStream(redirect Token, destValue value) (io.Writer, er
 			return ioutil.Discard, nil
 		}
 		p.commands[name] = cmd
-		buffered := newBufferedWriteCloser(w)
+		buffered := newCommandWriteCloser(w, cmd)
 		p.outputStreams[name] = buffered
 		return buffered, nil
 
