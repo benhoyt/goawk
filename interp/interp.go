@@ -90,6 +90,7 @@ type interp struct {
 	shellCommand  []string
 	csvOutput     *bufio.Writer
 	noArgVars     bool
+	splitBuffer   []byte
 
 	// Scalars, arrays, and function state
 	globals       []value

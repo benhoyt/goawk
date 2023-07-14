@@ -1746,6 +1746,23 @@ var csvTests = []csvTest{
 	// Ignores UTF-8 byte order mark (BOM) at start of CSV file
 	{`BEGIN { INPUTMODE="csv" } { print $1=="foo" }`, "\ufefffoo,bar\n\ufefffoo,bar", "1\n0\n", "", nil},
 
+	// Two-argument split() parses in CSV mode if input mode is CSV
+	{`
+BEGIN {
+    INPUTMODE = "csv"
+    split("foo,\"bar baz\",,x", a)
+    for (i=1; i in a; i++) print i ": " a[i]
+    split("a,b c,d", a)
+    for (i=1; i in a; i++) print i ": " a[i]
+}`, "", "1: foo\n2: bar baz\n3: \n4: x\n1: a\n2: b c\n3: d\n", "", nil},
+	// Three-argument split() does not parse in CSV mode
+	{`
+BEGIN {
+    INPUTMODE = "csv"
+    split("foo,\"bar baz\",,x", a, " ")
+    for (i=1; i in a; i++) print i ": " a[i]
+}`, "", "1: foo,\"bar\n2: baz\",,x\n", "", nil},
+
 	// Error handling when parsing INPUTMODE and OUTPUTMODE
 	{`BEGIN { INPUTMODE="xyz" }`, "", "", `invalid input mode "xyz"`, nil},
 	{`BEGIN { INPUTMODE="csv separator=foo" }`, "", "", `invalid CSV/TSV separator "foo"`, nil},
