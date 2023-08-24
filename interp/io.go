@@ -96,51 +96,6 @@ func (p *interp) writeCSV(output io.Writer, fields []string) error {
 	return nil
 }
 
-// Buffered version of WriteCloser so output is buffered when redirecting to a
-// file (eg: print >"out")
-type bufferedWriteCloser struct {
-	*bufio.Writer
-	io.Closer
-}
-
-func newBufferedWriteCloser(w io.WriteCloser) *bufferedWriteCloser {
-	writer := bufio.NewWriterSize(w, outputBufSize)
-	return &bufferedWriteCloser{writer, w}
-}
-
-func (wc *bufferedWriteCloser) Close() error {
-	err := wc.Writer.Flush()
-	if err != nil {
-		return err
-	}
-	return wc.Closer.Close()
-}
-
-// Buffered version of WriteCloser for pipes so output is buffered when
-// redirecting to a command; waits for the command to finish on close.
-type commandWriteCloser struct {
-	*bufio.Writer
-	io.Closer
-	command *exec.Cmd
-}
-
-func newCommandWriteCloser(w io.WriteCloser, command *exec.Cmd) *commandWriteCloser {
-	writer := bufio.NewWriterSize(w, outputBufSize)
-	return &commandWriteCloser{writer, w, command}
-}
-
-func (wc *commandWriteCloser) Close() error {
-	err := wc.Writer.Flush()
-	if err != nil {
-		return err
-	}
-	err = wc.Closer.Close()
-	if err != nil {
-		return err
-	}
-	return wc.command.Wait()
-}
-
 // Determine the output stream for given redirect token and
 // destination (file or pipe name)
 func (p *interp) getOutputStream(redirect Token, destValue value) (io.Writer, error) {
@@ -169,13 +124,13 @@ func (p *interp) getOutputStream(redirect Token, destValue value) (io.Writer, er
 		} else {
 			flags |= os.O_APPEND
 		}
-		w, err := os.OpenFile(name, flags, 0644)
+		f, err := os.OpenFile(name, flags, 0644)
 		if err != nil {
 			return nil, newError("output redirection error: %s", err)
 		}
-		buffered := newBufferedWriteCloser(w)
-		p.outputStreams[name] = buffered
-		return buffered, nil
+		out := newOutFileStream(f, outputBufSize)
+		p.outputStreams[name] = out
+		return out, nil
 
 	case PIPE:
 		// Pipe to command
@@ -183,22 +138,16 @@ func (p *interp) getOutputStream(redirect Token, destValue value) (io.Writer, er
 			return nil, newError("can't write to pipe due to NoExec")
 		}
 		cmd := p.execShell(name)
-		w, err := cmd.StdinPipe()
-		if err != nil {
-			return nil, newError("error connecting to stdin pipe: %v", err)
-		}
 		cmd.Stdout = p.output
 		cmd.Stderr = p.errorOutput
 		p.flushOutputAndError() // ensure synchronization
-		err = cmd.Start()
+		out, err := newOutCmdStream(cmd)
 		if err != nil {
 			p.printErrorf("%s\n", err)
-			return io.Discard, nil
+			out = newOutNullStream()
 		}
-		p.commands[name] = cmd
-		buffered := newCommandWriteCloser(w, cmd)
-		p.outputStreams[name] = buffered
-		return buffered, nil
+		p.outputStreams[name] = out
+		return out, nil
 
 	default:
 		// Should never happen
@@ -238,13 +187,14 @@ func (p *interp) getInputScannerFile(name string) (*bufio.Scanner, error) {
 	if p.noFileReads {
 		return nil, newError("can't read from file due to NoFileReads")
 	}
-	r, err := os.Open(name)
+	f, err := os.Open(name)
 	if err != nil {
 		return nil, err // *os.PathError is handled by caller (getline returns -1)
 	}
-	scanner := p.newScanner(r, make([]byte, inputBufSize))
+	in := newInFileStream(f)
+	scanner := p.newScanner(in, make([]byte, inputBufSize))
 	p.scanners[name] = scanner
-	p.inputStreams[name] = r
+	p.inputStreams[name] = in
 	return scanner, nil
 }
 
@@ -262,19 +212,15 @@ func (p *interp) getInputScannerPipe(name string) (*bufio.Scanner, error) {
 	cmd := p.execShell(name)
 	cmd.Stdin = p.stdin
 	cmd.Stderr = p.errorOutput
-	r, err := cmd.StdoutPipe()
-	if err != nil {
-		return nil, newError("error connecting to stdout pipe: %v", err)
-	}
 	p.flushOutputAndError() // ensure synchronization
-	err = cmd.Start()
+	in, err := newInCmdStream(cmd)
 	if err != nil {
 		p.printErrorf("%s\n", err)
 		return bufio.NewScanner(strings.NewReader("")), nil
 	}
-	scanner := p.newScanner(r, make([]byte, inputBufSize))
-	p.commands[name] = cmd
-	p.inputStreams[name] = r
+
+	scanner := p.newScanner(in, make([]byte, inputBufSize))
+	p.inputStreams[name] = in
 	p.scanners[name] = scanner
 	return scanner, nil
 }
@@ -838,7 +784,7 @@ func writeOutput(w io.Writer, s string) error {
 	return err
 }
 
-// Close all streams, commands, and so on (after program execution).
+// Close all streams and so on (after program execution).
 func (p *interp) closeAll() {
 	if prevInput, ok := p.input.(io.Closer); ok {
 		_ = prevInput.Close()
@@ -848,9 +794,6 @@ func (p *interp) closeAll() {
 	}
 	for _, w := range p.outputStreams {
 		_ = w.Close()
-	}
-	for _, cmd := range p.commands {
-		_ = cmd.Wait()
 	}
 	if f, ok := p.output.(flusher); ok {
 		_ = f.Flush()
