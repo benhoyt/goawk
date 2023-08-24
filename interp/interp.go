@@ -20,7 +20,6 @@ import (
 	"math"
 	"math/rand"
 	"os"
-	"os/exec"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -80,9 +79,8 @@ type interp struct {
 	hadFiles      bool
 	input         io.Reader
 	inputBuffer   []byte
-	inputStreams  map[string]io.ReadCloser
-	outputStreams map[string]io.WriteCloser
-	commands      map[string]*exec.Cmd
+	inputStreams  map[string]inputStream
+	outputStreams map[string]outputStream
 	noExec        bool
 	noFileWrites  bool
 	noFileReads   bool
@@ -392,9 +390,8 @@ func newInterp(program *parser.Program) *interp {
 	p.outputRecordSep = "\n"
 	p.subscriptSep = "\x1c"
 
-	p.inputStreams = make(map[string]io.ReadCloser)
-	p.outputStreams = make(map[string]io.WriteCloser)
-	p.commands = make(map[string]*exec.Cmd)
+	p.inputStreams = make(map[string]inputStream)
+	p.outputStreams = make(map[string]outputStream)
 	p.scanners = make(map[string]*bufio.Scanner)
 
 	return p

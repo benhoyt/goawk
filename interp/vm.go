@@ -911,33 +911,25 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 		p.replaceTop(num(math.Atan2(y.num(), x.num())))
 
 	case compiler.BuiltinClose:
+		var err error
+		code := -1
 		name := p.toString(p.peekTop())
-		var c io.Closer = p.inputStreams[name]
-		if c != nil {
+		if stream := p.inputStreams[name]; stream != nil {
 			// Close input stream
 			delete(p.inputStreams, name)
-			err := c.Close()
-			if err != nil {
-				p.replaceTop(num(-1))
-			} else {
-				p.replaceTop(num(0))
-			}
-		} else {
-			c = p.outputStreams[name]
-			if c != nil {
-				// Close output stream
-				delete(p.outputStreams, name)
-				err := c.Close()
-				if err != nil {
-					p.replaceTop(num(-1))
-				} else {
-					p.replaceTop(num(0))
-				}
-			} else {
-				// Nothing to close
-				p.replaceTop(num(-1))
-			}
+			delete(p.scanners, name)
+			err = stream.Close()
+			code = stream.ExitCode()
+		} else if stream := p.outputStreams[name]; stream != nil {
+			// Close output stream
+			delete(p.outputStreams, name)
+			err = stream.Close()
+			code = stream.ExitCode()
 		}
+		if err != nil {
+			p.printErrorf("error closing %q: %v\n", name, err)
+		}
+		p.replaceTop(num(float64(code)))
 
 	case compiler.BuiltinCos:
 		p.replaceTop(num(math.Cos(p.peekTop().num())))

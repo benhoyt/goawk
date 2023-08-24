@@ -96,9 +96,6 @@ func (p *interp) resetCore() {
 	for k := range p.outputStreams {
 		delete(p.outputStreams, k)
 	}
-	for k := range p.commands {
-		delete(p.commands, k)
-	}
 
 	p.sp = 0
 	p.localArrays = p.localArrays[:0]
