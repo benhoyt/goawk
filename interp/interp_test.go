@@ -587,6 +587,7 @@ BEGIN {
 		"", "error\n0\n", "", ""},
 	{`BEGIN { print system("exit 42") }  # !fuzz !posix`, "", "42\n", "", ""},
 	{`BEGIN { system("cat") }`, "foo\nbar", "foo\nbar", "", ""},
+	{`BEGIN { print system("exec kill -9 $$") } # !awk !posix !windows-gawk`, "", "265\n", "", ""},
 
 	// Test bytes/unicode handling (GoAWK currently has char==byte, unlike Gawk).
 	{`BEGIN { print match("food", "foo"), RSTART, RLENGTH }  !gawk`, "", "1 1 3\n", "", ""},
@@ -839,6 +840,13 @@ BEGIN { x[1]=3; f5(x); print x[1] }
 	{`BEGIN { print |"out"; getline <"out" }  # !awk !gawk`, "", "", "can't read from writer stream", ""},
 	{`BEGIN { print >"out"; close("out"); getline <"out"; print >"out" }  # !awk !gawk`, "", "", "can't write to reader stream", ""},
 	{`BEGIN { print >"out"; close("out"); getline <"out"; print |"out" }  # !awk !gawk`, "", "", "can't write to reader stream", ""},
+
+	// The value of close() on a pipe emulates gawk behavior. Results are identical for both
+	// input and output. Windows does not do POSIX signals.
+	{`BEGIN { cmd="exit 9"; print "" |cmd; print close(cmd) } # !awk !posix`, "", "9\n", "", ""},
+	{`BEGIN { cmd="exec kill -9 $$"; print "" |cmd; print close(cmd) } # !awk !posix !windows-gawk`, "", "265\n", "", ""},
+	{`BEGIN { cmd="exit 9"; cmd |getline; print close(cmd) } # !awk !posix`, "", "9\n", "", ""},
+	{`BEGIN { cmd="exec kill -9 $$"; cmd |getline; print close(cmd) } # !awk !posix !windows-gawk`, "", "265\n", "", ""},
 
 	// Redirecting to or from a filename of "-" means write to stdout or read from stdin
 	{`BEGIN { print getline x < "-"; print x }`, "a\nb\n", "1\na\n", "", ""},
