@@ -6,7 +6,6 @@ import (
 	"io"
 	"math"
 	"os"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -1077,20 +1076,21 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 		cmd.Stdout = p.output
 		cmd.Stderr = p.errorOutput
 		_ = p.flushAll() // ensure synchronization
-		err := cmd.Run()
-		ret := 0.0
+		err := cmd.Start()
+		if err != nil {
+			// Could not start the shell so skip waiting on it.
+			p.printErrorf("%v\n", err)
+			p.replaceTop(num(-1.0))
+			return nil
+		}
+		exitCode, err := waitExitCode(cmd)
 		if err != nil {
 			if p.checkCtx && p.ctx.Err() != nil {
 				return p.ctx.Err()
 			}
-			if exitErr, ok := err.(*exec.ExitError); ok {
-				ret = float64(exitErr.ProcessState.ExitCode())
-			} else {
-				p.printErrorf("%v\n", err)
-				ret = -1
-			}
+			p.printErrorf("%v\n", err)
 		}
-		p.replaceTop(num(ret))
+		p.replaceTop(num(float64(exitCode)))
 
 	case compiler.BuiltinTolower:
 		p.replaceTop(str(strings.ToLower(p.toString(p.peekTop()))))
