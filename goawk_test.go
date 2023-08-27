@@ -234,9 +234,6 @@ func TestGAWK(t *testing.T) {
 
 		"gsubtst7":     true, // something wrong with gsub or field split/join
 		"splitwht":     true, // other awks handle split(s, a, " ") differently from split(s, a, / /)
-		"status-close": true, // hmmm, not sure what's up here
-		"sigpipe1":     true, // probable race condition: sometimes fails, sometimes passes
-
 		"parse1": true, // incorrect parsing of $$a++++ (see TODOs in interp_test.go too)
 
 		"rscompat": true, // GoAWK allows multi-char RS by default
@@ -251,6 +248,7 @@ func TestGAWK(t *testing.T) {
 		"eofsplit": true, // reads from /etc/passwd
 		"getline5": true, // removes a file while it's open
 		"iobug1":   true, // reads from /dev/null
+		"sigpipe1": true, // requires POSIX signals
 	}
 
 	sortLines := map[string]bool{
