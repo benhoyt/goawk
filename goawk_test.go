@@ -8,7 +8,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -86,7 +85,7 @@ func TestAWK(t *testing.T) {
 		"p.50": true, // because this pipes to Unix sort "sort -t: +0 -1 +2nr"
 	}
 
-	infos, err := ioutil.ReadDir(testsDir)
+	infos, err := os.ReadDir(testsDir)
 	if err != nil {
 		t.Fatalf("couldn't read test files: %v", err)
 	}
@@ -113,7 +112,7 @@ func TestAWK(t *testing.T) {
 				expected = sortedLines(expected)
 			}
 			if writeAWK {
-				err := ioutil.WriteFile(outputPath, expected, 0644)
+				err := os.WriteFile(outputPath, expected, 0644)
 				if err != nil {
 					t.Fatalf("error writing awk output: %v", err)
 				}
@@ -139,7 +138,7 @@ func TestAWK(t *testing.T) {
 				output = sortedLines(output)
 			}
 			if writeGoAWK {
-				err := ioutil.WriteFile(outputPath, output, 0644)
+				err := os.WriteFile(outputPath, output, 0644)
 				if err != nil {
 					t.Fatalf("error writing goawk output: %v", err)
 				}
@@ -155,7 +154,7 @@ func TestAWK(t *testing.T) {
 }
 
 func parseGoAWK(srcPath string) (*parser.Program, error) {
-	src, err := ioutil.ReadFile(srcPath)
+	src, err := os.ReadFile(srcPath)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +180,7 @@ func interpGoAWK(prog *parser.Program, inputPath string) ([]byte, error) {
 }
 
 func interpGoAWKStdin(prog *parser.Program, inputPath string) ([]byte, error) {
-	input, _ := ioutil.ReadFile(inputPath)
+	input, _ := os.ReadFile(inputPath)
 	outBuf := &bytes.Buffer{}
 	errBuf := &bytes.Buffer{}
 	config := &interp.Config{
@@ -262,7 +261,7 @@ func TestGAWK(t *testing.T) {
 	}
 
 	gawkDir := filepath.Join(testsDir, "gawk")
-	infos, err := ioutil.ReadDir(gawkDir)
+	infos, err := os.ReadDir(gawkDir)
 	if err != nil {
 		t.Fatalf("couldn't read test files: %v", err)
 	}
@@ -282,7 +281,7 @@ func TestGAWK(t *testing.T) {
 			inputPath := filepath.Join(gawkDir, testName+".in")
 			okPath := filepath.Join(gawkDir, testName+".ok")
 
-			expected, err := ioutil.ReadFile(okPath)
+			expected, err := os.ReadFile(okPath)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -857,7 +856,7 @@ func TestCoverPrintAnnotatedSource(t *testing.T) {
 			if err != nil {
 				t.Fatalf("expected no error, got %v (%q)", err, stderr)
 			}
-			expected, err := ioutil.ReadFile("testdata/cover/" + test.expectedResultFile)
+			expected, err := os.ReadFile("testdata/cover/" + test.expectedResultFile)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -920,7 +919,7 @@ func TestCover(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.expectedCoverReport, func(t *testing.T) {
-			tempFile, err := ioutil.TempFile("", "testCov*.txt")
+			tempFile, err := os.CreateTemp("", "testCov*.txt")
 			if err != nil {
 				t.Fatalf("%v", err)
 			}
@@ -953,13 +952,13 @@ func TestCover(t *testing.T) {
 				}
 			}
 
-			result, err := ioutil.ReadFile(coverProfile)
+			result, err := os.ReadFile(coverProfile)
 			if err != nil {
 				t.Fatalf("%v", err)
 			}
 			resultStr := string(normalizeNewlines(result))
 			resultStr = strings.TrimSpace(convertPathsToFilenames(t, resultStr))
-			expected, err := ioutil.ReadFile("testdata/cover/" + test.expectedCoverReport)
+			expected, err := os.ReadFile("testdata/cover/" + test.expectedCoverReport)
 			if err != nil {
 				t.Fatalf("%v", err)
 			}

@@ -8,7 +8,6 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"regexp"
@@ -194,7 +193,7 @@ func (p *interp) getOutputStream(redirect Token, destValue value) (io.Writer, er
 		err = cmd.Start()
 		if err != nil {
 			p.printErrorf("%s\n", err)
-			return ioutil.Discard, nil
+			return io.Discard, nil
 		}
 		p.commands[name] = cmd
 		buffered := newCommandWriteCloser(w, cmd)

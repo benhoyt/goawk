@@ -8,7 +8,7 @@ package interp_test
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"strings"
 	"testing"
 	"time"
@@ -39,8 +39,8 @@ func FuzzSource(f *testing.F) {
 		}
 		config := interp.Config{
 			Stdin:        strings.NewReader("foo bar\nbazz\n"),
-			Output:       ioutil.Discard,
-			Error:        ioutil.Discard,
+			Output:       io.Discard,
+			Error:        io.Discard,
 			NoExec:       true,
 			NoFileWrites: true,
 			NoFileReads:  true,
@@ -87,8 +87,8 @@ func FuzzInput(f *testing.F) {
 				interpreter.ResetVars()
 				config := interp.Config{
 					Stdin:        strings.NewReader(in),
-					Output:       ioutil.Discard,
-					Error:        ioutil.Discard,
+					Output:       io.Discard,
+					Error:        io.Discard,
 					Vars:         v,
 					NoExec:       true,
 					NoFileWrites: true,
