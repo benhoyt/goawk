@@ -17,7 +17,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"math/rand"
 	"os"
@@ -602,7 +601,7 @@ func Exec(source, fieldSep string, input io.Reader, output io.Writer) error {
 	config := &Config{
 		Stdin:  input,
 		Output: output,
-		Error:  ioutil.Discard,
+		Error:  io.Discard,
 		Vars:   []string{"FS", fieldSep},
 	}
 	_, err = ExecProgram(prog, config)

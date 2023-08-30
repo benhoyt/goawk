@@ -8,7 +8,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"reflect"
@@ -1101,7 +1100,7 @@ func testGoAWK(
 	}
 
 	// Test that disassembler at least doesn't panic or return an error.
-	err = prog.Disassemble(ioutil.Discard)
+	err = prog.Disassemble(io.Discard)
 	if err != nil {
 		t.Fatalf("disassembler returned an error: %v", err)
 	}
@@ -1428,7 +1427,7 @@ func TestConfigVarsCorrect(t *testing.T) {
 	config := &interp.Config{
 		Stdin:  strings.NewReader(""),
 		Output: &bytes.Buffer{},
-		Error:  ioutil.Discard,
+		Error:  io.Discard,
 		Vars:   []string{"FS"},
 	}
 	_, err = interp.ExecProgram(prog, config)
@@ -1907,7 +1906,7 @@ func benchmarkProgram(b *testing.B, funcs map[string]interface{},
 	config := &interp.Config{
 		Stdin:  strings.NewReader(input),
 		Output: outBuf,
-		Error:  ioutil.Discard,
+		Error:  io.Discard,
 		Funcs:  funcs,
 	}
 	b.StartTimer()
@@ -2485,7 +2484,7 @@ BEGIN {
 	}
 	b.StartTimer()
 	_, err = interp.ExecProgram(prog, &interp.Config{
-		Output:  ioutil.Discard,
+		Output:  io.Discard,
 		Environ: []string{},
 	})
 	b.StopTimer()
@@ -2519,7 +2518,7 @@ BEGIN {
 	}
 	b.StartTimer()
 	_, err = interp.ExecProgram(prog, &interp.Config{
-		Output:  ioutil.Discard,
+		Output:  io.Discard,
 		Environ: []string{},
 	})
 	b.StopTimer()
@@ -2534,7 +2533,7 @@ func BenchmarkRepeatExecProgram(b *testing.B) {
 		b.Fatalf("parse error: %v", err)
 	}
 	config := interp.Config{
-		Output:  ioutil.Discard,
+		Output:  io.Discard,
 		Environ: []string{},
 	}
 	b.ResetTimer()
@@ -2556,7 +2555,7 @@ func BenchmarkRepeatNew(b *testing.B) {
 		b.Fatalf("interp.New error: %v", err)
 	}
 	config := interp.Config{
-		Output:  ioutil.Discard,
+		Output:  io.Discard,
 		Environ: []string{},
 	}
 	b.ResetTimer()

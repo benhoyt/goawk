@@ -3,7 +3,6 @@ package cover
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -52,7 +51,7 @@ func TestAnnotatingLogicCorrectness(t *testing.T) {
 
 			result := strings.TrimSpace(actualAnnotationData.String())
 
-			expected, err := ioutil.ReadFile(checkPath)
+			expected, err := os.ReadFile(checkPath)
 			if err != nil {
 				panic(err)
 			}
