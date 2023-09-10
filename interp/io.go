@@ -865,11 +865,12 @@ func (p *interp) closeAll() {
 func (p *interp) flushAll() bool {
 	allGood := true
 	for name, writer := range p.outputStreams {
-		allGood = allGood && p.flushWriter(name, writer)
+		if !p.flushWriter(name, writer) {
+			allGood = false
+		}
 	}
-	if _, ok := p.output.(flusher); ok {
-		// User-provided output may or may not be flushable
-		allGood = allGood && p.flushWriter("stdout", p.output)
+	if !p.flushWriter("stdout", p.output) {
+		allGood = false
 	}
 	return allGood
 }
