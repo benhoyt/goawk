@@ -587,14 +587,14 @@ BEGIN {
 		"", "error\n0\n", "", ""},
 	{`BEGIN { print system("exit 42") }  # !fuzz !posix`, "", "42\n", "", ""},
 	{`BEGIN { system("cat") }`, "foo\nbar", "foo\nbar", "", ""},
-	{`BEGIN { print system("exec kill -9 $$") } # !awk !posix !windows-gawk`, "", "265\n", "", ""},
+	{`BEGIN { print system("exec /bin/kill -9 $$") } # !awk !posix !windows`, "", "265\n", "", ""},
 
 	// Test bytes/unicode handling (GoAWK currently has char==byte, unlike Gawk).
-	{`BEGIN { print match("food", "foo"), RSTART, RLENGTH }  !gawk`, "", "1 1 3\n", "", ""},
-	{`BEGIN { print match("x food y", "fo"), RSTART, RLENGTH }  !gawk`, "", "3 3 2\n", "", ""},
-	{`BEGIN { print match("x food y", "fox"), RSTART, RLENGTH }  !gawk`, "", "0 0 -1\n", "", ""},
-	{`BEGIN { print match("x food y", /[fod]+/), RSTART, RLENGTH }  !gawk`, "", "3 3 4\n", "", ""},
-	{`BEGIN { print match("絵 fööd y", /[föd]+/), RSTART, RLENGTH }  !gawk`, "", "5 5 6\n", "", ""},
+	{`BEGIN { print match("food", "foo"), RSTART, RLENGTH } # !gawk`, "", "1 1 3\n", "", ""},
+	{`BEGIN { print match("x food y", "fo"), RSTART, RLENGTH } # !gawk`, "", "3 3 2\n", "", ""},
+	{`BEGIN { print match("x food y", "fox"), RSTART, RLENGTH } # !gawk`, "", "0 0 -1\n", "", ""},
+	{`BEGIN { print match("x food y", /[fod]+/), RSTART, RLENGTH } # !gawk`, "", "3 3 4\n", "", ""},
+	{`BEGIN { print match("絵 fööd y", /[föd]+/), RSTART, RLENGTH } # !gawk`, "", "5 5 6\n", "", ""},
 	{`{ print length, length(), length("buzz"), length("") }  # !gawk`, "foo bar", "7 7 4 0\n", "", ""},
 	{`BEGIN { print length("a"), length("絵") }  # !gawk`, "", "1 3\n", "", ""},
 	{`BEGIN { print index("foo", "f"), index("foo0", 0), index("foo", "o"), index("foo", "x") }  # !gawk`, "", "1 4 2 0\n", "", ""},
@@ -844,9 +844,9 @@ BEGIN { x[1]=3; f5(x); print x[1] }
 	// The value of close() on a pipe emulates gawk behavior. Results are identical for both
 	// input and output. Windows does not do POSIX signals.
 	{`BEGIN { cmd="exit 9"; print "" |cmd; print close(cmd) } # !awk !posix`, "", "9\n", "", ""},
-	{`BEGIN { cmd="exec kill -9 $$"; print "" |cmd; print close(cmd) } # !awk !posix !windows-gawk`, "", "265\n", "", ""},
+	{`BEGIN { cmd="exec /bin/kill -9 $$"; print "" |cmd; print close(cmd) } # !awk !posix !windows`, "", "265\n", "", ""},
 	{`BEGIN { cmd="exit 9"; cmd |getline; print close(cmd) } # !awk !posix`, "", "9\n", "", ""},
-	{`BEGIN { cmd="exec kill -9 $$"; cmd |getline; print close(cmd) } # !awk !posix !windows-gawk`, "", "265\n", "", ""},
+	{`BEGIN { cmd="exec /bin/kill -9 $$"; cmd |getline; print close(cmd) } # !awk !posix !windows`, "", "265\n", "", ""},
 
 	// Redirecting to or from a filename of "-" means write to stdout or read from stdin
 	{`BEGIN { print getline x < "-"; print x }`, "a\nb\n", "1\na\n", "", ""},
@@ -991,6 +991,28 @@ BEGIN { x[1]=3; f5(x); print x[1] }
 	{`{ print $1<$2 }`, "1_0 2", "1\n", "", ""},
 }
 
+// Flags parses the "skip flags" in it.src's first comment and returns them as
+// a map. An enable flag ("# +flag") appears as {"flag": true} in the map, and
+// a disable flag ("# !flag") appears as {"flag": false} in the map.
+func (it interpTest) Flags() map[string]bool {
+	flags := make(map[string]bool)
+	i := strings.Index(it.src, "#")
+	if i < 0 {
+		return flags
+	}
+	for _, field := range strings.Fields(it.src[i+1:]) {
+		switch {
+		case len(field) <= 1:
+			continue
+		case field[0] == '!':
+			flags[field[1:]] = false
+		case field[0] == '+':
+			flags[field[1:]] = true
+		}
+	}
+	return flags
+}
+
 func TestInterp(t *testing.T) {
 	// Ensure very long lines work (> 64KB)
 	longLine := strings.Repeat("x", 70000)
@@ -1003,20 +1025,30 @@ func TestInterp(t *testing.T) {
 		if len(testName) > 70 {
 			testName = testName[:70]
 		}
+		flags := test.Flags()
+		var skipWindows bool
+		if f, ok := flags["windows"]; !f && ok && runtime.GOOS == "windows" {
+			skipWindows = true
+		}
 
 		// Run it through external awk program first
 		if awkExe != "" {
 			runAWK := func(t *testing.T, posix bool) {
-				if strings.Contains(test.src, "!"+awkExe) {
+				if skipWindows {
+					t.Skip("skipping windows")
+				}
+
+				var f, ok bool
+				if f, ok = flags[awkExe]; !f && ok {
 					t.Skipf("skipping under %s", awkExe)
 				}
-				if strings.Contains(test.src, "!"+runtime.GOOS+"-"+awkExe) {
+				if f, ok = flags[runtime.GOOS+"-"+awkExe]; !f && ok {
 					t.Skipf("skipping on %s under %s", runtime.GOOS, awkExe)
 				}
-				if posix && strings.Contains(test.src, "!posix") {
+				if f, ok = flags["posix"]; posix && !f && ok {
 					t.Skipf("skipping in --posix mode")
 				}
-				if !posix && strings.Contains(test.src, "+posix") {
+				if !posix && f {
 					t.Skip("skipping in non-posix mode")
 				}
 
@@ -1063,6 +1095,9 @@ func TestInterp(t *testing.T) {
 
 		// Then test it in GoAWK
 		t.Run(testName, func(t *testing.T) {
+			if skipWindows {
+				t.Skip("skipping windows")
+			}
 			testGoAWK(t, test.src, test.in, test.out, test.err, nil, nil)
 		})
 	}
