@@ -500,8 +500,9 @@ func parseString(quote byte, ch func() byte, next func()) (string, error) {
 			if !utf8.ValidRune(rune(r)) {
 				return "", errors.New("invalid Unicode character")
 			}
-			runeBytes := utf8.AppendRune(nil, rune(r))
-			chars = append(chars, runeBytes...)
+			runeBytes := make([]byte, utf8.UTFMax)
+			n := utf8.EncodeRune(runeBytes, rune(r))
+			chars = append(chars, runeBytes[:n]...)
 			continue
 		case '0', '1', '2', '3', '4', '5', '6', '7':
 			// Octal byte of 1-3 octal digits
