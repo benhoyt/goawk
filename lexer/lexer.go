@@ -10,6 +10,7 @@ package lexer
 import (
 	"errors"
 	"fmt"
+	"unicode/utf8"
 )
 
 // Lexer tokenizes a byte string of AWK source code. Use NewLexer to
@@ -467,7 +468,7 @@ func parseString(quote byte, ch func() byte, next func()) (string, error) {
 			c = '\v'
 			next()
 		case 'x':
-			// Hex byte of one of two hex digits
+			// Hex byte of one or two hex digits
 			next()
 			digit := hexDigit(ch())
 			if digit < 0 {
@@ -480,6 +481,28 @@ func parseString(quote byte, ch func() byte, next func()) (string, error) {
 				c = c*16 + byte(digit)
 				next()
 			}
+		case 'u':
+			// Hex Unicode character of 1-8 digits
+			next()
+			r := hexDigit(ch())
+			if r < 0 {
+				return "", errors.New("1-8 hex digits expected")
+			}
+			next()
+			for i := 0; i < 7; i++ {
+				digit := hexDigit(ch())
+				if digit < 0 {
+					break
+				}
+				next()
+				r = r*16 + digit
+			}
+			if !utf8.ValidRune(rune(r)) {
+				return "", errors.New("invalid Unicode character")
+			}
+			runeBytes := utf8.AppendRune(nil, rune(r))
+			chars = append(chars, runeBytes...)
+			continue
 		case '0', '1', '2', '3', '4', '5', '6', '7':
 			// Octal byte of 1-3 octal digits
 			c = ch() - '0'

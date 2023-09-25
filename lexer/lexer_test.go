@@ -20,7 +20,7 @@ func TestLexer(t *testing.T) {
 		{"+# foo \n- #foo", `1:1 + "", 1:8 <newline> "", 2:1 - ""`},
 		{"+\\\n-", `1:1 + "", 2:1 - ""`},
 		{"+\\\r\n-", `1:1 + "", 2:1 - ""`},
-		{"+\\-", `1:1 + "", 1:3 <illegal> "expected \\n after \\ line continuation", 1:3 - ""`},
+		{"+\\-", `1:1 + "", 1:3 <illegal> "expected \\n after \\ line continuation"`},
 
 		// Names and keywords
 		{"x", `1:1 name "x"`},
@@ -33,14 +33,19 @@ func TestLexer(t *testing.T) {
 		{`"a\t\r\n\z\'\"\a\b\f\vb"`, `1:1 string "a\t\r\nz'\"\a\b\f\vb"`},
 		{`"x`, `1:3 <illegal> "didn't find end quote in string"`},
 		{`"foo\"`, `1:7 <illegal> "didn't find end quote in string"`},
-		{"\"x\n\"", `1:3 <illegal> "can't have newline in string", 1:3 <newline> "", 2:2 <illegal> "didn't find end quote in string"`},
+		{"\"x\n\"", `1:3 <illegal> "can't have newline in string"`},
 		{`'foo'`, `1:1 string "foo"`},
 		{`'a\t\r\n\z\'\"b'`, `1:1 string "a\t\r\nz'\"b"`},
 		{`'x`, `1:3 <illegal> "didn't find end quote in string"`},
-		{"'x\n'", `1:3 <illegal> "can't have newline in string", 1:3 <newline> "", 2:2 <illegal> "didn't find end quote in string"`},
+		{"'x\n'", `1:3 <illegal> "can't have newline in string"`},
 		{`"\x0.\x00.\x0A\x10\xff\xFF\x41"`, `1:1 string "\x00.\x00.\n\x10\xff\xffA"`},
-		{`"\xg"`, `1:4 <illegal> "1 or 2 hex digits expected", 1:4 name "g", 1:6 <illegal> "didn't find end quote in string"`},
+		{`"\xg"`, `1:4 <illegal> "1 or 2 hex digits expected"`},
 		{`"\0\78\7\77\777\0 \141 "`, `1:1 string "\x00\a8\a?\xff\x00 a "`},
+		{`"\ufg\uffg\uabcg\u201C\u1F602"`, `1:1 string "\x0fgÿg઼g“😂"`},
+		{`"\u201C"`, `1:1 string "“"`},
+		{`"\u00000041Z"`, `1:1 string "AZ"`},
+		{`"\ug"`, `1:4 <illegal> "1-8 hex digits expected"`},
+		{`"\uffffffffg"`, `1:12 <illegal> "invalid Unicode character"`},
 
 		// Number tokens
 		{"0", `1:1 number "0"`},
@@ -67,7 +72,7 @@ func TestLexer(t *testing.T) {
 		{".", `1:2 <illegal> "expected digits"`},
 
 		// Misc errors
-		{"&=", `1:2 <illegal> "unexpected char after '&'", 1:2 = ""`},
+		{"&=", `1:2 <illegal> "unexpected char after '&'"`},
 	}
 	for _, test := range tests {
 		t.Run(test.input, func(t *testing.T) {
@@ -88,6 +93,9 @@ func TestLexer(t *testing.T) {
 					}
 				}
 				strs = append(strs, fmt.Sprintf("%d:%d %s %q", pos.Line, pos.Column, tok, val))
+				if tok == ILLEGAL {
+					break
+				}
 			}
 			output := strings.Join(strs, ", ")
 			if output != test.output {
