@@ -269,6 +269,7 @@ BEGIN {
 	{`BEGIN { print 1, 1., .1, 1e0, -1, 1e }`, "", "1 1 0.1 1 -1 1\n", "", ""},
 	{`BEGIN { print '\"' '\'' 'xy' "z" "'" '\"' }`, "", "\"'xyz'\"\n", "", "invalid char"}, // Check support for single-quoted strings
 	{`BEGIN { print "0\n1\t2\r3\a4\b5\f6\v7\x408\xf" }  # !posix`, "", "0\n1\t2\r3\a4\b5\f6\v7@8\x0f\n", "", ""},
+	{`BEGIN { print "The \u201cQUICK\u201d brown fox \u1F602" }  # !gawk`, "", "The “QUICK” brown fox 😂\n", "", ""},
 	{`{ print /foo/ }`, "food\nfoo\nxfooz\nbar\n", "1\n1\n1\n0\n", "", ""},
 	{`/[a-/`, "foo", "", "parse error at 1:1: error parsing regexp: invalid character class range: `a-)`", "terminated"},
 	{`/\Q/  # !gawk`, "", "", "parse error at 1:1: error parsing regexp: missing closing ): `(?s:\\Q)`", ""}, // Gawk produces a warning (not an error), so skip
