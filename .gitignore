@@ -13,3 +13,4 @@ goawk_*.tar.gz
 interp/testdata
 scripts/csvbench/bin
 scripts/csvbench/count.csv
+/default.pgo

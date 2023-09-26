@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Create PGO profile
+go test -run=^$ -bench=. -cpuprofile=default.pgo ./interp
+
 go build
 VERSION="$(./goawk -version)"
 
