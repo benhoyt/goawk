@@ -232,9 +232,8 @@ func TestGAWK(t *testing.T) {
 		"getline":  true, // getline syntax issues (may be okay, see grammar notes at http://pubs.opengroup.org/onlinepubs/007904975/utilities/awk.html#tag_04_06_13_14)
 		"getline3": true, // getline syntax issues (similar to above)
 
-		"gsubtst7":     true, // something wrong with gsub or field split/join
-		"splitwht":     true, // other awks handle split(s, a, " ") differently from split(s, a, / /)
-		"parse1": true, // incorrect parsing of $$a++++ (see TODOs in interp_test.go too)
+		"gsubtst7": true, // something wrong with gsub or field split/join
+		"splitwht": true, // other awks handle split(s, a, " ") differently from split(s, a, / /)
 
 		"rscompat": true, // GoAWK allows multi-char RS by default
 		"rsstart2": true, // GoAWK ^ and $ anchors match beginning and end of line, not file (unlike Gawk)
