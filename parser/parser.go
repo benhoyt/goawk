@@ -733,7 +733,13 @@ func (p *parser) primary() ast.Expr {
 		return &ast.RegExpr{regex}
 	case DOLLAR:
 		p.next()
-		return &ast.FieldExpr{p.primary()}
+		var res ast.Expr = &ast.FieldExpr{p.primary()}
+		if p.tok == INCR || p.tok == DECR {
+			op := p.tok
+			p.next()
+			res = &ast.IncrExpr{res, op, false}
+		}
+		return res
 	case AT:
 		p.next()
 		return &ast.NamedFieldExpr{p.primary()}
