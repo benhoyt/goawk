@@ -422,9 +422,9 @@ BEGIN {
 	{`BEGIN { $1234567=1 }`, "", "", "field index too large: 1234567", ""},
 	{`0 in FS  # !awk - doesn't flag this as an error`, "x", "",
 		`parse error at 1:6: can't use scalar "FS" as array`, "array"},
-	// TODO: I think this is happening because we parse this as ($($0))++ rather than ($($0++))
-	// {`{ $$0++; print $0 }`, "2 3 4", "3\n", "", ""},
-	// {`BEGIN { $0="3 4 5 6 7 8 9"; a=3; print $$a++++; print }`, "", "7\n3 4 6 6 8 8 9\n", "", ""},
+	{`{ $$0++; print $0 }`, "2 3 4", "3\n", "", ""},
+	{`BEGIN { $0="3 4 5 6 7 8 9"; a=3; print $$a++++; print }`, "", "7\n3 4 6 6 8 8 9\n", "", ""},
+	{`BEGIN { n = split("12345", a, ""); i = 1; a[a[a[1]++]++]++; for (i=1;i<=n;i++) printf a[i]; print }`, "", "33345\n", "", ""},
 
 	// Lots of NF tests with different combinations of NF, $, and number
 	// of input fields. Some of these cause segmentation faults on awk

@@ -234,30 +234,8 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 
 		case *ast.IncrExpr:
 			// Pre or post doesn't matter for an assignment expression
-			switch target := expr.Expr.(type) {
-			case *ast.VarExpr:
-				scope, index := c.scalarInfo(target.Name)
-				switch scope {
-				case resolver.Global:
-					c.add(IncrGlobal, incrAmount(expr.Op), opcodeInt(index))
-				case resolver.Local:
-					c.add(IncrLocal, incrAmount(expr.Op), opcodeInt(index))
-				default: // ScopeSpecial
-					c.add(IncrSpecial, incrAmount(expr.Op), opcodeInt(index))
-				}
-			case *ast.FieldExpr:
-				c.expr(target.Index)
-				c.add(IncrField, incrAmount(expr.Op))
-			case *ast.IndexExpr:
-				c.index(target.Index)
-				scope, index := c.arrayInfo(target.Array)
-				switch scope {
-				case resolver.Global:
-					c.add(IncrArrayGlobal, incrAmount(expr.Op), opcodeInt(index))
-				default: // ScopeLocal
-					c.add(IncrArrayLocal, incrAmount(expr.Op), opcodeInt(index))
-				}
-			}
+			c.incrExpr(expr)
+			c.add(Drop)
 			return
 
 		case *ast.AugAssignExpr:
@@ -628,6 +606,46 @@ func (c *compiler) condition(expr ast.Expr, invert bool) Opcode {
 	return jumpOp(JumpTrue, JumpFalse)
 }
 
+// Performs a post-increment / post-decrement operation.
+// Leaves the original value (before increment) on the stack
+func (c *compiler) incrExpr(expr *ast.IncrExpr) {
+	switch target := expr.Expr.(type) {
+	case *ast.VarExpr:
+		scope, index := c.scalarInfo(target.Name)
+		switch scope {
+		case resolver.Global:
+			c.add(Global, opcodeInt(index))
+			c.add(IncrGlobal, incrAmount(expr.Op), opcodeInt(index))
+		case resolver.Local:
+			c.add(Local, opcodeInt(index))
+			c.add(IncrLocal, incrAmount(expr.Op), opcodeInt(index))
+		default: // ScopeSpecial
+			c.add(Special, opcodeInt(index))
+			c.add(IncrSpecial, incrAmount(expr.Op), opcodeInt(index))
+		}
+	case *ast.FieldExpr:
+		c.expr(target.Index)
+		c.add(Dupe)
+		c.add(Field)
+		c.add(Swap)
+		c.add(IncrField, incrAmount(expr.Op))
+	case *ast.IndexExpr:
+		c.index(target.Index)
+		c.add(Dupe)
+		scope, index := c.arrayInfo(target.Array)
+		switch scope {
+		case resolver.Global:
+			c.add(ArrayGlobal, opcodeInt(index))
+			c.add(Swap)
+			c.add(IncrArrayGlobal, incrAmount(expr.Op), opcodeInt(index))
+		default: // ScopeLocal
+			c.add(ArrayLocal, opcodeInt(index))
+			c.add(Swap)
+			c.add(IncrArrayLocal, incrAmount(expr.Op), opcodeInt(index))
+		}
+	}
+}
+
 func (c *compiler) expr(expr ast.Expr) {
 	switch e := expr.(type) {
 	case *ast.NumExpr:
@@ -710,15 +728,12 @@ func (c *compiler) expr(expr ast.Expr) {
 			c.expr(&ast.NumExpr{1})
 			c.add(op)
 			c.add(Dupe)
+			c.assign(e.Expr)
 		} else {
-			c.expr(e.Expr)
+			c.incrExpr(e)
 			c.expr(&ast.NumExpr{0})
 			c.add(Add)
-			c.add(Dupe)
-			c.expr(&ast.NumExpr{1})
-			c.add(op)
 		}
-		c.assign(e.Expr)
 
 	case *ast.AssignExpr:
 		// Most AssignExpr (standalone) will be handled by the ExprStmt special case
