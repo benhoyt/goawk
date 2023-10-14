@@ -734,6 +734,9 @@ func (p *parser) primary() ast.Expr {
 	case DOLLAR:
 		p.next()
 		var expr ast.Expr = &ast.FieldExpr{p.primary()}
+		// Post-increment operators have lower precedence than primary
+		// expressions by default, except for field expressions with
+		// post-increments (e.g., $$1++ = $($1++), NOT $($1)++).
 		if p.tok == INCR || p.tok == DECR {
 			op := p.tok
 			p.next()
