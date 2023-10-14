@@ -22,6 +22,15 @@ const (
 	Dupe
 	Drop
 	Swap
+	Roll // index
+
+	// i x y
+	// y x i SwapThree
+	// y i x Swap
+	// x i y SwapThree
+	// x y i Swap
+
+	// i x y SwapSkipOne
 
 	// Fetch a field, variable, or array item
 	Field

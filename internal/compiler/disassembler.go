@@ -131,6 +131,9 @@ func (d *disassembler) disassemble(prefix string) error {
 		op := d.fetch()
 
 		switch op {
+		case Roll:
+			index := d.fetch()
+			d.writeOpf("Roll %d", int(index))
 		case Num:
 			index := d.fetch()
 			num := d.program.Nums[index]
@@ -139,7 +142,6 @@ func (d *disassembler) disassemble(prefix string) error {
 			} else {
 				d.writeOpf("Num %.6g (%d)", num, index)
 			}
-
 		case Str:
 			index := d.fetch()
 			d.writeOpf("Str %q (%d)", d.program.Strs[index], index)

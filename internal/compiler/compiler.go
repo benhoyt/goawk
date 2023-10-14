@@ -522,6 +522,33 @@ func (c *compiler) assign(target ast.Expr) {
 	}
 }
 
+func (c *compiler) assignIndex(target ast.Expr, indexOffset int) {
+	switch target := target.(type) {
+	case *ast.VarExpr:
+		scope, index := c.scalarInfo(target.Name)
+		switch scope {
+		case resolver.Global:
+			c.add(AssignGlobal, opcodeInt(index))
+		case resolver.Local:
+			c.add(AssignLocal, opcodeInt(index))
+		case resolver.Special:
+			c.add(AssignSpecial, opcodeInt(index))
+		}
+	case *ast.FieldExpr:
+		c.add(Roll, opcodeInt(indexOffset))
+		c.add(AssignField)
+	case *ast.IndexExpr:
+		c.add(Roll, opcodeInt(indexOffset))
+		scope, index := c.arrayInfo(target.Array)
+		switch scope {
+		case resolver.Global:
+			c.add(AssignArrayGlobal, opcodeInt(index))
+		case resolver.Local:
+			c.add(AssignArrayLocal, opcodeInt(index))
+		}
+	}
+}
+
 // Convert int to Opcode, raising a *compileError if it doesn't fit.
 func opcodeInt(n int) Opcode {
 	if n > math.MaxInt32 || n < math.MinInt32 {
@@ -628,46 +655,6 @@ func (c *compiler) condition(expr ast.Expr, invert bool) Opcode {
 	return jumpOp(JumpTrue, JumpFalse)
 }
 
-// Performs a post-increment / post-decrement operation.
-// Leaves the original value (before increment) on the stack
-func (c *compiler) incrExpr(expr *ast.IncrExpr) {
-	switch target := expr.Expr.(type) {
-	case *ast.VarExpr:
-		scope, index := c.scalarInfo(target.Name)
-		switch scope {
-		case resolver.Global:
-			c.add(Global, opcodeInt(index))
-			c.add(IncrGlobal, incrAmount(expr.Op), opcodeInt(index))
-		case resolver.Local:
-			c.add(Local, opcodeInt(index))
-			c.add(IncrLocal, incrAmount(expr.Op), opcodeInt(index))
-		default: // ScopeSpecial
-			c.add(Special, opcodeInt(index))
-			c.add(IncrSpecial, incrAmount(expr.Op), opcodeInt(index))
-		}
-	case *ast.FieldExpr:
-		c.expr(target.Index)
-		c.add(Dupe)
-		c.add(Field)
-		c.add(Swap)
-		c.add(IncrField, incrAmount(expr.Op))
-	case *ast.IndexExpr:
-		c.index(target.Index)
-		c.add(Dupe)
-		scope, index := c.arrayInfo(target.Array)
-		switch scope {
-		case resolver.Global:
-			c.add(ArrayGlobal, opcodeInt(index))
-			c.add(Swap)
-			c.add(IncrArrayGlobal, incrAmount(expr.Op), opcodeInt(index))
-		default: // ScopeLocal
-			c.add(ArrayLocal, opcodeInt(index))
-			c.add(Swap)
-			c.add(IncrArrayLocal, incrAmount(expr.Op), opcodeInt(index))
-		}
-	}
-}
-
 func (c *compiler) expr(expr ast.Expr) {
 	switch e := expr.(type) {
 	case *ast.NumExpr:
@@ -746,15 +733,19 @@ func (c *compiler) expr(expr ast.Expr) {
 			op = Subtract
 		}
 		if e.Pre {
-			c.expr(e.Expr)
+			c.dupIndexLvalue(e.Expr)
 			c.expr(&ast.NumExpr{1})
 			c.add(op)
 			c.add(Dupe)
-			c.assign(e.Expr)
+			c.assignIndex(e.Expr, 2)
 		} else {
-			c.incrExpr(e)
+			c.dupIndexLvalue(e.Expr)
 			c.expr(&ast.NumExpr{0})
 			c.add(Add)
+			c.add(Dupe)
+			c.expr(&ast.NumExpr{1})
+			c.add(op)
+			c.assignIndex(e.Expr, 2)
 		}
 
 	case *ast.AssignExpr:
@@ -765,13 +756,21 @@ func (c *compiler) expr(expr ast.Expr) {
 
 	case *ast.AugAssignExpr:
 		// Most AugAssignExpr (standalone) will be handled by the ExprStmt special case
-		c.expr(e.Right)
-		c.expr(e.Left)
-		c.add(Swap)
-		c.binaryOp(e.Op)
-		c.add(Dupe)
-		c.assign(e.Left)
-
+		if ast.IsIndexed(e.Left) {
+			c.expr(e.Right)
+			c.dupIndexLvalue(e.Left)
+			c.add(Roll, opcodeInt(2))
+			c.binaryOp(e.Op)
+			c.add(Dupe)
+			c.assignIndex(e.Left, 2)
+		} else {
+			c.expr(e.Right)
+			c.expr(e.Left)
+			c.add(Swap)
+			c.binaryOp(e.Op)
+			c.add(Dupe)
+			c.assign(e.Left)
+		}
 	case *ast.CondExpr:
 		jump := c.condition(e.Cond, true)
 		ifMark := c.jumpForward(jump)
@@ -814,12 +813,22 @@ func (c *compiler) expr(expr ast.Expr) {
 			if len(e.Args) == 3 {
 				target = e.Args[2]
 			}
-			c.expr(e.Args[0])
-			c.expr(e.Args[1])
-			c.expr(target)
-			c.add(CallBuiltin, Opcode(op))
-			c.assign(target)
+			if ast.IsIndexed(target) {
+				c.dupIndexLvalue(target)
+				c.expr(e.Args[0])
+				c.expr(e.Args[1])
+				c.add(Roll, opcodeInt(2))
+				c.add(CallBuiltin, Opcode(op))
+				c.assignIndex(target, 2)
+			} else {
+				c.expr(e.Args[0])
+				c.expr(e.Args[1])
+				c.expr(target)
+				c.add(CallBuiltin, Opcode(op))
+				c.assign(target)
+			}
 			return
+
 		case lexer.F_LENGTH:
 			if len(e.Args) > 0 {
 				// Determine if the call is length(arrayVar) or length(stringExpr).
@@ -984,6 +993,37 @@ func (c *compiler) expr(expr ast.Expr) {
 	default:
 		// Should never happen
 		panic(fmt.Sprintf("unexpected expr type: %T", expr))
+	}
+}
+
+func (c *compiler) dupIndexLvalue(expr ast.Expr) {
+
+	switch e := expr.(type) {
+	case *ast.FieldExpr:
+		c.expr(e.Index)
+		c.add(Dupe)
+		c.add(Field)
+	case *ast.VarExpr:
+		scope, index := c.scalarInfo(e.Name)
+		switch scope {
+		case resolver.Global:
+			c.add(Global, opcodeInt(index))
+		case resolver.Local:
+			c.add(Local, opcodeInt(index))
+		case resolver.Special:
+			c.add(Special, opcodeInt(index))
+		}
+	case *ast.IndexExpr:
+		c.index(e.Index)
+		c.add(Dupe)
+		scope, index := c.arrayInfo(e.Array)
+		switch scope {
+		case resolver.Global:
+			c.add(ArrayGlobal, opcodeInt(index))
+		case resolver.Local:
+			c.add(ArrayLocal, opcodeInt(index))
+		}
+
 	}
 }
 

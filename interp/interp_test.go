@@ -482,6 +482,10 @@ BEGIN {
 	{`BEGIN { if (0||x+=2) print "t", x }`, "", "t 2\n", "", ""},
 	{`BEGIN { print(1&&x=2, 1||x=2, 1~x=2, 1!~x=2, 1==x=2, 1!=x=2, 1<x=2, 1<=x=2, 1>x=2, 1>=x=2); print x }`,
 		"", "1 1 0 1 0 1 1 1 0 0\n2\n", "", ""},
+	{`BEGIN { print a[f()]+=g(); print a["x"] }  function f() { print "f"; return "x" }  function g() { print "g"; return 1 }`,
+		"", "g\nf\n1\n1\n", "", ""},
+	{`{ print $f()+=g(); print }  function f() { print "f"; return 2 }  function g() { print "g"; return 1 }`,
+		"1 2 3", "g\nf\n3\n1 3 3\n", "", ""},
 
 	// Incr/decr expressions
 	{`BEGIN { print x++; print x }`, "", "0\n1\n", "", ""},
@@ -499,6 +503,14 @@ BEGIN {
 	{"{ print $++n; print $--n }", "x y", "x\nx y\n", "", ""},
 	{"{ print $++a }", "1 2 3\na b c\nd e f\n", "1\nb\nf\n", "", ""},
 	{"BEGIN{ a = 3; b = 7; c = (a)++b; print a, b, c }", "", "3 8 38\n", "", ""},
+	{`BEGIN { print ++a[f()]; print a["x"] }  function f() { print "f"; return "x" }`,
+		"", "f\n1\n1\n", "", ""},
+	{`BEGIN { print a[f()]++; print a["x"] }  function f() { print "f"; return "x" }`,
+		"", "f\n0\n1\n", "", ""},
+	{`{ print ++$f(); print }  function f() { print "f"; return 2 }`,
+		"1 2 3", "f\n3\n1 3 3\n", "", ""},
+	{`{ print $f()++; print }  function f() { print "f"; return 2 }`,
+		"1 2 3", "f\n2\n1 3 3\n", "", ""},
 
 	// Builtin functions
 	{`BEGIN { print sin(0), sin(0.5), sin(1), sin(-1) }`, "", "0 0.479426 0.841471 -0.841471\n", "", ""},
@@ -550,6 +562,10 @@ BEGIN {
 	{`BEGIN { n = split("1 2", a); print (n, a[1], a[2], a[1]==1, a[2]==2) }`, "", "2 1 2 1 1\n", "", ""},
 	{`BEGIN { x = "1.2.3"; print sub(/\./, ",", x); print x }`, "", "1\n1,2.3\n", "", ""},
 	{`BEGIN { x = "1.2.3"; print sub(/\./, ",\\", x); print x }`, "", "1\n1,\\2.3\n", "", ""},
+	{`BEGIN { a["x"] = "1.2.3"; print sub(/\./, ",", a[f()]); print a["x"] }  function f() { print "f"; return "x" }`,
+		"", "f\n1\n1,2.3\n", "", ""},
+	{`{ print sub(/\./, ",", $f()); print }  function f() { print "f"; return 2 }`,
+		"x 1.2.3 y", "f\n1\nx 1,2.3 y\n", "", ""},
 	{`{ print sub(/\./, ","); print $0 }`, "1.2.3", "1\n1,2.3\n", "", ""},
 	{`BEGIN { x = "1.2.3"; print gsub(/\./, ",", x); print x }`, "", "2\n1,2,3\n", "", ""},
 	{`{ print gsub(/\./, ","); print $0 }`, "1.2.3", "2\n1,2,3\n", "", ""},
