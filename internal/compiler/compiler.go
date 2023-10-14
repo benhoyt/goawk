@@ -234,8 +234,30 @@ func (c *compiler) stmt(stmt ast.Stmt) {
 
 		case *ast.IncrExpr:
 			// Pre or post doesn't matter for an assignment expression
-			c.incrExpr(expr)
-			c.add(Drop)
+			switch target := expr.Expr.(type) {
+			case *ast.VarExpr:
+				scope, index := c.scalarInfo(target.Name)
+				switch scope {
+				case resolver.Global:
+					c.add(IncrGlobal, incrAmount(expr.Op), opcodeInt(index))
+				case resolver.Local:
+					c.add(IncrLocal, incrAmount(expr.Op), opcodeInt(index))
+				default: // ScopeSpecial
+					c.add(IncrSpecial, incrAmount(expr.Op), opcodeInt(index))
+				}
+			case *ast.FieldExpr:
+				c.expr(target.Index)
+				c.add(IncrField, incrAmount(expr.Op))
+			case *ast.IndexExpr:
+				c.index(target.Index)
+				scope, index := c.arrayInfo(target.Array)
+				switch scope {
+				case resolver.Global:
+					c.add(IncrArrayGlobal, incrAmount(expr.Op), opcodeInt(index))
+				default: // ScopeLocal
+					c.add(IncrArrayLocal, incrAmount(expr.Op), opcodeInt(index))
+				}
+			}
 			return
 
 		case *ast.AugAssignExpr:
