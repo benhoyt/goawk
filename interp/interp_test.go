@@ -65,6 +65,12 @@ NR==2, NR==4 { print $0 }
 NR==3, NR==5 { print NR }
 `, "a\nb\nc\nd\ne\nf\ng", "b\nc\n3\nd\n4\n5\n", "", ""},
 
+	// field separator cannot match empty field
+	{`BEGIN {FS = "[^,]*"} {for (i=1;i<=NF;i++) print i, "<"$i">"}`, `x,,z`, "1 <>\n2 <,,>\n3 <>\n", "", ""},
+	{`BEGIN {FS = "[^a-z]*"} {for (i=1;i<=NF;i++) print i, "<"$i">"}`, `xyz`, "1 <xyz>\n", "", ""},
+	{`BEGIN {FS = "[0-9]*"} {for (i=1;i<=NF;i++) print i, "<"$i">"}`, `xyz`, "1 <xyz>\n", "", ""},
+	{`BEGIN {FS = "(abc)?"} {for (i=1;i<=NF;i++) print i, "<"$i">"}`, `abcdef`, "1 <>\n2 <def>\n", "", ""},
+
 	// print and printf statements
 	{`BEGIN { print "x", "y" }`, "", "x y\n", "", ""},
 	{`BEGIN { print OFS; OFS = ","; print "x", "y" }`, "", " \nx,y\n", "", ""},
