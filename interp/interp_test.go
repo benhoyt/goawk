@@ -843,9 +843,9 @@ BEGIN { x[1]=3; f5(x); print x[1] }
 	{`BEGIN { print >"out"; close("out"); getline <"out"; print |"out" }  # !awk !gawk`, "", "", "can't write to reader stream", ""},
 
 	// The value of close() on a pipe emulates gawk behavior. Results are identical for both
-	// input and output. Windows does not do POSIX signals.
-	{`BEGIN { cmd="exit 9"; print "" |cmd; print close(cmd) } # !awk !posix`, "", "9\n", "", ""},
-	{`BEGIN { cmd="exec /bin/kill -9 $$"; print "" |cmd; print close(cmd) } # !awk !posix !windows`, "", "265\n", "", ""},
+	// input and output. Windows does not do POSIX signals. Windows gawk uses cmd.exe, not sh.exe.
+	{`BEGIN { cmd="read FOO; exit 9"; print "" |cmd; print close(cmd) } # !awk !posix !windows-gawk`, "", "9\n", "", ""},
+	{`BEGIN { cmd="read FOO; exec /bin/kill -9 $$"; print "" |cmd; print close(cmd) } # !awk !posix !windows`, "", "265\n", "", ""},
 	{`BEGIN { cmd="exit 9"; cmd |getline; print close(cmd) } # !awk !posix`, "", "9\n", "", ""},
 	{`BEGIN { cmd="exec /bin/kill -9 $$"; cmd |getline; print close(cmd) } # !awk !posix !windows`, "", "265\n", "", ""},
 
