@@ -618,8 +618,9 @@ func (p *interp) setLine(line string, isTrueStr bool) {
 	p.reparseCSV = true
 }
 
-func (p *interp) customFieldSepRegexSplit(line string) []string {
-	var result []string
+// Splits on FS as a regex, appending each field to fields and returning the
+// new slice (for efficiency).
+func (p *interp) splitOnFieldSepRegex(fields []string, line string) []string {
 	indices := p.fieldSepRegex.FindAllStringIndex(line, -1)
 	prevIndex := 0
 	for _, match := range indices {
@@ -628,11 +629,11 @@ func (p *interp) customFieldSepRegexSplit(line string) []string {
 		if start == end {
 			continue
 		}
-		result = append(result, line[prevIndex:start])
+		fields = append(fields, line[prevIndex:start])
 		prevIndex = end
 	}
-	result = append(result, line[prevIndex:])
-	return result
+	fields = append(fields, line[prevIndex:])
+	return fields
 }
 
 // Ensure that the current line is parsed into fields, splitting it
@@ -671,7 +672,7 @@ func (p *interp) ensureFields() {
 		p.fields = strings.Split(p.line, p.fieldSep)
 	default:
 		// Split on FS as a regex
-		p.fields = p.customFieldSepRegexSplit(p.line)
+		p.fields = p.splitOnFieldSepRegex(p.fields[:0], p.line)
 	}
 
 	// Special case for when RS=="" and FS is single character,
