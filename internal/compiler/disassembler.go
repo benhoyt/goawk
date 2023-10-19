@@ -139,6 +139,7 @@ func (d *disassembler) disassemble(prefix string) error {
 			} else {
 				d.writeOpf("Num %.6g (%d)", num, index)
 			}
+
 		case Str:
 			index := d.fetch()
 			d.writeOpf("Str %q (%d)", d.program.Strs[index], index)
