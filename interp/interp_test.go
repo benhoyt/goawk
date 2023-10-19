@@ -425,6 +425,22 @@ BEGIN {
 	{`{ $$0++; print $0 }`, "2 3 4", "3\n", "", ""},
 	{`BEGIN { $0="3 4 5 6 7 8 9"; a=3; print $$a++++; print }`, "", "7\n3 4 6 6 8 8 9\n", "", ""},
 	{`BEGIN { n = split("12345", a, ""); i = 1; a[a[a[1]++]++]++; for (i=1;i<=n;i++) printf a[i]; print }`, "", "33345\n", "", ""},
+	{`
+BEGIN {
+    a[1] = "ciao"
+    a[2] = "."
+    a[3] = ".."
+    print gsub("ciao", "hello", a[gsub(".", ",", a[gsub(".", ",", a[f()])])])
+    print a[1]
+    print a[2]
+    print a[3]
+}
+
+function f() {
+    print "f"
+    return 3
+}
+`, "", "f\n1\nhello\n,\n,,\n", "", ""},
 
 	// Lots of NF tests with different combinations of NF, $, and number
 	// of input fields. Some of these cause segmentation faults on awk
