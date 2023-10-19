@@ -496,9 +496,9 @@ func incrAmount(op lexer.Token) Opcode {
 
 // Generate opcodes for an assignment.
 func (c *compiler) assign(target ast.Expr) {
-	switch target := target.(type) {
+	switch t := target.(type) {
 	case *ast.VarExpr:
-		scope, index := c.scalarInfo(target.Name)
+		scope, index := c.scalarInfo(t.Name)
 		switch scope {
 		case resolver.Global:
 			c.add(AssignGlobal, opcodeInt(index))
@@ -508,44 +508,36 @@ func (c *compiler) assign(target ast.Expr) {
 			c.add(AssignSpecial, opcodeInt(index))
 		}
 	case *ast.FieldExpr:
-		c.expr(target.Index)
+		c.expr(t.Index)
 		c.add(AssignField)
 	case *ast.IndexExpr:
-		c.index(target.Index)
-		scope, index := c.arrayInfo(target.Array)
-		switch scope {
-		case resolver.Global:
-			c.add(AssignArrayGlobal, opcodeInt(index))
-		case resolver.Local:
-			c.add(AssignArrayLocal, opcodeInt(index))
-		}
+		c.index(t.Index)
+		c.assignIndexExpr(t)
 	}
 }
 
-func (c *compiler) assignIndex(target ast.Expr, indexOffset int) {
-	switch target := target.(type) {
+func (c *compiler) assignIndexExpr(target *ast.IndexExpr) {
+	scope, index := c.arrayInfo(target.Array)
+	switch scope {
+	case resolver.Global:
+		c.add(AssignArrayGlobal, opcodeInt(index))
+	case resolver.Local:
+		c.add(AssignArrayLocal, opcodeInt(index))
+	}
+}
+
+// Assign to target, but instead of evaluating the index, rotate it to the top
+// of the stack first (for applicable target types).
+func (c *compiler) assignRoteIndex(target ast.Expr) {
+	switch t := target.(type) {
 	case *ast.VarExpr:
-		scope, index := c.scalarInfo(target.Name)
-		switch scope {
-		case resolver.Global:
-			c.add(AssignGlobal, opcodeInt(index))
-		case resolver.Local:
-			c.add(AssignLocal, opcodeInt(index))
-		case resolver.Special:
-			c.add(AssignSpecial, opcodeInt(index))
-		}
+		c.assign(target) // no index for VarExpr, just call assign
 	case *ast.FieldExpr:
-		c.add(Roll, opcodeInt(indexOffset))
+		c.add(Rote)
 		c.add(AssignField)
 	case *ast.IndexExpr:
-		c.add(Roll, opcodeInt(indexOffset))
-		scope, index := c.arrayInfo(target.Array)
-		switch scope {
-		case resolver.Global:
-			c.add(AssignArrayGlobal, opcodeInt(index))
-		case resolver.Local:
-			c.add(AssignArrayLocal, opcodeInt(index))
-		}
+		c.add(Rote)
+		c.assignIndexExpr(t)
 	}
 }
 
@@ -733,19 +725,19 @@ func (c *compiler) expr(expr ast.Expr) {
 			op = Subtract
 		}
 		if e.Pre {
-			c.dupIndexLvalue(e.Expr)
+			c.dupeIndexLValue(e.Expr)
 			c.expr(&ast.NumExpr{1})
 			c.add(op)
 			c.add(Dupe)
-			c.assignIndex(e.Expr, 2)
+			c.assignRoteIndex(e.Expr)
 		} else {
-			c.dupIndexLvalue(e.Expr)
-			c.expr(&ast.NumExpr{0})
+			c.dupeIndexLValue(e.Expr)
+			c.expr(&ast.NumExpr{0}) // add 0 to coerce result to number
 			c.add(Add)
 			c.add(Dupe)
 			c.expr(&ast.NumExpr{1})
 			c.add(op)
-			c.assignIndex(e.Expr, 2)
+			c.assignRoteIndex(e.Expr)
 		}
 
 	case *ast.AssignExpr:
@@ -756,14 +748,15 @@ func (c *compiler) expr(expr ast.Expr) {
 
 	case *ast.AugAssignExpr:
 		// Most AugAssignExpr (standalone) will be handled by the ExprStmt special case
-		if ast.IsIndexed(e.Left) {
+		switch e.Left.(type) {
+		case *ast.FieldExpr, *ast.IndexExpr:
 			c.expr(e.Right)
-			c.dupIndexLvalue(e.Left)
-			c.add(Roll, opcodeInt(2))
+			c.dupeIndexLValue(e.Left)
+			c.add(Rote)
 			c.binaryOp(e.Op)
 			c.add(Dupe)
-			c.assignIndex(e.Left, 2)
-		} else {
+			c.assignRoteIndex(e.Left)
+		case *ast.VarExpr:
 			c.expr(e.Right)
 			c.expr(e.Left)
 			c.add(Swap)
@@ -771,6 +764,7 @@ func (c *compiler) expr(expr ast.Expr) {
 			c.add(Dupe)
 			c.assign(e.Left)
 		}
+
 	case *ast.CondExpr:
 		jump := c.condition(e.Cond, true)
 		ifMark := c.jumpForward(jump)
@@ -782,13 +776,7 @@ func (c *compiler) expr(expr ast.Expr) {
 
 	case *ast.IndexExpr:
 		c.index(e.Index)
-		scope, index := c.arrayInfo(e.Array)
-		switch scope {
-		case resolver.Global:
-			c.add(ArrayGlobal, opcodeInt(index))
-		case resolver.Local:
-			c.add(ArrayLocal, opcodeInt(index))
-		}
+		c.indexExpr(e)
 
 	case *ast.CallExpr:
 		// split and sub/gsub require special cases as they have lvalue arguments
@@ -813,14 +801,15 @@ func (c *compiler) expr(expr ast.Expr) {
 			if len(e.Args) == 3 {
 				target = e.Args[2]
 			}
-			if ast.IsIndexed(target) {
-				c.dupIndexLvalue(target)
+			switch target.(type) {
+			case *ast.FieldExpr, *ast.IndexExpr:
+				c.dupeIndexLValue(target)
 				c.expr(e.Args[0])
 				c.expr(e.Args[1])
-				c.add(Roll, opcodeInt(2))
+				c.add(Rote)
 				c.add(CallBuiltin, Opcode(op))
-				c.assignIndex(target, 2)
-			} else {
+				c.assignRoteIndex(target)
+			case *ast.VarExpr:
 				c.expr(e.Args[0])
 				c.expr(e.Args[1])
 				c.expr(target)
@@ -996,34 +985,30 @@ func (c *compiler) expr(expr ast.Expr) {
 	}
 }
 
-func (c *compiler) dupIndexLvalue(expr ast.Expr) {
+func (c *compiler) indexExpr(e *ast.IndexExpr) {
+	scope, index := c.arrayInfo(e.Array)
+	switch scope {
+	case resolver.Global:
+		c.add(ArrayGlobal, opcodeInt(index))
+	case resolver.Local:
+		c.add(ArrayLocal, opcodeInt(index))
+	}
+}
 
+// Compile an lvalue expression, but Dupe the index for applicable expr types
+// so it can be used later for assignIndexExpr (without evaluating it again).
+func (c *compiler) dupeIndexLValue(expr ast.Expr) {
 	switch e := expr.(type) {
+	case *ast.VarExpr:
+		c.expr(expr) // VarExpr has no index, so Dupe is not needed
 	case *ast.FieldExpr:
 		c.expr(e.Index)
 		c.add(Dupe)
 		c.add(Field)
-	case *ast.VarExpr:
-		scope, index := c.scalarInfo(e.Name)
-		switch scope {
-		case resolver.Global:
-			c.add(Global, opcodeInt(index))
-		case resolver.Local:
-			c.add(Local, opcodeInt(index))
-		case resolver.Special:
-			c.add(Special, opcodeInt(index))
-		}
 	case *ast.IndexExpr:
 		c.index(e.Index)
 		c.add(Dupe)
-		scope, index := c.arrayInfo(e.Array)
-		switch scope {
-		case resolver.Global:
-			c.add(ArrayGlobal, opcodeInt(index))
-		case resolver.Local:
-			c.add(ArrayLocal, opcodeInt(index))
-		}
-
+		c.indexExpr(e)
 	}
 }
 

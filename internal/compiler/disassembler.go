@@ -131,9 +131,6 @@ func (d *disassembler) disassemble(prefix string) error {
 		op := d.fetch()
 
 		switch op {
-		case Roll:
-			index := d.fetch()
-			d.writeOpf("Roll %d", int(index))
 		case Num:
 			index := d.fetch()
 			num := d.program.Nums[index]

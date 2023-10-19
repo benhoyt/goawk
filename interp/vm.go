@@ -60,10 +60,10 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			l, r := p.peekTwo()
 			p.replaceTwo(r, l)
 
-		case compiler.Roll:
-			n := code[ip]
-			ip++
-			p.roll(int(n))
+		case compiler.Rote:
+			s := p.peekSlice(3)
+			v0, v1, v2 := s[0], s[1], s[2]
+			s[0], s[1], s[2] = v1, v2, v0
 
 		case compiler.Field:
 			index := p.peekTop()
@@ -1143,15 +1143,6 @@ func (p *interp) pushNulls(num int) {
 		sp++
 	}
 	p.sp = sp
-}
-
-func (p *interp) roll(n int) {
-	if n == 0 {
-		return
-	}
-	val := p.stack[p.sp-n-1]
-	copy(p.stack[p.sp-n-1:p.sp-1], p.stack[p.sp-n:p.sp])
-	p.stack[p.sp-1] = val
 }
 
 func (p *interp) pop() value {

@@ -14,7 +14,7 @@ func _() {
 	_ = x[Dupe-3]
 	_ = x[Drop-4]
 	_ = x[Swap-5]
-	_ = x[Roll-6]
+	_ = x[Rote-6]
 	_ = x[Field-7]
 	_ = x[FieldInt-8]
 	_ = x[FieldByName-9]
@@ -104,7 +104,7 @@ func _() {
 	_ = x[EndOpcode-93]
 }
 
-const _Opcode_name = "NopNumStrDupeDropSwapRollFieldFieldIntFieldByNameFieldByNameStrGlobalLocalSpecialArrayGlobalArrayLocalInGlobalInLocalAssignFieldAssignGlobalAssignLocalAssignSpecialAssignArrayGlobalAssignArrayLocalDeleteDeleteAllIncrFieldIncrGlobalIncrLocalIncrSpecialIncrArrayGlobalIncrArrayLocalAugAssignFieldAugAssignGlobalAugAssignLocalAugAssignSpecialAugAssignArrayGlobalAugAssignArrayLocalRegexIndexMultiConcatMultiAddSubtractMultiplyDividePowerModuloEqualsNotEqualsLessGreaterLessOrEqualGreaterOrEqualConcatMatchNotMatchNotUnaryMinusUnaryPlusBooleanJumpJumpFalseJumpTrueJumpEqualsJumpNotEqualsJumpLessJumpGreaterJumpLessOrEqualJumpGreaterOrEqualNextNextfileExitExitStatusForInBreakForInCallBuiltinCallLengthArrayCallSplitCallSplitSepCallSprintfCallUserCallNativeReturnReturnNullNullsPrintPrintfGetlineGetlineFieldGetlineGlobalGetlineLocalGetlineSpecialGetlineArrayEndOpcode"
+const _Opcode_name = "NopNumStrDupeDropSwapRoteFieldFieldIntFieldByNameFieldByNameStrGlobalLocalSpecialArrayGlobalArrayLocalInGlobalInLocalAssignFieldAssignGlobalAssignLocalAssignSpecialAssignArrayGlobalAssignArrayLocalDeleteDeleteAllIncrFieldIncrGlobalIncrLocalIncrSpecialIncrArrayGlobalIncrArrayLocalAugAssignFieldAugAssignGlobalAugAssignLocalAugAssignSpecialAugAssignArrayGlobalAugAssignArrayLocalRegexIndexMultiConcatMultiAddSubtractMultiplyDividePowerModuloEqualsNotEqualsLessGreaterLessOrEqualGreaterOrEqualConcatMatchNotMatchNotUnaryMinusUnaryPlusBooleanJumpJumpFalseJumpTrueJumpEqualsJumpNotEqualsJumpLessJumpGreaterJumpLessOrEqualJumpGreaterOrEqualNextNextfileExitExitStatusForInBreakForInCallBuiltinCallLengthArrayCallSplitCallSplitSepCallSprintfCallUserCallNativeReturnReturnNullNullsPrintPrintfGetlineGetlineFieldGetlineGlobalGetlineLocalGetlineSpecialGetlineArrayEndOpcode"
 
 var _Opcode_index = [...]uint16{0, 3, 6, 9, 13, 17, 21, 25, 30, 38, 49, 63, 69, 74, 81, 92, 102, 110, 117, 128, 140, 151, 164, 181, 197, 203, 212, 221, 231, 240, 251, 266, 280, 294, 309, 323, 339, 359, 378, 383, 393, 404, 407, 415, 423, 429, 434, 440, 446, 455, 459, 466, 477, 491, 497, 502, 510, 513, 523, 532, 539, 543, 552, 560, 570, 583, 591, 602, 617, 635, 639, 647, 651, 661, 666, 676, 687, 702, 711, 723, 734, 742, 752, 758, 768, 773, 778, 784, 791, 803, 816, 828, 842, 854, 863}
 

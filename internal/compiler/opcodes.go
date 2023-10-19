@@ -22,7 +22,7 @@ const (
 	Dupe
 	Drop
 	Swap
-	Roll // index
+	Rote
 
 	// i x y
 	// y x i SwapThree

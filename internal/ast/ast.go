@@ -460,15 +460,6 @@ func IsLValue(expr Expr) bool {
 	}
 }
 
-func IsIndexed(expr Expr) bool {
-	switch expr.(type) {
-	case *FieldExpr, *IndexExpr:
-		return true
-	default:
-		return false
-	}
-}
-
 // Stmt is the abstract syntax tree for any AWK statement.
 type Stmt interface {
 	Node
