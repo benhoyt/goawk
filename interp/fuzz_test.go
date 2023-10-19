@@ -35,7 +35,7 @@ func FuzzSource(f *testing.F) {
 		}
 		interpreter, err := interp.New(prog)
 		if err != nil {
-			f.Fatalf("interp.New error: %v", err)
+			t.Fatalf("interp.New error: %v", err)
 		}
 		config := interp.Config{
 			Stdin:        strings.NewReader("foo bar\nbazz\n"),
