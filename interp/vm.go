@@ -60,6 +60,11 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			l, r := p.peekTwo()
 			p.replaceTwo(r, l)
 
+		case compiler.Rote:
+			s := p.peekSlice(3)
+			v0, v1, v2 := s[0], s[1], s[2]
+			s[0], s[1], s[2] = v1, v2, v0
+
 		case compiler.Field:
 			index := p.peekTop()
 			v := p.getField(int(index.num()))

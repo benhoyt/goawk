@@ -22,6 +22,7 @@ const (
 	Dupe
 	Drop
 	Swap
+	Rote
 
 	// Fetch a field, variable, or array item
 	Field

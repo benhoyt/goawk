@@ -428,9 +428,25 @@ BEGIN {
 	{`BEGIN { $1234567=1 }`, "", "", "field index too large: 1234567", ""},
 	{`0 in FS  # !awk - doesn't flag this as an error`, "x", "",
 		`parse error at 1:6: can't use scalar "FS" as array`, "array"},
-	// TODO: I think this is happening because we parse this as ($($0))++ rather than ($($0++))
-	// {`{ $$0++; print $0 }`, "2 3 4", "3\n", "", ""},
-	// {`BEGIN { $0="3 4 5 6 7 8 9"; a=3; print $$a++++; print }`, "", "7\n3 4 6 6 8 8 9\n", "", ""},
+	{`{ $$0++; print $0 }`, "2 3 4", "3\n", "", ""},
+	{`BEGIN { $0="3 4 5 6 7 8 9"; a=3; print $$a++++; print }`, "", "7\n3 4 6 6 8 8 9\n", "", ""},
+	{`BEGIN { n = split("12345", a, ""); i = 1; a[a[a[1]++]++]++; for (i=1;i<=n;i++) printf a[i]; print }`, "", "33345\n", "", ""},
+	{`
+BEGIN {
+    a[1] = "ciao"
+    a[2] = "."
+    a[3] = ".."
+    print gsub("ciao", "hello", a[gsub(".", ",", a[gsub(".", ",", a[f()])])])
+    print a[1]
+    print a[2]
+    print a[3]
+}
+
+function f() {
+    print "f"
+    return 3
+}
+`, "", "f\n1\nhello\n,\n,,\n", "", ""},
 
 	// Lots of NF tests with different combinations of NF, $, and number
 	// of input fields. Some of these cause segmentation faults on awk
@@ -488,6 +504,12 @@ BEGIN {
 	{`BEGIN { if (0||x+=2) print "t", x }`, "", "t 2\n", "", ""},
 	{`BEGIN { print(1&&x=2, 1||x=2, 1~x=2, 1!~x=2, 1==x=2, 1!=x=2, 1<x=2, 1<=x=2, 1>x=2, 1>=x=2); print x }`,
 		"", "1 1 0 1 0 1 1 1 0 0\n2\n", "", ""},
+	{`BEGIN { print a[f()]+=g(); print a["x"] }  function f() { print "f"; return "x" }  function g() { print "g"; return 1 }`,
+		"", "g\nf\n1\n1\n", "", ""},
+	{`{ print $f()+=g(); print }  function f() { print "f"; return 2 }  function g() { print "g"; return 1 }`,
+		"1 2 3", "g\nf\n3\n1 3 3\n", "", ""},
+	{`BEGIN { x += x++; print x }`, "", "1\n", "", ""},
+	{`BEGIN { print(x += x++); print x }`, "", "1\n1\n", "", ""},
 
 	// Incr/decr expressions
 	{`BEGIN { print x++; print x }`, "", "0\n1\n", "", ""},
@@ -505,6 +527,14 @@ BEGIN {
 	{"{ print $++n; print $--n }", "x y", "x\nx y\n", "", ""},
 	{"{ print $++a }", "1 2 3\na b c\nd e f\n", "1\nb\nf\n", "", ""},
 	{"BEGIN{ a = 3; b = 7; c = (a)++b; print a, b, c }", "", "3 8 38\n", "", ""},
+	{`BEGIN { print ++a[f()]; print a["x"] }  function f() { print "f"; return "x" }`,
+		"", "f\n1\n1\n", "", ""},
+	{`BEGIN { print a[f()]++; print a["x"] }  function f() { print "f"; return "x" }`,
+		"", "f\n0\n1\n", "", ""},
+	{`{ print ++$f(); print }  function f() { print "f"; return 2 }`,
+		"1 2 3", "f\n3\n1 3 3\n", "", ""},
+	{`{ print $f()++; print }  function f() { print "f"; return 2 }`,
+		"1 2 3", "f\n2\n1 3 3\n", "", ""},
 
 	// Builtin functions
 	{`BEGIN { print sin(0), sin(0.5), sin(1), sin(-1) }`, "", "0 0.479426 0.841471 -0.841471\n", "", ""},
@@ -556,6 +586,10 @@ BEGIN {
 	{`BEGIN { n = split("1 2", a); print (n, a[1], a[2], a[1]==1, a[2]==2) }`, "", "2 1 2 1 1\n", "", ""},
 	{`BEGIN { x = "1.2.3"; print sub(/\./, ",", x); print x }`, "", "1\n1,2.3\n", "", ""},
 	{`BEGIN { x = "1.2.3"; print sub(/\./, ",\\", x); print x }`, "", "1\n1,\\2.3\n", "", ""},
+	{`BEGIN { a["x"] = "1.2.3"; print sub(/\./, ",", a[f()]); print a["x"] }  function f() { print "f"; return "x" }`,
+		"", "f\n1\n1,2.3\n", "", ""},
+	{`{ print sub(/\./, ",", $f()); print }  function f() { print "f"; return 2 }`,
+		"x 1.2.3 y", "f\n1\nx 1,2.3 y\n", "", ""},
 	{`{ print sub(/\./, ","); print $0 }`, "1.2.3", "1\n1,2.3\n", "", ""},
 	{`BEGIN { x = "1.2.3"; print gsub(/\./, ",", x); print x }`, "", "2\n1,2,3\n", "", ""},
 	{`{ print gsub(/\./, ","); print $0 }`, "1.2.3", "2\n1,2,3\n", "", ""},
