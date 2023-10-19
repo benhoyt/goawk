@@ -486,6 +486,8 @@ BEGIN {
 		"", "g\nf\n1\n1\n", "", ""},
 	{`{ print $f()+=g(); print }  function f() { print "f"; return 2 }  function g() { print "g"; return 1 }`,
 		"1 2 3", "g\nf\n3\n1 3 3\n", "", ""},
+	{`BEGIN { x += x++; print x }`, "", "1\n", "", ""},
+	{`BEGIN { print(x += x++); print x }`, "", "1\n1\n", "", ""},
 
 	// Incr/decr expressions
 	{`BEGIN { print x++; print x }`, "", "0\n1\n", "", ""},
