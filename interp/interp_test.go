@@ -830,9 +830,11 @@ BEGIN { x[1]=3; f5(x); print x[1] }
 	{`BEGIN { print getline x+1; print x }`, "foo", "2\nfoo\n", "", ""},
 	{`BEGIN { print getline (x+1); print $0 }`, "foo", "11\nfoo\n", "", ""},
 	{`BEGIN { print getline foo(); print $0 } function foo() { print "z" }`, "foo", "z\n1\nfoo\n", "", ""},
+	{`BEGIN { print("echo foo" | getline x+1); print x }`, "", "2\nfoo\n", "", ""},
+	{`BEGIN { print("echo foo" | getline $0+1); print }`, "", "2\nfoo\n", "", ""},
+	{`BEGIN { while ("echo foo" | getline > 0) print }`, "", "foo\n", "", ""},
+	{`BEGIN { print("echo foo" | getline * 100) }`, "", "100\n", "", ""},
 	// TODO: these forms don't yet work under GoAWK
-	//{`BEGIN { print("echo foo" | getline x+1); print x }`, "", "2\nfoo\n", "", ""},
-	//{`BEGIN { print("echo foo" | getline $0+1); print }`, "", "2\nfoo\n", "", ""},
 	//{`BEGIN { print("echo foo" | getline ($0+1)); print }`, "", "11\nfoo\n", "", ""},
 	//{`BEGIN { print("echo foo" | getline foo()); print } function foo() { print "z" }`, "", "z\n1\nfoo\n", "", ""},
 	{`BEGIN {
