@@ -124,9 +124,10 @@ type parser struct {
 	val     string   // string value of last token (or "")
 
 	// Parsing state
-	inAction  bool   // true if parsing an action (false in BEGIN or END)
-	funcName  string // function name if parsing a func, else ""
-	loopDepth int    // current loop depth (0 if not in any loops)
+	inAction           bool   // true if parsing an action (false in BEGIN or END)
+	funcName           string // function name if parsing a func, else ""
+	loopDepth          int    // current loop depth (0 if not in any loops)
+	pendingGetLineLeft ast.Expr
 
 	// Variable tracking and resolving
 	multiExprs map[*ast.MultiExpr]Position // tracks comma-separated expressions
@@ -518,21 +519,20 @@ func (p *parser) exprList(parse func() ast.Expr) []ast.Expr {
 // which skips PIPE GETLINE and GREATER expressions.
 
 // Parse a single expression.
-func (p *parser) expr() ast.Expr      { return p.getLine() }
+func (p *parser) expr() ast.Expr      { return p._assign(p.getLine) }
 func (p *parser) printExpr() ast.Expr { return p._assign(p.printCond) }
 
 // Parse an "expr | getline [lvalue]" expression:
 //
 //	assign [PIPE GETLINE [lvalue]]
 func (p *parser) getLine() ast.Expr {
-	expr := p._assign(p.cond)
+	p.pendingGetLineLeft = nil
+	left := p.cond()
 	if p.tok == PIPE {
-		p.next()
-		p.expect(GETLINE)
-		target := p.optionalLValue()
-		return &ast.GetlineExpr{expr, target, nil}
+		p.pendingGetLineLeft = left
+		return p.cond()
 	}
-	return expr
+	return left
 }
 
 // Parse an = assignment expression:
@@ -807,6 +807,17 @@ func (p *parser) primary() ast.Expr {
 			file = p.primary()
 		}
 		return &ast.GetlineExpr{nil, target, file}
+	case PIPE:
+		if p.pendingGetLineLeft == nil {
+			panic(p.errorf("expected expression instead of %s", p.tok))
+		}
+		left := p.pendingGetLineLeft
+		p.pendingGetLineLeft = nil
+		p.next()
+		p.expect(GETLINE)
+		target := p.optionalLValue()
+		res := &ast.GetlineExpr{left, target, nil}
+		return res
 	// Below is the parsing of all the builtin function calls. We
 	// could unify these but several of them have special handling
 	// (array/lvalue/regex params, optional arguments, and so on).
