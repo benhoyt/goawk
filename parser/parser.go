@@ -525,34 +525,12 @@ func (p *parser) printExpr() ast.Expr { return p._assign(p.printCond) }
 //
 //	assign [PIPE GETLINE [lvalue]]
 func (p *parser) getLine() ast.Expr {
-	var expr ast.Expr
-	expr = p._assign(p.cond)
+	expr := p._assign(p.cond)
 	if p.tok == PIPE {
 		p.next()
 		p.expect(GETLINE)
 		target := p.optionalLValue()
-		expr = &ast.GetlineExpr{expr, target, nil}
-		if p.matches(
-			ADD,
-			SUB,
-			MUL,
-			DIV,
-			POW,
-			AND,
-			OR,
-			MATCH,
-			NOT_MATCH,
-			EQUALS,
-			NOT_EQUALS,
-			GREATER,
-			GTE,
-			LESS,
-			LTE,
-		) {
-			op := p.tok
-			p.next()
-			expr = &ast.BinaryExpr{expr, op, p.expr()}
-		}
+		return &ast.GetlineExpr{expr, target, nil}
 	}
 	return expr
 }
