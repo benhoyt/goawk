@@ -379,6 +379,7 @@ func (p *parser) stmt() ast.Stmt {
 		p.next()
 		p.optionalNewlines()
 		body := p.loopStmts()
+		p.optionalNewlines()
 		p.expect(WHILE)
 		p.expect(LPAREN)
 		cond := p.expr()

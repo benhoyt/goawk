@@ -155,6 +155,7 @@ NR==3, NR==5 { print NR }
 	{`BEGIN { s="x"; while (s=="x") { print s; s="y" } }`, "", "x\n", "", ""},
 	{`BEGIN { s="x"; while (s!="") { print s; s="" } }`, "", "x\n", "", ""},
 	{`BEGIN { s="x"; while (s) { print s; s="" } }`, "", "x\n", "", ""},
+	{"BEGIN { do { print 1 }\nwhile (0) }", "", "1\n", "", ""},
 	// regression tests for break and continue with nested loops
 	{`
 BEGIN {
