@@ -726,7 +726,7 @@ func (p *parser) primary() ast.Expr {
 	case STRING:
 		s := p.val
 		p.next()
-		return &ast.StrExpr{s}
+		return &ast.StrExpr{Value: s}
 	case DIV, DIV_ASSIGN:
 		// If we get to DIV or DIV_ASSIGN as a primary expression,
 		// it's actually a regex.
@@ -967,7 +967,7 @@ func (p *parser) optionalLValue() ast.Expr {
 func (p *parser) regexStr(parse func() ast.Expr) ast.Expr {
 	if p.matches(DIV, DIV_ASSIGN) {
 		regex := p.nextRegex()
-		return &ast.StrExpr{regex}
+		return &ast.StrExpr{Value: regex, Regexp: true}
 	}
 	return parse()
 }
