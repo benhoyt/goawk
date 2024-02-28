@@ -292,12 +292,16 @@ func (e *NumExpr) String() string {
 	}
 }
 
-// StrExpr is a literal string like "foo".
+// StrExpr is a literal string like "foo" or a regex constant like /foo/.
 type StrExpr struct {
 	Value string
+	Regex bool
 }
 
 func (e *StrExpr) String() string {
+	if e.Regex {
+		return formatRegex(e.Value)
+	}
 	return strconv.Quote(e.Value)
 }
 
@@ -308,8 +312,7 @@ type RegExpr struct {
 }
 
 func (e *RegExpr) String() string {
-	escaped := strings.Replace(e.Regex, "/", `\/`, -1)
-	return "/" + escaped + "/"
+	return formatRegex(e.Regex)
 }
 
 // VarExpr is a variable reference (special var, global, or local).
@@ -458,6 +461,12 @@ func IsLValue(expr Expr) bool {
 	default:
 		return false
 	}
+}
+
+// formatRegex formats the regex string r.
+func formatRegex(r string) string {
+	escaped := strings.Replace(r, "/", `\/`, -1)
+	return "/" + escaped + "/"
 }
 
 // Stmt is the abstract syntax tree for any AWK statement.
