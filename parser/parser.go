@@ -967,7 +967,7 @@ func (p *parser) optionalLValue() ast.Expr {
 func (p *parser) regexStr(parse func() ast.Expr) ast.Expr {
 	if p.matches(DIV, DIV_ASSIGN) {
 		regex := p.nextRegex()
-		return &ast.StrExpr{Value: regex, Regexp: true}
+		return &ast.StrExpr{Value: regex, Regex: true}
 	}
 	return parse()
 }

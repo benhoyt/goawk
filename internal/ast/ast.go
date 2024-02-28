@@ -292,14 +292,14 @@ func (e *NumExpr) String() string {
 	}
 }
 
-// StrExpr is a literal string like "foo" or a regexp constant like /foo/.
+// StrExpr is a literal string like "foo" or a regex constant like /foo/.
 type StrExpr struct {
-	Value  string
-	Regexp bool
+	Value string
+	Regex bool
 }
 
 func (e *StrExpr) String() string {
-	if e.Regexp {
+	if e.Regex {
 		return formatRegex(e.Value)
 	}
 	return strconv.Quote(e.Value)
