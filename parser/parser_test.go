@@ -124,6 +124,8 @@ $0 {
     a[x, y, z]
     f()
     set(a, k, v)
+    sub(/regex/, repl, s)
+    sub("regex", repl, s)
     sub(regex, repl)
     sub(regex, repl, s)
     gsub(regex, repl)
