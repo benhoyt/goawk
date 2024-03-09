@@ -1388,7 +1388,7 @@ BEGIN {
 			}},
 		{`BEGIN { 8 }`, "", "", `native function "r" returns more than two values`,
 			map[string]interface{}{
-				"r": func() (int, error, int) { return 0, nil, 0 },
+				"r": func() (int, int, int) { return 0, 0, 0 },
 			}},
 		{`BEGIN { print f(), f(1, 2) }`, "", "", `parse error at 1:20: "f" called with more arguments than declared`,
 			map[string]interface{}{

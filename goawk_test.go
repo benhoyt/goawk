@@ -483,11 +483,6 @@ func runAWKs(t *testing.T, testArgs []string, testStdin, testOutput, testError s
 
 	t.Run("awk", func(t *testing.T) {
 		t.Helper()
-		var args []string
-		if strings.Contains(awkExe, "gawk") {
-			args = append(args, "--posix")
-		}
-		args = append(args, testArgs...)
 		cmd := exec.Command(awkExe, testArgs...)
 		if runtime.GOOS != "windows" {
 			cmd.Env = []string{"LC_ALL=en_US.UTF-8"}
