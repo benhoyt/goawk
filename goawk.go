@@ -366,8 +366,10 @@ argsLoop:
 
 	// Run the program!
 	interpreter, err := interp.New(prog)
+	if err != nil {
+		errorExit(err)
+	}
 	status, err := interpreter.Execute(config)
-
 	if err != nil {
 		errorExit(err)
 	}

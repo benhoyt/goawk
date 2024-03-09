@@ -646,6 +646,7 @@ func (p *interp) ensureFields() {
 
 	switch {
 	case p.inputMode == CSVMode || p.inputMode == TSVMode:
+		// Normally fields have already been parsed by csvSplitter
 		if p.reparseCSV {
 			scanner := bufio.NewScanner(strings.NewReader(p.line))
 			scanner.Buffer(nil, maxRecordLength)
@@ -659,8 +660,6 @@ func (p *interp) ensureFields() {
 			if !scanner.Scan() {
 				p.fields = nil
 			}
-		} else {
-			// Normally fields have already been parsed by csvSplitter
 		}
 	case p.fieldSep == " ":
 		// FS space (default) means split fields on any whitespace

@@ -68,7 +68,7 @@ func parseFloatHelper(s string) (float64, error) {
 	if s == "+nan" || s == "-nan" {
 		return math.NaN(), nil
 	}
-	if strings.Contains(s, "0x") && strings.IndexAny(s, "pP") < 0 {
+	if strings.Contains(s, "0x") && !strings.ContainsAny(s, "pP") {
 		s += "p0"
 	}
 	return strconv.ParseFloat(s, 64)
