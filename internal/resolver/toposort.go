@@ -57,7 +57,6 @@ func topoSort(graph map[string]map[string]struct{}) []string {
 		permMarks[n] = struct{}{}
 		delete(unmarked, n)
 		sorted = append(sorted, n)
-		return
 	}
 
 	for len(unmarked) > 0 {
