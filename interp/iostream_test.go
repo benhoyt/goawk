@@ -64,7 +64,7 @@ func checkDoubleClose(t *testing.T, sc streamCloser) {
 		t.Fatal(err)
 	}
 	exitCode := sc.ExitCode()
-	if err := sc.Close(); !errors.Is(err, doubleCloseError) {
+	if err := sc.Close(); !errors.Is(err, errDoubleClose) {
 		t.Error("expected stream.Close() to return error on double close")
 	}
 	if sc.ExitCode() != exitCode {

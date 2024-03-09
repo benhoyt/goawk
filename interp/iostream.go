@@ -16,7 +16,7 @@ const (
 )
 
 var (
-	doubleCloseError = errors.New("close: stream already closed")
+	errDoubleClose = errors.New("close: stream already closed")
 )
 
 // firstError returns the first non-nil error or nil if all errors are nil.
@@ -89,7 +89,7 @@ func newOutFileStream(wc io.WriteCloser, size int) outputStream {
 
 func (s *outFileStream) Close() error {
 	if s.closed {
-		return doubleCloseError
+		return errDoubleClose
 	}
 	s.closed = true
 	flushErr := s.Writer.Flush()
@@ -130,7 +130,7 @@ func newOutCmdStream(cmd *exec.Cmd) (outputStream, error) {
 
 func (s *outCmdStream) Close() error {
 	if s.closed {
-		return doubleCloseError
+		return errDoubleClose
 	}
 	s.closed = true
 	flushErr := s.Writer.Flush()
@@ -154,7 +154,7 @@ func newOutNullStream() outputStream { return &outNullStream{io.Discard, false} 
 func (s outNullStream) Flush() error { return nil }
 func (s *outNullStream) Close() error {
 	if s.closed {
-		return doubleCloseError
+		return errDoubleClose
 	}
 	s.closed = true
 	return nil
@@ -173,7 +173,7 @@ func newInFileStream(rc io.ReadCloser) inputStream {
 
 func (s *inFileStream) Close() error {
 	if s.closed {
-		return doubleCloseError
+		return errDoubleClose
 	}
 	s.closed = true
 	if err := s.ReadCloser.Close(); err != nil {
@@ -210,7 +210,7 @@ func newInCmdStream(cmd *exec.Cmd) (inputStream, error) {
 
 func (s *inCmdStream) Close() error {
 	if s.closed {
-		return doubleCloseError
+		return errDoubleClose
 	}
 	s.closed = true
 	closeErr := s.ReadCloser.Close()
