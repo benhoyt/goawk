@@ -158,7 +158,7 @@ func (p *parser) program() *ast.Program {
 		p.optionalNewlines()
 		switch p.tok {
 		case EOF:
-			break
+			// End of file
 		case BEGIN:
 			p.next()
 			prog.Begin = append(prog.Begin, p.stmtsBrace())
