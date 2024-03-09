@@ -129,7 +129,7 @@ print x
 			// test result source
 			source := string(fr.Source())
 			for _, file := range tst.files {
-				if strings.Index(source, file.source) < 0 {
+				if !strings.Contains(source, file.source) {
 					t.Errorf("Source() is incorrect")
 				}
 			}
