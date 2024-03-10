@@ -124,10 +124,10 @@ type parser struct {
 	val     string   // string value of last token (or "")
 
 	// Parsing state
-	inAction           bool   // true if parsing an action (false in BEGIN or END)
-	funcName           string // function name if parsing a func, else ""
-	loopDepth          int    // current loop depth (0 if not in any loops)
-	pendingGetLineLeft ast.Expr
+	inAction           bool     // true if parsing an action (false in BEGIN or END)
+	funcName           string   // function name if parsing a func, else ""
+	loopDepth          int      // current loop depth (0 if not in any loops)
+	pendingGetlineLeft ast.Expr // saved expression to the left of |
 
 	// Variable tracking and resolving
 	multiExprs map[*ast.MultiExpr]Position // tracks comma-separated expressions
@@ -519,17 +519,18 @@ func (p *parser) exprList(parse func() ast.Expr) []ast.Expr {
 // which skips PIPE GETLINE and GREATER expressions.
 
 // Parse a single expression.
-func (p *parser) expr() ast.Expr      { return p._assign(p.getLine) }
+func (p *parser) expr() ast.Expr      { return p._assign(p.getline) }
 func (p *parser) printExpr() ast.Expr { return p._assign(p.printCond) }
 
 // Parse an "expr | getline [lvalue]" expression:
 //
 //	assign [PIPE GETLINE [lvalue]]
-func (p *parser) getLine() ast.Expr {
-	p.pendingGetLineLeft = nil
+func (p *parser) getline() ast.Expr {
+	// NOTE: getline is special, see https://github.com/benhoyt/goawk/pull/216
+	p.pendingGetlineLeft = nil
 	left := p.cond()
 	if p.tok == PIPE {
-		p.pendingGetLineLeft = left
+		p.pendingGetlineLeft = left
 		return p.cond()
 	}
 	return left
@@ -808,16 +809,15 @@ func (p *parser) primary() ast.Expr {
 		}
 		return &ast.GetlineExpr{nil, target, file}
 	case PIPE:
-		if p.pendingGetLineLeft == nil {
+		if p.pendingGetlineLeft == nil {
 			panic(p.errorf("expected expression instead of %s", p.tok))
 		}
-		left := p.pendingGetLineLeft
-		p.pendingGetLineLeft = nil
+		left := p.pendingGetlineLeft
+		p.pendingGetlineLeft = nil
 		p.next()
 		p.expect(GETLINE)
 		target := p.optionalLValue()
-		res := &ast.GetlineExpr{left, target, nil}
-		return res
+		return &ast.GetlineExpr{left, target, nil}
 	// Below is the parsing of all the builtin function calls. We
 	// could unify these but several of them have special handling
 	// (array/lvalue/regex params, optional arguments, and so on).
