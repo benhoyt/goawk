@@ -716,6 +716,14 @@ func (p *parser) postIncr() ast.Expr {
 }
 
 func (p *parser) primary() ast.Expr {
+	if p.pendingGetlineLeft != nil {
+		p.expect(PIPE)
+		p.expect(GETLINE)
+		left := p.pendingGetlineLeft
+		p.pendingGetlineLeft = nil
+		target := p.optionalLValue()
+		return &ast.GetlineExpr{left, target, nil}
+	}
 	switch p.tok {
 	case NUMBER:
 		// AWK allows forms like "1.5e", but ParseFloat doesn't
@@ -808,16 +816,6 @@ func (p *parser) primary() ast.Expr {
 			file = p.primary()
 		}
 		return &ast.GetlineExpr{nil, target, file}
-	case PIPE:
-		if p.pendingGetlineLeft == nil {
-			panic(p.errorf("expected expression instead of %s", p.tok))
-		}
-		left := p.pendingGetlineLeft
-		p.pendingGetlineLeft = nil
-		p.next()
-		p.expect(GETLINE)
-		target := p.optionalLValue()
-		return &ast.GetlineExpr{left, target, nil}
 	// Below is the parsing of all the builtin function calls. We
 	// could unify these but several of them have special handling
 	// (array/lvalue/regex params, optional arguments, and so on).
