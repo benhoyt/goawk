@@ -109,13 +109,17 @@ func (p *interp) getOutputStream(redirect Token, destValue value) (io.Writer, er
 
 	switch redirect {
 	case GREATER, APPEND:
+		// Write or append to file
 		if name == "-" {
 			// filename of "-" means write to stdout, eg: print "x" >"-"
 			return p.output, nil
 		}
-		// Write or append to file
 		if p.noFileWrites {
 			return nil, newError("can't write to file due to NoFileWrites")
+		}
+		if runtime.GOOS == "windows" && name == "/dev/stderr" {
+			// Special case /dev/stderr on Windows to allow portably printing to stderr.
+			return p.errorOutput, nil
 		}
 		p.flushOutputAndError() // ensure synchronization
 		flags := os.O_CREATE | os.O_WRONLY
