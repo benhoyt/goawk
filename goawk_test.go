@@ -229,9 +229,6 @@ func sortedLines(data []byte) []byte {
 
 func TestGAWK(t *testing.T) {
 	skip := map[string]bool{ // TODO: fix these (at least the ones that are bugs)
-		"getline":  true, // getline syntax issues (may be okay, see grammar notes at http://pubs.opengroup.org/onlinepubs/007904975/utilities/awk.html#tag_04_06_13_14)
-		"getline3": true, // getline syntax issues (similar to above)
-
 		"gsubtst7": true, // something wrong with gsub or field split/join
 		"splitwht": true, // other awks handle split(s, a, " ") differently from split(s, a, / /)
 

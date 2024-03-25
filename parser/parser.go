@@ -124,9 +124,10 @@ type parser struct {
 	val     string   // string value of last token (or "")
 
 	// Parsing state
-	inAction  bool   // true if parsing an action (false in BEGIN or END)
-	funcName  string // function name if parsing a func, else ""
-	loopDepth int    // current loop depth (0 if not in any loops)
+	inAction           bool     // true if parsing an action (false in BEGIN or END)
+	funcName           string   // function name if parsing a func, else ""
+	loopDepth          int      // current loop depth (0 if not in any loops)
+	pendingGetlineLeft ast.Expr // saved expression to the left of |
 
 	// Variable tracking and resolving
 	multiExprs map[*ast.MultiExpr]Position // tracks comma-separated expressions
@@ -519,21 +520,21 @@ func (p *parser) exprList(parse func() ast.Expr) []ast.Expr {
 // which skips PIPE GETLINE and GREATER expressions.
 
 // Parse a single expression.
-func (p *parser) expr() ast.Expr      { return p.getLine() }
+func (p *parser) expr() ast.Expr      { return p._assign(p.getline) }
 func (p *parser) printExpr() ast.Expr { return p._assign(p.printCond) }
 
 // Parse an "expr | getline [lvalue]" expression:
 //
 //	assign [PIPE GETLINE [lvalue]]
-func (p *parser) getLine() ast.Expr {
-	expr := p._assign(p.cond)
+func (p *parser) getline() ast.Expr {
+	// NOTE: getline is special, see https://github.com/benhoyt/goawk/pull/216
+	p.pendingGetlineLeft = nil
+	left := p.cond()
 	if p.tok == PIPE {
-		p.next()
-		p.expect(GETLINE)
-		target := p.optionalLValue()
-		return &ast.GetlineExpr{expr, target, nil}
+		p.pendingGetlineLeft = left
+		return p.cond()
 	}
-	return expr
+	return left
 }
 
 // Parse an = assignment expression:
@@ -716,6 +717,14 @@ func (p *parser) postIncr() ast.Expr {
 }
 
 func (p *parser) primary() ast.Expr {
+	if p.pendingGetlineLeft != nil {
+		p.expect(PIPE)
+		p.expect(GETLINE)
+		left := p.pendingGetlineLeft
+		p.pendingGetlineLeft = nil
+		target := p.optionalLValue()
+		return &ast.GetlineExpr{left, target, nil}
+	}
 	switch p.tok {
 	case NUMBER:
 		// AWK allows forms like "1.5e", but ParseFloat doesn't

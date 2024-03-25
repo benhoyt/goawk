@@ -831,11 +831,10 @@ BEGIN { x[1]=3; f5(x); print x[1] }
 	{`BEGIN { print getline x+1; print x }`, "foo", "2\nfoo\n", "", ""},
 	{`BEGIN { print getline (x+1); print $0 }`, "foo", "11\nfoo\n", "", ""},
 	{`BEGIN { print getline foo(); print $0 } function foo() { print "z" }`, "foo", "z\n1\nfoo\n", "", ""},
-	// TODO: these forms don't yet work under GoAWK
-	//{`BEGIN { print("echo foo" | getline x+1); print x }`, "", "2\nfoo\n", "", ""},
-	//{`BEGIN { print("echo foo" | getline $0+1); print }`, "", "2\nfoo\n", "", ""},
-	//{`BEGIN { print("echo foo" | getline ($0+1)); print }`, "", "11\nfoo\n", "", ""},
-	//{`BEGIN { print("echo foo" | getline foo()); print } function foo() { print "z" }`, "", "z\n1\nfoo\n", "", ""},
+	{`BEGIN { print("echo foo" | getline x+1); print x }`, "", "2\nfoo\n", "", ""},
+	{`BEGIN { print("echo foo" | getline $0+1); print }`, "", "2\nfoo\n", "", ""},
+	{`BEGIN { print("echo foo" | getline ($0+1)); print }`, "", "11\nfoo\n", "", ""},
+	{`BEGIN { print("echo foo" | getline foo()); print } function foo() { print "z" }`, "", "z\n1\nfoo\n", "", ""},
 	{`BEGIN {
 	print "foo" >"out"
 	print close("out")
@@ -933,6 +932,8 @@ BEGIN { x[1]=3; f5(x); print x[1] }
 
 	// Ensure syntax errors result in errors
 	{`{ $1 = substr($1, 1, 3) print $1 }`, "", "", "parse error at 1:25: expected ; or newline between statements", "syntax error"},
+	{`BEGIN { 1 + 1 - | }`, "", "", `parse error at 1:17: expected expression instead of |`, "syntax"},
+	{`BEGIN { | }`, "", "", `parse error at 1:9: expected expression instead of |`, "syntax"},
 	{`BEGIN { f() }`, "", "", `parse error at 1:9: undefined function "f"`, "defined"},
 	{`function f() {} function f() {} BEGIN { }`, "", "", `parse error at 1:26: function "f" already defined`, "define"},
 	{`BEGIN { print (1,2),(3,4) }`, "", "", "parse error at 1:15: unexpected comma-separated expression", "syntax"},
