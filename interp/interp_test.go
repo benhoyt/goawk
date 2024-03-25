@@ -1572,9 +1572,10 @@ func TestDevStderrWindows(t *testing.T) {
 	if outBuf.String() != "" {
 		t.Fatalf("expected empty stdout, got %q", outBuf.String())
 	}
+	gotError := normalizeNewlines(errBuf.String())
 	expectedError := "Error!\n"
-	if errBuf.String() != expectedError {
-		t.Fatalf("expected stderr %q, got %q", expectedError, errBuf.String())
+	if gotError != expectedError {
+		t.Fatalf("expected stderr %q, got %q", expectedError, gotError)
 	}
 }
 
