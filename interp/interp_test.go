@@ -1101,8 +1101,10 @@ func TestInterp(t *testing.T) {
 				}
 				args = append(args, test.src, "-")
 				cmd := exec.Command(awkExe, args...)
-				if runtime.GOOS != "windows" {
+				if runtime.GOOS == "darwin" {
 					cmd.Env = []string{"LC_ALL=en_US.UTF-8"}
+				} else if runtime.GOOS != "windows" {
+					cmd.Env = []string{"LC_ALL=C.UTF-8"}
 				}
 				if test.in != "" {
 					cmd.Stdin = strings.NewReader(test.in)
