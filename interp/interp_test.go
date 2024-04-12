@@ -1553,6 +1553,34 @@ func TestShellCommand(t *testing.T) {
 	}
 }
 
+func TestDevStderrWindows(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("skipping on non-Windows platform")
+	}
+	prog, err := parser.ParseProgram([]byte(`BEGIN { print "Error!" >"/dev/stderr" }`), nil)
+	if err != nil {
+		t.Fatalf("error parsing: %v", err)
+	}
+	var outBuf bytes.Buffer
+	var errBuf bytes.Buffer
+	config := &interp.Config{
+		Output: &outBuf,
+		Error:  &errBuf,
+	}
+	_, err = interp.ExecProgram(prog, config)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if outBuf.String() != "" {
+		t.Fatalf("expected empty stdout, got %q", outBuf.String())
+	}
+	gotError := normalizeNewlines(errBuf.String())
+	expectedError := "Error!\n"
+	if gotError != expectedError {
+		t.Fatalf("expected stderr %q, got %q", expectedError, gotError)
+	}
+}
+
 func TestSystemCommandNotFound(t *testing.T) {
 	prog, err := parser.ParseProgram([]byte(`BEGIN { print system("foobar3982") }`), nil)
 	if err != nil {
