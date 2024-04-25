@@ -50,6 +50,7 @@ var interpTests = []interpTest{
 	{`BEGIN { print "b"} END { print "e" }`, "foo", "b\ne\n", "", ""},
 	{`BEGIN { print "b"} $0 { print NR } END { print "e" }`, "foo", "b\n1\ne\n", "", ""},
 	{`BEGIN { printf "x" }; BEGIN { printf "y" }`, "", "xy", "", ""},
+	{`{}`, "1\n2\n3\n", "", "", ""}, // issue #228
 
 	// Patterns
 	{`$0`, "foo\n\nbar", "foo\nbar\n", "", ""},
@@ -1750,6 +1751,32 @@ func TestExit(t *testing.T) {
 				t.Fatalf("expected status %d, got %d", test.status, status)
 			}
 		})
+	}
+}
+
+// A bare 'END {}' should consume the input (issue #228).
+func TestENDConsumesInput(t *testing.T) {
+	prog, err := parser.ParseProgram([]byte("END {}"), nil)
+	if err != nil {
+		t.Fatalf("error parsing: %v", err)
+	}
+	input := strings.NewReader("1\n2\n3\n")
+	outBuf := &bytes.Buffer{}
+	config := &interp.Config{
+		Stdin:  input,
+		Output: outBuf,
+	}
+	_, err = interp.ExecProgram(prog, config)
+	if err != nil {
+		t.Fatalf("error interpreting: %v", err)
+	}
+	if outBuf.String() != "" {
+		t.Fatalf("output expected/got:\n%q\n%q", "", outBuf.String())
+	}
+	// Ensure there's no input remaining to be read.
+	b, err := io.ReadAll(input)
+	if string(b) != "" {
+		t.Fatalf("input expected/got:\n%q\n%q", "", string(b))
 	}
 }
 

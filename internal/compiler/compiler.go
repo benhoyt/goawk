@@ -135,6 +135,13 @@ func Compile(resolved *resolver.ResolvedProgram) (compiledProg *Program, err err
 			c := compiler{resolved: resolved, program: p, indexes: indexes}
 			c.stmts(action.Stmts)
 			body = c.finish()
+		} else if len(action.Pattern) == 0 {
+			// No action and no pattern (a bare '{}') should have at least one
+			// opcode, otherwise interpreter will treat it as no action, which
+			// would be evaluated as '{ print $0 }'.
+			c := compiler{resolved: resolved, program: p, indexes: indexes}
+			c.add(Nop)
+			body = c.finish()
 		}
 		p.Actions = append(p.Actions, Action{
 			Pattern: pattern,
@@ -145,7 +152,12 @@ func Compile(resolved *resolver.ResolvedProgram) (compiledProg *Program, err err
 	// Compile END blocks.
 	for _, stmts := range resolved.End {
 		c := compiler{resolved: resolved, program: p, indexes: indexes}
-		c.stmts(stmts)
+		if len(stmts) > 0 {
+			c.stmts(stmts)
+		} else {
+			// Ensure empty 'END {}' isn't treated as no END.
+			c.add(Nop)
+		}
 		p.End = append(p.End, c.finish()...)
 	}
 
