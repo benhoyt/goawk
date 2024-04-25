@@ -14,3 +14,4 @@ interp/testdata
 scripts/csvbench/bin
 scripts/csvbench/count.csv
 /default.pgo
+/goawk-versions
