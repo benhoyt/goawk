@@ -2,6 +2,7 @@
 package cover
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -103,6 +104,10 @@ func (cover *Cover) WriteProfile(path string, data map[string]interface{}) error
 			return err
 		}
 	}
+	defer func() {
+		closeErr := f.Close()
+		err = errors.Join(err, closeErr)
+	}()
 
 	for i, block := range cover.trackedBlocks {
 		_, err := fmt.Fprintf(f, "%s:%d.%d,%d.%d %d %d\n",
