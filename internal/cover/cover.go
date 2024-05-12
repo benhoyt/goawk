@@ -64,7 +64,7 @@ func (cover *Cover) Annotate(prog *ast.Program) {
 }
 
 // WriteProfile writes coverage data to a file at the given path.
-func (cover *Cover) WriteProfile(path string, data map[string]interface{}) error {
+func (cover *Cover) WriteProfile(path string, data map[string]interface{}) (err error) {
 	// 1a. If file doesn't exist - create and write cover mode line
 	// 1b. If file exists and coverappend=true  - open it for writing in append mode
 	// 1c. If file exists and coverappend=false - truncate it and follow 1a.
@@ -96,6 +96,13 @@ func (cover *Cover) WriteProfile(path string, data map[string]interface{}) error
 	} else {
 		return err
 	}
+
+	defer func() {
+		closeErr := f.Close()
+		if err == nil {
+			err = closeErr
+		}
+	}()
 
 	if isNewFile {
 		_, err := fmt.Fprintf(f, "mode: %s\n", cover.mode)
