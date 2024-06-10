@@ -29,6 +29,7 @@ jobs:
       run: |
         gawk --version
         go test -race ./...
+        GOARCH=386 go test ./...
 
   build-windows:
     runs-on: windows-latest
