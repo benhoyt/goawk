@@ -141,8 +141,8 @@ func (v value) str(floatFormat string) string {
 			} else {
 				return "inf"
 			}
-		case v.n == float64(int(v.n)):
-			return strconv.Itoa(int(v.n))
+		case v.n == float64(int64(v.n)):
+			return strconv.FormatInt(int64(v.n), 10)
 		default:
 			if floatFormat == "%.6g" {
 				return strconv.FormatFloat(v.n, 'g', 6, 64)
