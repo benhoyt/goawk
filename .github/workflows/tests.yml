@@ -30,6 +30,29 @@ jobs:
         gawk --version
         go test -race ./...
 
+  build-linux-386:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ['1.22']
+
+    name: Go ${{ matrix.go }} on Linux 386
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go }}
+
+    - name: Build and Test
+      run: |
+        gawk --version
+        GOARCH=386 go test ./...
+
   build-windows:
     runs-on: windows-latest
 

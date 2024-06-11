@@ -980,7 +980,7 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 		p.replaceTop(num(float64(index + 1)))
 
 	case compiler.BuiltinInt:
-		p.replaceTop(num(float64(int(p.peekTop().num()))))
+		p.replaceTop(num(float64(int64(p.peekTop().num()))))
 
 	case compiler.BuiltinLength:
 		p.push(num(float64(len(p.line))))

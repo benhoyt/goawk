@@ -1135,10 +1135,10 @@ func (c *compiler) binaryOp(op lexer.Token) {
 // Generate an array index, handling multi-indexes properly.
 func (c *compiler) index(index []ast.Expr) {
 	for _, expr := range index {
-		if e, ok := expr.(*ast.NumExpr); ok && e.Value == float64(int(e.Value)) {
+		if e, ok := expr.(*ast.NumExpr); ok && e.Value == float64(int64(e.Value)) {
 			// If index expression is integer constant, optimize to string "n"
 			// to avoid toString() at runtime.
-			s := strconv.Itoa(int(e.Value))
+			s := strconv.FormatInt(int64(e.Value), 10)
 			c.expr(&ast.StrExpr{Value: s})
 			continue
 		}
