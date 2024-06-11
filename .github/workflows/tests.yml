@@ -29,7 +29,6 @@ jobs:
       run: |
         gawk --version
         go test -race ./...
-        go test ./...
 
   build-linux-386:
     runs-on: ubuntu-latest
