@@ -134,8 +134,8 @@ func (d *disassembler) disassemble(prefix string) error {
 		case Num:
 			index := d.fetch()
 			num := d.program.Nums[index]
-			if num == float64(int(num)) {
-				d.writeOpf("Num %d (%d)", int(num), index)
+			if num == float64(int64(num)) {
+				d.writeOpf("Num %d (%d)", int64(num), index)
 			} else {
 				d.writeOpf("Num %.6g (%d)", num, index)
 			}

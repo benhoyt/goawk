@@ -285,8 +285,8 @@ type NumExpr struct {
 }
 
 func (e *NumExpr) String() string {
-	if e.Value == float64(int(e.Value)) {
-		return strconv.Itoa(int(e.Value))
+	if e.Value == float64(int64(e.Value)) {
+		return strconv.FormatInt(int64(e.Value), 10)
 	} else {
 		return fmt.Sprintf("%.6g", e.Value)
 	}
