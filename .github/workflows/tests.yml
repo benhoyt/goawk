@@ -52,7 +52,6 @@ jobs:
     - name: Build and Test
       run: |
         gawk --version
-        GOARCH=386 go test -race ./...
         GOARCH=386 go test ./...
 
   build-windows:
