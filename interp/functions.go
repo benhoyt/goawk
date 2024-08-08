@@ -411,19 +411,18 @@ func (p *interp) sprintf(format string, args []value) (string, error) {
 		case 'u':
 			v = uint(a.num())
 		case 'c':
-			var c []byte
+			c := make([]byte, 0, utf8.UTFMax)
 			n, isStr := a.isTrueStr()
 			if isStr {
 				s := p.toString(a)
-				if len(s) > 0 {
-					c = []byte{s[0]}
+				_, size := utf8.DecodeRuneInString(s)
+				if size > 0 {
+					c = append(c, s[:size]...)
 				} else {
-					c = []byte{0}
+					c = append(c, 0)
 				}
 			} else {
-				// Follow the behaviour of awk and mawk, where %c
-				// operates on bytes (0-255), not Unicode codepoints
-				c = []byte{byte(n)}
+				c = utf8.AppendRune(c, rune(n))
 			}
 			v = c
 		}
