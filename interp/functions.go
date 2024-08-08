@@ -415,15 +415,16 @@ func (p *interp) sprintf(format string, args []value) (string, error) {
 			n, isStr := a.isTrueStr()
 			if isStr {
 				s := p.toString(a)
-				if len(s) > 0 {
-					c = []byte{s[0]}
+				_, size := utf8.DecodeRuneInString(s)
+				if size > 0 {
+					c = []byte(s[:size])
 				} else {
 					c = []byte{0}
 				}
 			} else {
-				// Follow the behaviour of awk and mawk, where %c
-				// operates on bytes (0-255), not Unicode codepoints
-				c = []byte{byte(n)}
+				c = make([]byte, utf8.UTFMax)
+				size := utf8.EncodeRune(c, rune(n))
+				c = c[:size]
 			}
 			v = c
 		}
