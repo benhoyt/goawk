@@ -411,18 +411,20 @@ func (p *interp) sprintf(format string, args []value) (string, error) {
 		case 'u':
 			v = uint(a.num())
 		case 'c':
-			c := make([]byte, 0, utf8.UTFMax)
+			var c []byte
 			n, isStr := a.isTrueStr()
 			if isStr {
 				s := p.toString(a)
 				_, size := utf8.DecodeRuneInString(s)
 				if size > 0 {
-					c = append(c, s[:size]...)
+					c = []byte(s[:size])
 				} else {
-					c = append(c, 0)
+					c = []byte{0}
 				}
 			} else {
-				c = utf8.AppendRune(c, rune(n))
+				c = make([]byte, utf8.UTFMax)
+				size := utf8.EncodeRune(c, rune(n))
+				c = c[:size]
 			}
 			v = c
 		}
