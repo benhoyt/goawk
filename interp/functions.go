@@ -405,23 +405,26 @@ func (p *interp) sprintf(format string, args []value) (string, error) {
 		case 's':
 			v = p.toString(a)
 		case 'd':
-			v = int64(a.num())
+			v = int(a.num())
 		case 'f':
 			v = a.num()
 		case 'u':
-			v = uint64(a.num())
+			v = uint(a.num())
 		case 'c':
-			var c string
+			var c []byte
 			n, isStr := a.isTrueStr()
 			if isStr {
-				s := []rune(p.toString(a))
-				if len(s) > 0 {
-					c = string([]rune{s[0]})
+				s := p.toString(a)
+				_, size := utf8.DecodeRuneInString(s)
+				if size > 0 {
+					c = []byte(s[:size])
 				} else {
-					c = string([]byte{0})
+					c = []byte{0}
 				}
 			} else {
-				c = string([]rune{rune(n)})
+				c = make([]byte, utf8.UTFMax)
+				size := utf8.EncodeRune(c, rune(n))
+				c = c[:size]
 			}
 			v = c
 		}
