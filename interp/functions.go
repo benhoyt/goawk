@@ -411,19 +411,17 @@ func (p *interp) sprintf(format string, args []value) (string, error) {
 		case 'u':
 			v = uint64(a.num())
 		case 'c':
-			var c []byte
+			var c string
 			n, isStr := a.isTrueStr()
 			if isStr {
-				s := p.toString(a)
+				s := []rune(p.toString(a))
 				if len(s) > 0 {
-					c = []byte{s[0]}
+					c = string([]rune{s[0]})
 				} else {
-					c = []byte{0}
+					c = string([]byte{0})
 				}
 			} else {
-				// Follow the behaviour of awk and mawk, where %c
-				// operates on bytes (0-255), not Unicode codepoints
-				c = []byte{byte(n)}
+				c = string([]rune{rune(n)})
 			}
 			v = c
 		}
