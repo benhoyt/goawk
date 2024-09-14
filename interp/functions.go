@@ -82,15 +82,15 @@ func (p *interp) toNative(v value, typ reflect.Type) reflect.Value {
 	case reflect.Int64:
 		return reflect.ValueOf(int64(v.num()))
 	case reflect.Uint:
-		return reflect.ValueOf(uint(v.num()))
+		return reflect.ValueOf(uint(int64(v.num())))
 	case reflect.Uint8:
-		return reflect.ValueOf(uint8(v.num()))
+		return reflect.ValueOf(uint8(int64(v.num())))
 	case reflect.Uint16:
-		return reflect.ValueOf(uint16(v.num()))
+		return reflect.ValueOf(uint16(int64(v.num())))
 	case reflect.Uint32:
-		return reflect.ValueOf(uint32(v.num()))
+		return reflect.ValueOf(uint32(int64(v.num())))
 	case reflect.Uint64:
-		return reflect.ValueOf(uint64(v.num()))
+		return reflect.ValueOf(uint64(int64(v.num())))
 	case reflect.Float32:
 		return reflect.ValueOf(float32(v.num()))
 	case reflect.Float64:
@@ -420,7 +420,7 @@ func (p *interp) sprintf(format string, args []value) (string, error) {
 		case 'f':
 			v = a.num()
 		case 'u':
-			v = uint64(a.num())
+			v = uint64(int64(a.num()))
 		case 'c':
 			var c []byte
 			n, isStr := a.isTrueStr()
