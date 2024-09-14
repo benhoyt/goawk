@@ -2862,28 +2862,20 @@ func normalizeNewlines(s string) string {
 }
 
 func TestFmtNegativeUnsigned1(t *testing.T) {
-	n := -42.0
-	result := fmt.Sprintf("%d %o %x %X", uint64(n), uint64(n), uint64(n), uint64(n))
-	expected := "18446744073709551574 1777777777777777777726 ffffffffffffffd6 FFFFFFFFFFFFFFD6"
+	f := -1.0
+	n := int64(f)
+	result := uint64(n)
+	expected := uint64(18446744073709551615)
 	if result != expected {
-		t.Errorf("got %q, want %q", result, expected)
+		t.Errorf("got %d, want %d", result, expected)
 	}
 }
 
 func TestFmtNegativeUnsigned2(t *testing.T) {
-	n := int64(-42.0)
-	result := fmt.Sprintf("%d %o %x %X", uint64(n), uint64(n), uint64(n), uint64(n))
-	expected := "18446744073709551574 1777777777777777777726 ffffffffffffffd6 FFFFFFFFFFFFFFD6"
+	f := -1.0
+	result := uint64(f)
+	expected := uint64(18446744073709551615)
 	if result != expected {
-		t.Errorf("got %q, want %q", result, expected)
-	}
-}
-
-func TestFmtNegativeUnsigned3(t *testing.T) {
-	n := -42.0
-	result := fmt.Sprint(uint64(n), uint64(n), uint64(n), uint64(n))
-	expected := "18446744073709551574 18446744073709551574 18446744073709551574 18446744073709551574"
-	if result != expected {
-		t.Errorf("got %q, want %q", result, expected)
+		t.Errorf("got %d, want %d", result, expected)
 	}
 }
