@@ -2860,3 +2860,21 @@ func BenchmarkCSVOutputWriter(b *testing.B) {
 func normalizeNewlines(s string) string {
 	return strings.Replace(s, "\r\n", "\n", -1)
 }
+
+func TestFmtNegativeUnsigned1(t *testing.T) {
+	n := -42.0
+	result := fmt.Sprintf("%d %o %x %X", uint64(n), uint64(n), uint64(n), uint64(n))
+	expected := "18446744073709551574 1777777777777777777726 ffffffffffffffd6 FFFFFFFFFFFFFFD6"
+	if result != expected {
+		t.Errorf("got %q, want %q", result, expected)
+	}
+}
+
+func TestFmtNegativeUnsigned2(t *testing.T) {
+	n := int64(-42.0)
+	result := fmt.Sprintf("%d %o %x %X", uint64(n), uint64(n), uint64(n), uint64(n))
+	expected := "18446744073709551574 1777777777777777777726 ffffffffffffffd6 FFFFFFFFFFFFFFD6"
+	if result != expected {
+		t.Errorf("got %q, want %q", result, expected)
+	}
+}
