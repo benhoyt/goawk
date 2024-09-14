@@ -363,10 +363,21 @@ func (p *interp) parseFmtTypes(s string) (format string, types []byte, err error
 			switch s[i] {
 			case 's':
 				t = 's'
-			case 'd', 'i', 'o', 'x', 'X':
+			case 'd':
 				t = 'd'
+			case 'o', 'x', 'X':
+				t = 'u'
+			case 'i':
+				t = 'd'
+				out[i] = 'd'
 			case 'f', 'e', 'E', 'g', 'G':
 				t = 'f'
+			case 'a':
+				t = 'f'
+				out[i] = 'x'
+			case 'A':
+				t = 'f'
+				out[i] = 'X'
 			case 'u':
 				t = 'u'
 				out[i] = 'd'
