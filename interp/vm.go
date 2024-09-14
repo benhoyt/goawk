@@ -1021,7 +1021,8 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 
 	case compiler.BuiltinSrand:
 		prevSeed := p.randSeed
-		p.random.Seed(time.Now().UnixNano())
+		p.randSeed = float64(time.Now().Unix())
+		p.random.Seed(int64(math.Float64bits(p.randSeed)))
 		p.push(num(prevSeed))
 
 	case compiler.BuiltinSrandSeed:

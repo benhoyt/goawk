@@ -621,6 +621,7 @@ BEGIN {
 	print (a==x, b==y, c==z)
 }
 `, "", "0 0 0 0\n1 1 1\n", "", ""},
+	{`BEGIN { s = srand(srand()); print (s > 1700000000) }`, "", "1\n", "", ""},
 	{`
 BEGIN {
 	for (i = 0; i < 1000; i++) {
