@@ -2878,3 +2878,12 @@ func TestFmtNegativeUnsigned2(t *testing.T) {
 		t.Errorf("got %q, want %q", result, expected)
 	}
 }
+
+func TestFmtNegativeUnsigned3(t *testing.T) {
+	n := -42.0
+	result := fmt.Sprint(uint64(n), uint64(n), uint64(n), uint64(n))
+	expected := "18446744073709551574 18446744073709551574 18446744073709551574 18446744073709551574"
+	if result != expected {
+		t.Errorf("got %q, want %q", result, expected)
+	}
+}
