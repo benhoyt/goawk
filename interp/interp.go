@@ -906,7 +906,7 @@ func (p *interp) getFieldByName(name string) (value, error) {
 	if p.fieldIndexes == nil {
 		// Lazily create map of field names to indexes.
 		if p.fieldNames == nil {
-			return null(), newError(`@ only supported if header parsing enabled; use -H or add "header" to INPUTMODE`)
+			return null(), newError(`no field names for @; use -H or add "header" to INPUTMODE, and use "getline" first if in BEGIN`)
 		}
 		p.fieldIndexes = make(map[string]int, len(p.fieldNames))
 		for i, n := range p.fieldNames {
