@@ -99,7 +99,8 @@ NR==3, NR==5 { print NR }
 	{`BEGIN { printf "%d %i %o %u %x %X", 42, 42, 42, 42, 42, 42 }`, "", "42 42 52 42 2a 2A", "", ""},
 	{`BEGIN { printf "%d %i %o %u %x %X", -42, -42, -42, -42, -42, -42 }`, "", "-42 -42 1777777777777777777726 18446744073709551574 ffffffffffffffd6 FFFFFFFFFFFFFFD6", "", ""},
 	// Note that Go's fmt %a/%A always has a two-digit exponent with a leading zero, but who cares -- it's rarely used.
-	{`BEGIN { printf "%a %A\n", 1234.56, 1234.56 }`, "", "0x1.34a3d70a3d70ap+10 0X1.34A3D70A3D70AP+10\n", "", ""},
+	// Also, the output is normalised differently on Gawk under Windows as 0x9.a51eb851eb85p+7, so skip there.
+	{`BEGIN { printf "%a %A\n", 1234.56, 1234.56 }  # !windows-gawk`, "", "0x1.34a3d70a3d70ap+10 0X1.34A3D70A3D70AP+10\n", "", ""},
 
 	// if and loop statements
 	{`BEGIN { if (1) print "t"; }`, "", "t\n", "", ""},
