@@ -85,14 +85,14 @@ NR==3, NR==5 { print NR }
 	{`BEGIN { printf "%.1g", 42 }  # !windows-gawk`, "", "4e+01", "", ""}, // for some reason gawk gives "4e+001" on Windows
 	{`BEGIN { printf "%d", 12, 34 }`, "", "12", "", ""},
 	{`BEGIN { printf "%d" }`, "", "", "format error: got 0 args, expected 1", "not enough arg"},
+	// Our %c handling is mostly like awk's, except for multiples
+	// 256, where awk is weird, and we're like mawk
 	{`BEGIN { printf "%c", 0 }`, "", "\x00", "", ""},
 	{`BEGIN { printf "%c", 127 }`, "", "\x7f", "", ""},
-	{`BEGIN { printf "%c", 128 }  # !windows-gawk`, "", "\u0080", "", ""},
-	{`BEGIN { printf "%c", 255 }  # !windows-gawk`, "", "ÿ", "", ""},
-	{`BEGIN { printf "%c", 256 }  # !windows-gawk`, "", "Ā", "", ""},
-	{`BEGIN { printf "%c", 4660 }  # !windows-gawk`, "", "\u1234", "", ""},
+	{`BEGIN { printf "%c", 128 }  # !gawk`, "", "\x80", "", ""},
+	{`BEGIN { printf "%c", 255 }  # !gawk`, "", "\xff", "", ""},
+	{`BEGIN { printf "%c", 256 }  # !gawk`, "", "\x00", "", ""},
 	{`BEGIN { printf "%c", "xyz" }`, "", "x", "", ""},
-	{`BEGIN { printf "%c %c %c", "Ā", "ĀĀĀ", "Āx" }  # !windows-gawk`, "", "Ā Ā Ā", "", ""},
 	{`BEGIN { printf "%c", "" }  # !awk`, "", "\x00", "", ""},
 	{`BEGIN { printf }  # !awk !posix - doesn't error on this`, "", "", "parse error at 1:16: expected printf args, got none", "printf: no arguments"},
 	{`BEGIN { printf("%%%dd", 4) }`, "", "%4d", "", ""},
@@ -1529,6 +1529,31 @@ func TestConfigVarsCorrect(t *testing.T) {
 	expected := "length of config.Vars must be a multiple of 2, not 1"
 	if err == nil || err.Error() != expected {
 		t.Fatalf("expected error %q, got: %v", expected, err)
+	}
+}
+
+func TestCharsMode(t *testing.T) {
+	tests := []struct {
+		src string
+		in  string
+		out string
+	}{
+		{`BEGIN { printf "%c", 128 }`, "", "\u0080"},
+		{`BEGIN { printf "%c", 255 }`, "", "ÿ"},
+		{`BEGIN { printf "%c", 256 }`, "", "Ā"},
+		{`BEGIN { printf "%c", 4660 }`, "", "\u1234"},
+		{`BEGIN { printf "%c %c %c", "Ā", "ĀĀĀ", "Āx" }`, "", "Ā Ā Ā"},
+	}
+	for _, test := range tests {
+		testName := test.src
+		if len(testName) > 70 {
+			testName = testName[:70]
+		}
+		t.Run(testName, func(t *testing.T) {
+			testGoAWK(t, test.src, test.in, test.out, "", nil, func(config *interp.Config) {
+				config.Chars = true
+			})
+		})
 	}
 }
 

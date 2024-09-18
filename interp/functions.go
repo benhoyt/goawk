@@ -426,16 +426,22 @@ func (p *interp) sprintf(format string, args []value) (string, error) {
 			n, isStr := a.isTrueStr()
 			if isStr {
 				s := p.toString(a)
-				_, size := utf8.DecodeRuneInString(s)
-				if size > 0 {
+				if len(s) == 0 {
+					c = []byte{0}
+				} else if p.chars {
+					_, size := utf8.DecodeRuneInString(s)
 					c = []byte(s[:size])
 				} else {
-					c = []byte{0}
+					c = []byte{s[0]}
 				}
 			} else {
-				c = make([]byte, utf8.UTFMax)
-				size := utf8.EncodeRune(c, rune(n))
-				c = c[:size]
+				if p.chars {
+					buf := make([]byte, utf8.UTFMax)
+					size := utf8.EncodeRune(buf, rune(n))
+					c = buf[:size]
+				} else {
+					c = []byte{byte(n)}
+				}
 			}
 			v = c
 		}

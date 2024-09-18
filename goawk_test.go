@@ -621,6 +621,9 @@ func TestGoAWKSpecificOptions(t *testing.T) {
 		{[]string{"-oxyz", `{}`}, "", "", "invalid output mode \"xyz\"\n"},
 		{[]string{"-H", `{}`}, "", "", "-H only allowed together with -i\n"},
 
+		// Chars mode
+		{[]string{"-c", `BEGIN { printf "%c", 4660 }`}, "", "\u1234", ""},
+
 		// Debug options
 		{[]string{"-dt", `
 BEGIN { x=42; a[1]=x; print f(a, 1) }
