@@ -57,6 +57,7 @@ const (
   -v var=value      variable assignment (multiple allowed)
 
 Additional GoAWK features:
+  -c                use Unicode chars for index, length, match, substr, and %c
   -E progfile       load program, treat as last option, disable var=value args
   -H                parse header row and enable @"field" in CSV input mode
   -h, --help        show this help message
@@ -97,6 +98,7 @@ func main() {
 	coverMode := cover.ModeUnspecified
 	coverProfile := ""
 	coverAppend := false
+	useChars := false
 
 	var i int
 argsLoop:
@@ -161,6 +163,8 @@ argsLoop:
 			cpuProfile = os.Args[i]
 		case "-csv", "--csv":
 			inputMode = "csv"
+		case "-c":
+			useChars = true
 		case "-d":
 			debug = true
 		case "-da":
@@ -332,6 +336,7 @@ argsLoop:
 	config := &interp.Config{
 		Argv0:     filepath.Base(os.Args[0]),
 		Args:      expandWildcardsOnWindows(args),
+		Chars:     useChars,
 		NoArgVars: noArgVars,
 		Output:    stdout,
 		Vars: []string{

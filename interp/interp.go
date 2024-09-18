@@ -154,6 +154,7 @@ type interp struct {
 	regexCache       map[string]*regexp.Regexp
 	formatCache      map[string]cachedFormat
 	csvJoinFieldsBuf bytes.Buffer
+	chars            bool
 }
 
 // Various const configuration. Could make these part of Config if
@@ -291,6 +292,10 @@ type Config struct {
 	//
 	//     BEGIN { OUTPUTMODE="csv separator=|" }
 	CSVOutput CSVOutputConfig
+
+	// Set to true to count using Unicode chars instead of bytes for
+	// index(), length(), match(), substr(), and printf %c.
+	Chars bool
 }
 
 // IOMode specifies the input parsing or print output mode.
@@ -458,6 +463,7 @@ func (p *interp) setExecuteConfig(config *Config) error {
 			return err
 		}
 	}
+	p.chars = config.Chars
 
 	// After Vars has been handled, validate CSV configuration.
 	err := validateCSVInputConfig(p.inputMode, p.csvInputConfig)

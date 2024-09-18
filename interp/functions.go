@@ -426,20 +426,74 @@ func (p *interp) sprintf(format string, args []value) (string, error) {
 			n, isStr := a.isTrueStr()
 			if isStr {
 				s := p.toString(a)
-				_, size := utf8.DecodeRuneInString(s)
-				if size > 0 {
+				if len(s) == 0 {
+					c = []byte{0}
+				} else if p.chars {
+					_, size := utf8.DecodeRuneInString(s)
 					c = []byte(s[:size])
 				} else {
-					c = []byte{0}
+					c = []byte{s[0]}
 				}
 			} else {
-				c = make([]byte, utf8.UTFMax)
-				size := utf8.EncodeRune(c, rune(n))
-				c = c[:size]
+				if p.chars {
+					buf := make([]byte, utf8.UTFMax)
+					size := utf8.EncodeRune(buf, rune(n))
+					c = buf[:size]
+				} else {
+					c = []byte{byte(n)}
+				}
 			}
 			v = c
 		}
 		converted = append(converted, v)
 	}
 	return fmt.Sprintf(format, converted...), nil
+}
+
+func substrChars(s string, pos int) string {
+	// Count characters till we get to pos.
+	chars := 1
+	start := 0
+	for start = range s {
+		chars++
+		if chars > pos {
+			break
+		}
+	}
+	if pos >= chars {
+		start = len(s)
+	}
+	return s[start:]
+}
+
+func substrLengthChars(s string, pos, length int) string {
+	// Count characters till we get to pos.
+	chars := 1
+	start := 0
+	for start = range s {
+		chars++
+		if chars > pos {
+			break
+		}
+	}
+	if pos >= chars {
+		start = len(s)
+	}
+
+	// Count characters from start till we reach length.
+	chars = 0
+	end := 0
+	for end = range s[start:] {
+		chars++
+		if chars > length {
+			break
+		}
+	}
+	if length >= chars {
+		end = len(s)
+	} else {
+		end += start
+	}
+
+	return s[start:end]
 }
