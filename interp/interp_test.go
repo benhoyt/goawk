@@ -1538,11 +1538,36 @@ func TestCharsMode(t *testing.T) {
 		in  string
 		out string
 	}{
+		// printf %c
 		{`BEGIN { printf "%c", 128 }`, "", "\u0080"},
 		{`BEGIN { printf "%c", 255 }`, "", "ÿ"},
 		{`BEGIN { printf "%c", 256 }`, "", "Ā"},
 		{`BEGIN { printf "%c", 4660 }`, "", "\u1234"},
 		{`BEGIN { printf "%c %c %c", "Ā", "ĀĀĀ", "Āx" }`, "", "Ā Ā Ā"},
+
+		// index()
+		{`BEGIN { print index("föö", "f"), index("föö0", 0), index("föö", "ö"), index("föö", "x") }`, "", "1 4 2 0\n"},
+
+		// length()
+		{`BEGIN { print length("a"), length("絵") }`, "", "1 1\n"},
+		{`BEGIN { $0="a"; print length(); $0 = "絵"; print length() }`, "", "1\n1\n"},
+
+		// match()
+		{`BEGIN { print match("絵 fööd y", /[föd]+/), RSTART, RLENGTH }`, "", "3 3 4\n"},
+
+		// substr()
+		{`BEGIN { print substr("food", 1), substr("fööd", 1) }`, "", "food fööd\n"},
+		{`BEGIN { print substr("food", 1, 2), substr("fööd", 1, 2) }`, "", "fo fö\n"},
+		{`BEGIN { print substr("food", 1, 4), substr("fööd", 1, 4) }`, "", "food fööd\n"},
+		{`BEGIN { print substr("food", 1, 8), substr("fööd", 1, 8) }`, "", "food fööd\n"},
+		{`BEGIN { print substr("food", 2), substr("fööd", 2) }`, "", "ood ööd\n"},
+		{`BEGIN { print substr("food", 2, 2), substr("fööd", 2, 2) }`, "", "oo öö\n"},
+		{`BEGIN { print substr("food", 2, 3), substr("fööd", 2, 3) }`, "", "ood ööd\n"},
+		{`BEGIN { print substr("food", 2, 8), substr("fööd", 2, 8) }`, "", "ood ööd\n"},
+		{`BEGIN { print substr("food", 0, 8), substr("fööd", 0, 8) }`, "", "food fööd\n"},
+		{`BEGIN { print substr("food", -1, 8), substr("fööd", -1, 8) }`, "", "food fööd\n"},
+		{`BEGIN { print substr("food", 5, 8), substr("fööd", 5, 8) }`, "", " \n"},
+		{`BEGIN { print substr("food", 2, -3), substr("fööd", 2, -3) }`, "", " \n"},
 	}
 	for _, test := range tests {
 		testName := test.src

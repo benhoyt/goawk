@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/benhoyt/goawk/internal/compiler"
 	"github.com/benhoyt/goawk/internal/resolver"
@@ -977,17 +978,37 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 		sValue, substr := p.peekPop()
 		s := p.toString(sValue)
 		index := strings.Index(s, p.toString(substr))
-		p.replaceTop(num(float64(index + 1)))
+		var awkIndex int
+		if index < 0 {
+			awkIndex = 0
+		} else if p.chars {
+			awkIndex = utf8.RuneCountInString(s[:index]) + 1
+		} else {
+			awkIndex = index + 1
+		}
+		p.replaceTop(num(float64(awkIndex)))
 
 	case compiler.BuiltinInt:
 		p.replaceTop(num(float64(int64(p.peekTop().num()))))
 
 	case compiler.BuiltinLength:
-		p.push(num(float64(len(p.line))))
+		var length int
+		if p.chars {
+			length = utf8.RuneCountInString(p.line)
+		} else {
+			length = len(p.line)
+		}
+		p.push(num(float64(length)))
 
 	case compiler.BuiltinLengthArg:
 		s := p.toString(p.peekTop())
-		p.replaceTop(num(float64(len(s))))
+		var length int
+		if p.chars {
+			length = utf8.RuneCountInString(s)
+		} else {
+			length = len(s)
+		}
+		p.replaceTop(num(float64(length)))
 
 	case compiler.BuiltinLog:
 		p.replaceTop(num(math.Log(p.peekTop().num())))
@@ -1003,12 +1024,14 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 		if loc == nil {
 			p.matchStart = 0
 			p.matchLength = -1
-			p.replaceTop(num(0))
+		} else if p.chars {
+			p.matchStart = utf8.RuneCountInString(s[:loc[0]]) + 1
+			p.matchLength = utf8.RuneCountInString(s[loc[0]:loc[1]])
 		} else {
 			p.matchStart = loc[0] + 1
 			p.matchLength = loc[1] - loc[0]
-			p.replaceTop(num(float64(p.matchStart)))
 		}
+		p.replaceTop(num(float64(p.matchStart)))
 
 	case compiler.BuiltinRand:
 		p.push(num(p.random.Float64()))
@@ -1043,34 +1066,46 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 		sValue, posValue := p.peekPop()
 		pos := int(posValue.num())
 		s := p.toString(sValue)
-		if pos > len(s) {
-			pos = len(s) + 1
+		var substr string
+		if p.chars {
+			substr = substrChars(s, pos)
+		} else {
+			if pos > len(s) {
+				pos = len(s) + 1
+			}
+			if pos < 1 {
+				pos = 1
+			}
+			length := len(s) - pos + 1
+			substr = s[pos-1 : pos-1+length]
 		}
-		if pos < 1 {
-			pos = 1
-		}
-		length := len(s) - pos + 1
-		p.replaceTop(str(s[pos-1 : pos-1+length]))
+		p.replaceTop(str(substr))
 
 	case compiler.BuiltinSubstrLength:
 		posValue, lengthValue := p.popTwo()
 		length := int(lengthValue.num())
 		pos := int(posValue.num())
 		s := p.toString(p.peekTop())
-		if pos > len(s) {
-			pos = len(s) + 1
+		var substr string
+		if p.chars {
+			substr = substrLengthChars(s, pos, length)
+		} else {
+			if pos > len(s) {
+				pos = len(s) + 1
+			}
+			if pos < 1 {
+				pos = 1
+			}
+			maxLength := len(s) - pos + 1
+			if length < 0 {
+				length = 0
+			}
+			if length > maxLength {
+				length = maxLength
+			}
+			substr = s[pos-1 : pos-1+length]
 		}
-		if pos < 1 {
-			pos = 1
-		}
-		maxLength := len(s) - pos + 1
-		if length < 0 {
-			length = 0
-		}
-		if length > maxLength {
-			length = maxLength
-		}
-		p.replaceTop(str(s[pos-1 : pos-1+length]))
+		p.replaceTop(str(substr))
 
 	case compiler.BuiltinSystem:
 		if p.noExec {
