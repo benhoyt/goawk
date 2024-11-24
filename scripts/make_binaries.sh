@@ -23,4 +23,9 @@ tar -cvzf "goawk_${VERSION}_darwin_amd64.tar.gz" goawk README.md LICENSE.txt doc
 GOOS=darwin GOARCH=arm64 go build -ldflags="-w"
 tar -cvzf "goawk_${VERSION}_darwin_arm64.tar.gz" goawk README.md LICENSE.txt docs/*
 
+GOOS=freebsd GOARCH=amd64 go build -ldflags="-w"
+tar -cvzf "goawk_${VERSION}_freebsd_amd64.tar.gz" goawk README.md LICENSE.txt docs/*
+GOOS=freebsd GOARCH=arm go build -ldflags="-w"
+tar -cvzf "goawk_${VERSION}_freebsd_arm.tar.gz" goawk README.md LICENSE.txt docs/*
+
 rm -f goawk goawk.exe
