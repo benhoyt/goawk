@@ -990,11 +990,11 @@ func (p *interp) compileRegex(regex string) (*regexp.Regexp, error) {
 }
 
 func getDefaultShellCommand() []string {
-	executable := "/bin/sh"
+	executable, runcmd := "/bin/sh", "-c"
 	if runtime.GOOS == "windows" {
-		executable = "sh"
+		executable, runcmd = "cmd", "/C"
 	}
-	return []string{executable, "-c"}
+	return []string{executable, runcmd}
 }
 
 func inputModeString(mode IOMode, csvConfig CSVInputConfig) string {
