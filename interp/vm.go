@@ -1001,12 +1001,12 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 		p.push(num(float64(length)))
 
 	case compiler.BuiltinLengthArg:
-		s := p.toString(p.peekTop())
+		s := p.peekTop()
 		var length int
 		if p.chars {
-			length = utf8.RuneCountInString(s)
+			length = len(s.runes(p.convertFormat))
 		} else {
-			length = len(s)
+			length = len(p.toString(s))
 		}
 		p.replaceTop(num(float64(length)))
 
@@ -1066,9 +1066,18 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 		sValue, posValue := p.peekPop()
 		pos := int(posValue.num())
 		s := p.toString(sValue)
-		var substr string
+		var substr value
 		if p.chars {
-			substr = substrChars(s, pos)
+			runes := sValue.runes(p.convertFormat)
+			if pos > len(runes) {
+				pos = len(runes) + 1
+			}
+			if pos < 1 {
+				pos = 1
+			}
+			length := len(runes) - pos + 1
+			runes = runes[pos-1 : pos-1+length]
+			substr = strFromRunes(runes)
 		} else {
 			if pos > len(s) {
 				pos = len(s) + 1
@@ -1077,19 +1086,34 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 				pos = 1
 			}
 			length := len(s) - pos + 1
-			substr = s[pos-1 : pos-1+length]
+			substr = str(s[pos-1 : pos-1+length])
 		}
-		p.replaceTop(str(substr))
+		p.replaceTop(substr)
 
 	case compiler.BuiltinSubstrLength:
 		posValue, lengthValue := p.popTwo()
 		length := int(lengthValue.num())
 		pos := int(posValue.num())
-		s := p.toString(p.peekTop())
-		var substr string
+		sValue := p.peekTop()
+		var substr value
 		if p.chars {
-			substr = substrLengthChars(s, pos, length)
+			runes := sValue.runes(p.convertFormat)
+			if pos > len(runes) {
+				pos = len(runes) + 1
+			}
+			if pos < 1 {
+				pos = 1
+			}
+			maxLength := len(runes) - pos + 1
+			if length < 0 {
+				length = 0
+			}
+			if length > maxLength {
+				length = maxLength
+			}
+			substr = strFromRunes(runes[pos-1 : pos-1+length])
 		} else {
+			s := p.toString(sValue)
 			if pos > len(s) {
 				pos = len(s) + 1
 			}
@@ -1103,9 +1127,9 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 			if length > maxLength {
 				length = maxLength
 			}
-			substr = s[pos-1 : pos-1+length]
+			substr = str(s[pos-1 : pos-1+length])
 		}
-		p.replaceTop(str(substr))
+		p.replaceTop(substr)
 
 	case compiler.BuiltinSystem:
 		if p.noExec {
