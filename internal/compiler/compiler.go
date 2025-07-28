@@ -744,8 +744,7 @@ func (c *compiler) expr(expr ast.Expr) {
 			c.assignRoteIndex(e.Expr)
 		} else {
 			c.dupeIndexLValue(e.Expr)
-			c.expr(&ast.NumExpr{0}) // add 0 to coerce result to number
-			c.add(Add)
+			c.add(UnaryPlus) // coerce result to number
 			c.add(Dupe)
 			c.expr(&ast.NumExpr{1})
 			c.add(op)
