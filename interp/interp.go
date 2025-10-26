@@ -40,8 +40,7 @@ var (
 
 	errCSVSeparator = errors.New("invalid CSV field separator or comment delimiter")
 
-	crlfNewline = runtime.GOOS == "windows"
-	varRegex    = regexp.MustCompile(`^([_a-zA-Z][_a-zA-Z0-9]*)=(.*)`)
+	varRegex = regexp.MustCompile(`^([_a-zA-Z][_a-zA-Z0-9]*)=(.*)`)
 
 	defaultShellCommand = getDefaultShellCommand()
 )
@@ -148,13 +147,14 @@ type interp struct {
 	ctxOps   int
 
 	// Misc pieces of state
-	random           *rand.Rand
-	randSeed         float64
-	exitStatus       int
-	regexCache       map[string]*regexp.Regexp
-	formatCache      map[string]cachedFormat
-	csvJoinFieldsBuf bytes.Buffer
-	chars            bool
+	random            *rand.Rand
+	randSeed          float64
+	exitStatus        int
+	regexCache        map[string]*regexp.Regexp
+	formatCache       map[string]cachedFormat
+	csvJoinFieldsBuf  bytes.Buffer
+	chars             bool
+	newlineOutputCRLF bool
 }
 
 // Various const configuration. Could make these part of Config if
@@ -168,6 +168,25 @@ const (
 	initialStackSize = 100
 	outputBufSize    = 64 * 1024
 	inputBufSize     = 64 * 1024
+)
+
+// NewlineMode specifies how newline characters are handled
+// when reading or writing text.
+type NewlineMode int
+
+const (
+	// SmartNewlineMode automatically detects and normalizes
+	// newline characters. It preserves the platform’s default
+	// style when writing, but accepts both LF and CRLF on input.
+	SmartNewlineMode NewlineMode = iota
+
+	// RawNewlineMode keeps newline characters exactly as they
+	// appear in the input, without any normalization.
+	RawNewlineMode
+
+	// CRLFNewlineMode forces the use of CRLF ("\r\n") newlines
+	// on output, regardless of the input format.
+	CRLFNewlineMode
 )
 
 // Config defines the interpreter configuration for ExecProgram.
@@ -296,6 +315,10 @@ type Config struct {
 	// Set to true to count using Unicode chars instead of bytes for
 	// index(), length(), match(), substr(), and printf %c.
 	Chars bool
+
+	// NewlineOutput specifies how newline characters are handled
+	// when writing output.
+	NewlineOutput NewlineMode
 }
 
 // IOMode specifies the input parsing or print output mode.
@@ -520,6 +543,15 @@ func (p *interp) setExecuteConfig(config *Config) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	switch config.NewlineOutput {
+	case SmartNewlineMode:
+		p.newlineOutputCRLF = (runtime.GOOS == "windows")
+	case RawNewlineMode:
+		p.newlineOutputCRLF = false
+	case CRLFNewlineMode:
+		p.newlineOutputCRLF = true
 	}
 
 	return nil

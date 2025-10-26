@@ -22,11 +22,11 @@ import (
 
 // Print a line of output followed by a newline
 func (p *interp) printLine(writer io.Writer, line string) error {
-	err := writeOutput(writer, line)
+	err := writeOutput(writer, line, p.newlineOutputCRLF)
 	if err != nil {
 		return err
 	}
-	return writeOutput(writer, p.outputRecordSep)
+	return writeOutput(writer, p.outputRecordSep, p.newlineOutputCRLF)
 }
 
 // Print given arguments followed by a newline (for "print" statement).
@@ -45,17 +45,17 @@ func (p *interp) printArgs(writer io.Writer, args []value) error {
 		// Print OFS-separated args followed by ORS (usually newline).
 		for i, arg := range args {
 			if i > 0 {
-				err := writeOutput(writer, p.outputFieldSep)
+				err := writeOutput(writer, p.outputFieldSep, p.newlineOutputCRLF)
 				if err != nil {
 					return err
 				}
 			}
-			err := writeOutput(writer, arg.str(p.outputFormat))
+			err := writeOutput(writer, arg.str(p.outputFormat), p.newlineOutputCRLF)
 			if err != nil {
 				return err
 			}
 		}
-		err := writeOutput(writer, p.outputRecordSep)
+		err := writeOutput(writer, p.outputRecordSep, p.newlineOutputCRLF)
 		if err != nil {
 			return err
 		}
@@ -793,7 +793,7 @@ func (p *interp) nextLine() (string, error) {
 
 // Write output string to given writer, producing correct line endings
 // on Windows (CR LF).
-func writeOutput(w io.Writer, s string) error {
+func writeOutput(w io.Writer, s string, crlfNewline bool) error {
 	if crlfNewline {
 		// First normalize to \n, then convert all newlines to \r\n
 		// (on Windows). NOTE: creating two new strings is almost

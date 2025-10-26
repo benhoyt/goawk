@@ -65,6 +65,7 @@ Additional GoAWK features:
                     'csv|tsv [separator=<char>] [comment=<char>] [header]'
   -o mode           use CSV output for print with args (ignore OFS and ORS)
                     'csv|tsv [separator=<char>]'
+  -N                mode set newline output mode: smart (default), raw, crlf
   -version          show GoAWK version and exit
 
 GoAWK debugging arguments:
@@ -99,6 +100,7 @@ func main() {
 	coverProfile := ""
 	coverAppend := false
 	useChars := false
+	newlineOutput := interp.SmartNewlineMode
 
 	var i int
 argsLoop:
@@ -194,6 +196,21 @@ argsLoop:
 			}
 			i++
 			outputMode = os.Args[i]
+		case "-N":
+			if i+1 >= len(os.Args) {
+				errorExitf("flag needs an argument: -N")
+			}
+			i++
+			switch os.Args[i] {
+			case "smart":
+				newlineOutput = interp.SmartNewlineMode
+			case "raw":
+				newlineOutput = interp.RawNewlineMode
+			case "crlf":
+				newlineOutput = interp.CRLFNewlineMode
+			default:
+				errorExitf("invalid value for -N: %s", os.Args[i])
+			}
 		case "-version", "--version":
 			fmt.Println(version)
 			os.Exit(0)
@@ -334,11 +351,12 @@ argsLoop:
 	}
 
 	config := &interp.Config{
-		Argv0:     filepath.Base(os.Args[0]),
-		Args:      expandWildcardsOnWindows(args),
-		Chars:     useChars,
-		NoArgVars: noArgVars,
-		Output:    stdout,
+		Argv0:         filepath.Base(os.Args[0]),
+		Args:          expandWildcardsOnWindows(args),
+		Chars:         useChars,
+		NoArgVars:     noArgVars,
+		Output:        stdout,
+		NewlineOutput: newlineOutput,
 		Vars: []string{
 			"FS", fieldSep,
 			"INPUTMODE", inputMode,
