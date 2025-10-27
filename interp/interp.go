@@ -175,9 +175,8 @@ const (
 type NewlineMode int
 
 const (
-	// SmartNewlineMode automatically detects and normalizes
-	// newline characters. It preserves the platform’s default
-	// style when writing, but accepts both LF and CRLF on input.
+	// SmartNewlineMode uses the newline mode most appropriate
+	// for the operating system: raw on Unix/Linux, crlf on Windows.
 	SmartNewlineMode NewlineMode = iota
 
 	// RawNewlineMode keeps newline characters exactly as they
