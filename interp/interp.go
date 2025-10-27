@@ -180,11 +180,11 @@ const (
 	SmartNewlineMode NewlineMode = 0
 
 	// RawNewlineMode does no newline translation.
-	RawNewlineMode
+	RawNewlineMode NewlineMode = 1
 
 	// CRLFNewlineMode forces the use of CRLF ("\r\n") newlines
 	// on output, regardless of the input format.
-	CRLFNewlineMode
+	CRLFNewlineMode NewlineMode = 2
 )
 
 // Config defines the interpreter configuration for ExecProgram.
