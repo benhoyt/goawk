@@ -85,7 +85,7 @@ func (p *interp) writeCSV(output io.Writer, fields []string) error {
 	// Given the above, creating a new one of these is cheap.
 	writer := csv.NewWriter(output)
 	writer.Comma = p.csvOutputConfig.Separator
-	writer.UseCRLF = runtime.GOOS == "windows"
+	writer.UseCRLF = p.newlineOutputCRLF
 	err := writer.Write(fields)
 	if err != nil {
 		return err
