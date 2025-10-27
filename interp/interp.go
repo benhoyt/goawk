@@ -179,8 +179,7 @@ const (
 	// for the operating system: raw on Unix/Linux, crlf on Windows.
 	SmartNewlineMode NewlineMode = 0
 
-	// RawNewlineMode keeps newline characters exactly as they
-	// appear in the input, without any normalization.
+	// RawNewlineMode does no newline translation.
 	RawNewlineMode
 
 	// CRLFNewlineMode forces the use of CRLF ("\r\n") newlines
