@@ -553,6 +553,8 @@ func (p *interp) setExecuteConfig(config *Config) error {
 		p.newlineOutputCRLF = false
 	case CRLFNewlineMode:
 		p.newlineOutputCRLF = true
+	default:
+		return fmt.Errorf("invalid newline output mode %d", config.NewlineOutput)
 	}
 
 	return nil
