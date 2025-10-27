@@ -177,7 +177,7 @@ type NewlineMode int
 const (
 	// SmartNewlineMode uses the newline mode most appropriate
 	// for the operating system: raw on Unix/Linux, crlf on Windows.
-	SmartNewlineMode NewlineMode = iota
+	SmartNewlineMode NewlineMode = 0
 
 	// RawNewlineMode keeps newline characters exactly as they
 	// appear in the input, without any normalization.
