@@ -475,6 +475,19 @@ func runGoAWK(args []string, stdin string) (stdout, stderr string, err error) {
 	return stdout, stderr, err
 }
 
+func runGoAWKKeepNewline(args []string, stdin string) (stdout, stderr string, err error) {
+	cmd := exec.Command(goAWKExe, args...)
+	if stdin != "" {
+		cmd.Stdin = strings.NewReader(stdin)
+	}
+	errBuf := &bytes.Buffer{}
+	cmd.Stderr = errBuf
+	output, err := cmd.Output()
+	stdout = string(output)
+	stderr = string(errBuf.Bytes())
+	return stdout, stderr, err
+}
+
 func runAWKs(t *testing.T, testArgs []string, testStdin, testOutput, testError string) {
 	t.Helper()
 
@@ -682,6 +695,46 @@ $1 {
 		testName := strings.Join(test.args, " ")
 		t.Run(testName, func(t *testing.T) {
 			stdout, stderr, err := runGoAWK(test.args, test.input)
+			if err != nil {
+				if test.error == "" {
+					t.Fatalf("expected no error, got %v (%q)", err, stderr)
+				} else if stderr != test.error {
+					t.Fatalf("expected error message %q, got %q", test.error, stderr)
+				}
+			}
+			if stdout != test.output {
+				t.Fatalf("output differs, got:\n%s\nexpected:\n%s", stdout, test.output)
+			}
+		})
+	}
+
+	nl := "\n"
+	if runtime.GOOS == "windows" {
+		nl = "\r\n"
+	}
+
+	newlineTests := []struct {
+		args   []string
+		input  string
+		output string
+		error  string
+	}{
+		{[]string{`BEGIN{ printf 'foo\nbar\n' }`}, "", "foo" + nl + "bar" + nl, ""},
+		{[]string{"-N", "smart", `BEGIN{ printf 'foo\nbar\n' }`}, "", "foo" + nl + "bar" + nl, ""},
+		{[]string{"-Nsmart", `BEGIN{ printf 'foo\nbar\n' }`}, "", "foo" + nl + "bar" + nl, ""},
+		{[]string{"-N", "raw", `BEGIN{ printf 'foo\nbar\n' }`}, "", "foo\nbar\n", ""},
+		{[]string{"-Nraw", `BEGIN{ printf 'foo\nbar\n' }`}, "", "foo\nbar\n", ""},
+		{[]string{"-N", "crlf", `BEGIN{ printf 'foo\nbar\n' }`}, "", "foo\r\nbar\r\n", ""},
+		{[]string{"-Ncrlf", `BEGIN{ printf 'foo\nbar\n' }`}, "", "foo\r\nbar\r\n", ""},
+		{[]string{"-N", "INVALID", `BEGIN{ printf 'foo\nbar\n' }`}, "", "", "-N arg can only be one of: smart, raw, crlf\n"},
+		{[]string{"-NINVALID", `BEGIN{ printf 'foo\nbar\n' }`}, "", "", "-N arg can only be one of: smart, raw, crlf\n"},
+		{[]string{"-o", "csv", "-Nraw", `BEGIN{ print 1," 2 " }`}, "", "1,\" 2 \"\n", ""},
+		{[]string{"-o", "csv", "-Ncrlf", `BEGIN{ print 1," 2 " }`}, "", "1,\" 2 \"\r\n", ""},
+	}
+	for _, test := range newlineTests {
+		testName := strings.Join(test.args, " ")
+		t.Run(testName, func(t *testing.T) {
+			stdout, stderr, err := runGoAWKKeepNewline(test.args, test.input)
 			if err != nil {
 				if test.error == "" {
 					t.Fatalf("expected no error, got %v (%q)", err, stderr)
