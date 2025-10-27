@@ -315,7 +315,8 @@ type Config struct {
 	Chars bool
 
 	// NewlineOutput specifies how newline characters are handled
-	// when writing output.
+	// when writing output. The default is "smart", meaning no translation on Linux/Unix
+	// and CRLF translation on Windows.
 	NewlineOutput NewlineMode
 }
 
