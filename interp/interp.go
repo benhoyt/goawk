@@ -185,6 +185,8 @@ const (
 	// CRLFNewlineMode forces the use of CRLF ("\r\n") newlines
 	// on output, regardless of the input format.
 	CRLFNewlineMode NewlineMode = 2
+
+	NewlineUnspecified NewlineMode = 3
 )
 
 // Config defines the interpreter configuration for ExecProgram.

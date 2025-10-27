@@ -201,16 +201,7 @@ argsLoop:
 				errorExitf("flag needs an argument: -N")
 			}
 			i++
-			switch os.Args[i] {
-			case "smart":
-				newlineOutput = interp.SmartNewlineMode
-			case "raw":
-				newlineOutput = interp.RawNewlineMode
-			case "crlf":
-				newlineOutput = interp.CRLFNewlineMode
-			default:
-				errorExitf("invalid value for -N: %s", os.Args[i])
-			}
+			newlineOutput = newlineModeFromString(os.Args[i])
 		case "-version", "--version":
 			fmt.Println(version)
 			os.Exit(0)
@@ -231,6 +222,8 @@ argsLoop:
 				outputMode = arg[2:]
 			case strings.HasPrefix(arg, "-v"):
 				vars = append(vars, arg[2:])
+			case strings.HasPrefix(arg, "-N"):
+				newlineOutput = newlineModeFromString(arg[2:])
 			case strings.HasPrefix(arg, "-cpuprofile="):
 				cpuProfile = arg[len("-cpuprofile="):]
 			case strings.HasPrefix(arg, "-memprofile="):
@@ -420,6 +413,20 @@ argsLoop:
 	}
 
 	os.Exit(status)
+}
+
+func newlineModeFromString(mode string) interp.NewlineMode {
+	switch mode {
+	case "smart":
+		return interp.SmartNewlineMode
+	case "raw":
+		return interp.RawNewlineMode
+	case "crlf":
+		return interp.CRLFNewlineMode
+	default:
+		errorExitf("-N arg can only be one of: smart, raw, crlf")
+		return interp.NewlineUnspecified
+	}
 }
 
 func coverModeFromString(mode string) cover.Mode {
