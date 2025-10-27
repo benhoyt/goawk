@@ -65,7 +65,7 @@ Additional GoAWK features:
                     'csv|tsv [separator=<char>] [comment=<char>] [header]'
   -o mode           use CSV output for print with args (ignore OFS and ORS)
                     'csv|tsv [separator=<char>]'
-  -N                mode set newline output mode: smart (default), raw, crlf
+  -N mode           newline output translation: smart (default), raw, crlf
   -version          show GoAWK version and exit
 
 GoAWK debugging arguments:
