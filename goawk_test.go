@@ -728,8 +728,8 @@ $1 {
 		{[]string{"-Ncrlf", `BEGIN{ printf 'foo\nbar\n' }`}, "", "foo\r\nbar\r\n", ""},
 		{[]string{"-N", "INVALID", `BEGIN{ printf 'foo\nbar\n' }`}, "", "", "-N arg can only be one of: smart, raw, crlf\n"},
 		{[]string{"-NINVALID", `BEGIN{ printf 'foo\nbar\n' }`}, "", "", "-N arg can only be one of: smart, raw, crlf\n"},
-		{[]string{"-o", "csv", "-Nraw", `BEGIN{ print 1," 2 " }`}, "", "1,\" 2 \"\n", ""},
-		{[]string{"-o", "csv", "-Ncrlf", `BEGIN{ print 1," 2 " }`}, "", "1,\" 2 \"\r\n", ""},
+		{[]string{"-o", "csv", "-Nraw", `BEGIN { print 1, " 2 " }`}, "", "1,\" 2 \"\n", ""},
+		{[]string{"-o", "csv", "-Ncrlf", `BEGIN { print 1, " 2 " }`}, "", "1,\" 2 \"\r\n", ""},
 	}
 	for _, test := range newlineTests {
 		testName := strings.Join(test.args, " ")
