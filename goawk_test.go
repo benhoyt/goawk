@@ -707,13 +707,15 @@ $1 {
 			}
 		})
 	}
+}
 
+func TestGoAWKSpecificOptionsRaw(t *testing.T) {
 	nl := "\n"
 	if runtime.GOOS == "windows" {
 		nl = "\r\n"
 	}
 
-	newlineTests := []struct {
+	tests := []struct {
 		args   []string
 		input  string
 		output string
@@ -731,7 +733,7 @@ $1 {
 		{[]string{"-o", "csv", "-Nraw", `BEGIN { print 1, " 2 " }`}, "", "1,\" 2 \"\n", ""},
 		{[]string{"-o", "csv", "-Ncrlf", `BEGIN { print 1, " 2 " }`}, "", "1,\" 2 \"\r\n", ""},
 	}
-	for _, test := range newlineTests {
+	for _, test := range tests {
 		testName := strings.Join(test.args, " ")
 		t.Run(testName, func(t *testing.T) {
 			stdout, stderr, err := runGoAWKKeepNewline(test.args, test.input)
