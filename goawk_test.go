@@ -716,14 +716,14 @@ func TestGoAWKSpecificOptionsRaw(t *testing.T) {
 		error  string
 	}{
 		{[]string{`BEGIN { printf 'foo\nbar\n' }`}, "", "foo" + nl + "bar" + nl, ""},
-		{[]string{"-N", "smart", `BEGIN{ printf 'foo\nbar\n' }`}, "", "foo" + nl + "bar" + nl, ""},
-		{[]string{"-Nsmart", `BEGIN{ printf 'foo\nbar\n' }`}, "", "foo" + nl + "bar" + nl, ""},
-		{[]string{"-N", "raw", `BEGIN{ printf 'foo\nbar\n' }`}, "", "foo\nbar\n", ""},
-		{[]string{"-Nraw", `BEGIN{ printf 'foo\nbar\n' }`}, "", "foo\nbar\n", ""},
-		{[]string{"-N", "crlf", `BEGIN{ printf 'foo\nbar\n' }`}, "", "foo\r\nbar\r\n", ""},
-		{[]string{"-Ncrlf", `BEGIN{ printf 'foo\nbar\n' }`}, "", "foo\r\nbar\r\n", ""},
-		{[]string{"-N", "INVALID", `BEGIN{ printf 'foo\nbar\n' }`}, "", "", "-N arg can only be one of: smart, raw, crlf\n"},
-		{[]string{"-NINVALID", `BEGIN{ printf 'foo\nbar\n' }`}, "", "", "-N arg can only be one of: smart, raw, crlf\n"},
+		{[]string{"-N", "smart", `BEGIN { printf 'foo\nbar\n' }`}, "", "foo" + nl + "bar" + nl, ""},
+		{[]string{"-Nsmart", `BEGIN { printf 'foo\nbar\n' }`}, "", "foo" + nl + "bar" + nl, ""},
+		{[]string{"-N", "raw", `BEGIN { printf 'foo\nbar\n' }`}, "", "foo\nbar\n", ""},
+		{[]string{"-Nraw", `BEGIN { printf 'foo\nbar\n' }`}, "", "foo\nbar\n", ""},
+		{[]string{"-N", "crlf", `BEGIN { printf 'foo\nbar\n' }`}, "", "foo\r\nbar\r\n", ""},
+		{[]string{"-Ncrlf", `BEGIN { printf 'foo\nbar\n' }`}, "", "foo\r\nbar\r\n", ""},
+		{[]string{"-N", "INVALID", `BEGIN { printf 'foo\nbar\n' }`}, "", "", "-N arg can only be one of: smart, raw, crlf\n"},
+		{[]string{"-NINVALID", `BEGIN { printf 'foo\nbar\n' }`}, "", "", "-N arg can only be one of: smart, raw, crlf\n"},
 		{[]string{"-o", "csv", "-Nraw", `BEGIN { print 1, " 2 " }`}, "", "1,\" 2 \"\n", ""},
 		{[]string{"-o", "csv", "-Ncrlf", `BEGIN { print 1, " 2 " }`}, "", "1,\" 2 \"\r\n", ""},
 	}
