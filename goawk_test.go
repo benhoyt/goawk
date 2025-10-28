@@ -719,7 +719,7 @@ $1 {
 		output string
 		error  string
 	}{
-		{[]string{`BEGIN{ printf 'foo\nbar\n' }`}, "", "foo" + nl + "bar" + nl, ""},
+		{[]string{`BEGIN { printf 'foo\nbar\n' }`}, "", "foo" + nl + "bar" + nl, ""},
 		{[]string{"-N", "smart", `BEGIN{ printf 'foo\nbar\n' }`}, "", "foo" + nl + "bar" + nl, ""},
 		{[]string{"-Nsmart", `BEGIN{ printf 'foo\nbar\n' }`}, "", "foo" + nl + "bar" + nl, ""},
 		{[]string{"-N", "raw", `BEGIN{ printf 'foo\nbar\n' }`}, "", "foo\nbar\n", ""},
