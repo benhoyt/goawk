@@ -79,6 +79,11 @@ jobs:
         gawk --version
         go test -race ./...
 
+    - name: Repro bug
+      run: |
+        gawk --version
+        gawk -f testdata/t.match1 testdata/test.data
+
   build-macos:
     runs-on: macos-latest
 
