@@ -425,7 +425,7 @@ func newlineModeFromString(mode string) interp.NewlineMode {
 		return interp.CRLFNewlineMode
 	default:
 		errorExitf("-N arg can only be one of: smart, raw, crlf")
-		return interp.NewlineUnspecified
+		return interp.SmartNewlineMode
 	}
 }
 
