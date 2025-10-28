@@ -1176,9 +1176,11 @@ func (b *concurrentBuffer) String() string {
 	return b.buffer.String()
 }
 
-func testGoAWK(
+func testGoAWKBase(
 	t *testing.T, src, in, out, errStr string,
-	funcs map[string]interface{}, configure func(config *interp.Config),
+	funcs map[string]interface{},
+	configure func(config *interp.Config),
+	transformFn func(string) string,
 ) {
 	parserConfig := &parser.ParserConfig{
 		Funcs: funcs,
@@ -1224,13 +1226,28 @@ func testGoAWK(
 	if errStr != "" {
 		t.Fatalf(`expected error %q, got ""`, errStr)
 	}
-	normalized := normalizeNewlines(outBuf.String())
+	normalized := transformFn(outBuf.String())
 	if normalized != out {
 		t.Fatalf("expected/got:\n%q\n%q", out, normalized)
 	}
 	if status != 0 {
 		t.Fatalf("expected status 0, got %d", status)
 	}
+}
+
+func testGoAWK(
+	t *testing.T, src, in, out, errStr string,
+	funcs map[string]interface{}, configure func(config *interp.Config),
+) {
+	testGoAWKBase(t, src, in, out, errStr, funcs, configure, normalizeNewlines)
+}
+
+func testGoAWKRaw(
+	t *testing.T, src, in, out, errStr string,
+	funcs map[string]interface{}, configure func(config *interp.Config),
+) {
+	rawdata := func(s string) string { return s }
+	testGoAWKBase(t, src, in, out, errStr, funcs, configure, rawdata)
 }
 
 func TestNative(t *testing.T) {
@@ -1833,6 +1850,67 @@ func TestENDConsumesInput(t *testing.T) {
 	b, err := io.ReadAll(input)
 	if string(b) != "" {
 		t.Fatalf("input expected/got:\n%q\n%q", "", string(b))
+	}
+}
+
+type newlineTest struct {
+	src       string
+	in        string
+	out       string
+	err       string
+	configure func(config *interp.Config)
+}
+
+var newlineTests = []newlineTest{
+	{
+		`BEGIN { printf 'smart\nnewline\n' }`, "", "smart@newline@", "",
+		func(config *interp.Config) { config.NewlineOutput = interp.SmartNewlineMode },
+	},
+	{
+		`BEGIN { printf 'raw\nnewline\n' }`, "", "raw\nnewline\n", "",
+		func(config *interp.Config) { config.NewlineOutput = interp.RawNewlineMode },
+	},
+	{
+		`BEGIN { printf 'crlf\nnewline\n' }`, "", "crlf\r\nnewline\r\n", "",
+		func(config *interp.Config) { config.NewlineOutput = interp.CRLFNewlineMode },
+	},
+	{
+		`BEGIN { print 1, " smart " }`, "", "1,\" smart \"@", "",
+		func(config *interp.Config) {
+			config.OutputMode = interp.CSVMode
+			config.NewlineOutput = interp.SmartNewlineMode
+		},
+	},
+	{
+		`BEGIN { print 2, " raw " }`, "", "2,\" raw \"\n", "",
+		func(config *interp.Config) {
+			config.OutputMode = interp.CSVMode
+			config.NewlineOutput = interp.RawNewlineMode
+		},
+	},
+	{
+		`BEGIN { print 3, " crlf " }`, "", "3,\" crlf \"\r\n", "",
+		func(config *interp.Config) {
+			config.OutputMode = interp.CSVMode
+			config.NewlineOutput = interp.CRLFNewlineMode
+		},
+	},
+}
+
+func TestNewline(t *testing.T) {
+	nl := "\n"
+	if runtime.GOOS == "windows" {
+		nl = "\r\n"
+	}
+	for _, test := range newlineTests {
+		testName := test.src
+		if len(testName) > 70 {
+			testName = testName[:70]
+		}
+		out := strings.ReplaceAll(test.out, "@", nl)
+		t.Run(testName, func(t *testing.T) {
+			testGoAWKRaw(t, test.src, test.in, out, test.err, nil, test.configure)
+		})
 	}
 }
 
