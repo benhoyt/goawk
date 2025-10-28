@@ -462,20 +462,7 @@ func TestDevStdout(t *testing.T) {
 	runAWKs(t, []string{`BEGIN { print "1"; print "2">"/dev/stdout" }`}, "", "1\n2\n", "")
 }
 
-func runGoAWK(args []string, stdin string) (stdout, stderr string, err error) {
-	cmd := exec.Command(goAWKExe, args...)
-	if stdin != "" {
-		cmd.Stdin = strings.NewReader(stdin)
-	}
-	errBuf := &bytes.Buffer{}
-	cmd.Stderr = errBuf
-	output, err := cmd.Output()
-	stdout = string(normalizeNewlines(output))
-	stderr = string(normalizeNewlines(errBuf.Bytes()))
-	return stdout, stderr, err
-}
-
-func runGoAWKKeepNewline(args []string, stdin string) (stdout, stderr string, err error) {
+func runGoAWKRaw(args []string, stdin string) (stdout, stderr string, err error) {
 	cmd := exec.Command(goAWKExe, args...)
 	if stdin != "" {
 		cmd.Stdin = strings.NewReader(stdin)
@@ -485,6 +472,13 @@ func runGoAWKKeepNewline(args []string, stdin string) (stdout, stderr string, er
 	output, err := cmd.Output()
 	stdout = string(output)
 	stderr = string(errBuf.Bytes())
+	return stdout, stderr, err
+}
+
+func runGoAWK(args []string, stdin string) (stdout, stderr string, err error) {
+	stdout, stderr, err = runGoAWKRaw(args, stdin)
+	stdout = string(normalizeNewlines([]byte(stdout)))
+	stderr = string(normalizeNewlines([]byte(stderr)))
 	return stdout, stderr, err
 }
 
@@ -736,7 +730,7 @@ func TestGoAWKSpecificOptionsRaw(t *testing.T) {
 	for _, test := range tests {
 		testName := strings.Join(test.args, " ")
 		t.Run(testName, func(t *testing.T) {
-			stdout, stderr, err := runGoAWKKeepNewline(test.args, test.input)
+			stdout, stderr, err := runGoAWKRaw(test.args, test.input)
 			if err != nil {
 				if test.error == "" {
 					t.Fatalf("expected no error, got %v (%q)", err, stderr)
