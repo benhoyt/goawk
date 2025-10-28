@@ -74,15 +74,15 @@ jobs:
     - name: Install Gawk
       run: choco install gawk
 
-    - name: Build and Test
-      run: |
-        gawk --version
-        go test -race ./...
-
     - name: Repro bug
       run: |
         gawk --version
         gawk -f testdata/t.match1 testdata/test.data
+
+    - name: Build and Test
+      run: |
+        gawk --version
+        go test -race ./...
 
   build-macos:
     runs-on: macos-latest
