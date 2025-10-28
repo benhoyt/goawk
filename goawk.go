@@ -65,6 +65,7 @@ Additional GoAWK features:
                     'csv|tsv [separator=<char>] [comment=<char>] [header]'
   -o mode           use CSV output for print with args (ignore OFS and ORS)
                     'csv|tsv [separator=<char>]'
+  -N mode           newline output translation: smart (default), raw, crlf
   -version          show GoAWK version and exit
 
 GoAWK debugging arguments:
@@ -99,6 +100,7 @@ func main() {
 	coverProfile := ""
 	coverAppend := false
 	useChars := false
+	newlineOutput := interp.SmartNewlineMode
 
 	var i int
 argsLoop:
@@ -194,6 +196,12 @@ argsLoop:
 			}
 			i++
 			outputMode = os.Args[i]
+		case "-N":
+			if i+1 >= len(os.Args) {
+				errorExitf("flag needs an argument: -N")
+			}
+			i++
+			newlineOutput = newlineModeFromString(os.Args[i])
 		case "-version", "--version":
 			fmt.Println(version)
 			os.Exit(0)
@@ -214,6 +222,8 @@ argsLoop:
 				outputMode = arg[2:]
 			case strings.HasPrefix(arg, "-v"):
 				vars = append(vars, arg[2:])
+			case strings.HasPrefix(arg, "-N"):
+				newlineOutput = newlineModeFromString(arg[2:])
 			case strings.HasPrefix(arg, "-cpuprofile="):
 				cpuProfile = arg[len("-cpuprofile="):]
 			case strings.HasPrefix(arg, "-memprofile="):
@@ -334,11 +344,12 @@ argsLoop:
 	}
 
 	config := &interp.Config{
-		Argv0:     filepath.Base(os.Args[0]),
-		Args:      expandWildcardsOnWindows(args),
-		Chars:     useChars,
-		NoArgVars: noArgVars,
-		Output:    stdout,
+		Argv0:         filepath.Base(os.Args[0]),
+		Args:          expandWildcardsOnWindows(args),
+		Chars:         useChars,
+		NoArgVars:     noArgVars,
+		Output:        stdout,
+		NewlineOutput: newlineOutput,
 		Vars: []string{
 			"FS", fieldSep,
 			"INPUTMODE", inputMode,
@@ -402,6 +413,20 @@ argsLoop:
 	}
 
 	os.Exit(status)
+}
+
+func newlineModeFromString(mode string) interp.NewlineMode {
+	switch mode {
+	case "smart":
+		return interp.SmartNewlineMode
+	case "raw":
+		return interp.RawNewlineMode
+	case "crlf":
+		return interp.CRLFNewlineMode
+	default:
+		errorExitf("-N arg can only be one of: smart, raw, crlf")
+		return interp.SmartNewlineMode
+	}
 }
 
 func coverModeFromString(mode string) cover.Mode {

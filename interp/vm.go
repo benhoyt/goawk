@@ -808,7 +808,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 					return err
 				}
 			}
-			err = writeOutput(output, s)
+			err = writeOutput(output, s, p.newlineOutputCRLF)
 			if err != nil {
 				return err
 			}
