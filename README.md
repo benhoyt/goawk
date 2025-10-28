@@ -1,4 +1,5 @@
 
+
 # GoAWK: an AWK interpreter with CSV support
 
 [![Documentation](https://pkg.go.dev/badge/github.com/benhoyt/goawk)](https://pkg.go.dev/github.com/benhoyt/goawk)
