@@ -703,7 +703,7 @@ $1 {
 	}
 }
 
-func TestGoAWKSpecificOptionsRaw(t *testing.T) {
+func TestNewlineOutputMode(t *testing.T) {
 	nl := "\n"
 	if runtime.GOOS == "windows" {
 		nl = "\r\n"

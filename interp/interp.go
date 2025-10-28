@@ -170,20 +170,20 @@ const (
 	inputBufSize     = 64 * 1024
 )
 
-// NewlineMode specifies how newline characters are handled
-// when reading or writing text.
+// NewlineMode specifies how newline characters are handled when reading or
+// writing text.
 type NewlineMode int
 
 const (
-	// SmartNewlineMode uses the newline mode most appropriate
-	// for the operating system: raw on Unix/Linux, crlf on Windows.
+	// SmartNewlineMode uses the newline mode most appropriate for the
+	// operating system: raw on Unix/Linux, crlf on Windows.
 	SmartNewlineMode NewlineMode = 0
 
 	// RawNewlineMode does no newline translation.
 	RawNewlineMode NewlineMode = 1
 
-	// CRLFNewlineMode forces the use of CRLF ("\r\n") newlines
-	// on output, regardless of the input format.
+	// CRLFNewlineMode forces the use of CRLF ("\r\n") newlines on output,
+	// regardless of the input format.
 	CRLFNewlineMode NewlineMode = 2
 )
 
@@ -314,8 +314,8 @@ type Config struct {
 	// index(), length(), match(), substr(), and printf %c.
 	Chars bool
 
-	// NewlineOutput specifies how newline characters are handled
-	// when writing output. The default is "smart", meaning no translation on Linux/Unix
+	// NewlineOutput specifies how newline characters are handled when writing
+	// output. The default is "smart", meaning no translation on Linux/Unix
 	// and CRLF translation on Windows.
 	NewlineOutput NewlineMode
 }

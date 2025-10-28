@@ -1861,55 +1861,50 @@ type newlineTest struct {
 	configure func(config *interp.Config)
 }
 
-var newlineTests = []newlineTest{
-	{
-		`BEGIN { printf 'smart\nnewline\n' }`, "", "smart@newline@", "",
-		func(config *interp.Config) { config.NewlineOutput = interp.SmartNewlineMode },
+var nl = func() string {
+	if runtime.GOOS == "windows" {
+		return "\r\n"
+	}
+	return "\n"
+}()
+
+var newlineTests = []newlineTest{{
+	`BEGIN { printf 'smart\nnewline\n' }`, "", "smart" + nl + "newline" + nl, "",
+	func(config *interp.Config) { config.NewlineOutput = interp.SmartNewlineMode },
+}, {
+	`BEGIN { printf 'raw\nnewline\n' }`, "", "raw\nnewline\n", "",
+	func(config *interp.Config) { config.NewlineOutput = interp.RawNewlineMode },
+}, {
+	`BEGIN { printf 'crlf\nnewline\n' }`, "", "crlf\r\nnewline\r\n", "",
+	func(config *interp.Config) { config.NewlineOutput = interp.CRLFNewlineMode },
+}, {
+	`BEGIN { print 1, " smart " }`, "", "1,\" smart \"" + nl, "",
+	func(config *interp.Config) {
+		config.OutputMode = interp.CSVMode
+		config.NewlineOutput = interp.SmartNewlineMode
 	},
-	{
-		`BEGIN { printf 'raw\nnewline\n' }`, "", "raw\nnewline\n", "",
-		func(config *interp.Config) { config.NewlineOutput = interp.RawNewlineMode },
+}, {
+	`BEGIN { print 2, " raw " }`, "", "2,\" raw \"\n", "",
+	func(config *interp.Config) {
+		config.OutputMode = interp.CSVMode
+		config.NewlineOutput = interp.RawNewlineMode
 	},
-	{
-		`BEGIN { printf 'crlf\nnewline\n' }`, "", "crlf\r\nnewline\r\n", "",
-		func(config *interp.Config) { config.NewlineOutput = interp.CRLFNewlineMode },
+}, {
+	`BEGIN { print 3, " crlf " }`, "", "3,\" crlf \"\r\n", "",
+	func(config *interp.Config) {
+		config.OutputMode = interp.CSVMode
+		config.NewlineOutput = interp.CRLFNewlineMode
 	},
-	{
-		`BEGIN { print 1, " smart " }`, "", "1,\" smart \"@", "",
-		func(config *interp.Config) {
-			config.OutputMode = interp.CSVMode
-			config.NewlineOutput = interp.SmartNewlineMode
-		},
-	},
-	{
-		`BEGIN { print 2, " raw " }`, "", "2,\" raw \"\n", "",
-		func(config *interp.Config) {
-			config.OutputMode = interp.CSVMode
-			config.NewlineOutput = interp.RawNewlineMode
-		},
-	},
-	{
-		`BEGIN { print 3, " crlf " }`, "", "3,\" crlf \"\r\n", "",
-		func(config *interp.Config) {
-			config.OutputMode = interp.CSVMode
-			config.NewlineOutput = interp.CRLFNewlineMode
-		},
-	},
-}
+}}
 
 func TestNewline(t *testing.T) {
-	nl := "\n"
-	if runtime.GOOS == "windows" {
-		nl = "\r\n"
-	}
 	for _, test := range newlineTests {
 		testName := test.src
 		if len(testName) > 70 {
 			testName = testName[:70]
 		}
-		out := strings.ReplaceAll(test.out, "@", nl)
 		t.Run(testName, func(t *testing.T) {
-			testGoAWKRaw(t, test.src, test.in, out, test.err, nil, test.configure)
+			testGoAWKRaw(t, test.src, test.in, test.out, test.err, nil, test.configure)
 		})
 	}
 }
