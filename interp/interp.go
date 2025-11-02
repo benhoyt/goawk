@@ -851,7 +851,7 @@ func (p *interp) setSpecial(index int, v value) error {
 			// Multi-byte unicode char falls back to regex splitter
 			sep := regexp.QuoteMeta(p.recordSep) // not strictly necessary as no multi-byte chars are regex meta chars
 			p.recordSepRegex = regexp.MustCompile(sep)
-			p.recordSepRegex.Longest()
+			p.recordSepRegex.Longest() // other awks use leftmost-longest matching
 		default:
 			re, err := regexp.Compile(compiler.AddRegexFlags(p.recordSep))
 			if err != nil {
