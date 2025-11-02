@@ -608,6 +608,9 @@ function f() {
 		"0", "1\nx\\y\n", "", ""},
 	{`sub("", "\\e", FS)  # !awk !gawk`, "foo bar\nbaz buz\n", "",
 		"invalid regex \"\\\\e \": error parsing regexp: invalid escape sequence: `\\e`", ""},
+	// ensure leftmost-longest matching like other awks
+	{`BEGIN { s = "#!a"; sub(/(#|#!)/, "", s); print s }`, "", "a\n", "", ""},
+
 	{`BEGIN { print tolower("Foo BaR") }`, "", "foo bar\n", "", ""},
 	{`BEGIN { print toupper("Foo BaR") }`, "", "FOO BAR\n", "", ""},
 	{`
