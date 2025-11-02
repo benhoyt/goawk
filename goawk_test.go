@@ -82,7 +82,7 @@ func TestAWK(t *testing.T) {
 		"t.intest2": true,
 	}
 	dontRunOnWindows := map[string]bool{
-		"p.50": true, // because this pipes to Unix sort "sort -t: +0 -1 +2nr"
+		"p.50":     true, // because this pipes to Unix sort "sort -t: +0 -1 +2nr"
 		"t.match1": true, // TODO: remove once https://lists.gnu.org/archive/html/bug-gawk/2025-10/msg00072.html is fixed and in choco (presumably 5.3.3)
 	}
 

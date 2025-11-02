@@ -1082,7 +1082,9 @@ func (c *compiler) regexIndex(r string) int {
 		return index // reuse existing constant
 	}
 	index := len(c.program.Regexes)
-	c.program.Regexes = append(c.program.Regexes, regexp.MustCompile(AddRegexFlags(r)))
+	re := regexp.MustCompile(AddRegexFlags(r))
+	re.Longest() // other awks use leftmost-longest matching
+	c.program.Regexes = append(c.program.Regexes, re)
 	c.indexes.regexes[r] = index
 	return index
 }

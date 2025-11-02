@@ -833,6 +833,7 @@ func (p *interp) setSpecial(index int, v value) error {
 			if err != nil {
 				return newError("invalid regex %q: %s", p.fieldSep, err)
 			}
+			re.Longest() // other awks use leftmost-longest matching
 			p.fieldSepRegex = re
 		}
 	case ast.V_OFMT:
@@ -850,11 +851,13 @@ func (p *interp) setSpecial(index int, v value) error {
 			// Multi-byte unicode char falls back to regex splitter
 			sep := regexp.QuoteMeta(p.recordSep) // not strictly necessary as no multi-byte chars are regex meta chars
 			p.recordSepRegex = regexp.MustCompile(sep)
+			p.recordSepRegex.Longest() // other awks use leftmost-longest matching
 		default:
 			re, err := regexp.Compile(compiler.AddRegexFlags(p.recordSep))
 			if err != nil {
 				return newError("invalid regex %q: %s", p.recordSep, err)
 			}
+			re.Longest() // other awks use leftmost-longest matching
 			p.recordSepRegex = re
 		}
 	case ast.V_RT:
@@ -1015,6 +1018,7 @@ func (p *interp) compileRegex(regex string) (*regexp.Regexp, error) {
 	if err != nil {
 		return nil, newError("invalid regex %q: %s", regex, err)
 	}
+	re.Longest() // other awks use leftmost-longest matching
 	// Dumb, non-LRU cache: just cache the first N regexes
 	if len(p.regexCache) < maxCachedRegexes {
 		p.regexCache[regex] = re
