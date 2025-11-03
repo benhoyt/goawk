@@ -22,7 +22,8 @@ const (
 type value struct {
 	typ valueType // Type of value
 	s   string    // String value (for typeStr and typeNumStr)
-	n   float64   // Numeric value (for typeNum)
+	r   *[]rune
+	n   float64 // Numeric value (for typeNum)
 }
 
 // Create a new null value
@@ -37,12 +38,16 @@ func num(n float64) value {
 
 // Create a new string value
 func str(s string) value {
-	return value{typ: typeStr, s: s}
+	return value{typ: typeStr, s: s, r: new([]rune)}
+}
+
+func strFromRunes(runes []rune) value {
+	return value{typ: typeStr, s: string(runes), r: &runes}
 }
 
 // Create a new value to represent a "numeric string" from an input field
 func numStr(s string) value {
-	return value{typ: typeNumStr, s: s}
+	return value{typ: typeNumStr, s: s, r: new([]rune)}
 }
 
 // Create a numeric value from a Go bool
@@ -51,6 +56,18 @@ func boolean(b bool) value {
 		return num(1)
 	}
 	return num(0)
+}
+
+func (v value) runes(floatFormat string) []rune {
+	switch v.typ {
+	case typeStr, typeNumStr:
+		if *v.r == nil {
+			*v.r = []rune(v.s)
+		}
+		return *v.r
+	default: // typeNum, typeNull
+		return []rune(v.str(floatFormat))
+	}
 }
 
 // String returns a string representation of v for debugging.
