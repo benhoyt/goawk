@@ -50,7 +50,17 @@ var interpTests = []interpTest{
 	{`BEGIN { print "b"} END { print "e" }`, "foo", "b\ne\n", "", ""},
 	{`BEGIN { print "b"} $0 { print NR } END { print "e" }`, "foo", "b\n1\ne\n", "", ""},
 	{`BEGIN { printf "x" }; BEGIN { printf "y" }`, "", "xy", "", ""},
-	{`{}`, "1\n2\n3\n", "", "", ""}, // issue #228
+
+	// Presence of patterns and actions
+	{``, "foo", "", "", ""},                    // no pattern, no action
+	{`0`, "foo", "", "", ""},                   // false pattern, no action
+	{`1`, "foo", "foo\n", "", ""},              // true pattern, no action
+	{`{}`, "foo", "", "", ""},                  // no pattern, empty action (issue #228)
+	{`0 {}`, "foo", "", "", ""},                // false pattern, empty action
+	{`1 {}`, "foo", "", "", ""},                // true pattern, empty action (issue #261)
+	{`{ print $1 }`, "foo", "foo\n", "", ""},   // no pattern, non-empty action
+	{`0 { print $1 }`, "foo", "", "", ""},      // false pattern, non-empty action
+	{`1 { print $1 }`, "foo", "foo\n", "", ""}, // true pattern, non-empty action
 
 	// Patterns
 	{`$0`, "foo\n\nbar", "foo\nbar\n", "", ""},
