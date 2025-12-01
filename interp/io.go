@@ -10,11 +10,12 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/coregx/coregex"
 
 	"github.com/benhoyt/goawk/internal/resolver"
 	. "github.com/benhoyt/goawk/lexer"
@@ -371,7 +372,7 @@ func (s byteSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, 
 
 // Splitter that splits records on the given regular expression
 type regexSplitter struct {
-	re         *regexp.Regexp
+	re         *coregex.Regex
 	terminator *string
 }
 

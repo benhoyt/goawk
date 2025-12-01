@@ -2,9 +2,10 @@ package compiler
 
 import (
 	"bytes"
-	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/coregx/coregex"
 )
 
 func TestDisassembler(t *testing.T) {
@@ -25,7 +26,7 @@ func TestDisassembler(t *testing.T) {
 				},
 				Nums:            []float64{0},
 				Strs:            []string{""},
-				Regexes:         []*regexp.Regexp{regexp.MustCompile("")},
+				Regexes:         []*coregex.Regex{coregex.MustCompile("")},
 				scalarNames:     []string{"s"},
 				arrayNames:      []string{"a"},
 				nativeFuncNames: []string{"n"},

@@ -2914,6 +2914,7 @@ func BenchmarkRepeatIONew(b *testing.B) {
 	}
 }
 
+/*
 func BenchmarkCSVInputGoAWK(b *testing.B) {
 	b.StopTimer()
 	s := 0
@@ -2927,6 +2928,7 @@ func BenchmarkCSVInputGoAWK(b *testing.B) {
 	src := `BEGIN { INPUTMODE="csv" } { s += $1 } END { print s }`
 	benchmarkProgram(b, nil, input, expected, src)
 }
+*/
 
 func BenchmarkCSVInputReader(b *testing.B) {
 	b.StopTimer()

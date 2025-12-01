@@ -4,12 +4,12 @@ package compiler
 import (
 	"fmt"
 	"math"
-	"regexp"
 	"strconv"
 
 	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/internal/resolver"
 	"github.com/benhoyt/goawk/lexer"
+	"github.com/coregx/coregex"
 )
 
 // Program holds an entire compiled program.
@@ -20,7 +20,7 @@ type Program struct {
 	Functions []Function
 	Nums      []float64
 	Strs      []string
-	Regexes   []*regexp.Regexp
+	Regexes   []*coregex.Regex
 
 	// For disassembly
 	scalarNames     []string
@@ -1086,8 +1086,8 @@ func (c *compiler) regexIndex(r string) int {
 		return index // reuse existing constant
 	}
 	index := len(c.program.Regexes)
-	re := regexp.MustCompile(AddRegexFlags(r))
-	re.Longest() // other awks use leftmost-longest matching
+	re := coregex.MustCompile(AddRegexFlags(r))
+	//TODO re.Longest() // other awks use leftmost-longest matching
 	c.program.Regexes = append(c.program.Regexes, re)
 	c.indexes.regexes[r] = index
 	return index

@@ -7,9 +7,10 @@ package parser
 import (
 	"fmt"
 	"io"
-	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/coregx/coregex"
 
 	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/internal/compiler"
@@ -1033,7 +1034,7 @@ func (p *parser) nextRegex() string {
 		panic(p.errorf("%s", p.val))
 	}
 	regex := p.val
-	_, err := regexp.Compile(compiler.AddRegexFlags(regex))
+	_, err := coregex.Compile(compiler.AddRegexFlags(regex))
 	if err != nil {
 		panic(p.errorf("%v", err))
 	}

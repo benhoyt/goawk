@@ -26,6 +26,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/coregx/coregex"
+
 	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/internal/compiler"
 	"github.com/benhoyt/goawk/internal/resolver"
@@ -40,7 +42,7 @@ var (
 
 	errCSVSeparator = errors.New("invalid CSV field separator or comment delimiter")
 
-	varRegex = regexp.MustCompile(`^([_a-zA-Z][_a-zA-Z0-9]*)=(.*)`)
+	varRegex = coregex.MustCompile(`^([_a-zA-Z][_a-zA-Z0-9]*)=`) // TODO: coregex hangs on the original
 
 	defaultShellCommand = getDefaultShellCommand()
 )
@@ -119,9 +121,9 @@ type interp struct {
 	convertFormat    string
 	outputFormat     string
 	fieldSep         string
-	fieldSepRegex    *regexp.Regexp
+	fieldSepRegex    *coregex.Regex
 	recordSep        string
-	recordSepRegex   *regexp.Regexp
+	recordSepRegex   *coregex.Regex
 	recordTerminator string
 	outputFieldSep   string
 	outputRecordSep  string
@@ -138,7 +140,7 @@ type interp struct {
 	functions []compiler.Function
 	nums      []float64
 	strs      []string
-	regexes   []*regexp.Regexp
+	regexes   []*coregex.Regex
 
 	// Context support (for Interpreter.ExecuteContext)
 	checkCtx bool
@@ -150,7 +152,7 @@ type interp struct {
 	random            *rand.Rand
 	randSeed          float64
 	exitStatus        int
-	regexCache        map[string]*regexp.Regexp
+	regexCache        map[string]*coregex.Regex
 	formatCache       map[string]cachedFormat
 	csvJoinFieldsBuf  bytes.Buffer
 	chars             bool
@@ -404,7 +406,7 @@ func newInterp(program *parser.Program) *interp {
 	}
 
 	// Initialize defaults
-	p.regexCache = make(map[string]*regexp.Regexp, 10)
+	p.regexCache = make(map[string]*coregex.Regex, 10)
 	p.formatCache = make(map[string]cachedFormat, 10)
 	p.randSeed = 1.0
 	seed := math.Float64bits(p.randSeed)
@@ -829,11 +831,11 @@ func (p *interp) setSpecial(index int, v value) error {
 	case ast.V_FS:
 		p.fieldSep = p.toString(v)
 		if utf8.RuneCountInString(p.fieldSep) > 1 { // compare to interp.ensureFields
-			re, err := regexp.Compile(compiler.AddRegexFlags(p.fieldSep))
+			re, err := coregex.Compile(compiler.AddRegexFlags(p.fieldSep))
 			if err != nil {
 				return newError("invalid regex %q: %s", p.fieldSep, err)
 			}
-			re.Longest() // other awks use leftmost-longest matching
+			// TODO re.Longest() // other awks use leftmost-longest matching
 			p.fieldSepRegex = re
 		}
 	case ast.V_OFMT:
@@ -849,15 +851,15 @@ func (p *interp) setSpecial(index int, v value) error {
 			// Simple cases use specialized splitters, not regex
 		case utf8.RuneCountInString(p.recordSep) == 1:
 			// Multi-byte unicode char falls back to regex splitter
-			sep := regexp.QuoteMeta(p.recordSep) // not strictly necessary as no multi-byte chars are regex meta chars
-			p.recordSepRegex = regexp.MustCompile(sep)
-			p.recordSepRegex.Longest() // other awks use leftmost-longest matching
+			sep := /* TODO */ regexp.QuoteMeta(p.recordSep) // not strictly necessary as no multi-byte chars are regex meta chars
+			p.recordSepRegex = coregex.MustCompile(sep)
+			// TODO p.recordSepRegex.Longest() // other awks use leftmost-longest matching
 		default:
-			re, err := regexp.Compile(compiler.AddRegexFlags(p.recordSep))
+			re, err := coregex.Compile(compiler.AddRegexFlags(p.recordSep))
 			if err != nil {
 				return newError("invalid regex %q: %s", p.recordSep, err)
 			}
-			re.Longest() // other awks use leftmost-longest matching
+			//TODO re.Longest() // other awks use leftmost-longest matching
 			p.recordSepRegex = re
 		}
 	case ast.V_RT:
@@ -1010,15 +1012,15 @@ func (p *interp) toString(v value) string {
 }
 
 // Compile regex string (or fetch from regex cache)
-func (p *interp) compileRegex(regex string) (*regexp.Regexp, error) {
+func (p *interp) compileRegex(regex string) (*coregex.Regex, error) {
 	if re, ok := p.regexCache[regex]; ok {
 		return re, nil
 	}
-	re, err := regexp.Compile(compiler.AddRegexFlags(regex))
+	re, err := coregex.Compile(compiler.AddRegexFlags(regex))
 	if err != nil {
 		return nil, newError("invalid regex %q: %s", regex, err)
 	}
-	re.Longest() // other awks use leftmost-longest matching
+	//TODO re.Longest() // other awks use leftmost-longest matching
 	// Dumb, non-LRU cache: just cache the first N regexes
 	if len(p.regexCache) < maxCachedRegexes {
 		p.regexCache[regex] = re
