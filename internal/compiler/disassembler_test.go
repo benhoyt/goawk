@@ -26,7 +26,7 @@ func TestDisassembler(t *testing.T) {
 				},
 				Nums:            []float64{0},
 				Strs:            []string{""},
-				Regexes:         []*regexp.Regex{regexp.MustCompile("")},
+				Regexes:         []*regexp.Regexp{regexp.MustCompile("")},
 				scalarNames:     []string{"s"},
 				arrayNames:      []string{"a"},
 				nativeFuncNames: []string{"n"},

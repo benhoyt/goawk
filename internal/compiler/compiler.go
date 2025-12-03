@@ -21,7 +21,7 @@ type Program struct {
 	Functions []Function
 	Nums      []float64
 	Strs      []string
-	Regexes   []*regexp.Regex
+	Regexes   []*regexp.Regexp
 
 	// For disassembly
 	scalarNames     []string

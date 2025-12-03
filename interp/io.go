@@ -372,7 +372,7 @@ func (s byteSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, 
 
 // Splitter that splits records on the given regular expression
 type regexSplitter struct {
-	re         *regexp.Regex
+	re         *regexp.Regexp
 	terminator *string
 }
 

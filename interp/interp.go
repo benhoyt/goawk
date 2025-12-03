@@ -120,9 +120,9 @@ type interp struct {
 	convertFormat    string
 	outputFormat     string
 	fieldSep         string
-	fieldSepRegex    *regexp.Regex
+	fieldSepRegex    *regexp.Regexp
 	recordSep        string
-	recordSepRegex   *regexp.Regex
+	recordSepRegex   *regexp.Regexp
 	recordTerminator string
 	outputFieldSep   string
 	outputRecordSep  string
@@ -139,7 +139,7 @@ type interp struct {
 	functions []compiler.Function
 	nums      []float64
 	strs      []string
-	regexes   []*regexp.Regex
+	regexes   []*regexp.Regexp
 
 	// Context support (for Interpreter.ExecuteContext)
 	checkCtx bool
@@ -151,7 +151,7 @@ type interp struct {
 	random            *rand.Rand
 	randSeed          float64
 	exitStatus        int
-	regexCache        map[string]*regexp.Regex
+	regexCache        map[string]*regexp.Regexp
 	formatCache       map[string]cachedFormat
 	csvJoinFieldsBuf  bytes.Buffer
 	chars             bool
@@ -405,7 +405,7 @@ func newInterp(program *parser.Program) *interp {
 	}
 
 	// Initialize defaults
-	p.regexCache = make(map[string]*regexp.Regex, 10)
+	p.regexCache = make(map[string]*regexp.Regexp, 10)
 	p.formatCache = make(map[string]cachedFormat, 10)
 	p.randSeed = 1.0
 	seed := math.Float64bits(p.randSeed)
@@ -1011,7 +1011,7 @@ func (p *interp) toString(v value) string {
 }
 
 // Compile regex string (or fetch from regex cache)
-func (p *interp) compileRegex(regex string) (*regexp.Regex, error) {
+func (p *interp) compileRegex(regex string) (*regexp.Regexp, error) {
 	if re, ok := p.regexCache[regex]; ok {
 		return re, nil
 	}
