@@ -238,10 +238,6 @@ func TestGAWK(t *testing.T) {
 
 		"hex2":   true, // GoAWK allows hex numbers / floating point (per POSIX)
 		"strtod": true, // GoAWK allows hex numbers / floating point (per POSIX)
-
-		"gsubtst2": true, // TODO: coregex
-		"gsubtst3": true, // TODO: coregex
-		"gsubtst4": true, // TODO: coregex
 	}
 
 	dontRunOnWindows := map[string]bool{
