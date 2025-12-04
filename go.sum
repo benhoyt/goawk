@@ -1,4 +1,4 @@
-github.com/coregx/coregex v0.8.3 h1:dRuk6+EgXqls+pj1k2eb6Ku3kufiHcHhUZ2kQ7rvKRo=
-github.com/coregx/coregex v0.8.3/go.mod h1:kG2JlfN/gpUggS6WDwx6FT3E8KFvcZSAiwQP4tMveJc=
+github.com/coregx/coregex v0.8.4 h1:uq8uOLVgEbckeqTpeoP83B5+Ow3ETdIiiPtjVxLLC60=
+github.com/coregx/coregex v0.8.4/go.mod h1:kG2JlfN/gpUggS6WDwx6FT3E8KFvcZSAiwQP4tMveJc=
 golang.org/x/sys v0.38.0 h1:3yZWxaJjBmCWXqhN1qh02AkOnCQ1poK6oF+a7xWL6Gc=
 golang.org/x/sys v0.38.0/go.mod h1:OgkHotnGiDImocRcuBABYBEXf8A9a87e/uXjp9XT3ks=
