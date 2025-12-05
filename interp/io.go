@@ -10,11 +10,12 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
 	"unicode/utf8"
+
+	regexp "github.com/coregx/coregex"
 
 	"github.com/benhoyt/goawk/internal/resolver"
 	. "github.com/benhoyt/goawk/lexer"

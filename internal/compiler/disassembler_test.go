@@ -2,9 +2,10 @@ package compiler
 
 import (
 	"bytes"
-	"regexp"
 	"strings"
 	"testing"
+
+	regexp "github.com/coregx/coregex"
 )
 
 func TestDisassembler(t *testing.T) {

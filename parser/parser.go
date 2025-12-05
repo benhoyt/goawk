@@ -7,9 +7,10 @@ package parser
 import (
 	"fmt"
 	"io"
-	"regexp"
 	"strconv"
 	"strings"
+
+	regexp "github.com/coregx/coregex"
 
 	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/internal/compiler"

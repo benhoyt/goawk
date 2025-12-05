@@ -4,8 +4,9 @@ package compiler
 import (
 	"fmt"
 	"math"
-	"regexp"
 	"strconv"
+
+	regexp "github.com/coregx/coregex"
 
 	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/internal/resolver"
