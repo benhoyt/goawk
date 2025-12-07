@@ -294,8 +294,8 @@ BEGIN {
 	{`BEGIN { print "0\n1\t2\r3\a4\b5\f6\v7\x408\xf" }  # !posix`, "", "0\n1\t2\r3\a4\b5\f6\v7@8\x0f\n", "", ""},
 	{`BEGIN { print "The \u201cQUICK\u201d brown fox \u1F602" }  # !gawk`, "", "The “QUICK” brown fox 😂\n", "", ""},
 	{`{ print /foo/ }`, "food\nfoo\nxfooz\nbar\n", "1\n1\n1\n0\n", "", ""},
-	//TODO	{`/[a-/`, "foo", "", "parse error at 1:1: error parsing regexp: invalid character class range: `a-)`", "terminated"},
-	//TODO	{`/\Q/  # !gawk`, "", "", "parse error at 1:1: error parsing regexp: missing closing ): `(?s:\\Q)`", ""}, // Gawk produces a warning (not an error), so skip
+	{`/[a-/`, "foo", "", "parse error at 1:1: error parsing regexp: invalid character class range: `a-)`", "terminated"},
+	{`/\Q/  # !gawk`, "", "", "parse error at 1:1: error parsing regexp: missing closing ): `(?s:\\Q)`", ""}, // Gawk produces a warning (not an error), so skip
 	{`/=foo/`, "=foo", "=foo\n", "", ""},
 	{`BEGIN { RS="x" } /^a.*c$/`, "a\nb\nc", "a\nb\nc\n", "", ""},
 	{`BEGIN { print "-12"+0, "+12"+0, " \t\r\n7foo"+0, ".5"+0, "5."+0, "+."+0 }`, "", "-12 12 7 0.5 5 0\n", "", ""},
@@ -616,8 +616,8 @@ function f() {
 	{`{ print gsub(/[0-9]/, "\\z"); print $0 }`, "0123x. 42y", "6\n\\z\\z\\z\\zx. \\z\\zy\n", "", ""},
 	{`{ print gsub("0", "x\\\\y"); print $0 }  # !awk !gawk -- our behaviour is per POSIX spec (gawk -P and mawk)`,
 		"0", "1\nx\\y\n", "", ""},
-	//TODO	{`sub("", "\\e", FS)  # !awk !gawk`, "foo bar\nbaz buz\n", "",
-	//TODO		"invalid regex \"\\\\e \": error parsing regexp: invalid escape sequence: `\\e`", ""},
+	{`sub("", "\\e", FS)  # !awk !gawk`, "foo bar\nbaz buz\n", "",
+		"invalid regex \"\\\\e \": error parsing regexp: invalid escape sequence: `\\e`", ""},
 	// ensure leftmost-longest matching like other awks
 	{`BEGIN { s = "#!a"; sub(/(#|#!)/, "", s); print s }`, "", "a\n", "", ""},
 
