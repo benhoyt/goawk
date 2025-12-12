@@ -85,7 +85,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        go: ['1.25', '1.18']
+        go: ['1.25']  # TODO: '1.18' on macOS not working right now (403 when downloading)
 
     name: Go ${{ matrix.go }} on macOS
 
