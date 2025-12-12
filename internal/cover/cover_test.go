@@ -64,5 +64,5 @@ func TestAnnotatingLogicCorrectness(t *testing.T) {
 }
 
 func normalizeNewlines(b []byte) []byte {
-	return bytes.Replace(b, []byte("\r\n"), []byte{'\n'}, -1)
+	return bytes.ReplaceAll(b, []byte("\r\n"), []byte{'\n'})
 }

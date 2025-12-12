@@ -17,7 +17,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/benhoyt/goawk/internal/resolver"
-	. "github.com/benhoyt/goawk/lexer"
+	"github.com/benhoyt/goawk/lexer"
 )
 
 // Print a line of output followed by a newline
@@ -98,7 +98,7 @@ func (p *interp) writeCSV(output io.Writer, fields []string) error {
 
 // Determine the output stream for given redirect token and
 // destination (file or pipe name)
-func (p *interp) getOutputStream(redirect Token, destValue value) (io.Writer, error) {
+func (p *interp) getOutputStream(redirect lexer.Token, destValue value) (io.Writer, error) {
 	name := p.toString(destValue)
 	if _, ok := p.inputStreams[name]; ok {
 		return nil, newError("can't write to reader stream")
@@ -108,7 +108,7 @@ func (p *interp) getOutputStream(redirect Token, destValue value) (io.Writer, er
 	}
 
 	switch redirect {
-	case GREATER, APPEND:
+	case lexer.GREATER, lexer.APPEND:
 		// Write or append to file
 		if name == "-" {
 			// filename of "-" means write to stdout, eg: print "x" >"-"
@@ -123,7 +123,7 @@ func (p *interp) getOutputStream(redirect Token, destValue value) (io.Writer, er
 		}
 		p.flushOutputAndError() // ensure synchronization
 		flags := os.O_CREATE | os.O_WRONLY
-		if redirect == GREATER {
+		if redirect == lexer.GREATER {
 			flags |= os.O_TRUNC
 		} else {
 			flags |= os.O_APPEND
@@ -136,7 +136,7 @@ func (p *interp) getOutputStream(redirect Token, destValue value) (io.Writer, er
 		p.outputStreams[name] = out
 		return out, nil
 
-	case PIPE:
+	case lexer.PIPE:
 		// Pipe to command
 		if p.noExec {
 			return nil, newError("can't write to pipe due to NoExec")
@@ -737,7 +737,7 @@ func (p *interp) nextLine() (string, error) {
 					// Yep, set variable to value and keep going
 					name, val := matches[1], matches[2]
 					// Oddly, var=value args must interpret escapes (issue #129)
-					unescaped, err := Unescape(val)
+					unescaped, err := lexer.Unescape(val)
 					if err == nil {
 						val = unescaped
 					}
@@ -798,8 +798,8 @@ func writeOutput(w io.Writer, s string, crlfNewline bool) error {
 		// First normalize to \n, then convert all newlines to \r\n
 		// (on Windows). NOTE: creating two new strings is almost
 		// certainly slow; would be better to create a custom Writer.
-		s = strings.Replace(s, "\r\n", "\n", -1)
-		s = strings.Replace(s, "\n", "\r\n", -1)
+		s = strings.ReplaceAll(s, "\r\n", "\n")
+		s = strings.ReplaceAll(s, "\n", "\r\n")
 	}
 	_, err := io.WriteString(w, s)
 	return err

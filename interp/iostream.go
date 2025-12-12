@@ -121,7 +121,7 @@ func newOutCmdStream(cmd *exec.Cmd) (outputStream, error) {
 	}
 	err = cmd.Start()
 	if err != nil {
-		w.Close()
+		_ = w.Close()
 		return nil, err
 	}
 	out := &outCmdStream{bufio.NewWriterSize(w, outputBufSize), w, cmd, notClosedExitCode, false}
@@ -202,7 +202,7 @@ func newInCmdStream(cmd *exec.Cmd) (inputStream, error) {
 	}
 	err = cmd.Start()
 	if err != nil {
-		r.Close()
+		_ = r.Close()
 		return nil, err
 	}
 	return &inCmdStream{r, cmd, notClosedExitCode, false}, nil
