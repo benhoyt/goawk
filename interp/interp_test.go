@@ -1861,6 +1861,9 @@ func TestENDConsumesInput(t *testing.T) {
 	}
 	// Ensure there's no input remaining to be read.
 	b, err := io.ReadAll(input)
+	if err != nil {
+		t.Fatalf("error reading input: %v", err)
+	}
 	if string(b) != "" {
 		t.Fatalf("input expected/got:\n%q\n%q", "", string(b))
 	}
@@ -2205,7 +2208,7 @@ func benchmarkProgram(b *testing.B, funcs map[string]interface{},
 	if expected != "" {
 		expected += "\n"
 	}
-	outStr := strings.Replace(outBuf.String(), "\r\n", "\n", -1)
+	outStr := strings.ReplaceAll(outBuf.String(), "\r\n", "\n")
 	if outStr != expected {
 		b.Fatalf("expected/got:\n%q\n%q", expected, outStr)
 	}
@@ -2997,5 +3000,5 @@ func BenchmarkCSVOutputWriter(b *testing.B) {
 }
 
 func normalizeNewlines(s string) string {
-	return strings.Replace(s, "\r\n", "\n", -1)
+	return strings.ReplaceAll(s, "\r\n", "\n")
 }

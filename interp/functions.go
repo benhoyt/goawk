@@ -14,7 +14,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/benhoyt/goawk/internal/resolver"
-	. "github.com/benhoyt/goawk/lexer"
+	"github.com/benhoyt/goawk/lexer"
 )
 
 // Call native-defined function with given name and arguments, return
@@ -181,7 +181,7 @@ var errorType = reflect.TypeOf((*error)(nil)).Elem()
 // AWK, return an *interp.Error if not. This checks that f is actually
 // a function, and that its parameter and return types are good.
 func checkNativeFunc(name string, f interface{}) error {
-	if KeywordToken(name) != ILLEGAL {
+	if lexer.KeywordToken(name) != lexer.ILLEGAL {
 		return newError("can't use keyword %q as native function name", name)
 	}
 

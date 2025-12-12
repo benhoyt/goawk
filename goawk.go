@@ -450,7 +450,7 @@ func showSourceLine(src []byte, pos lexer.Position) {
 	srcLine := string(lines[pos.Line-1])
 	numTabs := strings.Count(srcLine[:pos.Column-1], "\t")
 	runeColumn := utf8.RuneCountInString(srcLine[:pos.Column-1])
-	fmt.Fprintln(os.Stderr, strings.Replace(srcLine, "\t", "    ", -1))
+	fmt.Fprintln(os.Stderr, strings.ReplaceAll(srcLine, "\t", "    "))
 	fmt.Fprintln(os.Stderr, strings.Repeat(" ", runeColumn)+strings.Repeat("   ", numTabs)+"^")
 }
 

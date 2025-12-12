@@ -465,7 +465,7 @@ func IsLValue(expr Expr) bool {
 
 // formatRegex formats the regex string r.
 func formatRegex(r string) string {
-	escaped := strings.Replace(r, "/", `\/`, -1)
+	escaped := strings.ReplaceAll(r, "/", `\/`)
 	return "/" + escaped + "/"
 }
 

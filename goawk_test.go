@@ -107,7 +107,7 @@ func TestAWK(t *testing.T) {
 			if err != nil && !errorExits[info.Name()] {
 				t.Fatalf("error running %s: %v", awkExe, err)
 			}
-			expected = bytes.Replace(expected, []byte{0}, []byte("<00>"), -1)
+			expected = bytes.ReplaceAll(expected, []byte{0}, []byte("<00>"))
 			expected = normalizeNewlines(expected)
 			if sortLines[info.Name()] {
 				expected = sortedLines(expected)
@@ -127,7 +127,7 @@ func TestAWK(t *testing.T) {
 			if err != nil && !errorExits[info.Name()] {
 				t.Fatal(err)
 			}
-			output = bytes.Replace(output, []byte{0}, []byte("<00>"), -1)
+			output = bytes.ReplaceAll(output, []byte{0}, []byte("<00>"))
 			output = normalizeNewlines(output)
 			if randTests[info.Name()] || knownDifferent[info.Name()] {
 				// For tests that use rand(), run them to ensure they
@@ -472,7 +472,7 @@ func runGoAWKRaw(args []string, stdin string) (stdout, stderr string, err error)
 	cmd.Stderr = errBuf
 	output, err := cmd.Output()
 	stdout = string(output)
-	stderr = string(errBuf.Bytes())
+	stderr = errBuf.String()
 	return stdout, stderr, err
 }
 
@@ -574,7 +574,7 @@ func TestWildcards(t *testing.T) {
 			if err != nil {
 				t.Fatalf("expected no error, got %v (%q)", err, stderr)
 			}
-			stdout = strings.Replace(stdout, "\\", "/", -1)
+			stdout = strings.ReplaceAll(stdout, "\\", "/")
 			if stdout != test.output {
 				t.Fatalf("expected %q, got %q", test.output, stdout)
 			}
@@ -606,7 +606,7 @@ BEGIN { FILENAME = 10; print(FILENAME, FILENAME<2) }
 }
 
 func normalizeNewlines(b []byte) []byte {
-	return bytes.Replace(b, []byte("\r\n"), []byte{'\n'}, -1)
+	return bytes.ReplaceAll(b, []byte("\r\n"), []byte{'\n'})
 }
 
 func TestGoAWKSpecificOptions(t *testing.T) {
