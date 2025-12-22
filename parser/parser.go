@@ -43,7 +43,7 @@ type ParserConfig struct {
 
 	// Map of named Go functions to allow calling from AWK. See docs
 	// on interp.Config.Funcs for details.
-	Funcs map[string]interface{}
+	Funcs map[string]any
 }
 
 func (c *ParserConfig) toResolverConfig() *resolver.Config {
@@ -1069,7 +1069,7 @@ func (p *parser) matches(operators ...Token) bool {
 
 // Format given string and args with Sprintf and return *ParseError
 // with that message and the current position.
-func (p *parser) errorf(format string, args ...interface{}) error {
+func (p *parser) errorf(format string, args ...any) error {
 	return ast.PosErrorf(p.pos, format, args...)
 }
 

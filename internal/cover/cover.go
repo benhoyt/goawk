@@ -64,7 +64,7 @@ func (cover *Cover) Annotate(prog *ast.Program) {
 }
 
 // WriteProfile writes coverage data to a file at the given path.
-func (cover *Cover) WriteProfile(path string, data map[string]interface{}) (err error) {
+func (cover *Cover) WriteProfile(path string, data map[string]any) (err error) {
 	// 1a. If file doesn't exist - create and write cover mode line
 	// 1b. If file exists and coverappend=true  - open it for writing in append mode
 	// 1c. If file exists and coverappend=false - truncate it and follow 1a.
@@ -125,7 +125,7 @@ func (cover *Cover) WriteProfile(path string, data map[string]interface{}) (err 
 	return nil
 }
 
-func dataToInts(data map[string]interface{}) (map[int]int, error) {
+func dataToInts(data map[string]any) (map[int]int, error) {
 	res := make(map[int]int)
 	for k, v := range data {
 		ki, err := strconv.Atoi(k)

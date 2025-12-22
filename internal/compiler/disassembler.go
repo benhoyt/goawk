@@ -432,7 +432,7 @@ func (d *disassembler) fetch() Opcode {
 }
 
 // Write formatted string to the disassembly output.
-func (d *disassembler) writef(format string, args ...interface{}) {
+func (d *disassembler) writef(format string, args ...any) {
 	if d.err != nil {
 		return
 	}
@@ -440,7 +440,7 @@ func (d *disassembler) writef(format string, args ...interface{}) {
 }
 
 // Write formatted opcode (with address and newline) to disassembly output.
-func (d *disassembler) writeOpf(format string, args ...interface{}) {
+func (d *disassembler) writeOpf(format string, args ...any) {
 	if d.err != nil {
 		return
 	}

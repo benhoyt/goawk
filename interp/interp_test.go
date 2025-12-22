@@ -1191,7 +1191,7 @@ func (b *concurrentBuffer) String() string {
 
 func testGoAWKBase(
 	t *testing.T, src, in, out, errStr string,
-	funcs map[string]interface{},
+	funcs map[string]any,
 	configure func(config *interp.Config),
 	transformFn func(string) string,
 ) {
@@ -1250,14 +1250,14 @@ func testGoAWKBase(
 
 func testGoAWK(
 	t *testing.T, src, in, out, errStr string,
-	funcs map[string]interface{}, configure func(config *interp.Config),
+	funcs map[string]any, configure func(config *interp.Config),
 ) {
 	testGoAWKBase(t, src, in, out, errStr, funcs, configure, normalizeNewlines)
 }
 
 func testGoAWKRaw(
 	t *testing.T, src, in, out, errStr string,
-	funcs map[string]interface{}, configure func(config *interp.Config),
+	funcs map[string]any, configure func(config *interp.Config),
 ) {
 	rawdata := func(s string) string { return s }
 	testGoAWKBase(t, src, in, out, errStr, funcs, configure, rawdata)
@@ -1269,28 +1269,28 @@ func TestNative(t *testing.T) {
 		in    string
 		out   string
 		err   string
-		funcs map[string]interface{}
+		funcs map[string]any
 	}{
 		{`BEGIN { print foo() }`, "", "", `parse error at 1:15: undefined function "foo"`,
 			nil},
 		{`BEGIN { print foo() }`, "", "\n", "",
-			map[string]interface{}{
+			map[string]any{
 				"foo": func() {},
 			}},
 		{`BEGIN { print foo() }`, "", "FOO\n", "",
-			map[string]interface{}{
+			map[string]any{
 				"foo": func() string { return "FOO" },
 			}},
 		{`BEGIN { print foo() }`, "", "BYTES\n", "",
-			map[string]interface{}{
+			map[string]any{
 				"foo": func() []byte { return []byte("BYTES") },
 			}},
 		{`BEGIN { print repeat("xy", 5) }`, "", "xyxyxyxyxy\n", "",
-			map[string]interface{}{
+			map[string]any{
 				"repeat": strings.Repeat,
 			}},
 		{`BEGIN { print repeat("xy", 5) }`, "", "xyxyxyxyxy\n", "",
-			map[string]interface{}{
+			map[string]any{
 				"repeat": strings.Repeat,
 			}},
 		{`
@@ -1299,7 +1299,7 @@ BEGIN {
 	print r1(), r1(5)
 	print r2(), r2(5)
 }`, "", "\n0 25\n0 25\n", "",
-			map[string]interface{}{
+			map[string]any{
 				"r0": func() {},
 				"r1": func(n int) int { return n * n },
 				"r2": func(n int) (int, error) {
@@ -1310,7 +1310,7 @@ BEGIN {
 BEGIN {
 	print r2()
 }`, "", "", "NATIVE ERROR",
-			map[string]interface{}{
+			map[string]any{
 				"r2": func(n int) (int, error) {
 					return n * n, fmt.Errorf("NATIVE ERROR")
 				},
@@ -1346,7 +1346,7 @@ BEGIN {
 ..Foo bar.1234
 ..Foo bar.1234
 `, "",
-			map[string]interface{}{
+			map[string]any{
 				"bool": func(b bool) bool { return b },
 				"i":    func(n int) int { return n },
 				"i8":   func(n int8) int8 { return n },
@@ -1378,7 +1378,7 @@ BEGIN {
 123 456
 123 456 789
 `, "",
-			map[string]interface{}{
+			map[string]any{
 				"sum": func(args ...int) int {
 					sum := 0
 					for _, a := range args {
@@ -1387,7 +1387,7 @@ BEGIN {
 					return sum
 				},
 				"fmt_ints": func(s string, args ...int) string {
-					fmtArgs := make([]interface{}, len(args))
+					fmtArgs := make([]any, len(args))
 					for i, a := range args {
 						fmtArgs[i] = a
 					}
@@ -1395,108 +1395,108 @@ BEGIN {
 				},
 			}},
 		{`BEGIN { 0 }`, "", "", `native function "f" is not a function`,
-			map[string]interface{}{
+			map[string]any{
 				"f": 0,
 			}},
 		{`BEGIN { 1 }`, "", "", `native function "g" param 0 is not int or string`,
-			map[string]interface{}{
+			map[string]any{
 				"g": func(s complex64) {},
 			}},
 		{`BEGIN { 2 }`, "", "", `native function "g" param 2 is not int or string`,
-			map[string]interface{}{
+			map[string]any{
 				"g": func(x, y int, s []int, t string) {},
 			}},
 		{`BEGIN { 3 }`, "", "", `native function "h" param 0 is not int or string`,
-			map[string]interface{}{
+			map[string]any{
 				"h": func(a ...map[string]int) {},
 			}},
 		{`BEGIN { 4 }`, "", "", `native function "h" param 1 is not int or string`,
-			map[string]interface{}{
+			map[string]any{
 				"h": func(x int, a ...complex64) {},
 			}},
 		{`BEGIN { 5 }`, "", "", `native function "r" return value is not int or string`,
-			map[string]interface{}{
+			map[string]any{
 				"r": func() map[string]int { return nil },
 			}},
 		{`BEGIN { 6 }`, "", "", `native function "r" first return value is not int or string`,
-			map[string]interface{}{
+			map[string]any{
 				"r": func() (map[string]int, error) { return nil, nil },
 			}},
 		{`BEGIN { 7 }`, "", "", `native function "r" second return value is not an error`,
-			map[string]interface{}{
+			map[string]any{
 				"r": func() (int, int) { return 0, 0 },
 			}},
 		{`BEGIN { 8 }`, "", "", `native function "r" returns more than two values`,
-			map[string]interface{}{
+			map[string]any{
 				"r": func() (int, int, int) { return 0, 0, 0 },
 			}},
 		{`BEGIN { print f(), f(1, 2) }`, "", "", `parse error at 1:20: "f" called with more arguments than declared`,
-			map[string]interface{}{
+			map[string]any{
 				"f": func(n int) {},
 			}},
 		{`BEGIN { print split("x y", a) }`, "", "", `can't use keyword "split" as native function name`,
-			map[string]interface{}{
+			map[string]any{
 				"split": func() {},
 			}},
 		{`
 function foo(n) { return n * 2 }
 BEGIN { print foo(42) }
-`, "", "84\n", "", map[string]interface{}{
+`, "", "84\n", "", map[string]any{
 			"foo": func(n int) int { return n / 2 },
 		}},
 		{`BEGIN { x=3; print foo(x) }`, "", "9\n", ``,
-			map[string]interface{}{
+			map[string]any{
 				"foo": func(n int) int { return n * n },
 			}},
 		{`
 function bar(n) { return foo(n) }
 BEGIN { x=4; y=5; print foo(x), bar(y) }
 `, "", "16 25\n", ``,
-			map[string]interface{}{
+			map[string]any{
 				"foo": func(n int) int { return n * n },
 			}},
 		{`BEGIN { a["x"]=1; print foo(a) }`, "", "",
 			`parse error at 1:29: can't use array "a" as scalar`,
-			map[string]interface{}{
+			map[string]any{
 				"foo": func(n int) int { return n * n },
 			}},
 		{`BEGIN { print foo(a); a["x"]=1 }`, "", "",
 			`parse error at 1:23: can't use scalar "a" as array`,
-			map[string]interface{}{
+			map[string]any{
 				"foo": func(n int) int { return n * n },
 			}},
 		{`BEGIN { x["x"]=1; print f(x) }  function f(a) { return foo(a) }`, "", "",
 			`parse error at 1:27: can't pass array "x" as scalar param`,
-			map[string]interface{}{
+			map[string]any{
 				"foo": func(n int) int { return n * n },
 			}},
 		{`function f(a) { return foo(a) }  BEGIN { x["x"]=1; print f(x) }`, "", "",
 			`parse error at 1:60: can't pass array "x" as scalar param`,
-			map[string]interface{}{
+			map[string]any{
 				"foo": func(n int) int { return n * n },
 			}},
 		{`BEGIN { x["x"]=1; print f(x["x"]) }  function f(a) { return foo(a) }`, "", "1\n", "",
-			map[string]interface{}{
+			map[string]any{
 				"foo": func(n int) int { return n * n },
 			}},
 		{`BEGIN { print add(1, add(2, 3)) }`, "", "6\n", "",
-			map[string]interface{}{
+			map[string]any{
 				"add": func(a, b float64) float64 { return a + b },
 			}},
 		{`BEGIN { print add(1, add(2, 3)) }`, "", "6\n", "",
-			map[string]interface{}{
+			map[string]any{
 				"add": func(a, b float32) float32 { return a + b },
 			}},
 		{`BEGIN { print foo(x) }`, "", "0\n", "",
-			map[string]interface{}{
+			map[string]any{
 				"foo": func(i int) int { return i },
 			}},
 		{`BEGIN { print foo(_var) }`, "", "42\n", "",
-			map[string]interface{}{
+			map[string]any{
 				"foo": func(i int) int { return i },
 			}},
 		{`function foo(y) { return y/2 }  BEGIN { print foo(_var) }`, "", "21\n", "",
-			map[string]interface{}{
+			map[string]any{
 				"foo": func(i int) int { return i },
 			}},
 	}
@@ -2180,8 +2180,8 @@ func (r *sliceReader) Read(buf []byte) (int, error) {
 	return n, nil
 }
 
-func benchmarkProgram(b *testing.B, funcs map[string]interface{},
-	input, expected, srcFormat string, args ...interface{},
+func benchmarkProgram(b *testing.B, funcs map[string]any,
+	input, expected, srcFormat string, args ...any,
 ) {
 	b.StopTimer()
 	src := fmt.Sprintf(srcFormat, args...)
@@ -2492,7 +2492,7 @@ BEGIN {
 }
 
 func BenchmarkNativeFunc(b *testing.B) {
-	funcs := map[string]interface{}{
+	funcs := map[string]any{
 		"add": func(a, b float64) float64 { return a + b },
 	}
 	benchmarkProgram(b, funcs, "", "75", `

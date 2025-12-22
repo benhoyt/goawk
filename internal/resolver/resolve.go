@@ -115,7 +115,7 @@ type Config struct {
 
 	// Map of named Go functions to allow calling from AWK. See docs
 	// on interp.Config.Funcs for details.
-	Funcs map[string]interface{}
+	Funcs map[string]any
 }
 
 // Resolve assigns integer indexes to functions and variables, as well as
@@ -381,7 +381,7 @@ func (v *callGraphVisitor) Visit(node ast.Node) ast.Visitor {
 // mainVisitor records types of variables and performs various checks.
 type mainVisitor struct {
 	r           *resolver
-	nativeFuncs map[string]interface{}
+	nativeFuncs map[string]any
 	curFunc     string
 }
 
