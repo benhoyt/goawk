@@ -1,7 +1,6 @@
 // Don't run these on Windows, because newline handling means they don't pass.
 
 //go:build !windows
-// +build !windows
 
 package interp_test
 
@@ -66,7 +65,7 @@ func Example_funcs() {
 	src := `BEGIN { print sum(), sum(1), sum(2, 3, 4), repeat("xyz", 3) }`
 
 	parserConfig := &parser.ParserConfig{
-		Funcs: map[string]interface{}{
+		Funcs: map[string]any{
 			"sum": func(args ...float64) float64 {
 				sum := 0.0
 				for _, a := range args {

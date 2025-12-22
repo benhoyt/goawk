@@ -357,11 +357,10 @@ argsLoop:
 		},
 	}
 	for _, v := range vars {
-		equals := strings.IndexByte(v, '=')
-		if equals < 0 {
+		name, value, ok := strings.Cut(v, "=")
+		if !ok {
 			errorExitf("-v flag must be in format name=value")
 		}
-		name, value := v[:equals], v[equals+1:]
 		// Oddly, -v must interpret escapes (issue #129)
 		unescaped, err := lexer.Unescape(value)
 		if err == nil {
@@ -462,7 +461,7 @@ func errorExit(err error) {
 	errorExitf("%s", err)
 }
 
-func errorExitf(format string, args ...interface{}) {
+func errorExitf(format string, args ...any) {
 	fmt.Fprintf(os.Stderr, format+"\n", args...)
 	os.Exit(1)
 }

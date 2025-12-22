@@ -788,7 +788,7 @@ type PositionError struct {
 }
 
 // PosErrorf like fmt.Errorf, but with an explicit position.
-func PosErrorf(pos Position, format string, args ...interface{}) error {
+func PosErrorf(pos Position, format string, args ...any) error {
 	message := fmt.Sprintf(format, args...)
 	return &PositionError{pos, message}
 }

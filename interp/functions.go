@@ -142,7 +142,7 @@ type nativeFunc struct {
 }
 
 // Check and initialize native functions
-func (p *interp) initNativeFuncs(funcs map[string]interface{}) error {
+func (p *interp) initNativeFuncs(funcs map[string]any) error {
 	for name, f := range funcs {
 		err := checkNativeFunc(name, f)
 		if err != nil {
@@ -180,7 +180,7 @@ var errorType = reflect.TypeOf((*error)(nil)).Elem()
 // Check that native function with given name is okay to call from
 // AWK, return an *interp.Error if not. This checks that f is actually
 // a function, and that its parameter and return types are good.
-func checkNativeFunc(name string, f interface{}) error {
+func checkNativeFunc(name string, f any) error {
 	if lexer.KeywordToken(name) != lexer.ILLEGAL {
 		return newError("can't use keyword %q as native function name", name)
 	}
@@ -408,10 +408,10 @@ func (p *interp) sprintf(format string, args []value) (string, error) {
 	if len(types) > len(args) {
 		return "", newError("format error: got %d args, expected %d", len(args), len(types))
 	}
-	converted := make([]interface{}, 0, 7) // up to 7 args won't require heap allocation
+	converted := make([]any, 0, 7) // up to 7 args won't require heap allocation
 	for i, t := range types {
 		a := args[i]
-		var v interface{}
+		var v any
 		switch t {
 		case 's':
 			v = p.toString(a)

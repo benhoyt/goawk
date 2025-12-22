@@ -1,7 +1,6 @@
 // Fuzz tests for unexported functions for use with the Go 1.18 fuzzer.
 
 //go:build go1.18
-// +build go1.18
 
 package interp
 

@@ -880,7 +880,7 @@ func (p *interp) flushOutputAndError() {
 }
 
 // Print a message to the error output stream, flushing as necessary.
-func (p *interp) printErrorf(format string, args ...interface{}) {
+func (p *interp) printErrorf(format string, args ...any) {
 	if flusher, ok := p.output.(flusher); ok {
 		_ = flusher.Flush() // ensure synchronization
 	}

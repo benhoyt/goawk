@@ -64,13 +64,13 @@ func (p *Interpreter) Execute(config *Config) (int, error) {
 // Array returns a map representing the items in the named AWK array. AWK
 // numbers are included as type float64, strings (including "numeric strings")
 // are included as type string. If the named array does not exist, return nil.
-func (p *Interpreter) Array(name string) map[string]interface{} {
+func (p *Interpreter) Array(name string) map[string]any {
 	index, exists := p.interp.arrayIndexes[name]
 	if !exists {
 		return nil
 	}
 	array := p.interp.array(resolver.Global, index)
-	result := make(map[string]interface{}, len(array))
+	result := make(map[string]any, len(array))
 	for k, v := range array {
 		switch v.typ {
 		case typeNum:

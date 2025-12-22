@@ -55,7 +55,7 @@ func (e *Error) Error() string {
 	return e.message
 }
 
-func newError(format string, args ...interface{}) error {
+func newError(format string, args ...any) error {
 	return &Error{fmt.Sprintf(format, args...)}
 }
 
@@ -241,7 +241,7 @@ type Config struct {
 	//
 	// Functions defined with the "function" keyword in AWK code
 	// take precedence over functions in Funcs.
-	Funcs map[string]interface{}
+	Funcs map[string]any
 
 	// Set one or more of these to true to prevent unsafe behaviours,
 	// useful when executing untrusted scripts:
@@ -505,9 +505,9 @@ func (p *interp) setExecuteConfig(config *Config) error {
 		}
 	} else {
 		for _, kv := range os.Environ() {
-			eq := strings.IndexByte(kv, '=')
-			if eq >= 0 {
-				p.setArrayValue(resolver.Global, environIndex, kv[:eq], numStr(kv[eq+1:]))
+			key, val, ok := strings.Cut(kv, "=")
+			if ok {
+				p.setArrayValue(resolver.Global, environIndex, key, numStr(val))
 			}
 		}
 	}
@@ -1075,13 +1075,7 @@ func parseInputMode(s string) (mode IOMode, csvConfig CSVInputConfig, err error)
 		return DefaultMode, CSVInputConfig{}, newError("invalid input mode %q", fields[0])
 	}
 	for _, field := range fields[1:] {
-		key := field
-		val := ""
-		equals := strings.IndexByte(field, '=')
-		if equals >= 0 {
-			key = field[:equals]
-			val = field[equals+1:]
-		}
+		key, val, _ := strings.Cut(field, "=")
 		switch key {
 		case "separator":
 			r, n := utf8.DecodeRuneInString(val)
@@ -1142,13 +1136,7 @@ func parseOutputMode(s string) (mode IOMode, csvConfig CSVOutputConfig, err erro
 		return DefaultMode, CSVOutputConfig{}, newError("invalid output mode %q", fields[0])
 	}
 	for _, field := range fields[1:] {
-		key := field
-		val := ""
-		equals := strings.IndexByte(field, '=')
-		if equals >= 0 {
-			key = field[:equals]
-			val = field[equals+1:]
-		}
+		key, val, _ := strings.Cut(field, "=")
 		switch key {
 		case "separator":
 			r, n := utf8.DecodeRuneInString(val)
