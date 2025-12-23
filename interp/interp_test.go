@@ -889,7 +889,7 @@ BEGIN { x[1]=3; f5(x); print x[1] }
 	print $0
 }`, "", "foo\nbar\n", "", ""},
 	{`BEGIN { print "x" | "cat"; close("cat"); print "y" }`, "", "x\ny\n", "", ""},
-	{`BEGIN { print 1 >"/dev/stderr"; print 2 }  !windows-gawk`, "", "1\n2\n", "", ""},
+	{`BEGIN { print 1 >"/dev/stderr"; print 2 }  # !windows-gawk`, "", "1\n2\n", "", ""},
 
 	// Ensure data returned by getline (in various forms) is treated as numeric string
 	{`BEGIN { getline; print($0==0) }`, "0.0", "1\n", "", ""},
