@@ -35,7 +35,7 @@ $ echo -e 'name,amount\nBob,17.50\nJill,20\n"Boba Fett",100.00' | \
 137.5
 ```
 
-To use it in your Go programs, you can call `interp.Exec` directly for simple needs:
+To use it in your Go programs, you can call [`interp.Exec`](https://pkg.go.dev/github.com/benhoyt/goawk/interp#Exec) directly for simple needs:
 
 ```go
 input := strings.NewReader("foo bar\n\nbaz buz")
@@ -86,11 +86,11 @@ My intention is for GoAWK to conform to `awk`'s behavior and to the [POSIX AWK s
 
 Additional features GoAWK has over AWK:
 
-* It has proper support for CSV and TSV files ([documentation](https://github.com/benhoyt/goawk/blob/master/docs/csv.md)). Note that `awk` and `gawk` recently added basic CSV support too, with the `--csv` option.
-* It's the only AWK implementation we know with a code coverage feature ([documentation](https://github.com/benhoyt/goawk/blob/master/docs/cover.md)).
+* It has proper [support for CSV and TSV files](https://github.com/benhoyt/goawk/blob/master/docs/csv.md). Note that `awk` and `gawk` recently added basic CSV support too, with the `--csv` option.
+* It's the only AWK implementation we know with a [code coverage feature](https://github.com/benhoyt/goawk/blob/master/docs/cover.md).
 * It supports negative field indexes to access fields from the right, for example, `$-1` refers to the last field.
 * It's embeddable in your Go programs! You can even call custom Go functions from your AWK scripts.
-* Most AWK scripts are faster than `awk` and on a par with `gawk`, though usually slower than `mawk`. (See [benchmarks](https://benhoyt.com/writings/goawk-compiler-vm/#virtual-machine-results).)
+* Most AWK scripts are [faster](https://benhoyt.com/writings/goawk-compiler-vm/#virtual-machine-results) than `awk` and on a par with `gawk`, though usually slower than `mawk`.
 * The parser supports `'single-quoted strings'` in addition to `"double-quoted strings"`, primarily to make Windows one-liners easier when using the `cmd.exe` shell (which uses `"` as the quote character).
 
 Things AWK has over GoAWK:
