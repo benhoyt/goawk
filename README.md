@@ -6,18 +6,19 @@
 
 AWK is a fascinating text-processing language, and somehow after reading the delightfully-terse [*The AWK Programming Language*](https://ia802309.us.archive.org/25/items/pdfy-MgN0H1joIoDVoIC7/The_AWK_Programming_Language.pdf) I was inspired to write an interpreter for it in Go. So here it is, feature-complete and tested against "the one true AWK" and GNU AWK test suites.
 
-GoAWK is a POSIX-compatible version of AWK, and additionally has a CSV mode for reading and writing CSV and TSV files. This feature was sponsored by the [library of the University of Antwerp](https://www.uantwerpen.be/en/library/). Read the [CSV documentation](https://github.com/benhoyt/goawk/blob/master/docs/csv.md).
+GoAWK is a POSIX-compatible version of AWK, and additionally has a CSV mode for reading and writing CSV and TSV files (read the [CSV documentation](https://github.com/benhoyt/goawk/blob/master/docs/csv.md)).
 
 You can also read one of the articles I've written about GoAWK:
 
 * The original article about [how GoAWK works and performs](https://benhoyt.com/writings/goawk/)
 * How I converted the tree-walking interpreter to a [bytecode compiler and virtual machine](https://benhoyt.com/writings/goawk-compiler-vm/)
 * A description of why and how I added [CSV support](https://benhoyt.com/writings/goawk-csv/)
+* A description of the [code coverage feature](https://benhoyt.com/writings/goawk-coverage/), contributed by Volodymyr Gubarkov
 
 
 ## Basic usage
 
-To use the command-line version, simply use `go install` to install it, and then run it using `goawk` (assuming `~/go/bin` is in your `PATH`):
+To use the command-line version, download one of the [release binaries](https://github.com/benhoyt/goawk/releases). You can also use `go install` to build and install it from source, and then run it using `goawk` (assuming `~/go/bin` is in your `PATH`):
 
 ```shell
 $ go install github.com/benhoyt/goawk@latest
@@ -34,7 +35,7 @@ $ echo -e 'name,amount\nBob,17.50\nJill,20\n"Boba Fett",100.00' | \
 137.5
 ```
 
-To use it in your Go programs, you can call `interp.Exec()` directly for simple needs:
+To use it in your Go programs, you can call `interp.Exec` directly for simple needs:
 
 ```go
 input := strings.NewReader("foo bar\n\nbaz buz")
@@ -48,7 +49,7 @@ if err != nil {
 // baz
 ```
 
-Or you can use the `parser` module and then `interp.ExecProgram()` to control execution, set variables, and so on:
+Or you can use [`parser.ParseProgram`](https://pkg.go.dev/github.com/benhoyt/goawk/parser#ParseProgram) and then [`interp.ExecProgram`](https://pkg.go.dev/github.com/benhoyt/goawk/interp#ExecProgram) to control execution, set variables, and so on:
 
 ```go
 src := "{ print NR, tolower($0) }"
@@ -74,22 +75,22 @@ if err != nil {
 // 3:abc
 ```
 
-If you need to repeat execution of the same program on different inputs, you can call [`interp.New`](https://pkg.go.dev/github.com/benhoyt/goawk/interp#New) once, and then call the returned object's `Execute` method as many times as you need.
+If you need to repeat execution of the same program on different inputs, you can call [`interp.New`](https://pkg.go.dev/github.com/benhoyt/goawk/interp#New) once, and then call the returned object's [`Execute`](https://pkg.go.dev/github.com/benhoyt/goawk/interp#Interpreter.Execute) method as many times as you need.
 
-Read the [package documentation](https://pkg.go.dev/github.com/benhoyt/goawk) for more details.
+Read the [Go package documentation](https://pkg.go.dev/github.com/benhoyt/goawk) for more details.
 
 
 ## Differences from AWK
 
-The intention is for GoAWK to conform to `awk`'s behavior and to the [POSIX AWK spec](http://pubs.opengroup.org/onlinepubs/9699919799/utilities/awk.html), but this section describes some areas where it's different.
+My intention is for GoAWK to conform to `awk`'s behavior and to the [POSIX AWK spec](https://pubs.opengroup.org/onlinepubs/9799919799/utilities/awk.html), but this section describes some areas where it's different.
 
 Additional features GoAWK has over AWK:
 
-* It has proper support for CSV and TSV files ([read the documentation](https://github.com/benhoyt/goawk/blob/master/docs/csv.md)).
-* It's the only AWK implementation we know with a code coverage feature ([read the documentation](https://github.com/benhoyt/goawk/blob/master/docs/cover.md)).
+* It has proper support for CSV and TSV files ([documentation](https://github.com/benhoyt/goawk/blob/master/docs/csv.md)). Note that `awk` and `gawk` recently added basic CSV support too, with the `--csv` option.
+* It's the only AWK implementation we know with a code coverage feature ([documentation](https://github.com/benhoyt/goawk/blob/master/docs/cover.md)).
 * It supports negative field indexes to access fields from the right, for example, `$-1` refers to the last field.
 * It's embeddable in your Go programs! You can even call custom Go functions from your AWK scripts.
-* Most AWK scripts are faster than `awk` and on a par with `gawk`, though usually slower than `mawk`. (See [recent benchmarks](https://benhoyt.com/writings/goawk-compiler-vm/#virtual-machine-results).)
+* Most AWK scripts are faster than `awk` and on a par with `gawk`, though usually slower than `mawk`. (See [benchmarks](https://benhoyt.com/writings/goawk-compiler-vm/#virtual-machine-results).)
 * The parser supports `'single-quoted strings'` in addition to `"double-quoted strings"`, primarily to make Windows one-liners easier when using the `cmd.exe` shell (which uses `"` as the quote character).
 
 Things AWK has over GoAWK:
@@ -105,7 +106,7 @@ This project has a good suite of tests, which include my own intepreter tests, t
 
 ## AWKGo
 
-The GoAWK repository also includes the creatively-named AWKGo, an AWK-to-Go compiler. This is experimental and is not subject to the stability requirements of GoAWK itself. You can [read more about AWKGo](https://benhoyt.com/writings/awkgo/) or browse the code on the [`awkgo` branch](https://github.com/benhoyt/goawk/tree/awkgo/awkgo).
+The GoAWK repository also includes AWKGo, an AWK-to-Go compiler. This is experimental and is not subject to the stability requirements of GoAWK itself. You can [read more about AWKGo](https://benhoyt.com/writings/awkgo/) or browse the code on the [`awkgo` branch](https://github.com/benhoyt/goawk/tree/awkgo/awkgo).
 
 
 ## License
