@@ -889,6 +889,7 @@ BEGIN { x[1]=3; f5(x); print x[1] }
 	print $0
 }`, "", "foo\nbar\n", "", ""},
 	{`BEGIN { print "x" | "cat"; close("cat"); print "y" }`, "", "x\ny\n", "", ""},
+	{`BEGIN { print 1 >"/dev/stderr"; print 2 }  # !windows-gawk`, "", "1\n2\n", "", ""},
 
 	// Ensure data returned by getline (in various forms) is treated as numeric string
 	{`BEGIN { getline; print($0==0) }`, "0.0", "1\n", "", ""},
@@ -1640,11 +1641,12 @@ func TestShellCommand(t *testing.T) {
 	}
 }
 
-func TestDevStderrWindows(t *testing.T) {
-	if runtime.GOOS != "windows" {
-		t.Skip("skipping on non-Windows platform")
-	}
-	prog, err := parser.ParseProgram([]byte(`BEGIN { print "Error!" >"/dev/stderr" }`), nil)
+func TestDevStdfile(t *testing.T) {
+	prog, err := parser.ParseProgram([]byte(`
+BEGIN {
+    print "Output." >"/dev/stdout"
+    print "Error!" >"/dev/stderr"
+}`), nil)
 	if err != nil {
 		t.Fatalf("error parsing: %v", err)
 	}
@@ -1658,9 +1660,13 @@ func TestDevStderrWindows(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
-	if outBuf.String() != "" {
-		t.Fatalf("expected empty stdout, got %q", outBuf.String())
+
+	gotOutput := normalizeNewlines(outBuf.String())
+	expectedOutput := "Output.\n"
+	if gotOutput != expectedOutput {
+		t.Fatalf("expected stdout %q, got %q", expectedOutput, outBuf.String())
 	}
+
 	gotError := normalizeNewlines(errBuf.String())
 	expectedError := "Error!\n"
 	if gotError != expectedError {
