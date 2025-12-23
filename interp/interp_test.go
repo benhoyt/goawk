@@ -978,6 +978,10 @@ BEGIN { x[1]=3; f5(x); print x[1] }
 	{"BEGIN { ($i)++ }", "", "", "parse error at 1:16: expected lvalue after ++", "syntax"},
 	{"BEGIN { rand() = 1 }", "", "", "parse error at 1:9: expected lvalue before =", "syntax"},
 	{"BEGIN { 1 && rand()=1 }", "", "", "parse error at 1:9: expected lvalue before =", "syntax"},
+	{"{ break }", "", "", "parse error at 1:3: break must be inside a loop body", "not allowed"},
+	{"{ continue }", "", "", "parse error at 1:3: continue must be inside a loop body", "continue"},
+	{`{ sub(/x/, "y", 42) }  # !gawk`, "", "", "parse error at 1:17: 3rd arg to sub/gsub must be lvalue", ""},
+	{"{ a[] }", "", "", "parse error at 1:5: expected expression instead of ]", "syntax"},
 
 	// Hex floating point and other number conversions
 	{`{ print $1+0 }  # +posix`, `
