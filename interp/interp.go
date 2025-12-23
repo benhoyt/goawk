@@ -133,6 +133,9 @@ type interp struct {
 	outputMode       IOMode
 	csvOutputConfig  CSVOutputConfig
 
+	savedFieldSep      string
+	savedFieldSepRegex *regexp.Regexp
+
 	// Parsed program, compiled functions and constants
 	program   *parser.Program
 	functions []compiler.Function
@@ -412,6 +415,7 @@ func newInterp(program *parser.Program) *interp {
 	p.convertFormat = "%.6g"
 	p.outputFormat = "%.6g"
 	p.fieldSep = " "
+	p.savedFieldSep = " "
 	p.recordSep = "\n"
 	p.outputFieldSep = " "
 	p.outputRecordSep = "\n"

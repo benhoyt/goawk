@@ -132,6 +132,8 @@ func (p *interp) resetVars() {
 	p.outputFormat = "%.6g"
 	p.fieldSep = " "
 	p.fieldSepRegex = nil
+	p.savedFieldSep = " "
+	p.savedFieldSepRegex = nil
 	p.recordSep = "\n"
 	p.recordSepRegex = nil
 	p.recordTerminator = ""

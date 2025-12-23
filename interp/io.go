@@ -626,12 +626,18 @@ func (p *interp) setLine(line string, isTrueStr bool) {
 	p.lineIsTrueStr = isTrueStr
 	p.haveFields = false
 	p.reparseCSV = true
+
+	// POSIX says that fields should be evaluated as if they were split using
+	// the value of FS at the time that record's value was read. Because we
+	// split fields lazily, we need to save FS here.
+	p.savedFieldSep = p.fieldSep
+	p.savedFieldSepRegex = p.fieldSepRegex
 }
 
 // Splits on FS as a regex, appending each field to fields and returning the
 // new slice (for efficiency).
 func (p *interp) splitOnFieldSepRegex(fields []string, line string) []string {
-	indices := p.fieldSepRegex.FindAllStringIndex(line, -1)
+	indices := p.savedFieldSepRegex.FindAllStringIndex(line, -1)
 	prevIndex := 0
 	for _, match := range indices {
 		start, end := match[0], match[1]
@@ -671,14 +677,14 @@ func (p *interp) ensureFields() {
 				p.fields = nil
 			}
 		}
-	case p.fieldSep == " ":
+	case p.savedFieldSep == " ":
 		// FS space (default) means split fields on any whitespace
 		p.fields = strings.Fields(p.line)
 	case p.line == "":
 		p.fields = nil
-	case utf8.RuneCountInString(p.fieldSep) <= 1:
+	case utf8.RuneCountInString(p.savedFieldSep) <= 1:
 		// 1-char FS is handled as plain split (not regex)
-		p.fields = strings.Split(p.line, p.fieldSep)
+		p.fields = strings.Split(p.line, p.savedFieldSep)
 	default:
 		// Split on FS as a regex
 		p.fields = p.splitOnFieldSepRegex(p.fields[:0], p.line)
@@ -687,7 +693,7 @@ func (p *interp) ensureFields() {
 	// Special case for when RS=="" and FS is single character,
 	// split on newline in addition to FS. See more here:
 	// https://www.gnu.org/software/gawk/manual/html_node/Multiple-Line.html
-	if p.inputMode == DefaultMode && p.recordSep == "" && utf8.RuneCountInString(p.fieldSep) == 1 {
+	if p.inputMode == DefaultMode && p.recordSep == "" && utf8.RuneCountInString(p.savedFieldSep) == 1 {
 		fields := make([]string, 0, len(p.fields))
 		for _, field := range p.fields {
 			lines := strings.Split(field, "\n")
