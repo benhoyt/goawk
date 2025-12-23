@@ -167,12 +167,17 @@ func TestExecuteContextCancel(t *testing.T) {
 }
 
 func TestExecuteContextSystemTimeout(t *testing.T) {
+	start := time.Now()
 	interpreter := newInterp(t, `BEGIN { print system("sleep 1") }`)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Millisecond)
 	defer cancel()
 	_, err := interpreter.ExecuteContext(ctx, nil)
 	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("expected DeadlineExceeded error, got: %v", err)
+	}
+	elapsed := time.Since(start)
+	if elapsed > 500*time.Millisecond {
+		t.Fatalf("should have taken ~5ms, took %v", elapsed)
 	}
 }
 
