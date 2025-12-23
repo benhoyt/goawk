@@ -317,6 +317,14 @@ func TestUnescape(t *testing.T) {
 	}
 }
 
+func TestPositionString(t *testing.T) {
+	pos := Position{Line: 42, Column: 7}
+	expected := "42:7"
+	if pos.String() != expected {
+		t.Errorf("expected %q, got %q", expected, pos.String())
+	}
+}
+
 func benchmarkLexer(b *testing.B, repeat int, source string) {
 	fullSource := []byte(strings.Repeat(source+"\n", repeat))
 	b.ResetTimer()
@@ -388,7 +396,7 @@ func Example() {
 		if tok == EOF {
 			break
 		}
-		fmt.Printf("%d:%d %s %q\n", pos.Line, pos.Column, tok, val)
+		fmt.Printf("%s %s %q\n", pos, tok, val)
 	}
 	// Output:
 	// 1:1 $ ""
