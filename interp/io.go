@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
-	"runtime"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -117,11 +116,18 @@ func (p *interp) getOutputStream(redirect lexer.Token, destValue value) (io.Writ
 		if p.noFileWrites {
 			return nil, newError("can't write to file due to NoFileWrites")
 		}
-		if runtime.GOOS == "windows" && name == "/dev/stderr" {
-			// Special case /dev/stderr on Windows to allow portably printing to stderr.
-			return p.errorOutput, nil
-		}
+
 		p.flushOutputAndError() // ensure synchronization
+
+		// No need to open /dev/stdout or /dev/stderr, just use existing streams.
+		// This also makes writing to these stream names portable on Windows.
+		switch name {
+		case "/dev/stderr":
+			return p.errorOutput, nil
+		case "/dev/stdout":
+			return p.output, nil
+		}
+
 		flags := os.O_CREATE | os.O_WRONLY
 		if redirect == lexer.GREATER {
 			flags |= os.O_TRUNC
