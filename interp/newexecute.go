@@ -163,8 +163,8 @@ func (p *Interpreter) ResetRand() {
 // set an execution timeout or cancel the execution. For efficiency, the
 // context is only tested every 1000 virtual machine instructions.
 //
-// Context handling is not preemptive: currently long-running operations like
-// system() won't be interrupted.
+// Context handling is not preemptive: some long-running operations may not
+// be interrupted when the context is cancelled.
 func (p *Interpreter) ExecuteContext(ctx context.Context, config *Config) (int, error) {
 	p.interp.resetCore()
 	p.interp.checkCtx = ctx != context.Background() && ctx != context.TODO()

@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/benhoyt/goawk/internal/resolver"
@@ -170,11 +171,16 @@ func (p *interp) execShell(code string) *exec.Cmd {
 	executable := p.shellCommand[0]
 	args := p.shellCommand[1:]
 	args = append(args, code)
+
+	var cmd *exec.Cmd
 	if p.checkCtx {
-		return exec.CommandContext(p.ctx, executable, args...)
+		cmd = exec.CommandContext(p.ctx, executable, args...)
 	} else {
-		return exec.Command(executable, args...)
+		cmd = exec.Command(executable, args...)
 	}
+	// Ensure stdout/stderr pipes being held open don't keep process running.
+	cmd.WaitDelay = 250 * time.Millisecond
+	return cmd
 }
 
 // Get input Scanner to use for "getline" based on file name
