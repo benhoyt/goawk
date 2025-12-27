@@ -475,10 +475,10 @@ func (p *interp) setExecuteConfig(config *Config) error {
 
 	// Set up ARGV and other variables from config
 	argvIndex := p.arrayIndexes["ARGV"]
-	p.setArrayValue(resolver.Global, argvIndex, "0", str(config.Argv0))
+	p.setArrayValue(resolver.Global, argvIndex, "0", str(config.Argv0, p.chars))
 	p.argc = len(config.Args) + 1
 	for i, arg := range config.Args {
-		p.setArrayValue(resolver.Global, argvIndex, strconv.Itoa(i+1), numStr(arg))
+		p.setArrayValue(resolver.Global, argvIndex, strconv.Itoa(i+1), numStr(arg, p.chars))
 	}
 	p.noArgVars = config.NoArgVars
 	p.filenameIndex = 1
@@ -505,13 +505,13 @@ func (p *interp) setExecuteConfig(config *Config) error {
 	environIndex := p.arrayIndexes["ENVIRON"]
 	if config.Environ != nil {
 		for i := 0; i < len(config.Environ); i += 2 {
-			p.setArrayValue(resolver.Global, environIndex, config.Environ[i], numStr(config.Environ[i+1]))
+			p.setArrayValue(resolver.Global, environIndex, config.Environ[i], numStr(config.Environ[i+1], p.chars))
 		}
 	} else {
 		for _, kv := range os.Environ() {
 			key, val, ok := strings.Cut(kv, "=")
 			if ok {
-				p.setArrayValue(resolver.Global, environIndex, key, numStr(val))
+				p.setArrayValue(resolver.Global, environIndex, key, numStr(val, p.chars))
 			}
 		}
 	}
@@ -748,27 +748,27 @@ func (p *interp) getSpecial(index int) value {
 	case ast.V_ARGC:
 		return num(float64(p.argc))
 	case ast.V_CONVFMT:
-		return str(p.convertFormat)
+		return str(p.convertFormat, p.chars)
 	case ast.V_FILENAME:
 		return p.filename
 	case ast.V_FS:
-		return str(p.fieldSep)
+		return str(p.fieldSep, p.chars)
 	case ast.V_OFMT:
-		return str(p.outputFormat)
+		return str(p.outputFormat, p.chars)
 	case ast.V_OFS:
-		return str(p.outputFieldSep)
+		return str(p.outputFieldSep, p.chars)
 	case ast.V_ORS:
-		return str(p.outputRecordSep)
+		return str(p.outputRecordSep, p.chars)
 	case ast.V_RS:
-		return str(p.recordSep)
+		return str(p.recordSep, p.chars)
 	case ast.V_RT:
-		return str(p.recordTerminator)
+		return str(p.recordTerminator, p.chars)
 	case ast.V_SUBSEP:
-		return str(p.subscriptSep)
+		return str(p.subscriptSep, p.chars)
 	case ast.V_INPUTMODE:
-		return str(inputModeString(p.inputMode, p.csvInputConfig))
+		return str(inputModeString(p.inputMode, p.csvInputConfig), p.chars)
 	case ast.V_OUTPUTMODE:
-		return str(outputModeString(p.outputMode, p.csvOutputConfig))
+		return str(outputModeString(p.outputMode, p.csvOutputConfig), p.chars)
 	default:
 		panic(fmt.Sprintf("unexpected special variable index: %d", index))
 	}
@@ -778,11 +778,11 @@ func (p *interp) getSpecial(index int) value {
 func (p *interp) setVarByName(name, value string) error {
 	index := ast.SpecialVarIndex(name)
 	if index > 0 {
-		return p.setSpecial(index, numStr(value))
+		return p.setSpecial(index, numStr(value, p.chars))
 	}
 	index, ok := p.scalarIndexes[name]
 	if ok {
-		p.globals[index] = numStr(value)
+		p.globals[index] = numStr(value, p.chars)
 		return nil
 	}
 	// Ignore variables that aren't defined in program
@@ -925,25 +925,25 @@ func (p *interp) setArrayValue(scope resolver.Scope, arrayIndex int, index strin
 func (p *interp) getField(index int) value {
 	if index == 0 {
 		if p.lineIsTrueStr {
-			return str(p.line)
+			return str(p.line, p.chars)
 		} else {
-			return numStr(p.line)
+			return numStr(p.line, p.chars)
 		}
 	}
 	p.ensureFields()
 	if index < 1 {
 		index = len(p.fields) + 1 + index
 		if index < 1 {
-			return str("")
+			return str("", p.chars)
 		}
 	}
 	if index > len(p.fields) {
-		return str("")
+		return str("", p.chars)
 	}
 	if p.fieldsIsTrueStr[index-1] {
-		return str(p.fields[index-1])
+		return str(p.fields[index-1], p.chars)
 	} else {
-		return numStr(p.fields[index-1])
+		return numStr(p.fields[index-1], p.chars)
 	}
 }
 
@@ -961,7 +961,7 @@ func (p *interp) getFieldByName(name string) (value, error) {
 	}
 	index := p.fieldIndexes[name]
 	if index == 0 {
-		return str(""), nil
+		return str("", p.chars), nil
 	}
 	return p.getField(index), nil
 }
