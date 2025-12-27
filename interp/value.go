@@ -37,8 +37,12 @@ func num(n float64) value {
 }
 
 // Create a new string value
-func str(s string) value {
-	return value{typ: typeStr, s: s, r: new([]rune)}
+func str(s string, chars bool) value {
+	var runes *[]rune
+	if chars {
+		runes = new([]rune)
+	}
+	return value{typ: typeStr, s: s, r: runes}
 }
 
 func strFromRunes(runes []rune) value {
@@ -46,8 +50,12 @@ func strFromRunes(runes []rune) value {
 }
 
 // Create a new value to represent a "numeric string" from an input field
-func numStr(s string) value {
-	return value{typ: typeNumStr, s: s, r: new([]rune)}
+func numStr(s string, chars bool) value {
+	var runes *[]rune
+	if chars {
+		runes = new([]rune)
+	}
+	return value{typ: typeNumStr, s: s, r: runes}
 }
 
 // Create a numeric value from a Go bool

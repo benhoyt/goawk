@@ -53,13 +53,13 @@ func (p *interp) callNative(index int, args []value) (value, error) {
 		return null(), nil
 	case 1:
 		// Single return value
-		return fromNative(outs[0]), nil
+		return fromNative(outs[0], p.chars), nil
 	case 2:
 		// Two-valued return of (scalar, error)
 		if !outs[1].IsNil() {
 			return null(), outs[1].Interface().(error)
 		}
-		return fromNative(outs[0]), nil
+		return fromNative(outs[0], p.chars), nil
 	default:
 		// Should never happen (checked at parse time)
 		panic(fmt.Sprintf("unexpected number of return values: %d", len(outs)))
@@ -110,7 +110,7 @@ func (p *interp) toNative(v value, typ reflect.Type) reflect.Value {
 }
 
 // Convert from a native Go value to an AWK value
-func fromNative(v reflect.Value) value {
+func fromNative(v reflect.Value, chars bool) value {
 	switch v.Kind() {
 	case reflect.Bool:
 		return boolean(v.Bool())
@@ -121,10 +121,10 @@ func fromNative(v reflect.Value) value {
 	case reflect.Float32, reflect.Float64:
 		return num(v.Float())
 	case reflect.String:
-		return str(v.String())
+		return str(v.String(), chars)
 	case reflect.Slice:
 		if b, ok := v.Interface().([]byte); ok {
-			return str(string(b))
+			return str(string(b), chars)
 		}
 		// Shouldn't happen: prevented by checkNativeFunc
 		panic(fmt.Sprintf("unexpected return slice: %s", v.Type().Elem().Kind()))
@@ -279,7 +279,7 @@ func (p *interp) split(s string, scope resolver.Scope, index int, fs string, mod
 	}
 	array := make(map[string]value, len(parts))
 	for i, part := range parts {
-		array[strconv.Itoa(i+1)] = numStr(part)
+		array[strconv.Itoa(i+1)] = numStr(part, p.chars)
 	}
 	p.arrays[p.arrayIndex(scope, index)] = array
 	return len(array), nil

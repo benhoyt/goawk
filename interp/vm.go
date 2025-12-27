@@ -48,7 +48,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 		case compiler.Str:
 			index := code[ip]
 			ip++
-			p.push(str(p.strs[index]))
+			p.push(str(p.strs[index], p.chars))
 
 		case compiler.Dupe:
 			v := p.peekTop()
@@ -334,7 +334,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			for _, v := range values {
 				indices = append(indices, p.toString(v))
 			}
-			p.push(str(strings.Join(indices, p.subscriptSep)))
+			p.push(str(strings.Join(indices, p.subscriptSep), p.chars))
 
 		case compiler.Add:
 			l, r := p.peekPop()
@@ -430,7 +430,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 
 		case compiler.Concat:
 			l, r := p.peekPop()
-			p.replaceTop(str(p.toString(l) + p.toString(r)))
+			p.replaceTop(str(p.toString(l)+p.toString(r), p.chars))
 
 		case compiler.ConcatMulti:
 			numValues := int(code[ip])
@@ -441,7 +441,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			for _, v := range values {
 				sb.WriteString(p.toString(v))
 			}
-			p.push(str(sb.String()))
+			p.push(str(sb.String(), p.chars))
 
 		case compiler.Match:
 			l, r := p.peekPop()
@@ -615,11 +615,11 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			for index := range array {
 				switch resolver.Scope(varScope) {
 				case resolver.Global:
-					p.globals[varIndex] = str(index)
+					p.globals[varIndex] = str(index, p.chars)
 				case resolver.Local:
-					p.frame[varIndex] = str(index)
+					p.frame[varIndex] = str(index, p.chars)
 				default: // resolver.Special
-					err := p.setSpecial(int(varIndex), str(index))
+					err := p.setSpecial(int(varIndex), str(index, p.chars))
 					if err != nil {
 						return err
 					}
@@ -683,7 +683,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			if err != nil {
 				return err
 			}
-			p.push(str(s))
+			p.push(str(s, p.chars))
 
 		case compiler.CallUser:
 			funcIndex := code[ip]
@@ -852,7 +852,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 				return err
 			}
 			if ret == 1 {
-				p.globals[index] = numStr(line)
+				p.globals[index] = numStr(line, p.chars)
 			}
 			p.push(num(ret))
 
@@ -866,7 +866,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 				return err
 			}
 			if ret == 1 {
-				p.frame[index] = numStr(line)
+				p.frame[index] = numStr(line, p.chars)
 			}
 			p.push(num(ret))
 
@@ -880,7 +880,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 				return err
 			}
 			if ret == 1 {
-				err := p.setSpecial(int(index), numStr(line))
+				err := p.setSpecial(int(index), numStr(line, p.chars))
 				if err != nil {
 					return err
 				}
@@ -900,7 +900,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			index := p.toString(p.peekTop())
 			if ret == 1 {
 				array := p.array(resolver.Scope(arrayScope), int(arrayIndex))
-				array[index] = numStr(line)
+				array[index] = numStr(line, p.chars)
 			}
 			p.replaceTop(num(ret))
 		}
@@ -972,7 +972,7 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 		if err != nil {
 			return err
 		}
-		p.replaceTwo(num(float64(n)), str(out))
+		p.replaceTwo(num(float64(n)), str(out, p.chars))
 
 	case compiler.BuiltinIndex:
 		sValue, substr := p.peekPop()
@@ -1060,7 +1060,7 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 		if err != nil {
 			return err
 		}
-		p.replaceTwo(num(float64(n)), str(out))
+		p.replaceTwo(num(float64(n)), str(out, p.chars))
 
 	case compiler.BuiltinSubstr:
 		sValue, posValue := p.peekPop()
@@ -1086,7 +1086,7 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 				pos = 1
 			}
 			length := len(s) - pos + 1
-			substr = str(s[pos-1 : pos-1+length])
+			substr = str(s[pos-1:pos-1+length], p.chars)
 		}
 		p.replaceTop(substr)
 
@@ -1127,7 +1127,7 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 			if length > maxLength {
 				length = maxLength
 			}
-			substr = str(s[pos-1 : pos-1+length])
+			substr = str(s[pos-1:pos-1+length], p.chars)
 		}
 		p.replaceTop(substr)
 
@@ -1158,10 +1158,10 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 		p.replaceTop(num(float64(exitCode)))
 
 	case compiler.BuiltinTolower:
-		p.replaceTop(str(strings.ToLower(p.toString(p.peekTop()))))
+		p.replaceTop(str(strings.ToLower(p.toString(p.peekTop())), p.chars))
 
 	case compiler.BuiltinToupper:
-		p.replaceTop(str(strings.ToUpper(p.toString(p.peekTop()))))
+		p.replaceTop(str(strings.ToUpper(p.toString(p.peekTop())), p.chars))
 	}
 
 	return nil

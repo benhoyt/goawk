@@ -285,7 +285,7 @@ func (p *interp) setFieldNames(names []string) {
 		delete(fieldsArray, k)
 	}
 	for i, name := range names {
-		fieldsArray[strconv.Itoa(i+1)] = str(name)
+		fieldsArray[strconv.Itoa(i+1)] = str(name, p.chars)
 	}
 }
 
@@ -620,7 +620,7 @@ func nextRune(b []byte) rune {
 
 // Setup for a new input file with given name (empty string if stdin)
 func (p *interp) setFile(filename string) {
-	p.filename = numStr(filename)
+	p.filename = numStr(filename, p.chars)
 	p.fileLineNum = 0
 	p.hadFiles = true
 }
