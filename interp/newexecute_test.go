@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"math"
-	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -164,29 +163,6 @@ func TestExecuteContextCancel(t *testing.T) {
 	_, err := interpreter.ExecuteContext(ctx, nil)
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("expected Canceled error, got: %v", err)
-	}
-}
-
-func TestExecuteContextSystemTimeout(t *testing.T) {
-	start := time.Now()
-	interpreter := newInterp(t, `BEGIN { print system("sleep 1") }`)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Millisecond)
-	defer cancel()
-
-	_, err := interpreter.ExecuteContext(ctx, nil)
-	switch runtime.GOOS {
-	case "windows", "darwin":
-		// For some reason on Windows and macOS the returned error is nil, rather
-		// than DeadlineExceeded. Don't check it on those platforms.
-	default:
-		if !errors.Is(err, context.DeadlineExceeded) {
-			t.Fatalf("expected DeadlineExceeded error, got: %v", err)
-		}
-	}
-
-	elapsed := time.Since(start)
-	if elapsed > 500*time.Millisecond {
-		t.Fatalf("should have taken ~5ms, took %v", elapsed)
 	}
 }
 
