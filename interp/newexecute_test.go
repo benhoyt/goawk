@@ -166,6 +166,27 @@ func TestExecuteContextCancel(t *testing.T) {
 	}
 }
 
+func TestExecuteContextSystemTimeout(t *testing.T) {
+	start := time.Now()
+	interpreter := newInterp(t, `BEGIN { print system("sleep 1") }`)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Millisecond)
+	defer cancel()
+
+	interpreter.ExecuteContext(ctx, nil)
+
+	// The reason we don't take the err from ExecuteContext is the following:
+	//  - os/exec: CommandContext does not forward the context's error on timeout
+	//    see: https://github.com/golang/go/issues/21880
+	if !errors.Is(ctx.Err(), context.DeadlineExceeded) {
+		t.Fatalf("expected DeadlineExceeded error, got: %v", ctx.Err())
+	}
+
+	elapsed := time.Since(start)
+	if elapsed > 500*time.Millisecond {
+		t.Fatalf("should have taken ~5ms, took %v", elapsed)
+	}
+}
+
 func newInterp(t *testing.T, src string) *interp.Interpreter {
 	t.Helper()
 	prog, err := parser.ParseProgram([]byte(src), nil)
