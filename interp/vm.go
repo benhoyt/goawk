@@ -149,6 +149,18 @@ func (p *interp) execute(code []compiler.Opcode) error {
 				return err
 			}
 
+		case compiler.AssignFieldSub:
+			// Like AssignField, but only assign if sub/gsub made a
+			// substitution (n>0), to avoid rebuilding $0 in that case.
+			right, index := p.popTwo()
+			n := p.peekTop()
+			if n.num() > 0 {
+				err := p.setField(int(index.num()), p.toString(right))
+				if err != nil {
+					return err
+				}
+			}
+
 		case compiler.AssignGlobal:
 			index := code[ip]
 			ip++
