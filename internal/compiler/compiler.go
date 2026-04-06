@@ -823,7 +823,13 @@ func (c *compiler) expr(expr ast.Expr) {
 				c.expr(e.Args[1])
 				c.add(Rote)
 				c.add(CallBuiltin, Opcode(op))
-				c.assignRoteIndex(target)
+				c.add(Rote)
+				if index, ok := target.(*ast.IndexExpr); ok {
+					c.assignIndexExpr(index)
+				} else {
+					// Avoid rebuilding $0 when no substitutions were made
+					c.add(AssignFieldSub)
+				}
 			case *ast.VarExpr:
 				c.expr(e.Args[0])
 				c.expr(e.Args[1])
