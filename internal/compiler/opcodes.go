@@ -119,7 +119,7 @@ const (
 	CallBuiltin     // builtinOp
 	CallLengthArray // arrayScope arrayIndex
 	CallSplit       // arrayScope arrayIndex
-	CallSplitSep    // arrayScope arrayIndex
+	CallSplitSep    // arrayScope arrayIndex sepIsRegex
 	CallSprintf     // numArgs
 
 	// User and native functions

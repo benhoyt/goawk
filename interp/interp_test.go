@@ -606,6 +606,8 @@ function f() {
 	{`BEGIN { n = split("ab c d ", a); for (i=1; i<=n; i++) print a[i] }`, "", "ab\nc\nd\n", "", ""},
 	{`BEGIN { n = split("ab,c,d,", a, ","); for (i=1; i<=n; i++) print a[i] }`, "", "ab\nc\nd\n\n", "", ""},
 	{`BEGIN { n = split("ab,c.d,", a, /[,.]/); for (i=1; i<=n; i++) print a[i] }`, "", "ab\nc\nd\n\n", "", ""},
+	{`BEGIN { n = split("aaa", a, /./); print n; for (i=1; i<=n; i++) print a[i] }`, "", "4\n\n\n\n\n", "", ""},
+	{`BEGIN { n = split("a b\tc", a, / /); print n; for (i=1; i<=n; i++) print a[i] }`, "", "2\na\nb\tc\n", "", ""},
 	{`BEGIN { n = split("1 2", a); print (n, a[1], a[2], a[1]==1, a[2]==2) }`, "", "2 1 2 1 1\n", "", ""},
 	{`BEGIN { x = "1.2.3"; print sub(/\./, ",", x); print x }`, "", "1\n1,2.3\n", "", ""},
 	{`BEGIN { x = "1.2.3"; print sub(/\./, ",\\", x); print x }`, "", "1\n1,\\2.3\n", "", ""},

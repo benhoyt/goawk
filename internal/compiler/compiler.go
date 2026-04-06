@@ -802,7 +802,12 @@ func (c *compiler) expr(expr ast.Expr) {
 			scope, index := c.arrayInfo(varExpr.Name)
 			if len(e.Args) > 2 {
 				c.expr(e.Args[2])
-				c.add(CallSplitSep, Opcode(scope), opcodeInt(index))
+				strExpr, isStr := e.Args[2].(*ast.StrExpr)
+				sepIsRegex := 0
+				if isStr && strExpr.Regex {
+					sepIsRegex = 1
+				}
+				c.add(CallSplitSep, Opcode(scope), opcodeInt(index), Opcode(sepIsRegex))
 			} else {
 				c.add(CallSplit, Opcode(scope), opcodeInt(index))
 			}

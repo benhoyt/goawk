@@ -230,8 +230,6 @@ func sortedLines(data []byte) []byte {
 
 func TestGAWK(t *testing.T) {
 	skip := map[string]bool{ // TODO: fix these (at least the ones that are bugs)
-		"splitwht": true, // other awks handle split(s, a, " ") differently from split(s, a, / /)
-
 		"rscompat": true, // GoAWK allows multi-char RS by default
 		"rsstart2": true, // GoAWK ^ and $ anchors match beginning and end of line, not file (unlike Gawk)
 
