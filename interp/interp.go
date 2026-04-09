@@ -104,8 +104,8 @@ type interp struct {
 	filename        value
 	line            string
 	lineIsTrueStr   bool
-	lineNum         int
-	fileLineNum     int
+	lineNum         value
+	fileLineNum     value
 	fields          []string
 	fieldsIsTrueStr []bool
 	numFields       int
@@ -738,13 +738,13 @@ func (p *interp) getSpecial(index int) value {
 		p.ensureFields()
 		return num(float64(p.numFields))
 	case ast.V_NR:
-		return num(float64(p.lineNum))
+		return p.lineNum
 	case ast.V_RLENGTH:
 		return num(float64(p.matchLength))
 	case ast.V_RSTART:
 		return num(float64(p.matchStart))
 	case ast.V_FNR:
-		return num(float64(p.fileLineNum))
+		return p.fileLineNum
 	case ast.V_ARGC:
 		return num(float64(p.argc))
 	case ast.V_CONVFMT:
@@ -813,13 +813,13 @@ func (p *interp) setSpecial(index int, v value) error {
 		p.line = p.joinFields(p.fields)
 		p.lineIsTrueStr = true
 	case ast.V_NR:
-		p.lineNum = int(v.num())
+		p.lineNum = v
 	case ast.V_RLENGTH:
 		p.matchLength = int(v.num())
 	case ast.V_RSTART:
 		p.matchStart = int(v.num())
 	case ast.V_FNR:
-		p.fileLineNum = int(v.num())
+		p.fileLineNum = v
 	case ast.V_ARGC:
 		argc := int(v.num())
 		if argc > maxFieldIndex {

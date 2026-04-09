@@ -621,7 +621,7 @@ func nextRune(b []byte) rune {
 // Setup for a new input file with given name (empty string if stdin)
 func (p *interp) setFile(filename string) {
 	p.filename = numStr(filename)
-	p.fileLineNum = 0
+	p.fileLineNum = num(0)
 	p.hadFiles = true
 }
 
@@ -804,8 +804,8 @@ func (p *interp) nextLine() (string, error) {
 	}
 
 	// Got a line (record) of input, return it
-	p.lineNum++
-	p.fileLineNum++
+	p.lineNum = num(p.lineNum.num() + 1)
+	p.fileLineNum = num(p.fileLineNum.num() + 1)
 	return p.scanner.Text(), nil
 }
 

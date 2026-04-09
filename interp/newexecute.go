@@ -104,8 +104,8 @@ func (p *interp) resetCore() {
 	p.filename = null()
 	p.line = ""
 	p.lineIsTrueStr = false
-	p.lineNum = 0
-	p.fileLineNum = 0
+	p.lineNum = num(0)
+	p.fileLineNum = num(0)
 	p.fields = nil
 	p.fieldsIsTrueStr = nil
 	p.numFields = 0
