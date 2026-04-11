@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/benhoyt/goawk/lexer"
+	"github.com/benhoyt/goawk/lexer"
 )
 
 func TestLexer(t *testing.T) {
@@ -76,14 +76,14 @@ func TestLexer(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.input, func(t *testing.T) {
-			l := NewLexer([]byte(test.input))
+			l := lexer.NewLexer([]byte(test.input))
 			strs := []string{}
 			for {
 				pos, tok, val := l.Scan()
-				if tok == EOF {
+				if tok == lexer.EOF {
 					break
 				}
-				if tok == NUMBER {
+				if tok == lexer.NUMBER {
 					// Ensure ParseFloat() works, as that's what our
 					// parser uses to convert
 					trimmed := strings.TrimRight(val, "eE")
@@ -93,7 +93,7 @@ func TestLexer(t *testing.T) {
 					}
 				}
 				strs = append(strs, fmt.Sprintf("%d:%d %s %q", pos.Line, pos.Column, tok, val))
-				if tok == ILLEGAL {
+				if tok == lexer.ILLEGAL {
 					break
 				}
 			}
@@ -119,7 +119,7 @@ func TestRegex(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.input, func(t *testing.T) {
-			l := NewLexer([]byte(test.input))
+			l := lexer.NewLexer([]byte(test.input))
 			l.Scan() // Scan first token (probably DIV)
 			pos, tok, val := l.ScanRegex()
 			output := fmt.Sprintf("%d:%d %s %q", pos.Line, pos.Column, tok, val)
@@ -142,7 +142,7 @@ func TestScanRegexInvalid(t *testing.T) {
 			t.Fatalf("expected panic of string type")
 		}
 	}()
-	l := NewLexer([]byte("foo/"))
+	l := lexer.NewLexer([]byte("foo/"))
 	l.Scan() // Scan first token (NAME foo)
 	l.ScanRegex()
 }
@@ -150,19 +150,19 @@ func TestScanRegexInvalid(t *testing.T) {
 func TestHadSpace(t *testing.T) {
 	tests := []struct {
 		input  string
-		tokens []Token
+		tokens []lexer.Token
 		spaces []bool
 	}{
-		{`foo(x)`, []Token{NAME, LPAREN, NAME, RPAREN}, []bool{false, false, false, false}},
-		{`foo (x) `, []Token{NAME, LPAREN, NAME, RPAREN}, []bool{false, true, false, false}},
-		{` foo ( x ) `, []Token{NAME, LPAREN, NAME, RPAREN}, []bool{true, true, true, true}},
+		{`foo(x)`, []lexer.Token{lexer.NAME, lexer.LPAREN, lexer.NAME, lexer.RPAREN}, []bool{false, false, false, false}},
+		{`foo (x) `, []lexer.Token{lexer.NAME, lexer.LPAREN, lexer.NAME, lexer.RPAREN}, []bool{false, true, false, false}},
+		{` foo ( x ) `, []lexer.Token{lexer.NAME, lexer.LPAREN, lexer.NAME, lexer.RPAREN}, []bool{true, true, true, true}},
 	}
 	for _, test := range tests {
 		t.Run(test.input, func(t *testing.T) {
-			l := NewLexer([]byte(test.input))
+			l := lexer.NewLexer([]byte(test.input))
 			for i := 0; ; i++ {
 				_, tok, _ := l.Scan()
-				if tok == EOF {
+				if tok == lexer.EOF {
 					break
 				}
 				if tok != test.tokens[i] {
@@ -177,13 +177,13 @@ func TestHadSpace(t *testing.T) {
 }
 
 func TestPeekByte(t *testing.T) {
-	l := NewLexer([]byte("foo()"))
+	l := lexer.NewLexer([]byte("foo()"))
 	b := l.PeekByte()
 	if b != 'f' {
 		t.Errorf("expected 'f', got %q", b)
 	}
 	_, tok, _ := l.Scan()
-	if tok != NAME {
+	if tok != lexer.NAME {
 		t.Errorf("expected name, got %s", tok)
 	}
 	b = l.PeekByte()
@@ -191,11 +191,11 @@ func TestPeekByte(t *testing.T) {
 		t.Errorf("expected '(', got %q", b)
 	}
 	_, tok, _ = l.Scan()
-	if tok != LPAREN {
+	if tok != lexer.LPAREN {
 		t.Errorf("expected (, got %s", tok)
 	}
 	_, tok, _ = l.Scan()
-	if tok != RPAREN {
+	if tok != lexer.RPAREN {
 		t.Errorf("expected ), got %s", tok)
 	}
 	b = l.PeekByte()
@@ -207,17 +207,17 @@ func TestPeekByte(t *testing.T) {
 func TestKeywordToken(t *testing.T) {
 	tests := []struct {
 		name string
-		tok  Token
+		tok  lexer.Token
 	}{
-		{"print", PRINT},
-		{"split", F_SPLIT},
-		{"BEGIN", BEGIN},
-		{"foo", ILLEGAL},
-		{"GoAWK", ILLEGAL},
+		{"print", lexer.PRINT},
+		{"split", lexer.F_SPLIT},
+		{"BEGIN", lexer.BEGIN},
+		{"foo", lexer.ILLEGAL},
+		{"GoAWK", lexer.ILLEGAL},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			tok := KeywordToken(test.name)
+			tok := lexer.KeywordToken(test.name)
 			if tok != test.tok {
 				t.Errorf("expected %v, got %v", test.tok, tok)
 			}
@@ -236,14 +236,14 @@ func TestAllTokens(t *testing.T) {
 		"x \"str\\n\" 1234\n" +
 		"` ."
 
-	strs := make([]string, 0, LAST+1)
-	seen := make([]bool, LAST+1)
-	l := NewLexer([]byte(input))
+	strs := make([]string, 0, lexer.LAST+1)
+	seen := make([]bool, lexer.LAST+1)
+	l := lexer.NewLexer([]byte(input))
 	for {
 		_, tok, _ := l.Scan()
 		strs = append(strs, tok.String())
 		seen[int(tok)] = true
-		if tok == EOF {
+		if tok == lexer.EOF {
 			break
 		}
 	}
@@ -263,22 +263,22 @@ func TestAllTokens(t *testing.T) {
 	}
 
 	for i, s := range seen {
-		if !s && Token(i) != CONCAT && Token(i) != REGEX {
-			t.Errorf("token %s (%d) not seen", Token(i), i)
+		if !s && lexer.Token(i) != lexer.CONCAT && lexer.Token(i) != lexer.REGEX {
+			t.Errorf("token %s (%d) not seen", lexer.Token(i), i)
 		}
 	}
 
-	l = NewLexer([]byte(`/foo/`))
+	l = lexer.NewLexer([]byte(`/foo/`))
 	_, tok1, _ := l.Scan()
 	_, tok2, val := l.ScanRegex()
-	if tok1 != DIV || tok2 != REGEX || val != "foo" {
+	if tok1 != lexer.DIV || tok2 != lexer.REGEX || val != "foo" {
 		t.Errorf(`expected / regex "foo", got %s %s %q`, tok1, tok2, val)
 	}
 
-	l = NewLexer([]byte(`/=foo/`))
+	l = lexer.NewLexer([]byte(`/=foo/`))
 	_, tok1, _ = l.Scan()
 	_, tok2, val = l.ScanRegex()
-	if tok1 != DIV_ASSIGN || tok2 != REGEX || val != "=foo" {
+	if tok1 != lexer.DIV_ASSIGN || tok2 != lexer.REGEX || val != "=foo" {
 		t.Errorf(`expected /= regex "=foo", got %s %s %q`, tok1, tok2, val)
 	}
 }
@@ -300,7 +300,7 @@ func TestUnescape(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.input, func(t *testing.T) {
-			got, err := Unescape(test.input)
+			got, err := lexer.Unescape(test.input)
 			if err != nil {
 				if err.Error() != test.error {
 					t.Fatalf("expected error %q, got %q", test.error, err)
@@ -318,7 +318,7 @@ func TestUnescape(t *testing.T) {
 }
 
 func TestPositionString(t *testing.T) {
-	pos := Position{Line: 42, Column: 7}
+	pos := lexer.Position{Line: 42, Column: 7}
 	expected := "42:7"
 	if pos.String() != expected {
 		t.Errorf("expected %q, got %q", expected, pos.String())
@@ -329,10 +329,10 @@ func benchmarkLexer(b *testing.B, repeat int, source string) {
 	fullSource := []byte(strings.Repeat(source+"\n", repeat))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		l := NewLexer(fullSource)
+		l := lexer.NewLexer(fullSource)
 		for {
 			_, tok, _ := l.Scan()
-			if tok == EOF || tok == ILLEGAL {
+			if tok == lexer.EOF || tok == lexer.ILLEGAL {
 				break
 			}
 		}
@@ -372,17 +372,17 @@ func BenchmarkRegex(b *testing.B) {
 	fullSource := []byte(strings.Repeat(source+" ", 5))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		l := NewLexer(fullSource)
+		l := lexer.NewLexer(fullSource)
 		for {
 			_, tok, _ := l.Scan()
-			if tok == EOF {
+			if tok == lexer.EOF {
 				break
 			}
-			if tok != DIV && tok != DIV_ASSIGN {
+			if tok != lexer.DIV && tok != lexer.DIV_ASSIGN {
 				b.Fatalf("expected / or /=, got %s", tok)
 			}
 			_, tok, _ = l.ScanRegex()
-			if tok != REGEX {
+			if tok != lexer.REGEX {
 				b.Fatalf("expected regex, got %s", tok)
 			}
 		}
@@ -390,10 +390,10 @@ func BenchmarkRegex(b *testing.B) {
 }
 
 func Example() {
-	lexer := NewLexer([]byte(`$0 { print $1 }`))
+	lex := lexer.NewLexer([]byte(`$0 { print $1 }`))
 	for {
-		pos, tok, val := lexer.Scan()
-		if tok == EOF {
+		pos, tok, val := lex.Scan()
+		if tok == lexer.EOF {
 			break
 		}
 		fmt.Printf("%s %s %q\n", pos, tok, val)

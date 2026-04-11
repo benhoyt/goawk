@@ -1,9 +1,10 @@
 package parseutil_test
 
 import (
-	. "github.com/benhoyt/goawk/internal/parseutil"
 	"strings"
 	"testing"
+
+	"github.com/benhoyt/goawk/internal/parseutil"
 )
 
 type testFile struct{ name, source string }
@@ -110,7 +111,7 @@ print x
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {
 
-			fr := &FileReader{}
+			fr := &parseutil.FileReader{}
 
 			for _, file := range tst.files {
 				if nil != fr.AddFile(file.name, strings.NewReader(file.source)) {
