@@ -181,7 +181,7 @@ func (p *parser) program() *ast.Program {
 				pattern = append(pattern, p.expr())
 			}
 			// Or an empty action (equivalent to { print $0 })
-			action := &ast.Action{pattern, nil}
+			action := &ast.Action{Pattern: pattern}
 			if p.tok == LBRACE {
 				action.Stmts = p.stmtsBrace()
 			} else {
@@ -254,12 +254,12 @@ func (p *parser) simpleStmt() ast.Stmt {
 			dest = p.expr()
 		}
 		if op == PRINT {
-			return &ast.PrintStmt{args, redirect, dest, startPos, p.pos}
+			return &ast.PrintStmt{Args: args, Redirect: redirect, Dest: dest, Start: startPos, End: p.pos}
 		} else {
 			if len(args) == 0 {
 				panic(p.errorf("expected printf args, got none"))
 			}
-			return &ast.PrintfStmt{args, redirect, dest, startPos, p.pos}
+			return &ast.PrintfStmt{Args: args, Redirect: redirect, Dest: dest, Start: startPos, End: p.pos}
 		}
 	case DELETE:
 		p.next()
@@ -273,11 +273,11 @@ func (p *parser) simpleStmt() ast.Stmt {
 			}
 			p.expect(RBRACKET)
 		}
-		return &ast.DeleteStmt{name, namePos, index, startPos, p.pos}
+		return &ast.DeleteStmt{Array: name, ArrayPos: namePos, Index: index, Start: startPos, End: p.pos}
 	case IF, FOR, WHILE, DO, BREAK, CONTINUE, NEXT, NEXTFILE, EXIT, RETURN:
 		panic(p.errorf("expected print/printf, delete, or expression"))
 	default:
-		return &ast.ExprStmt{p.expr(), startPos, p.pos}
+		return &ast.ExprStmt{Expr: p.expr(), Start: startPos, End: p.pos}
 	}
 }
 
@@ -301,7 +301,7 @@ func (p *parser) stmt() ast.Stmt {
 			p.optionalNewlines()
 			elseBody = p.stmts()
 		}
-		s = &ast.IfStmt{cond, bodyStart, body, elseBody, startPos, p.pos}
+		s = &ast.IfStmt{Cond: cond, BodyStart: bodyStart, Body: body, Else: elseBody, Start: startPos, End: p.pos}
 	case FOR:
 		// Parse for statement, either "for in" or C-like for loop.
 		//
@@ -365,7 +365,7 @@ func (p *parser) stmt() ast.Stmt {
 			p.optionalNewlines()
 			bodyStart := p.pos
 			body := p.loopStmts()
-			s = &ast.ForStmt{pre, cond, post, bodyStart, body, startPos, p.pos}
+			s = &ast.ForStmt{Pre: pre, Cond: cond, Post: post, BodyStart: bodyStart, Body: body, Start: startPos, End: p.pos}
 		}
 	case WHILE:
 		p.next()
@@ -375,7 +375,7 @@ func (p *parser) stmt() ast.Stmt {
 		p.optionalNewlines()
 		bodyStart := p.pos
 		body := p.loopStmts()
-		s = &ast.WhileStmt{cond, bodyStart, body, startPos, p.pos}
+		s = &ast.WhileStmt{Cond: cond, BodyStart: bodyStart, Body: body, Start: startPos, End: p.pos}
 	case DO:
 		p.next()
 		p.optionalNewlines()
@@ -385,38 +385,38 @@ func (p *parser) stmt() ast.Stmt {
 		p.expect(LPAREN)
 		cond := p.expr()
 		p.expect(RPAREN)
-		s = &ast.DoWhileStmt{body, cond, startPos, p.pos}
+		s = &ast.DoWhileStmt{Body: body, Cond: cond, Start: startPos, End: p.pos}
 	case BREAK:
 		if p.loopDepth == 0 {
 			panic(p.errorf("break must be inside a loop body"))
 		}
 		p.next()
-		s = &ast.BreakStmt{startPos, p.pos}
+		s = &ast.BreakStmt{Start: startPos, End: p.pos}
 	case CONTINUE:
 		if p.loopDepth == 0 {
 			panic(p.errorf("continue must be inside a loop body"))
 		}
 		p.next()
-		s = &ast.ContinueStmt{startPos, p.pos}
+		s = &ast.ContinueStmt{Start: startPos, End: p.pos}
 	case NEXT:
 		if !p.inAction && p.funcName == "" {
 			panic(p.errorf("next can't be inside BEGIN or END"))
 		}
 		p.next()
-		s = &ast.NextStmt{startPos, p.pos}
+		s = &ast.NextStmt{Start: startPos, End: p.pos}
 	case NEXTFILE:
 		if !p.inAction && p.funcName == "" {
 			panic(p.errorf("nextfile can't be inside BEGIN or END"))
 		}
 		p.next()
-		s = &ast.NextfileStmt{startPos, p.pos}
+		s = &ast.NextfileStmt{Start: startPos, End: p.pos}
 	case EXIT:
 		p.next()
 		var status ast.Expr
 		if !p.matches(NEWLINE, SEMICOLON, RBRACE) {
 			status = p.expr()
 		}
-		s = &ast.ExitStmt{status, startPos, p.pos}
+		s = &ast.ExitStmt{Status: status, Start: startPos, End: p.pos}
 	case RETURN:
 		if p.funcName == "" {
 			panic(p.errorf("return must be inside a function"))
@@ -426,10 +426,10 @@ func (p *parser) stmt() ast.Stmt {
 		if !p.matches(NEWLINE, SEMICOLON, RBRACE) {
 			value = p.expr()
 		}
-		s = &ast.ReturnStmt{value, startPos, p.pos}
+		s = &ast.ReturnStmt{Value: value, Start: startPos, End: p.pos}
 	case LBRACE:
 		body := p.stmtsBrace()
-		s = &ast.BlockStmt{body, startPos, p.pos}
+		s = &ast.BlockStmt{Body: body, Start: startPos, End: p.pos}
 	default:
 		s = p.simpleStmt()
 	}
@@ -494,7 +494,7 @@ func (p *parser) function() *ast.Function {
 
 	p.funcName = ""
 
-	return &ast.Function{name, params, body, funcNamePos}
+	return &ast.Function{Name: name, Params: params, Body: body, Pos: funcNamePos}
 }
 
 // Parse expressions separated by commas: args to print[f] or user
@@ -565,7 +565,7 @@ func (p *parser) _assign(higher func() ast.Expr) ast.Expr {
 				switch binary.Op {
 				case AND, OR, MATCH, NOT_MATCH, EQUALS, NOT_EQUALS, LESS, LTE, GTE, GREATER:
 					assign := makeAssign(binary.Right, op, right)
-					return &ast.BinaryExpr{binary.Left, binary.Op, assign}
+					return &ast.BinaryExpr{Left: binary.Left, Op: binary.Op, Right: assign}
 				}
 			}
 			panic(ast.PosErrorf(leftPos, "expected lvalue before %s", op))
@@ -578,7 +578,7 @@ func (p *parser) _assign(higher func() ast.Expr) ast.Expr {
 func makeAssign(left ast.Expr, op Token, right ast.Expr) ast.Expr {
 	switch op {
 	case ASSIGN:
-		return &ast.AssignExpr{left, right}
+		return &ast.AssignExpr{Left: left, Right: right}
 	case ADD_ASSIGN:
 		op = ADD
 	case DIV_ASSIGN:
@@ -592,7 +592,7 @@ func makeAssign(left ast.Expr, op Token, right ast.Expr) ast.Expr {
 	case SUB_ASSIGN:
 		op = SUB
 	}
-	return &ast.AugAssignExpr{left, op, right}
+	return &ast.AugAssignExpr{Left: left, Op: op, Right: right}
 }
 
 // Parse a ?: conditional expression:
@@ -610,7 +610,7 @@ func (p *parser) _cond(higher func() ast.Expr) ast.Expr {
 		p.expect(COLON)
 		p.optionalNewlines()
 		f := p.expr()
-		return &ast.CondExpr{expr, t, f}
+		return &ast.CondExpr{Cond: expr, True: t, False: f}
 	}
 	return expr
 }
@@ -638,7 +638,7 @@ func (p *parser) _in(higher func() ast.Expr) ast.Expr {
 	for p.tok == IN {
 		p.next()
 		name, namePos := p.expectName()
-		expr = &ast.InExpr{[]ast.Expr{expr}, name, namePos}
+		expr = &ast.InExpr{Index: []ast.Expr{expr}, Array: name, ArrayPos: namePos}
 	}
 	return expr
 }
@@ -655,7 +655,7 @@ func (p *parser) _match(higher func() ast.Expr) ast.Expr {
 		op := p.tok
 		p.next()
 		right := p.regexStr(higher) // Not match() as these aren't associative
-		return &ast.BinaryExpr{expr, op, right}
+		return &ast.BinaryExpr{Left: expr, Op: op, Right: right}
 	}
 	return expr
 }
@@ -672,7 +672,7 @@ func (p *parser) _compare(ops ...Token) ast.Expr {
 		op := p.tok
 		p.next()
 		right := p.concat() // Not compare() as these aren't associative
-		return &ast.BinaryExpr{expr, op, right}
+		return &ast.BinaryExpr{Left: expr, Op: op, Right: right}
 	}
 	return expr
 }
@@ -682,7 +682,7 @@ func (p *parser) concat() ast.Expr {
 	for p.matches(DOLLAR, AT, NOT, NAME, NUMBER, STRING, LPAREN, INCR, DECR) ||
 		p.tok >= FIRST_FUNC && p.tok <= LAST_FUNC {
 		right := p.add()
-		expr = &ast.BinaryExpr{expr, CONCAT, right}
+		expr = &ast.BinaryExpr{Left: expr, Op: CONCAT, Right: right}
 	}
 	return expr
 }
@@ -701,7 +701,7 @@ func (p *parser) pow() ast.Expr {
 	if p.tok == POW {
 		p.next()
 		right := p.pow()
-		return &ast.BinaryExpr{expr, POW, right}
+		return &ast.BinaryExpr{Left: expr, Op: POW, Right: right}
 	}
 	return expr
 }
@@ -711,7 +711,7 @@ func (p *parser) postIncr() ast.Expr {
 	if (p.tok == INCR || p.tok == DECR) && ast.IsLValue(expr) {
 		op := p.tok
 		p.next()
-		return &ast.IncrExpr{expr, op, false}
+		return &ast.IncrExpr{Expr: expr, Op: op}
 	}
 	return expr
 }
@@ -723,7 +723,7 @@ func (p *parser) primary() ast.Expr {
 		left := p.pendingGetlineLeft
 		p.pendingGetlineLeft = nil
 		target := p.optionalLValue()
-		return &ast.GetlineExpr{left, target, nil}
+		return &ast.GetlineExpr{Command: left, Target: target}
 	}
 	switch p.tok {
 	case NUMBER:
@@ -731,7 +731,7 @@ func (p *parser) primary() ast.Expr {
 		s := strings.TrimRight(p.val, "eE")
 		n, _ := strconv.ParseFloat(s, 64)
 		p.next()
-		return &ast.NumExpr{n}
+		return &ast.NumExpr{Value: n}
 	case STRING:
 		s := p.val
 		p.next()
@@ -740,26 +740,26 @@ func (p *parser) primary() ast.Expr {
 		// If we get to DIV or DIV_ASSIGN as a primary expression,
 		// it's actually a regex.
 		regex := p.nextRegex()
-		return &ast.RegExpr{regex}
+		return &ast.RegExpr{Regex: regex}
 	case DOLLAR:
 		p.next()
-		var expr ast.Expr = &ast.FieldExpr{p.primary()}
+		var expr ast.Expr = &ast.FieldExpr{Index: p.primary()}
 		// Post-increment operators have lower precedence than primary
 		// expressions by default, except for field expressions with
 		// post-increments (e.g., $$1++ = $($1++), NOT $($1)++).
 		if p.tok == INCR || p.tok == DECR {
 			op := p.tok
 			p.next()
-			expr = &ast.IncrExpr{expr, op, false}
+			expr = &ast.IncrExpr{Expr: expr, Op: op}
 		}
 		return expr
 	case AT:
 		p.next()
-		return &ast.NamedFieldExpr{p.primary()}
+		return &ast.NamedFieldExpr{Field: p.primary()}
 	case NOT, ADD, SUB:
 		op := p.tok
 		p.next()
-		return &ast.UnaryExpr{op, p.pow()}
+		return &ast.UnaryExpr{Op: op, Value: p.pow()}
 	case INCR, DECR:
 		op := p.tok
 		p.next()
@@ -768,7 +768,7 @@ func (p *parser) primary() ast.Expr {
 		if expr == nil {
 			panic(ast.PosErrorf(exprPos, "expected lvalue after %s", op))
 		}
-		return &ast.IncrExpr{expr, op, true}
+		return &ast.IncrExpr{Expr: expr, Op: op, Pre: true}
 	case NAME:
 		name, namePos := p.expectName()
 		if p.tok == LBRACKET {
@@ -779,14 +779,14 @@ func (p *parser) primary() ast.Expr {
 				panic(p.errorf("expected expression instead of ]"))
 			}
 			p.expect(RBRACKET)
-			return &ast.IndexExpr{name, namePos, index}
+			return &ast.IndexExpr{Array: name, ArrayPos: namePos, Index: index}
 		} else if p.tok == LPAREN && !p.lexer.HadSpace() {
 			// Grammar requires no space between function name and
 			// left paren for user function calls, hence the funky
 			// lexer.HadSpace() method.
 			return p.userCall(name, namePos)
 		}
-		return &ast.VarExpr{name, namePos}
+		return &ast.VarExpr{Name: name, Pos: namePos}
 	case LPAREN:
 		parenPos := p.pos
 		p.next()
@@ -796,14 +796,14 @@ func (p *parser) primary() ast.Expr {
 			panic(p.errorf("expected expression, not %s", p.tok))
 		case 1:
 			p.expect(RPAREN)
-			return &ast.GroupingExpr{exprs[0]}
+			return &ast.GroupingExpr{Expr: exprs[0]}
 		default:
 			// Multi-dimensional array "in" requires parens around index
 			p.expect(RPAREN)
 			if p.tok == IN {
 				p.next()
 				name, namePos := p.expectName()
-				return &ast.InExpr{exprs, name, namePos}
+				return &ast.InExpr{Index: exprs, Array: name, ArrayPos: namePos}
 			}
 			// MultiExpr is used as a pseudo-expression for print[f] parsing.
 			return p.multiExpr(exprs, parenPos)
@@ -816,7 +816,7 @@ func (p *parser) primary() ast.Expr {
 			p.next()
 			file = p.primary()
 		}
-		return &ast.GetlineExpr{nil, target, file}
+		return &ast.GetlineExpr{Target: target, File: file}
 	// Below is the parsing of all the builtin function calls. We
 	// could unify these but several of them have special handling
 	// (array/lvalue/regex params, optional arguments, and so on).
@@ -839,20 +839,20 @@ func (p *parser) primary() ast.Expr {
 			args = append(args, in)
 		}
 		p.expect(RPAREN)
-		return &ast.CallExpr{op, args}
+		return &ast.CallExpr{Func: op, Args: args}
 	case F_SPLIT:
 		p.next()
 		p.expect(LPAREN)
 		str := p.expr()
 		p.commaNewlines()
 		name, namePos := p.expectName()
-		args := []ast.Expr{str, &ast.VarExpr{name, namePos}}
+		args := []ast.Expr{str, &ast.VarExpr{Name: name, Pos: namePos}}
 		if p.tok == COMMA {
 			p.commaNewlines()
 			args = append(args, p.regexStr(p.expr))
 		}
 		p.expect(RPAREN)
-		return &ast.CallExpr{F_SPLIT, args}
+		return &ast.CallExpr{Func: F_SPLIT, Args: args}
 	case F_MATCH:
 		p.next()
 		p.expect(LPAREN)
@@ -860,12 +860,12 @@ func (p *parser) primary() ast.Expr {
 		p.commaNewlines()
 		regex := p.regexStr(p.expr)
 		p.expect(RPAREN)
-		return &ast.CallExpr{F_MATCH, []ast.Expr{str, regex}}
+		return &ast.CallExpr{Func: F_MATCH, Args: []ast.Expr{str, regex}}
 	case F_RAND:
 		p.next()
 		p.expect(LPAREN)
 		p.expect(RPAREN)
-		return &ast.CallExpr{F_RAND, nil}
+		return &ast.CallExpr{Func: F_RAND}
 	case F_SRAND:
 		p.next()
 		p.expect(LPAREN)
@@ -874,7 +874,7 @@ func (p *parser) primary() ast.Expr {
 			args = append(args, p.expr())
 		}
 		p.expect(RPAREN)
-		return &ast.CallExpr{F_SRAND, args}
+		return &ast.CallExpr{Func: F_SRAND, Args: args}
 	case F_LENGTH:
 		p.next()
 		var args []ast.Expr
@@ -886,7 +886,7 @@ func (p *parser) primary() ast.Expr {
 			}
 			p.expect(RPAREN)
 		}
-		return &ast.CallExpr{F_LENGTH, args}
+		return &ast.CallExpr{Func: F_LENGTH, Args: args}
 	case F_SUBSTR:
 		p.next()
 		p.expect(LPAREN)
@@ -899,7 +899,7 @@ func (p *parser) primary() ast.Expr {
 			args = append(args, p.expr())
 		}
 		p.expect(RPAREN)
-		return &ast.CallExpr{F_SUBSTR, args}
+		return &ast.CallExpr{Func: F_SUBSTR, Args: args}
 	case F_SPRINTF:
 		p.next()
 		p.expect(LPAREN)
@@ -909,7 +909,7 @@ func (p *parser) primary() ast.Expr {
 			args = append(args, p.expr())
 		}
 		p.expect(RPAREN)
-		return &ast.CallExpr{F_SPRINTF, args}
+		return &ast.CallExpr{Func: F_SPRINTF, Args: args}
 	case F_FFLUSH:
 		p.next()
 		p.expect(LPAREN)
@@ -918,7 +918,7 @@ func (p *parser) primary() ast.Expr {
 			args = append(args, p.expr())
 		}
 		p.expect(RPAREN)
-		return &ast.CallExpr{F_FFLUSH, args}
+		return &ast.CallExpr{Func: F_FFLUSH, Args: args}
 	case F_COS, F_SIN, F_EXP, F_LOG, F_SQRT, F_INT, F_TOLOWER, F_TOUPPER, F_SYSTEM, F_CLOSE:
 		// Simple 1-argument functions
 		op := p.tok
@@ -926,7 +926,7 @@ func (p *parser) primary() ast.Expr {
 		p.expect(LPAREN)
 		arg := p.expr()
 		p.expect(RPAREN)
-		return &ast.CallExpr{op, []ast.Expr{arg}}
+		return &ast.CallExpr{Func: op, Args: []ast.Expr{arg}}
 	case F_ATAN2, F_INDEX:
 		// Simple 2-argument functions
 		op := p.tok
@@ -936,7 +936,7 @@ func (p *parser) primary() ast.Expr {
 		p.commaNewlines()
 		arg2 := p.expr()
 		p.expect(RPAREN)
-		return &ast.CallExpr{op, []ast.Expr{arg1, arg2}}
+		return &ast.CallExpr{Func: op, Args: []ast.Expr{arg1, arg2}}
 	default:
 		panic(p.errorf("expected expression instead of %s", p.tok))
 	}
@@ -959,12 +959,12 @@ func (p *parser) optionalLValue() ast.Expr {
 				panic(p.errorf("expected expression instead of ]"))
 			}
 			p.expect(RBRACKET)
-			return &ast.IndexExpr{name, namePos, index}
+			return &ast.IndexExpr{Array: name, ArrayPos: namePos, Index: index}
 		}
-		return &ast.VarExpr{name, namePos}
+		return &ast.VarExpr{Name: name, Pos: namePos}
 	case DOLLAR:
 		p.next()
-		return &ast.FieldExpr{p.primary()}
+		return &ast.FieldExpr{Index: p.primary()}
 	default:
 		return nil
 	}
@@ -994,7 +994,7 @@ func (p *parser) binaryLeft(higher func() ast.Expr, allowNewline bool, ops ...To
 			p.optionalNewlines()
 		}
 		right := higher()
-		expr = &ast.BinaryExpr{expr, op, right}
+		expr = &ast.BinaryExpr{Left: expr, Op: op, Right: right}
 	}
 	return expr
 }
@@ -1088,13 +1088,13 @@ func (p *parser) userCall(name string, pos Position) *ast.UserCallExpr {
 		i++
 	}
 	p.expect(RPAREN)
-	return &ast.UserCallExpr{name, args, pos}
+	return &ast.UserCallExpr{Name: name, Args: args, Pos: pos}
 }
 
 // Record a "multi expression" (comma-separated pseudo-expression
 // used to allow commas around print/printf arguments).
 func (p *parser) multiExpr(exprs []ast.Expr, pos Position) ast.Expr {
-	expr := &ast.MultiExpr{exprs}
+	expr := &ast.MultiExpr{Exprs: exprs}
 	p.multiExprs[expr] = pos
 	return expr
 }
@@ -1110,7 +1110,7 @@ func (p *parser) checkMultiExprs() {
 		return
 	}
 	// Show error on first comma-separated expression
-	min := Position{1000000000, 1000000000}
+	min := Position{Line: 1000000000, Column: 1000000000}
 	for _, pos := range p.multiExprs {
 		if pos.Line < min.Line || pos.Line == min.Line && pos.Column < min.Column {
 			min = pos

@@ -177,9 +177,9 @@ func Resolve(prog *ast.Program, config *Config) *ResolvedProgram {
 	r.varInfo[""] = make(map[string]VarInfo) // func of "" stores global vars
 
 	// Interpreter relies on ARGV and other built-in arrays being present.
-	r.recordVar("", "ARGV", Array, lexer.Position{1, 1})
-	r.recordVar("", "ENVIRON", Array, lexer.Position{1, 1})
-	r.recordVar("", "FIELDS", Array, lexer.Position{1, 1})
+	r.recordVar("", "ARGV", Array, lexer.Position{Line: 1, Column: 1})
+	r.recordVar("", "ENVIRON", Array, lexer.Position{Line: 1, Column: 1})
+	r.recordVar("", "FIELDS", Array, lexer.Position{Line: 1, Column: 1})
 
 	// Main resolver pass: determine types of variables and find function
 	// information. Can't call ast.Walk on prog directly, as it will not
@@ -212,7 +212,7 @@ func Resolve(prog *ast.Program, config *Config) *ResolvedProgram {
 		updates = r.updates
 		main.walkOrdered(prog, orderedFuncs)
 		if i >= 100 {
-			panic(ast.PosErrorf(lexer.Position{1, 1},
+			panic(ast.PosErrorf(lexer.Position{Line: 1, Column: 1},
 				"too many iterations trying to resolve variable types"))
 		}
 	}

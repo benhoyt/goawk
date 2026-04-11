@@ -742,7 +742,7 @@ func (c *compiler) expr(expr ast.Expr) {
 		}
 		if e.Pre {
 			c.dupeIndexLValue(e.Expr)
-			c.expr(&ast.NumExpr{1})
+			c.expr(&ast.NumExpr{Value: 1})
 			c.add(op)
 			c.add(Dupe)
 			c.assignRoteIndex(e.Expr)
@@ -750,7 +750,7 @@ func (c *compiler) expr(expr ast.Expr) {
 			c.dupeIndexLValue(e.Expr)
 			c.add(UnaryPlus) // coerce result to number
 			c.add(Dupe)
-			c.expr(&ast.NumExpr{1})
+			c.expr(&ast.NumExpr{Value: 1})
 			c.add(op)
 			c.assignRoteIndex(e.Expr)
 		}
@@ -817,7 +817,7 @@ func (c *compiler) expr(expr ast.Expr) {
 			if e.Func == lexer.F_GSUB {
 				op = BuiltinGsub
 			}
-			var target ast.Expr = &ast.FieldExpr{&ast.NumExpr{0}} // default value and target is $0
+			var target ast.Expr = &ast.FieldExpr{Index: &ast.NumExpr{}} // default value and target is $0
 			if len(e.Args) == 3 {
 				target = e.Args[2]
 			}
