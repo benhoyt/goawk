@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	. "github.com/benhoyt/goawk/lexer"
+	"github.com/benhoyt/goawk/lexer"
 )
 
 // Program is a parsed AWK program.
@@ -175,21 +175,21 @@ func (e *IncrExpr) precedence() int {
 
 func (e *BinaryExpr) precedence() int {
 	switch e.Op {
-	case AND:
+	case lexer.AND:
 		return precAnd
-	case OR:
+	case lexer.OR:
 		return precOr
-	case CONCAT:
+	case lexer.CONCAT:
 		return precConcat
-	case ADD, SUB:
+	case lexer.ADD, lexer.SUB:
 		return precAdd
-	case MUL, DIV, MOD:
+	case lexer.MUL, lexer.DIV, lexer.MOD:
 		return precMul
-	case EQUALS, LESS, LTE, GREATER, GTE, NOT_EQUALS:
+	case lexer.EQUALS, lexer.LESS, lexer.LTE, lexer.GREATER, lexer.GTE, lexer.NOT_EQUALS:
 		return precCompare
-	case MATCH, NOT_MATCH:
+	case lexer.MATCH, lexer.NOT_MATCH:
 		return precMatch
-	case POW:
+	case lexer.POW:
 		return precPower
 	default:
 		return precPrimary
@@ -225,7 +225,7 @@ func (e *NamedFieldExpr) String() string {
 
 // UnaryExpr is an expression like -1234.
 type UnaryExpr struct {
-	Op    Token
+	Op    lexer.Token
 	Value Expr
 }
 
@@ -236,13 +236,13 @@ func (e *UnaryExpr) String() string {
 // BinaryExpr is an expression like 1 + 2.
 type BinaryExpr struct {
 	Left  Expr
-	Op    Token
+	Op    lexer.Token
 	Right Expr
 }
 
 func (e *BinaryExpr) String() string {
 	var op string
-	if e.Op == CONCAT {
+	if e.Op == lexer.CONCAT {
 		op = " "
 	} else {
 		op = " " + e.Op.String() + " "
@@ -254,7 +254,7 @@ func (e *BinaryExpr) String() string {
 type InExpr struct {
 	Index    []Expr
 	Array    string
-	ArrayPos Position
+	ArrayPos lexer.Position
 }
 
 func (e *InExpr) String() string {
@@ -318,7 +318,7 @@ func (e *RegExpr) String() string {
 // VarExpr is a variable reference (special var, global, or local).
 type VarExpr struct {
 	Name string
-	Pos  Position
+	Pos  lexer.Position
 }
 
 func (e *VarExpr) String() string {
@@ -328,7 +328,7 @@ func (e *VarExpr) String() string {
 // IndexExpr is an expression like a[k] (rvalue or lvalue).
 type IndexExpr struct {
 	Array    string
-	ArrayPos Position
+	ArrayPos lexer.Position
 	Index    []Expr
 }
 
@@ -353,7 +353,7 @@ func (e *AssignExpr) String() string {
 // AugAssignExpr is an assignment expression like x += 5.
 type AugAssignExpr struct {
 	Left  Expr // can be one of: var, array[x], $n
-	Op    Token
+	Op    lexer.Token
 	Right Expr
 }
 
@@ -364,7 +364,7 @@ func (e *AugAssignExpr) String() string {
 // IncrExpr is an increment or decrement expression like x++ or --y.
 type IncrExpr struct {
 	Expr Expr
-	Op   Token
+	Op   lexer.Token
 	Pre  bool
 }
 
@@ -378,7 +378,7 @@ func (e *IncrExpr) String() string {
 
 // CallExpr is a builtin function call like length($1).
 type CallExpr struct {
-	Func Token
+	Func lexer.Token
 	Args []Expr
 }
 
@@ -395,7 +395,7 @@ func (e *CallExpr) String() string {
 type UserCallExpr struct {
 	Name string
 	Args []Expr
-	Pos  Position
+	Pos  lexer.Position
 }
 
 func (e *UserCallExpr) String() string {
@@ -472,8 +472,8 @@ func formatRegex(r string) string {
 // Stmt is the abstract syntax tree for any AWK statement.
 type Stmt interface {
 	Node
-	StartPos() Position // position of first character belonging to the node
-	EndPos() Position   // position of first character immediately after the node
+	StartPos() lexer.Position // position of first character belonging to the node
+	EndPos() lexer.Position   // position of first character immediately after the node
 	stmt()
 	String() string
 }
@@ -496,54 +496,54 @@ func (s *DeleteStmt) stmt()   {}
 func (s *ReturnStmt) stmt()   {}
 func (s *BlockStmt) stmt()    {}
 
-func (s *PrintStmt) StartPos() Position    { return s.Start }
-func (s *PrintfStmt) StartPos() Position   { return s.Start }
-func (s *ExprStmt) StartPos() Position     { return s.Start }
-func (s *IfStmt) StartPos() Position       { return s.Start }
-func (s *ForStmt) StartPos() Position      { return s.Start }
-func (s *ForInStmt) StartPos() Position    { return s.Start }
-func (s *WhileStmt) StartPos() Position    { return s.Start }
-func (s *DoWhileStmt) StartPos() Position  { return s.Start }
-func (s *BreakStmt) StartPos() Position    { return s.Start }
-func (s *ContinueStmt) StartPos() Position { return s.Start }
-func (s *NextStmt) StartPos() Position     { return s.Start }
-func (s *NextfileStmt) StartPos() Position { return s.Start }
-func (s *ExitStmt) StartPos() Position     { return s.Start }
-func (s *DeleteStmt) StartPos() Position   { return s.Start }
-func (s *ReturnStmt) StartPos() Position   { return s.Start }
-func (s *BlockStmt) StartPos() Position    { return s.Start }
+func (s *PrintStmt) StartPos() lexer.Position    { return s.Start }
+func (s *PrintfStmt) StartPos() lexer.Position   { return s.Start }
+func (s *ExprStmt) StartPos() lexer.Position     { return s.Start }
+func (s *IfStmt) StartPos() lexer.Position       { return s.Start }
+func (s *ForStmt) StartPos() lexer.Position      { return s.Start }
+func (s *ForInStmt) StartPos() lexer.Position    { return s.Start }
+func (s *WhileStmt) StartPos() lexer.Position    { return s.Start }
+func (s *DoWhileStmt) StartPos() lexer.Position  { return s.Start }
+func (s *BreakStmt) StartPos() lexer.Position    { return s.Start }
+func (s *ContinueStmt) StartPos() lexer.Position { return s.Start }
+func (s *NextStmt) StartPos() lexer.Position     { return s.Start }
+func (s *NextfileStmt) StartPos() lexer.Position { return s.Start }
+func (s *ExitStmt) StartPos() lexer.Position     { return s.Start }
+func (s *DeleteStmt) StartPos() lexer.Position   { return s.Start }
+func (s *ReturnStmt) StartPos() lexer.Position   { return s.Start }
+func (s *BlockStmt) StartPos() lexer.Position    { return s.Start }
 
-func (s *PrintStmt) EndPos() Position    { return s.End }
-func (s *PrintfStmt) EndPos() Position   { return s.End }
-func (s *ExprStmt) EndPos() Position     { return s.End }
-func (s *IfStmt) EndPos() Position       { return s.End }
-func (s *ForStmt) EndPos() Position      { return s.End }
-func (s *ForInStmt) EndPos() Position    { return s.End }
-func (s *WhileStmt) EndPos() Position    { return s.End }
-func (s *DoWhileStmt) EndPos() Position  { return s.End }
-func (s *BreakStmt) EndPos() Position    { return s.End }
-func (s *ContinueStmt) EndPos() Position { return s.End }
-func (s *NextStmt) EndPos() Position     { return s.End }
-func (s *NextfileStmt) EndPos() Position { return s.End }
-func (s *ExitStmt) EndPos() Position     { return s.End }
-func (s *DeleteStmt) EndPos() Position   { return s.End }
-func (s *ReturnStmt) EndPos() Position   { return s.End }
-func (s *BlockStmt) EndPos() Position    { return s.End }
+func (s *PrintStmt) EndPos() lexer.Position    { return s.End }
+func (s *PrintfStmt) EndPos() lexer.Position   { return s.End }
+func (s *ExprStmt) EndPos() lexer.Position     { return s.End }
+func (s *IfStmt) EndPos() lexer.Position       { return s.End }
+func (s *ForStmt) EndPos() lexer.Position      { return s.End }
+func (s *ForInStmt) EndPos() lexer.Position    { return s.End }
+func (s *WhileStmt) EndPos() lexer.Position    { return s.End }
+func (s *DoWhileStmt) EndPos() lexer.Position  { return s.End }
+func (s *BreakStmt) EndPos() lexer.Position    { return s.End }
+func (s *ContinueStmt) EndPos() lexer.Position { return s.End }
+func (s *NextStmt) EndPos() lexer.Position     { return s.End }
+func (s *NextfileStmt) EndPos() lexer.Position { return s.End }
+func (s *ExitStmt) EndPos() lexer.Position     { return s.End }
+func (s *DeleteStmt) EndPos() lexer.Position   { return s.End }
+func (s *ReturnStmt) EndPos() lexer.Position   { return s.End }
+func (s *BlockStmt) EndPos() lexer.Position    { return s.End }
 
 // PrintStmt is a statement like print $1, $3.
 type PrintStmt struct {
 	Args     []Expr
-	Redirect Token
+	Redirect lexer.Token
 	Dest     Expr
-	Start    Position
-	End      Position
+	Start    lexer.Position
+	End      lexer.Position
 }
 
 func (s *PrintStmt) String() string {
 	return printString("print", s.Args, s.Redirect, s.Dest)
 }
 
-func printString(f string, args []Expr, redirect Token, dest Expr) string {
+func printString(f string, args []Expr, redirect lexer.Token, dest Expr) string {
 	parts := make([]string, len(args))
 	for i, a := range args {
 		parts[i] = a.String()
@@ -558,10 +558,10 @@ func printString(f string, args []Expr, redirect Token, dest Expr) string {
 // PrintfStmt is a statement like printf "%3d", 1234.
 type PrintfStmt struct {
 	Args     []Expr
-	Redirect Token
+	Redirect lexer.Token
 	Dest     Expr
-	Start    Position
-	End      Position
+	Start    lexer.Position
+	End      lexer.Position
 }
 
 func (s *PrintfStmt) String() string {
@@ -571,8 +571,8 @@ func (s *PrintfStmt) String() string {
 // ExprStmt is statement like a bare function call: my_func(x).
 type ExprStmt struct {
 	Expr  Expr
-	Start Position
-	End   Position
+	Start lexer.Position
+	End   lexer.Position
 }
 
 func (s *ExprStmt) String() string {
@@ -582,11 +582,11 @@ func (s *ExprStmt) String() string {
 // IfStmt is an if or if-else statement.
 type IfStmt struct {
 	Cond      Expr
-	BodyStart Position
+	BodyStart lexer.Position
 	Body      Stmts
 	Else      Stmts
-	Start     Position
-	End       Position
+	Start     lexer.Position
+	End       lexer.Position
 }
 
 func (s *IfStmt) String() string {
@@ -602,10 +602,10 @@ type ForStmt struct {
 	Pre       Stmt
 	Cond      Expr
 	Post      Stmt
-	BodyStart Position
+	BodyStart lexer.Position
 	Body      Stmts
-	Start     Position
-	End       Position
+	Start     lexer.Position
+	End       lexer.Position
 }
 
 func (s *ForStmt) String() string {
@@ -627,13 +627,13 @@ func (s *ForStmt) String() string {
 // ForInStmt is a for loop like for (k in a) print k, a[k].
 type ForInStmt struct {
 	Var       string
-	VarPos    Position
+	VarPos    lexer.Position
 	Array     string
-	ArrayPos  Position
-	BodyStart Position
+	ArrayPos  lexer.Position
+	BodyStart lexer.Position
 	Body      Stmts
-	Start     Position
-	End       Position
+	Start     lexer.Position
+	End       lexer.Position
 }
 
 func (s *ForInStmt) String() string {
@@ -643,10 +643,10 @@ func (s *ForInStmt) String() string {
 // WhileStmt is a while loop.
 type WhileStmt struct {
 	Cond      Expr
-	BodyStart Position
+	BodyStart lexer.Position
 	Body      Stmts
-	Start     Position
-	End       Position
+	Start     lexer.Position
+	End       lexer.Position
 }
 
 func (s *WhileStmt) String() string {
@@ -657,8 +657,8 @@ func (s *WhileStmt) String() string {
 type DoWhileStmt struct {
 	Body  Stmts
 	Cond  Expr
-	Start Position
-	End   Position
+	Start lexer.Position
+	End   lexer.Position
 }
 
 func (s *DoWhileStmt) String() string {
@@ -667,8 +667,8 @@ func (s *DoWhileStmt) String() string {
 
 // BreakStmt is a break statement.
 type BreakStmt struct {
-	Start Position
-	End   Position
+	Start lexer.Position
+	End   lexer.Position
 }
 
 func (s *BreakStmt) String() string {
@@ -677,8 +677,8 @@ func (s *BreakStmt) String() string {
 
 // ContinueStmt is a continue statement.
 type ContinueStmt struct {
-	Start Position
-	End   Position
+	Start lexer.Position
+	End   lexer.Position
 }
 
 func (s *ContinueStmt) String() string {
@@ -687,8 +687,8 @@ func (s *ContinueStmt) String() string {
 
 // NextStmt is a next statement.
 type NextStmt struct {
-	Start Position
-	End   Position
+	Start lexer.Position
+	End   lexer.Position
 }
 
 func (s *NextStmt) String() string {
@@ -697,8 +697,8 @@ func (s *NextStmt) String() string {
 
 // NextfileStmt is a nextfile statement.
 type NextfileStmt struct {
-	Start Position
-	End   Position
+	Start lexer.Position
+	End   lexer.Position
 }
 
 func (s *NextfileStmt) String() string {
@@ -708,8 +708,8 @@ func (s *NextfileStmt) String() string {
 // ExitStmt is an exit statement.
 type ExitStmt struct {
 	Status Expr
-	Start  Position
-	End    Position
+	Start  lexer.Position
+	End    lexer.Position
 }
 
 func (s *ExitStmt) String() string {
@@ -723,10 +723,10 @@ func (s *ExitStmt) String() string {
 // DeleteStmt is a statement like delete a[k].
 type DeleteStmt struct {
 	Array    string
-	ArrayPos Position
+	ArrayPos lexer.Position
 	Index    []Expr
-	Start    Position
-	End      Position
+	Start    lexer.Position
+	End      lexer.Position
 }
 
 func (s *DeleteStmt) String() string {
@@ -743,8 +743,8 @@ func (s *DeleteStmt) String() string {
 // ReturnStmt is a return statement.
 type ReturnStmt struct {
 	Value Expr
-	Start Position
-	End   Position
+	Start lexer.Position
+	End   lexer.Position
 }
 
 func (s *ReturnStmt) String() string {
@@ -758,8 +758,8 @@ func (s *ReturnStmt) String() string {
 // BlockStmt is a stand-alone block like { print "x" }.
 type BlockStmt struct {
 	Body  Stmts
-	Start Position
-	End   Position
+	Start lexer.Position
+	End   lexer.Position
 }
 
 func (s *BlockStmt) String() string {
@@ -771,7 +771,7 @@ type Function struct {
 	Name   string
 	Params []string
 	Body   Stmts
-	Pos    Position
+	Pos    lexer.Position
 }
 
 func (f *Function) String() string {
@@ -782,13 +782,13 @@ func (f *Function) String() string {
 // PositionError represents an error bound to specific position in source.
 type PositionError struct {
 	// Source line/column position where the error occurred.
-	Position Position
+	Position lexer.Position
 	// Error message.
 	Message string
 }
 
 // PosErrorf like fmt.Errorf, but with an explicit position.
-func PosErrorf(pos Position, format string, args ...any) error {
+func PosErrorf(pos lexer.Position, format string, args ...any) error {
 	message := fmt.Sprintf(format, args...)
 	return &PositionError{pos, message}
 }
