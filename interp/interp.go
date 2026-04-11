@@ -115,7 +115,7 @@ type interp struct {
 	reparseCSV      bool
 
 	// Built-in variables
-	argc             int
+	argc             value
 	convertFormat    string
 	outputFormat     string
 	fieldSep         string
@@ -126,8 +126,8 @@ type interp struct {
 	outputFieldSep   string
 	outputRecordSep  string
 	subscriptSep     string
-	matchLength      int
-	matchStart       int
+	matchLength      value
+	matchStart       value
 	inputMode        IOMode
 	csvInputConfig   CSVInputConfig
 	outputMode       IOMode
@@ -420,6 +420,11 @@ func newInterp(program *parser.Program) *interp {
 	p.outputFieldSep = " "
 	p.outputRecordSep = "\n"
 	p.subscriptSep = "\x1c"
+	p.lineNum = num(0)
+	p.fileLineNum = num(0)
+	p.matchStart = num(0)
+	p.matchLength = num(0)
+	// p.argc is initialized in setExecuteConfig based on config.Args
 
 	p.inputStreams = make(map[string]inputStream)
 	p.outputStreams = make(map[string]outputStream)
@@ -476,7 +481,7 @@ func (p *interp) setExecuteConfig(config *Config) error {
 	// Set up ARGV and other variables from config
 	argvIndex := p.arrayIndexes["ARGV"]
 	p.setArrayValue(resolver.Global, argvIndex, "0", str(config.Argv0))
-	p.argc = len(config.Args) + 1
+	p.argc = num(float64(len(config.Args) + 1))
 	for i, arg := range config.Args {
 		p.setArrayValue(resolver.Global, argvIndex, strconv.Itoa(i+1), numStr(arg))
 	}
@@ -740,13 +745,13 @@ func (p *interp) getSpecial(index int) value {
 	case ast.V_NR:
 		return p.lineNum
 	case ast.V_RLENGTH:
-		return num(float64(p.matchLength))
+		return p.matchLength
 	case ast.V_RSTART:
-		return num(float64(p.matchStart))
+		return p.matchStart
 	case ast.V_FNR:
 		return p.fileLineNum
 	case ast.V_ARGC:
-		return num(float64(p.argc))
+		return p.argc
 	case ast.V_CONVFMT:
 		return str(p.convertFormat)
 	case ast.V_FILENAME:
@@ -815,9 +820,9 @@ func (p *interp) setSpecial(index int, v value) error {
 	case ast.V_NR:
 		p.lineNum = v
 	case ast.V_RLENGTH:
-		p.matchLength = int(v.num())
+		p.matchLength = v
 	case ast.V_RSTART:
-		p.matchStart = int(v.num())
+		p.matchStart = v
 	case ast.V_FNR:
 		p.fileLineNum = v
 	case ast.V_ARGC:
@@ -825,7 +830,7 @@ func (p *interp) setSpecial(index int, v value) error {
 		if argc > maxFieldIndex {
 			return newError("ARGC set too large: %d", argc)
 		}
-		p.argc = argc
+		p.argc = v
 	case ast.V_CONVFMT:
 		p.convertFormat = p.toString(v)
 	case ast.V_FILENAME:
