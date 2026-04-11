@@ -715,7 +715,7 @@ func (p *interp) ensureFields() {
 	for range p.fields {
 		p.fieldsIsTrueStr = append(p.fieldsIsTrueStr, false)
 	}
-	p.numFields = len(p.fields)
+	p.numFields = num(float64(len(p.fields)))
 }
 
 // Fetch next line (record) of input from current input file, opening

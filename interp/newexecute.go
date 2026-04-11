@@ -108,7 +108,7 @@ func (p *interp) resetCore() {
 	p.fileLineNum = num(0)
 	p.fields = nil
 	p.fieldsIsTrueStr = nil
-	p.numFields = 0
+	p.numFields = num(0)
 	p.haveFields = false
 
 	p.matchStart = num(0)

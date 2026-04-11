@@ -108,7 +108,7 @@ type interp struct {
 	fileLineNum     value
 	fields          []string
 	fieldsIsTrueStr []bool
-	numFields       int
+	numFields       value
 	haveFields      bool
 	fieldNames      []string
 	fieldIndexes    map[string]int
@@ -422,6 +422,7 @@ func newInterp(program *parser.Program) *interp {
 	p.subscriptSep = "\x1c"
 	p.lineNum = num(0)
 	p.fileLineNum = num(0)
+	p.numFields = num(0)
 	p.matchStart = num(0)
 	p.matchLength = num(0)
 	// p.argc is initialized in setExecuteConfig based on config.Args
@@ -741,7 +742,7 @@ func (p *interp) getSpecial(index int) value {
 	switch index {
 	case ast.V_NF:
 		p.ensureFields()
-		return num(float64(p.numFields))
+		return p.numFields
 	case ast.V_NR:
 		return p.lineNum
 	case ast.V_RLENGTH:
@@ -806,12 +807,12 @@ func (p *interp) setSpecial(index int, v value) error {
 			return newError("NF set too large: %d", numFields)
 		}
 		p.ensureFields()
-		p.numFields = numFields
-		if p.numFields < len(p.fields) {
-			p.fields = p.fields[:p.numFields]
-			p.fieldsIsTrueStr = p.fieldsIsTrueStr[:p.numFields]
+		p.numFields = v
+		if numFields < len(p.fields) {
+			p.fields = p.fields[:numFields]
+			p.fieldsIsTrueStr = p.fieldsIsTrueStr[:numFields]
 		}
-		for i := len(p.fields); i < p.numFields; i++ {
+		for i := len(p.fields); i < numFields; i++ {
 			p.fields = append(p.fields, "")
 			p.fieldsIsTrueStr = append(p.fieldsIsTrueStr, false)
 		}
@@ -994,7 +995,7 @@ func (p *interp) setField(index int, value string) error {
 	}
 	p.fields[index-1] = value
 	p.fieldsIsTrueStr[index-1] = true
-	p.numFields = len(p.fields)
+	p.numFields = num(float64(len(p.fields)))
 	p.line = p.joinFields(p.fields)
 	p.lineIsTrueStr = true
 	return nil
