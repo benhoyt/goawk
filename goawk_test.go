@@ -229,14 +229,11 @@ func sortedLines(data []byte) []byte {
 }
 
 func TestGAWK(t *testing.T) {
-	skip := map[string]bool{ // TODO: fix these (at least the ones that are bugs)
-		"splitwht": true, // other awks handle split(s, a, " ") differently from split(s, a, / /)
-
+	skip := map[string]bool{
+		"hex2":     true, // GoAWK allows hex numbers / floating point (per POSIX)
 		"rscompat": true, // GoAWK allows multi-char RS by default
 		"rsstart2": true, // GoAWK ^ and $ anchors match beginning and end of line, not file (unlike Gawk)
-
-		"hex2":   true, // GoAWK allows hex numbers / floating point (per POSIX)
-		"strtod": true, // GoAWK allows hex numbers / floating point (per POSIX)
+		"strtod":   true, // GoAWK allows hex numbers / floating point (per POSIX)
 	}
 
 	dontRunOnWindows := map[string]bool{

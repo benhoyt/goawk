@@ -669,7 +669,7 @@ func (p *interp) execute(code []compiler.Opcode) error {
 			arrayIndex := code[ip+1]
 			ip += 2
 			s := p.toString(p.peekTop())
-			n, err := p.split(s, resolver.Scope(arrayScope), int(arrayIndex), p.fieldSep, p.inputMode)
+			n, err := p.split(s, resolver.Scope(arrayScope), int(arrayIndex), p.fieldSep, false, p.inputMode)
 			if err != nil {
 				return err
 			}
@@ -678,10 +678,11 @@ func (p *interp) execute(code []compiler.Opcode) error {
 		case compiler.CallSplitSep:
 			arrayScope := code[ip]
 			arrayIndex := code[ip+1]
-			ip += 2
+			sepIsRegex := code[ip+2] != 0
+			ip += 3
 			s, fieldSep := p.peekPop()
 			// 3-argument form of split() ignores input mode
-			n, err := p.split(p.toString(s), resolver.Scope(arrayScope), int(arrayIndex), p.toString(fieldSep), DefaultMode)
+			n, err := p.split(p.toString(s), resolver.Scope(arrayScope), int(arrayIndex), p.toString(fieldSep), sepIsRegex, DefaultMode)
 			if err != nil {
 				return err
 			}

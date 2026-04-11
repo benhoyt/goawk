@@ -341,7 +341,8 @@ func (d *disassembler) disassemble(prefix string) error {
 		case CallSplitSep:
 			arrayScope := resolver.Scope(d.fetch())
 			arrayIndex := int(d.fetch())
-			d.writeOpf("CallSplitSep %s", d.arrayName(arrayScope, arrayIndex))
+			sepIsRegex := d.fetch()
+			d.writeOpf("CallSplitSep %s %d", d.arrayName(arrayScope, arrayIndex), sepIsRegex)
 
 		case CallSprintf:
 			numArgs := d.fetch()

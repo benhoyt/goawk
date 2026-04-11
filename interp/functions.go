@@ -243,7 +243,7 @@ func validNativeType(typ reflect.Type) bool {
 }
 
 // Guts of the split() function
-func (p *interp) split(s string, scope resolver.Scope, index int, fs string, mode IOMode) (int, error) {
+func (p *interp) split(s string, scope resolver.Scope, index int, sep string, sepIsRegex bool, mode IOMode) (int, error) {
 	var parts []string
 	switch {
 	case mode == CSVMode || mode == TSVMode:
@@ -264,14 +264,14 @@ func (p *interp) split(s string, scope resolver.Scope, index int, fs string, mod
 		// Parse one record. Errors shouldn't happen, but if there is one,
 		// len(parts) will be 0.
 		scanner.Scan()
-	case fs == " ":
+	case !sepIsRegex && sep == " ":
 		parts = strings.Fields(s)
 	case s == "":
 		// Leave parts 0 length on empty string
-	case utf8.RuneCountInString(fs) <= 1:
-		parts = strings.Split(s, fs)
+	case !sepIsRegex && utf8.RuneCountInString(sep) <= 1:
+		parts = strings.Split(s, sep)
 	default:
-		re, err := p.compileRegex(fs)
+		re, err := p.compileRegex(sep)
 		if err != nil {
 			return 0, err
 		}
