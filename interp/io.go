@@ -266,7 +266,7 @@ func (p *interp) newScanner(input io.Reader, buffer []byte) *bufio.Scanner {
 		scanner.Split(splitter.scan)
 	case utf8.RuneCountInString(p.recordSep) >= 1:
 		// Multi-byte and single char but multi-byte RS use regex
-		splitter := regexSplitter{re: p.recordSepRegex, terminator: &p.recordTerminator}
+		splitter := regexSplitter{re: &p.recordSepRegex, terminator: &p.recordTerminator}
 		scanner.Split(splitter.scan)
 	}
 	scanner.Buffer(buffer, maxRecordLength)
@@ -381,9 +381,11 @@ func (s byteSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, 
 	return 0, nil, nil
 }
 
-// Splitter that splits records on the given regular expression
+// Splitter that splits records on the given regular expression.
 type regexSplitter struct {
-	re         *regexp.Regexp
+	// Use a pointer to a *Regexp (&p.recordSepRegex) so that the splitter always reads
+	// the current regex, allowing dynamic changes to RS during execution.
+	re         **regexp.Regexp
 	terminator *string
 }
 
@@ -391,7 +393,7 @@ func (s regexSplitter) scan(data []byte, atEOF bool) (advance int, token []byte,
 	if atEOF && len(data) == 0 {
 		return 0, nil, nil
 	}
-	loc := s.re.FindIndex(data)
+	loc := (*s.re).FindIndex(data)
 	// Note: for a regex such as "()", loc[0]==loc[1]. Gawk behavior for this
 	// case is to match the entire input.
 	if loc != nil && loc[0] != loc[1] {

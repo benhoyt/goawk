@@ -405,6 +405,28 @@ Record = record 2 and RT = [ BBBB ]
 Record = record 3 and RT = []
 `, "", ""},
 	{`BEGIN { RS=".." } { print $0 RT }  # !posix`, "foo bar bazz", "fo\no \nba\nr \nba\nzz\n", "", ""},
+	// Dynamically changing RS (regex) between records
+	{`BEGIN { RS="\\.+" } NR==2 { RS="x+" } { print NR, $0 }  # !posix !awk`, "1.2..3xxx4x5", "1 1\n2 2\n3 3\n4 4\n5 5\n", "", ""},
+	{`
+# Regression test for https://github.com/benhoyt/goawk/issues/143
+BEGIN { RS=".{9}" }
+NR==1 { $0=substr(RT,1,8); RS=substr(RT,9,1) }
+{ print $0 }
+# !posix !awk
+`, "UNA:+,? 'UNB+UNOC:3+4042805000102:14+4016001000655:14+201231:0206+EC33218279A++TL'UNH+1+MSCONS:D:04B:UN:2.3'BGM+7+EC33218279A-1+9'DTM+137:202012310206:203'RFF+Z13:13018'NAD+MS+4042805000102::9'NAD+MR+4016001000655::9'UNS+D'NAD+DP'LOC+172+DE00108108359V0000000000000088446'DTM+163:202012300000?+01:303",
+		"UNA:+,? \n" +
+			`UNB+UNOC:3+4042805000102:14+4016001000655:14+201231:0206+EC33218279A++TL
+UNH+1+MSCONS:D:04B:UN:2.3
+BGM+7+EC33218279A-1+9
+DTM+137:202012310206:203
+RFF+Z13:13018
+NAD+MS+4042805000102::9
+NAD+MR+4016001000655::9
+UNS+D
+NAD+DP
+LOC+172+DE00108108359V0000000000000088446
+DTM+163:202012300000?+01:303
+`, "", ""},
 	{`BEGIN { RT="foo"; print RT }`, "", "foo\n", "", ""},
 	{`
 BEGIN {

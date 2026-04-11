@@ -856,7 +856,11 @@ func (p *interp) setSpecial(index int, v value) error {
 		p.recordSep = p.toString(v)
 		switch { // compare to interp.newScanner
 		case len(p.recordSep) <= 1:
-			// Simple cases use specialized splitters, not regex
+			// Simple cases use specialized splitters, not regex. However, we still update
+			// recordSepRegex in case an active regexSplitter is still using it.
+			sep := regexp.QuoteMeta(p.recordSep)
+			p.recordSepRegex = regexp.MustCompile(sep)
+			p.recordSepRegex.Longest() // other awks use leftmost-longest matching
 		case utf8.RuneCountInString(p.recordSep) == 1:
 			// Multi-byte unicode char falls back to regex splitter
 			sep := regexp.QuoteMeta(p.recordSep) // not strictly necessary as no multi-byte chars are regex meta chars
