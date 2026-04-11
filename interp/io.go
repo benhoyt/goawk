@@ -621,7 +621,7 @@ func nextRune(b []byte) rune {
 // Setup for a new input file with given name (empty string if stdin)
 func (p *interp) setFile(filename string) {
 	p.filename = numStr(filename)
-	p.fileLineNum = 0
+	p.fileLineNum = num(0)
 	p.hadFiles = true
 }
 
@@ -715,7 +715,7 @@ func (p *interp) ensureFields() {
 	for range p.fields {
 		p.fieldsIsTrueStr = append(p.fieldsIsTrueStr, false)
 	}
-	p.numFields = len(p.fields)
+	p.numFields = num(float64(len(p.fields)))
 }
 
 // Fetch next line (record) of input from current input file, opening
@@ -727,13 +727,13 @@ func (p *interp) nextLine() (string, error) {
 				// Previous input is file, close it
 				_ = prevInput.Close()
 			}
-			if p.filenameIndex >= p.argc && !p.hadFiles {
+			if p.filenameIndex >= int(p.argc.num()) && !p.hadFiles {
 				// Moved past number of ARGV args and haven't seen
 				// any files yet, use stdin
 				p.input = p.stdin
 				p.setFile("-")
 			} else {
-				if p.filenameIndex >= p.argc {
+				if p.filenameIndex >= int(p.argc.num()) {
 					// Done with ARGV args, all done with input
 					return "", io.EOF
 				}
@@ -804,8 +804,8 @@ func (p *interp) nextLine() (string, error) {
 	}
 
 	// Got a line (record) of input, return it
-	p.lineNum++
-	p.fileLineNum++
+	p.lineNum = num(p.lineNum.num() + 1)
+	p.fileLineNum = num(p.fileLineNum.num() + 1)
 	return p.scanner.Text(), nil
 }
 

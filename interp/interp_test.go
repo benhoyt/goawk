@@ -158,8 +158,7 @@ NR==3, NR==5 { print NR }
 	{`BEGIN { a[1]=1; a[2]=1; a[3]=1; for (k in a) { if (k==2) continue; s++ } print s }`, "", "2\n", "", ""},
 	{`function alen(a, k, n) { n=0; for (k in a) n++; return n }  BEGIN { a[1]=1; a[2]=1; print alen(a) }`, "", "2\n", "", ""},
 	{`BEGIN { a["x"]=1; for (SUBSEP in a) print SUBSEP, a[SUBSEP] }`, "", "x 1\n", "", ""},
-	// TODO: this doesn't work in GoAWK yet
-	// {`BEGIN { a["x"]=1; for (NR in a) print NR, a[NR] }`, "", "x 1\n", "", ""},
+	{`BEGIN { a["x"]=1; for (NR in a) print NR, a[NR] }`, "", "x 1\n", "", ""},
 	{`BEGIN { while (i<3) { i++; s++; break } print s }`, "", "1\n", "", ""},
 	{`BEGIN { while (i<3) { i++; if (i==2) continue; s++ } print s }`, "", "2\n", "", ""},
 	{`BEGIN { do { i++; s++; break } while (i<3); print s }`, "", "1\n", "", ""},
@@ -326,7 +325,7 @@ BEGIN {
 	{`BEGIN { $0="1"; print ($0?1:0) }`, "", "1\n", "", ""},
 	{`BEGIN { print 0?1:0, 1?1:0, ""?1:0, "0"?1:0, "1"?1:0, x?1:0 }`, "", "0 1 0 1 1 0\n", "", ""},
 
-	// Built-in variables
+	// Built-in variables (special variables)
 	{`BEGIN { print ARGC; ARGC=42; print ARGC }  # !gawk`, "", "1\n42\n", "", ""}, // ARGC is properly tested in goawk_test.go
 	{`BEGIN { ARGC=1234567 }`, "", "", "ARGC set too large: 1234567", ""},
 	{`
@@ -430,6 +429,22 @@ BEGIN {
 	{`{ FS="X+"; print $1; print $2 }`, "aXXb c", "aXXb\nc\n", "", ""},
 	{`BEGIN { FS="," } { print $1; print $2 }`, "a,b c", "a\nb c\n", "", ""},
 	{`BEGIN { FS="X+" } { print $1; print $2 }`, "aXXb c", "a\nb c\n", "", ""},
+
+	// Handling of integer special variables
+	{`BEGIN { print "NF", NF, "NR", NR, "FNR", FNR, "RSTART", RSTART, "RLENGTH", RLENGTH, "ARGC>0", (ARGC>0) }`,
+		"", "NF 0 NR 0 FNR 0 RSTART 0 RLENGTH 0 ARGC>0 1\n", "", ""},
+	{`BEGIN { NF = "x"; print NF } { print NF }`, "a\na b c\n", "x\n1\n3\n", "", ""},
+	{`BEGIN { NF = "3.14x"; print NF } { print NF }`, "a\na b c\n", "3.14x\n1\n3\n", "", ""},
+	{`BEGIN { NR = "x"; print NR } { print NR }`, "a\nb\n", "x\n1\n2\n", "", ""},
+	{`BEGIN { NR = "3.14x"; print NR } { print NR }  # !awk !gawk`, "a\nb\n", "3.14x\n4.14\n5.14\n", "", ""},
+	{`BEGIN { FNR = "x"; print FNR } { print FNR }`, "a\nb\n", "x\n1\n2\n", "", ""},
+	{`BEGIN { FNR = "3.14x"; print FNR } { print FNR }  # !awk !gawk`, "a\nb\n", "3.14x\n1\n2\n", "", ""},
+	{`BEGIN { RSTART = "x"; print RSTART; match("foo", /o/); print RSTART }`, "", "x\n2\n", "", ""},
+	{`BEGIN { RSTART = "3.14x"; print RSTART; match("foo", /o/); print RSTART }`, "", "3.14x\n2\n", "", ""},
+	{`BEGIN { RLENGTH = "x"; print RLENGTH; match("foo", /o+/); print RLENGTH }`, "", "x\n2\n", "", ""},
+	{`BEGIN { RLENGTH = "3.14x"; print RLENGTH; match("foo", /o+/); print RLENGTH }`, "", "3.14x\n2\n", "", ""},
+	{`BEGIN { ARGC = "x"; print ARGC }`, "", "x\n", "", ""},
+	{`BEGIN { ARGC = "3.14x"; print ARGC }`, "", "3.14x\n", "", ""},
 
 	// Field expressions and assignment (and interaction with NF)
 	{`{ print NF; NF=1; $2="two"; print $0, NF }`, "\n", "0\n two 2\n", "", ""},

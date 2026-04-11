@@ -1035,16 +1035,16 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 		}
 		loc := re.FindStringIndex(s)
 		if loc == nil {
-			p.matchStart = 0
-			p.matchLength = -1
+			p.matchStart = num(0)
+			p.matchLength = num(-1)
 		} else if p.chars {
-			p.matchStart = utf8.RuneCountInString(s[:loc[0]]) + 1
-			p.matchLength = utf8.RuneCountInString(s[loc[0]:loc[1]])
+			p.matchStart = num(float64(utf8.RuneCountInString(s[:loc[0]]) + 1))
+			p.matchLength = num(float64(utf8.RuneCountInString(s[loc[0]:loc[1]])))
 		} else {
-			p.matchStart = loc[0] + 1
-			p.matchLength = loc[1] - loc[0]
+			p.matchStart = num(float64(loc[0] + 1))
+			p.matchLength = num(float64(loc[1] - loc[0]))
 		}
-		p.replaceTop(num(float64(p.matchStart)))
+		p.replaceTop(p.matchStart)
 
 	case compiler.BuiltinRand:
 		p.push(num(p.random.Float64()))
