@@ -243,8 +243,8 @@ func (cover *Cover) trackStatement(stmts []ast.Stmt) ast.Stmt {
 	path, startLine := cover.fileReader.FileLine(start1.Line)
 	_, endLine := cover.fileReader.FileLine(end2.Line)
 	cover.trackedBlocks = append(cover.trackedBlocks, trackedBlock{
-		start:    lexer.Position{startLine, start1.Column},
-		end:      lexer.Position{endLine, end2.Column},
+		start:    lexer.Position{Line: startLine, Column: start1.Column},
+		end:      lexer.Position{Line: endLine, Column: end2.Column},
 		path:     path,
 		numStmts: len(stmts),
 	})
