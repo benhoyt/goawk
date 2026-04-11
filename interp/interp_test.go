@@ -325,7 +325,7 @@ BEGIN {
 	{`BEGIN { $0="1"; print ($0?1:0) }`, "", "1\n", "", ""},
 	{`BEGIN { print 0?1:0, 1?1:0, ""?1:0, "0"?1:0, "1"?1:0, x?1:0 }`, "", "0 1 0 1 1 0\n", "", ""},
 
-	// Built-in variables
+	// Built-in variables (special variables)
 	{`BEGIN { print ARGC; ARGC=42; print ARGC }  # !gawk`, "", "1\n42\n", "", ""}, // ARGC is properly tested in goawk_test.go
 	{`BEGIN { ARGC=1234567 }`, "", "", "ARGC set too large: 1234567", ""},
 	{`
@@ -429,6 +429,12 @@ BEGIN {
 	{`{ FS="X+"; print $1; print $2 }`, "aXXb c", "aXXb\nc\n", "", ""},
 	{`BEGIN { FS="," } { print $1; print $2 }`, "a,b c", "a\nb c\n", "", ""},
 	{`BEGIN { FS="X+" } { print $1; print $2 }`, "aXXb c", "a\nb c\n", "", ""},
+
+	// Handling of integer special variables
+	{`BEGIN { NR = "x"; print NR } { print NR }`, "a\nb\n", "x\n1\n2\n", "", ""},
+	{`BEGIN { NR = "3.14x"; print NR } { print NR }  # !awk !gawk`, "a\nb\n", "3.14x\n4.14\n5.14\n", "", ""},
+	{`BEGIN { FNR = "x"; print FNR } { print FNR }`, "a\nb\n", "x\n1\n2\n", "", ""},
+	{`BEGIN { FNR = "3.14x"; print FNR } { print FNR }  # !awk !gawk`, "a\nb\n", "3.14x\n1\n2\n", "", ""},
 
 	// Field expressions and assignment (and interaction with NF)
 	{`{ print NF; NF=1; $2="two"; print $0, NF }`, "\n", "0\n two 2\n", "", ""},
