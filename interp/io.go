@@ -255,6 +255,13 @@ func (p *interp) newScanner(input io.Reader, buffer []byte) *bufio.Scanner {
 			setFieldNames: p.setFieldNames,
 		}
 		scanner.Split(splitter.scan)
+	case p.inputMode == JSONLMode:
+		splitter := &jsonlSplitter{
+			fields:        &p.fields,
+			setFieldNames: p.setFieldNames,
+			interp:        p,
+		}
+		scanner.Split(splitter.scan)
 	case p.recordSep == "\n":
 		// Scanner default is to split on newlines
 	case p.recordSep == "":
@@ -274,7 +281,8 @@ func (p *interp) newScanner(input io.Reader, buffer []byte) *bufio.Scanner {
 }
 
 // setFieldNames is called by csvSplitter.scan on the first row (if the
-// "header" option is specified).
+// "header" option is specified), and by parseJSONLine for each JSON object
+// record. If names is nil, field names are cleared.
 func (p *interp) setFieldNames(names []string) {
 	p.fieldNames = names
 	p.fieldIndexes = nil // clear name-to-index cache
@@ -683,6 +691,16 @@ func (p *interp) ensureFields() {
 			scanner.Split(splitter.scan)
 			if !scanner.Scan() {
 				p.fields = nil
+			}
+		}
+	case p.inputMode == JSONLMode:
+		// Normally fields have already been parsed by jsonlSplitter.
+		// Only re-parse if $0 was explicitly assigned (reparseCSV flag).
+		if p.reparseCSV {
+			if err := p.parseJSONLine(p.line); err != nil {
+				fmt.Fprintf(p.errorOutput, "goawk: %s\n", err)
+				p.fields = nil
+				p.setFieldNames(nil)
 			}
 		}
 	case p.savedFieldSep == " ":

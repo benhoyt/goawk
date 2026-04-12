@@ -61,8 +61,10 @@ Additional GoAWK features:
   -E progfile       load program, treat as last option, disable var=value args
   -H                parse header row and enable @"field" in CSV input mode
   -h, --help        show this help message
-  -i mode           parse input into fields using CSV format (ignore FS and RS)
+  -i mode           parse input into fields using CSV or JSON Lines format
+                    (ignore FS and RS)
                     'csv|tsv [separator=<char>] [comment=<char>] [header]'
+                    'jsonl' (JSON Lines: arrays map to $1/$2/..., objects to @"name")
   -o mode           use CSV output for print with args (ignore OFS and ORS)
                     'csv|tsv [separator=<char>]'
   -N mode           newline output translation: smart (default), raw, crlf
