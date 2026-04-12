@@ -276,8 +276,13 @@ type Config struct {
 	// "encoding/csv" package, but FieldsPerRecord is not supported,
 	// LazyQuotes is always on, and TrimLeadingSpace is always off.
 	//
-	// You can also enable CSV or TSV input mode by setting INPUTMODE to "csv"
-	// or "tsv" in Vars or in the BEGIN block (those override this setting).
+	// If set to JSONLMode, each input line is parsed as a JSON value. JSON
+	// arrays map elements to $1, $2, etc. JSON objects map keys to named
+	// fields accessible via @"name" as well as $1, $2, etc.
+	//
+	// You can also enable CSV, TSV, or JSONL input mode by setting INPUTMODE
+	// to "csv", "tsv", or "jsonl" in Vars or in the BEGIN block (those
+	// override this setting).
 	//
 	// For further documentation about GoAWK's CSV support, see the full docs
 	// in "../docs/csv.md".
@@ -336,6 +341,12 @@ const (
 
 	// TSVMode uses tab-separated value mode for input or output.
 	TSVMode IOMode = 2
+
+	// JSONLMode uses JSON Lines format for input. Each line must be a JSON
+	// value (typically an array or object). JSON arrays map elements to $1,
+	// $2, etc. JSON objects map keys to named fields accessible via @"name"
+	// as well as $1, $2, etc. (in document key order).
+	JSONLMode IOMode = 3
 )
 
 // CSVInputConfig holds additional configuration for when InputMode is CSVMode
@@ -456,6 +467,10 @@ func (p *interp) setExecuteConfig(config *Config) error {
 	case TSVMode:
 		if p.csvInputConfig.Separator == 0 {
 			p.csvInputConfig.Separator = '\t'
+		}
+	case JSONLMode:
+		if p.csvInputConfig != (CSVInputConfig{}) {
+			return newError("CSV input configuration options are not supported in JSONL mode")
 		}
 	case DefaultMode:
 		if p.csvInputConfig != (CSVInputConfig{}) {
@@ -957,11 +972,19 @@ func (p *interp) getField(index int) value {
 	}
 }
 
-// Get the value of a field by name (for CSV/TSV mode), as in @"name".
+// Get the value of a field by name (for CSV/TSV/JSONL mode), as in @"name".
 func (p *interp) getFieldByName(name string) (value, error) {
+	if p.inputMode == JSONLMode {
+		// In JSONL mode, we must ensure fields are parsed (per-record field
+		// names come from each JSON object, not a fixed header).
+		p.ensureFields()
+	}
 	if p.fieldIndexes == nil {
 		// Lazily create map of field names to indexes.
 		if p.fieldNames == nil {
+			if p.inputMode == JSONLMode {
+				return null(), newError(`no field names for @"name" in JSONL mode; current record is not a JSON object`)
+			}
 			return null(), newError(`no field names for @; use -H or add "header" to INPUTMODE, and use "getline" first if in BEGIN`)
 		}
 		p.fieldIndexes = make(map[string]int, len(p.fieldNames))
@@ -1058,6 +1081,8 @@ func inputModeString(mode IOMode, csvConfig CSVInputConfig) string {
 	case TSVMode:
 		s = "tsv"
 		defaultSep = '\t'
+	case JSONLMode:
+		return "jsonl"
 	case DefaultMode:
 		return ""
 	}
@@ -1085,6 +1110,12 @@ func parseInputMode(s string) (mode IOMode, csvConfig CSVInputConfig, err error)
 	case "tsv":
 		mode = TSVMode
 		csvConfig.Separator = '\t'
+	case "jsonl":
+		mode = JSONLMode
+		if len(fields) > 1 {
+			return DefaultMode, CSVInputConfig{}, newError("jsonl input mode takes no options")
+		}
+		return mode, CSVInputConfig{}, nil
 	default:
 		return DefaultMode, CSVInputConfig{}, newError("invalid input mode %q", fields[0])
 	}

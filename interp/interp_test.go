@@ -2135,6 +2135,163 @@ BEGIN {
 	{`BEGIN { x="a"; @x += "y" }`, "", "", "parse error at 1:19: assigning @ expression not supported", nil},
 }
 
+// JSON Lines (JSONL) test cases
+var jsonlTests = []csvTest{
+	// JSON arrays: elements map to $1, $2, etc.
+	{`BEGIN { INPUTMODE="jsonl" } { print $1, $2, $3 }`,
+		`["Bob", "Smith", 42]` + "\n" + `["Jane", "Brown", 37]`,
+		"Bob Smith 42\nJane Brown 37\n", "", nil},
+
+	// JSON boolean and null conversions
+	{`BEGIN { INPUTMODE="jsonl" } { print $1, $2, $3, $4 }`,
+		`[true, false, null, 3.14]`,
+		"1 0  3.14\n", "", nil},
+
+	// JSON objects: @"name" syntax
+	{`BEGIN { INPUTMODE="jsonl" } { print @"name", @"age" }`,
+		`{"name":"Bob","age":42}` + "\n" + `{"name":"Jane","age":37}`,
+		"Bob 42\nJane 37\n", "", nil},
+
+	// JSON objects: dynamic @x lookup
+	{`BEGIN { INPUTMODE="jsonl" } { x="name"; print @x, @"age" }`,
+		`{"name":"Alice","age":25}`,
+		"Alice 25\n", "", nil},
+
+	// JSON objects: missing key returns empty string
+	{`BEGIN { INPUTMODE="jsonl" } { print @"name", @"missing" }`,
+		`{"name":"Bob","age":42}`,
+		"Bob \n", "", nil},
+
+	// JSON objects: $1, $2, ... also work (in document order)
+	{`BEGIN { INPUTMODE="jsonl" } { print $1, $2 }`,
+		`{"name":"Bob","age":42}`,
+		"Bob 42\n", "", nil},
+
+	// JSON objects: FIELDS array is updated per record
+	{`BEGIN { INPUTMODE="jsonl" } { print FIELDS[1], FIELDS[2] }`,
+		`{"name":"Bob","age":42}` + "\n" + `{"city":"NY","zip":"10001"}`,
+		"name age\ncity zip\n", "", nil},
+
+	// JSON objects: NF works
+	{`BEGIN { INPUTMODE="jsonl" } { print NF }`,
+		`{"a":1,"b":2,"c":3}`,
+		"3\n", "", nil},
+
+	// JSON objects: $0 is the raw JSON line
+	{`BEGIN { INPUTMODE="jsonl" } { print $0 }`,
+		`{"name":"Bob","age":42}`,
+		`{"name":"Bob","age":42}` + "\n", "", nil},
+
+	// Nested objects/arrays are flattened with dot notation
+	{`BEGIN { INPUTMODE="jsonl" } { print @"arr.0", @"arr.1", @"arr.2" }`,
+		`{"arr":[1,2,3]}`,
+		"1 2 3\n", "", nil},
+	{`BEGIN { INPUTMODE="jsonl" } { print @"obj.x" }`,
+		`{"obj":{"x":1}}`,
+		"1\n", "", nil},
+
+	// Flattened keys are not accessible via the unflattened parent name
+	{`BEGIN { INPUTMODE="jsonl" } { print @"arr", @"obj" }`,
+		`{"arr":[1,2,3],"obj":{"x":1}}`,
+		" \n", "", nil},
+
+	// Deeply nested: @"a.b.c" and @"a.b.d.0"
+	{`BEGIN { INPUTMODE="jsonl" } { print @"a.b.c", @"a.b.d.0", @"a.b.d.1" }`,
+		`{"a":{"b":{"c":"hello","d":[10,20]}}}`,
+		"hello 10 20\n", "", nil},
+
+	// Flattened NF counts all scalar leaves
+	{`BEGIN { INPUTMODE="jsonl" } { print NF }`,
+		`{"a":1,"b":{"c":2,"d":3},"e":[4,5]}`,
+		"5\n", "", nil},
+
+	// FIELDS array contains flattened key paths
+	{`BEGIN { INPUTMODE="jsonl" } { for (i=1; i<=NF; i++) printf "%s=%s\n", FIELDS[i], $i }`,
+		`{"x":1,"y":{"z":2}}`,
+		"x=1\ny.z=2\n", "", nil},
+
+	// JSON objects: different keys per line (each line independent)
+	{`BEGIN { INPUTMODE="jsonl" } { print @"a", @"b", @"c" }`,
+		`{"a":"x","b":"y"}` + "\n" + `{"b":"p","c":"q"}`,
+		"x y \n p q\n", "", nil},
+
+	// INPUTMODE "jsonl" round-trips via INPUTMODE variable
+	{`BEGIN { INPUTMODE="jsonl"; print INPUTMODE }`, "", "jsonl\n", "", nil},
+
+	// NR and FNR work correctly in JSONL mode
+	{`BEGIN { INPUTMODE="jsonl" } { print NR, $1 }`,
+		`["a"]` + "\n" + `["b"]` + "\n" + `["c"]`,
+		"1 a\n2 b\n3 c\n", "", nil},
+
+	// Filtering works in JSONL mode
+	{`BEGIN { INPUTMODE="jsonl" } @"type"=="error" { print @"msg" }`,
+		`{"type":"info","msg":"ok"}` + "\n" + `{"type":"error","msg":"fail"}`,
+		"fail\n", "", nil},
+
+	// @"name" on a JSON array line returns an error
+	{`BEGIN { INPUTMODE="jsonl" } { print @"x" }`,
+		`["a","b"]`,
+		"", `no field names for @"name" in JSONL mode; current record is not a JSON object`, nil},
+
+	// Configure via interp.Config struct
+	{`{ print $1, $2 }`, `["hello","world"]`, "hello world\n", "", func(config *interp.Config) {
+		config.InputMode = interp.JSONLMode
+	}},
+	{`{ print @"k", @"v" }`, `{"k":"key","v":"val"}`, "key val\n", "", func(config *interp.Config) {
+		config.InputMode = interp.JSONLMode
+	}},
+
+	// $0 reassignment in JSONL mode re-parses as JSON
+	{`BEGIN { INPUTMODE="jsonl" } { $0 = "{\"x\":99}"; print @"x" }`,
+		`{"x":1}`,
+		"99\n", "", nil},
+
+	// NF works correctly for JSON arrays
+	{`BEGIN { INPUTMODE="jsonl" } { print NF }`,
+		`["a","b","c","d"]`,
+		"4\n", "", nil},
+
+	// Empty lines are skipped in JSONL mode
+	{`BEGIN { INPUTMODE="jsonl" } { print NR, $1 }`,
+		"\n" + `["a"]` + "\n\n" + `["b"]` + "\n",
+		"1 a\n2 b\n", "", nil},
+
+	// Unicode strings work in JSONL mode
+	{`BEGIN { INPUTMODE="jsonl" } { print @"name" }`,
+		`{"name":"日本語"}`,
+		"日本語\n", "", nil},
+
+	// JSON strings with escape sequences are unescaped
+	{`BEGIN { INPUTMODE="jsonl" } { print @"s" }`,
+		`{"s":"hello\nworld"}`,
+		"hello\nworld\n", "", nil},
+
+	// Arithmetic on JSON numbers
+	{`BEGIN { INPUTMODE="jsonl" } { print @"a" + @"b" }`,
+		`{"a":10,"b":32}`,
+		"42\n", "", nil},
+
+	// Boolean comparison on true/false values
+	{`BEGIN { INPUTMODE="jsonl" } { print ($1 == 1), ($2 == 0) }`,
+		`[true, false]`,
+		"1 1\n", "", nil},
+
+	// INPUTMODE "jsonl" option parsing error
+	{`BEGIN { INPUTMODE="jsonl foo" }`, "", "", `jsonl input mode takes no options`, nil},
+}
+
+func TestJSONL(t *testing.T) {
+	for _, test := range jsonlTests {
+		testName := test.src
+		if len(testName) > 70 {
+			testName = testName[:70]
+		}
+		t.Run(testName, func(t *testing.T) {
+			testGoAWK(t, test.src, test.in, test.out, test.err, nil, test.configure)
+		})
+	}
+}
+
 func TestCSV(t *testing.T) {
 	for _, test := range csvTests {
 		testName := test.src
