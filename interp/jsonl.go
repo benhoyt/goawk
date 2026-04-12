@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strconv"
 )
 
 // jsonlSplitter is a bufio.Scanner split function for JSON Lines input.
@@ -80,7 +81,10 @@ func (p *interp) parseJSONLine(line string) error {
 }
 
 // parseJSONLineToFields parses a JSON line and returns the field values and
-// (for objects) the field names. For arrays, names is nil.
+// (for objects) the field names. For JSON objects, nested structures are
+// flattened using dot notation: object keys use @"parent.child" and array
+// indexes use @"parent.0", @"parent.1", etc.
+// For top-level JSON arrays, names is nil and elements map to $1, $2, etc.
 func parseJSONLineToFields(line []byte) (fields []string, names []string, err error) {
 	if len(bytes.TrimSpace(line)) == 0 {
 		return nil, nil, nil
@@ -101,7 +105,10 @@ func parseJSONLineToFields(line []byte) (fields []string, names []string, err er
 			fields, err = parseJSONArrayFields(dec)
 			return fields, nil, err
 		case '{':
-			return parseJSONObjectFields(dec)
+			if err := flattenObject(dec, "", &fields, &names); err != nil {
+				return nil, nil, err
+			}
+			return fields, names, nil
 		default:
 			return nil, nil, fmt.Errorf("unexpected JSON delimiter %q", t)
 		}
@@ -121,6 +128,9 @@ func parseJSONLineToFields(line []byte) (fields []string, names []string, err er
 	}
 }
 
+// parseJSONArrayFields reads JSON array elements ('{' already consumed) and
+// returns them as positional fields. Non-scalar elements are returned as their
+// JSON string representation.
 func parseJSONArrayFields(dec *json.Decoder) (fields []string, err error) {
 	for dec.More() {
 		var raw json.RawMessage
@@ -136,72 +146,92 @@ func parseJSONArrayFields(dec *json.Decoder) (fields []string, err error) {
 	return fields, nil
 }
 
-func parseJSONObjectFields(dec *json.Decoder) (fields []string, names []string, err error) {
+// flattenJSONValue recursively flattens a raw JSON value into fields/names
+// using dot notation for objects and numeric indexes for arrays.
+// path is the dot-separated key path so far (empty at the top level).
+func flattenJSONValue(raw json.RawMessage, path string, fields *[]string, names *[]string) error {
+	raw = bytes.TrimSpace(raw)
+	if len(raw) == 0 {
+		return nil
+	}
+	switch raw[0] {
+	case '{':
+		dec := json.NewDecoder(bytes.NewReader(raw))
+		dec.UseNumber()
+		if _, err := dec.Token(); err != nil { // consume '{'
+			return err
+		}
+		return flattenObject(dec, path, fields, names)
+	case '[':
+		dec := json.NewDecoder(bytes.NewReader(raw))
+		dec.UseNumber()
+		if _, err := dec.Token(); err != nil { // consume '['
+			return err
+		}
+		return flattenArray(dec, path, fields, names)
+	default:
+		// Scalar value: add to fields with its path as the name.
+		*fields = append(*fields, jsonRawToString(raw))
+		*names = append(*names, path)
+		return nil
+	}
+}
+
+// flattenObject processes a JSON object ('{' already consumed) and flattens
+// its key-value pairs into fields/names using dot-notation paths.
+func flattenObject(dec *json.Decoder, prefix string, fields *[]string, names *[]string) error {
 	for dec.More() {
-		// Read the object key
 		keyToken, err := dec.Token()
 		if err != nil {
-			return nil, nil, err
+			return err
 		}
 		key, ok := keyToken.(string)
 		if !ok {
-			return nil, nil, fmt.Errorf("expected string key in JSON object, got %T", keyToken)
+			return fmt.Errorf("expected string key in JSON object, got %T", keyToken)
 		}
 
-		// Read the value as raw JSON to preserve document order and type
+		var path string
+		if prefix == "" {
+			path = key
+		} else {
+			path = prefix + "." + key
+		}
+
 		var raw json.RawMessage
 		if err := dec.Decode(&raw); err != nil {
-			return nil, nil, err
+			return err
 		}
 
-		fields = append(fields, jsonRawToString(raw))
-		names = append(names, key)
+		if err := flattenJSONValue(raw, path, fields, names); err != nil {
+			return err
+		}
 	}
-	// consume the closing '}'
-	if _, err := dec.Token(); err != nil {
-		return nil, nil, err
-	}
-	return fields, names, nil
+	_, err := dec.Token() // consume '}'
+	return err
 }
 
-// jsonRawToValue converts a raw JSON value to an AWK value:
-//   - null      → numStr("")
-//   - true      → numStr("1")
-//   - false     → numStr("0")
-//   - number    → numStr(<decimal string>)
-//   - string    → numStr(<unquoted string>)
-//   - array/obj → numStr(<JSON representation>)
-func jsonRawToValue(raw json.RawMessage) value {
-	raw = bytes.TrimSpace(raw)
-	if len(raw) == 0 {
-		return numStr("")
-	}
-	switch raw[0] {
-	case 'n': // null
-		return numStr("")
-	case 't': // true
-		return numStr("1")
-	case 'f': // false
-		return numStr("0")
-	case '"': // string
-		var s string
-		if err := json.Unmarshal(raw, &s); err == nil {
-			return numStr(s)
+// flattenArray processes a JSON array ('[' already consumed) and flattens
+// its elements into fields/names using numeric-index paths (prefix.0, prefix.1, ...).
+func flattenArray(dec *json.Decoder, prefix string, fields *[]string, names *[]string) error {
+	i := 0
+	for dec.More() {
+		var raw json.RawMessage
+		if err := dec.Decode(&raw); err != nil {
+			return err
 		}
-		return numStr("")
-	case '[', '{': // array or object – return JSON representation
-		return numStr(string(raw))
-	default: // number
-		var n json.Number
-		if err := json.Unmarshal(raw, &n); err == nil {
-			return numStr(n.String())
+		path := prefix + "." + strconv.Itoa(i)
+		if err := flattenJSONValue(raw, path, fields, names); err != nil {
+			return err
 		}
-		return numStr("")
+		i++
 	}
+	_, err := dec.Token() // consume ']'
+	return err
 }
 
-// jsonRawToString returns the AWK string representation of a raw JSON value,
-// without allocating an intermediate value struct.
+// jsonRawToString returns the AWK string representation of a scalar JSON value.
+// For non-scalar values (arrays and objects), the raw JSON is returned as-is
+// (used when a top-level JSON array contains nested structures).
 func jsonRawToString(raw json.RawMessage) string {
 	raw = bytes.TrimSpace(raw)
 	if len(raw) == 0 {

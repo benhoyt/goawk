@@ -2182,10 +2182,33 @@ var jsonlTests = []csvTest{
 		`{"name":"Bob","age":42}`,
 		`{"name":"Bob","age":42}` + "\n", "", nil},
 
-	// Nested objects/arrays are returned as JSON strings
+	// Nested objects/arrays are flattened with dot notation
+	{`BEGIN { INPUTMODE="jsonl" } { print @"arr.0", @"arr.1", @"arr.2" }`,
+		`{"arr":[1,2,3]}`,
+		"1 2 3\n", "", nil},
+	{`BEGIN { INPUTMODE="jsonl" } { print @"obj.x" }`,
+		`{"obj":{"x":1}}`,
+		"1\n", "", nil},
+
+	// Flattened keys are not accessible via the unflattened parent name
 	{`BEGIN { INPUTMODE="jsonl" } { print @"arr", @"obj" }`,
 		`{"arr":[1,2,3],"obj":{"x":1}}`,
-		"[1,2,3] {\"x\":1}\n", "", nil},
+		" \n", "", nil},
+
+	// Deeply nested: @"a.b.c" and @"a.b.d.0"
+	{`BEGIN { INPUTMODE="jsonl" } { print @"a.b.c", @"a.b.d.0", @"a.b.d.1" }`,
+		`{"a":{"b":{"c":"hello","d":[10,20]}}}`,
+		"hello 10 20\n", "", nil},
+
+	// Flattened NF counts all scalar leaves
+	{`BEGIN { INPUTMODE="jsonl" } { print NF }`,
+		`{"a":1,"b":{"c":2,"d":3},"e":[4,5]}`,
+		"5\n", "", nil},
+
+	// FIELDS array contains flattened key paths
+	{`BEGIN { INPUTMODE="jsonl" } { for (i=1; i<=NF; i++) printf "%s=%s\n", FIELDS[i], $i }`,
+		`{"x":1,"y":{"z":2}}`,
+		"x=1\ny.z=2\n", "", nil},
 
 	// JSON objects: different keys per line (each line independent)
 	{`BEGIN { INPUTMODE="jsonl" } { print @"a", @"b", @"c" }`,
