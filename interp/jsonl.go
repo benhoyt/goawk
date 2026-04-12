@@ -67,7 +67,7 @@ func (s *jsonlSplitter) scan(data []byte, atEOF bool) (advance int, token []byte
 	return advance, line, nil
 }
 
-// parseJSONLine parses a JSON line and populates p.fields and p.fieldNames.
+// parseJSONLine calls parseJSONLineToFields and updates p.fields and p.fieldNames.
 // Called by ensureFields() when $0 is reassigned in JSONL mode.
 func (p *interp) parseJSONLine(line string) error {
 	fields, names, err := parseJSONLineToFields([]byte(line))
@@ -200,7 +200,33 @@ func jsonRawToValue(raw json.RawMessage) value {
 	}
 }
 
-// jsonRawToString returns the AWK string representation of a raw JSON value.
+// jsonRawToString returns the AWK string representation of a raw JSON value,
+// without allocating an intermediate value struct.
 func jsonRawToString(raw json.RawMessage) string {
-	return jsonRawToValue(raw).s
+	raw = bytes.TrimSpace(raw)
+	if len(raw) == 0 {
+		return ""
+	}
+	switch raw[0] {
+	case 'n': // null
+		return ""
+	case 't': // true
+		return "1"
+	case 'f': // false
+		return "0"
+	case '"': // string
+		var s string
+		if err := json.Unmarshal(raw, &s); err == nil {
+			return s
+		}
+		return ""
+	case '[', '{': // array or object – return JSON representation
+		return string(raw)
+	default: // number
+		var n json.Number
+		if err := json.Unmarshal(raw, &n); err == nil {
+			return n.String()
+		}
+		return ""
+	}
 }

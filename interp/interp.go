@@ -470,7 +470,7 @@ func (p *interp) setExecuteConfig(config *Config) error {
 		}
 	case JSONLMode:
 		if p.csvInputConfig != (CSVInputConfig{}) {
-			return newError("input mode configuration not valid in jsonl input mode")
+			return newError("CSV input configuration options are not supported in JSONL mode")
 		}
 	case DefaultMode:
 		if p.csvInputConfig != (CSVInputConfig{}) {
