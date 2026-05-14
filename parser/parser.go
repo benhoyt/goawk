@@ -464,6 +464,9 @@ func (p *parser) function() *ast.Function {
 	}
 	p.next()
 	name, funcNamePos := p.expectName()
+	if _, ok := ast.BuiltinFuncByName(name); ok {
+		panic(p.errorf("can't use builtin function name %q as user-defined function name", name))
+	}
 	p.expect(lexer.LPAREN)
 	first := true
 	params := make([]string, 0, 7) // pre-allocate some to reduce allocations
@@ -683,8 +686,7 @@ func (p *parser) _compare(ops ...lexer.Token) ast.Expr {
 
 func (p *parser) concat() ast.Expr {
 	expr := p.add()
-	for p.matches(lexer.DOLLAR, lexer.AT, lexer.NOT, lexer.NAME, lexer.NUMBER, lexer.STRING, lexer.LPAREN, lexer.INCR, lexer.DECR) ||
-		p.tok >= lexer.FIRST_FUNC && p.tok <= lexer.LAST_FUNC {
+	for p.matches(lexer.DOLLAR, lexer.AT, lexer.NOT, lexer.NAME, lexer.NUMBER, lexer.STRING, lexer.LPAREN, lexer.INCR, lexer.DECR) {
 		right := p.add()
 		expr = &ast.BinaryExpr{Left: expr, Op: lexer.CONCAT, Right: right}
 	}
@@ -775,6 +777,9 @@ func (p *parser) primary() ast.Expr {
 		return &ast.IncrExpr{Expr: expr, Op: op, Pre: true}
 	case lexer.NAME:
 		name, namePos := p.expectName()
+		if builtin, ok := ast.BuiltinFuncByName(name); ok {
+			return p.builtinCall(builtin, name, namePos)
+		}
 		if p.tok == lexer.LBRACKET {
 			// a[x] or a[x, y] array index expression
 			p.next()
@@ -821,13 +826,15 @@ func (p *parser) primary() ast.Expr {
 			file = p.primary()
 		}
 		return &ast.GetlineExpr{Target: target, File: file}
-	// Below is the parsing of all the builtin function calls. We
-	// could unify these but several of them have special handling
-	// (array/lvalue/regex params, optional arguments, and so on).
-	// Doing it this way means we can check more at parse time.
-	case lexer.F_SUB, lexer.F_GSUB:
-		op := p.tok
-		p.next()
+	default:
+		panic(p.errorf("expected expression instead of %s", p.tok))
+	}
+}
+
+// Parse a built-in function call with per-function validation.
+func (p *parser) builtinCall(builtin ast.BuiltinFunc, name string, pos lexer.Position) ast.Expr {
+	switch builtin {
+	case ast.BuiltinSub, ast.BuiltinGsub:
 		p.expect(lexer.LPAREN)
 		regex := p.regexStr(p.expr)
 		p.commaNewlines()
@@ -843,44 +850,39 @@ func (p *parser) primary() ast.Expr {
 			args = append(args, in)
 		}
 		p.expect(lexer.RPAREN)
-		return &ast.CallExpr{Func: op, Args: args}
-	case lexer.F_SPLIT:
-		p.next()
+		return &ast.CallExpr{Builtin: builtin, Name: name, Args: args, Pos: pos}
+	case ast.BuiltinSplit:
 		p.expect(lexer.LPAREN)
 		str := p.expr()
 		p.commaNewlines()
-		name, namePos := p.expectName()
-		args := []ast.Expr{str, &ast.VarExpr{Name: name, Pos: namePos}}
+		arrayName, arrayPos := p.expectName()
+		args := []ast.Expr{str, &ast.VarExpr{Name: arrayName, Pos: arrayPos}}
 		if p.tok == lexer.COMMA {
 			p.commaNewlines()
 			args = append(args, p.regexStr(p.expr))
 		}
 		p.expect(lexer.RPAREN)
-		return &ast.CallExpr{Func: lexer.F_SPLIT, Args: args}
-	case lexer.F_MATCH:
-		p.next()
+		return &ast.CallExpr{Builtin: ast.BuiltinSplit, Name: name, Args: args, Pos: pos}
+	case ast.BuiltinMatch:
 		p.expect(lexer.LPAREN)
 		str := p.expr()
 		p.commaNewlines()
 		regex := p.regexStr(p.expr)
 		p.expect(lexer.RPAREN)
-		return &ast.CallExpr{Func: lexer.F_MATCH, Args: []ast.Expr{str, regex}}
-	case lexer.F_RAND:
-		p.next()
+		return &ast.CallExpr{Builtin: ast.BuiltinMatch, Name: name, Args: []ast.Expr{str, regex}, Pos: pos}
+	case ast.BuiltinRand:
 		p.expect(lexer.LPAREN)
 		p.expect(lexer.RPAREN)
-		return &ast.CallExpr{Func: lexer.F_RAND}
-	case lexer.F_SRAND:
-		p.next()
+		return &ast.CallExpr{Builtin: ast.BuiltinRand, Name: name, Pos: pos}
+	case ast.BuiltinSrand:
 		p.expect(lexer.LPAREN)
 		var args []ast.Expr
 		if p.tok != lexer.RPAREN {
 			args = append(args, p.expr())
 		}
 		p.expect(lexer.RPAREN)
-		return &ast.CallExpr{Func: lexer.F_SRAND, Args: args}
-	case lexer.F_LENGTH:
-		p.next()
+		return &ast.CallExpr{Builtin: ast.BuiltinSrand, Name: name, Args: args, Pos: pos}
+	case ast.BuiltinLength:
 		var args []ast.Expr
 		// AWK quirk: "length" is allowed to be called without parens
 		if p.tok == lexer.LPAREN {
@@ -890,9 +892,8 @@ func (p *parser) primary() ast.Expr {
 			}
 			p.expect(lexer.RPAREN)
 		}
-		return &ast.CallExpr{Func: lexer.F_LENGTH, Args: args}
-	case lexer.F_SUBSTR:
-		p.next()
+		return &ast.CallExpr{Builtin: ast.BuiltinLength, Name: name, Args: args, Pos: pos}
+	case ast.BuiltinSubstr:
 		p.expect(lexer.LPAREN)
 		str := p.expr()
 		p.commaNewlines()
@@ -903,9 +904,8 @@ func (p *parser) primary() ast.Expr {
 			args = append(args, p.expr())
 		}
 		p.expect(lexer.RPAREN)
-		return &ast.CallExpr{Func: lexer.F_SUBSTR, Args: args}
-	case lexer.F_SPRINTF:
-		p.next()
+		return &ast.CallExpr{Builtin: ast.BuiltinSubstr, Name: name, Args: args, Pos: pos}
+	case ast.BuiltinSprintf:
 		p.expect(lexer.LPAREN)
 		args := []ast.Expr{p.expr()}
 		for p.tok == lexer.COMMA {
@@ -913,36 +913,31 @@ func (p *parser) primary() ast.Expr {
 			args = append(args, p.expr())
 		}
 		p.expect(lexer.RPAREN)
-		return &ast.CallExpr{Func: lexer.F_SPRINTF, Args: args}
-	case lexer.F_FFLUSH:
-		p.next()
+		return &ast.CallExpr{Builtin: ast.BuiltinSprintf, Name: name, Args: args, Pos: pos}
+	case ast.BuiltinFflush:
 		p.expect(lexer.LPAREN)
 		var args []ast.Expr
 		if p.tok != lexer.RPAREN {
 			args = append(args, p.expr())
 		}
 		p.expect(lexer.RPAREN)
-		return &ast.CallExpr{Func: lexer.F_FFLUSH, Args: args}
-	case lexer.F_COS, lexer.F_SIN, lexer.F_EXP, lexer.F_LOG, lexer.F_SQRT, lexer.F_INT, lexer.F_TOLOWER, lexer.F_TOUPPER, lexer.F_SYSTEM, lexer.F_CLOSE:
+		return &ast.CallExpr{Builtin: ast.BuiltinFflush, Name: name, Args: args, Pos: pos}
+	case ast.BuiltinCos, ast.BuiltinSin, ast.BuiltinExp, ast.BuiltinLog, ast.BuiltinSqrt, ast.BuiltinInt, ast.BuiltinTolower, ast.BuiltinToupper, ast.BuiltinSystem, ast.BuiltinClose:
 		// Simple 1-argument functions
-		op := p.tok
-		p.next()
 		p.expect(lexer.LPAREN)
 		arg := p.expr()
 		p.expect(lexer.RPAREN)
-		return &ast.CallExpr{Func: op, Args: []ast.Expr{arg}}
-	case lexer.F_ATAN2, lexer.F_INDEX:
+		return &ast.CallExpr{Builtin: builtin, Name: name, Args: []ast.Expr{arg}, Pos: pos}
+	case ast.BuiltinAtan2, ast.BuiltinIndex:
 		// Simple 2-argument functions
-		op := p.tok
-		p.next()
 		p.expect(lexer.LPAREN)
 		arg1 := p.expr()
 		p.commaNewlines()
 		arg2 := p.expr()
 		p.expect(lexer.RPAREN)
-		return &ast.CallExpr{Func: op, Args: []ast.Expr{arg1, arg2}}
+		return &ast.CallExpr{Builtin: builtin, Name: name, Args: []ast.Expr{arg1, arg2}, Pos: pos}
 	default:
-		panic(p.errorf("expected expression instead of %s", p.tok))
+		panic(p.errorf("unexpected built-in function %q", name))
 	}
 }
 
@@ -1079,7 +1074,7 @@ func (p *parser) errorf(format string, args ...any) error {
 
 // Parse call to a user-defined function (and record call site for
 // resolving later).
-func (p *parser) userCall(name string, pos lexer.Position) *ast.UserCallExpr {
+func (p *parser) userCall(name string, pos lexer.Position) *ast.CallExpr {
 	p.expect(lexer.LPAREN)
 	args := []ast.Expr{}
 	i := 0
@@ -1092,7 +1087,7 @@ func (p *parser) userCall(name string, pos lexer.Position) *ast.UserCallExpr {
 		i++
 	}
 	p.expect(lexer.RPAREN)
-	return &ast.UserCallExpr{Name: name, Args: args, Pos: pos}
+	return &ast.CallExpr{Name: name, Args: args, Pos: pos}
 }
 
 // Record a "multi expression" (comma-separated pseudo-expression

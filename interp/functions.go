@@ -13,6 +13,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/internal/resolver"
 	"github.com/benhoyt/goawk/lexer"
 )
@@ -183,6 +184,9 @@ var errorType = reflect.TypeOf((*error)(nil)).Elem()
 func checkNativeFunc(name string, f any) error {
 	if lexer.KeywordToken(name) != lexer.ILLEGAL {
 		return newError("can't use keyword %q as native function name", name)
+	}
+	if _, ok := ast.BuiltinFuncByName(name); ok {
+		return newError("can't use builtin function name %q as native function name", name)
 	}
 
 	typ := reflect.TypeOf(f)

@@ -365,11 +365,14 @@ func (v *callGraphVisitor) Visit(node ast.Node) ast.Visitor {
 		ast.WalkStmtList(v, n.Body)
 		v.curFunc = ""
 
-	case *ast.UserCallExpr:
-		if _, ok := v.calls[v.curFunc]; !ok {
-			v.calls[v.curFunc] = make(map[string]struct{})
+	case *ast.CallExpr:
+		if n.Builtin == ast.BuiltinNone {
+			// User-defined function call
+			if _, ok := v.calls[v.curFunc]; !ok {
+				v.calls[v.curFunc] = make(map[string]struct{})
+			}
+			v.calls[v.curFunc][n.Name] = struct{}{}
 		}
-		v.calls[v.curFunc][n.Name] = struct{}{}
 		ast.WalkExprList(v, n.Args)
 
 	default:
@@ -436,92 +439,95 @@ func (v *mainVisitor) Visit(node ast.Node) ast.Visitor {
 		ast.WalkExprList(v, n.Index)
 
 	case *ast.CallExpr:
-		switch n.Func {
-		case lexer.F_SPLIT:
-			ast.Walk(v, n.Args[0])
-			varExpr := n.Args[1].(*ast.VarExpr) // split()'s 2nd arg is always an array
-			v.r.recordVar(v.curFunc, varExpr.Name, Array, varExpr.Pos)
-			ast.WalkExprList(v, n.Args[2:])
+		if n.Builtin != ast.BuiltinNone {
+			// Handle built-in function calls
+			switch n.Builtin {
+			case ast.BuiltinSplit:
+				ast.Walk(v, n.Args[0])
+				varExpr := n.Args[1].(*ast.VarExpr) // split()'s 2nd arg is always an array
+				v.r.recordVar(v.curFunc, varExpr.Name, Array, varExpr.Pos)
+				ast.WalkExprList(v, n.Args[2:])
 
-		case lexer.F_LENGTH:
-			if len(n.Args) > 0 {
-				if varExpr, ok := n.Args[0].(*ast.VarExpr); ok {
-					// In a call to length(x), x may be a scalar or an array,
-					// so set it to unknown for now.
-					v.r.recordVar(v.curFunc, varExpr.Name, unknown, varExpr.Pos)
-					return nil
-				}
-			}
-			ast.WalkExprList(v, n.Args)
-
-		default:
-			ast.WalkExprList(v, n.Args)
-		}
-
-	case *ast.UserCallExpr:
-		_, _, varFunc, exists := v.r.lookupVar(v.curFunc, n.Name)
-		if varFunc != "" && exists {
-			panic(ast.PosErrorf(n.Pos, "can't call local variable %q as function", n.Name))
-		}
-
-		funcInfo, exists := v.r.funcInfo[n.Name]
-		if !exists {
-			panic(ast.PosErrorf(n.Pos, "undefined function %q", n.Name))
-		}
-
-		numParams := len(funcInfo.Params)
-		if funcInfo.Native {
-			typ := reflect.TypeOf(v.nativeFuncs[n.Name])
-			numParams = typ.NumIn()
-			if typ.IsVariadic() {
-				numParams = 1000000000 // bigger than any reasonable len(n.Args) value!
-			}
-		}
-		if len(n.Args) > numParams {
-			panic(ast.PosErrorf(n.Pos, "%q called with more arguments than declared", n.Name))
-		}
-
-		for i, arg := range n.Args {
-			varExpr, ok := arg.(*ast.VarExpr)
-			if !ok {
-				// Argument is not a variable, process normally.
-				if !funcInfo.Native {
-					paramInfo := v.r.varInfo[n.Name][funcInfo.Params[i]] // type info of corresponding parameter
-					if paramInfo.Type == Array {
-						panic(ast.PosErrorf(n.Pos, "can't pass scalar %s as array param", arg))
+			case ast.BuiltinLength:
+				if len(n.Args) > 0 {
+					if varExpr, ok := n.Args[0].(*ast.VarExpr); ok {
+						// In a call to length(x), x may be a scalar or an array,
+						// so set it to unknown for now.
+						v.r.recordVar(v.curFunc, varExpr.Name, unknown, varExpr.Pos)
+						return nil
 					}
 				}
-				ast.Walk(v, arg)
-				continue
-			}
+				ast.WalkExprList(v, n.Args)
 
-			if funcInfo.Native {
-				// Arguments to native function can only be scalar.
-				v.r.recordVar(v.curFunc, varExpr.Name, Scalar, varExpr.Pos)
-				continue
-			}
-
-			// Variable passed to AWK-defined function may be scalar or array,
-			// determine from how it was used elsewhere.
-			paramName := funcInfo.Params[i]             // name of corresponding parameter
-			paramInfo := v.r.varInfo[n.Name][paramName] // type info of parameter
-			_, varInfo, _, _ := v.r.lookupVar(v.curFunc, varExpr.Name)
-			switch {
-			case varInfo.Type == unknown && paramInfo.Type != unknown:
-				// Variable's type is not known but param type is, set variable type.
-				v.r.recordVar(v.curFunc, varExpr.Name, paramInfo.Type, varExpr.Pos)
-			case varInfo.Type != unknown && paramInfo.Type == unknown:
-				// Variable's type is known but param type is not, set param type.
-				funcPos := v.r.funcs[n.Name].Pos // best position we have at this point
-				v.r.recordVar(n.Name, paramName, varInfo.Type, funcPos)
-			case varInfo.Type != paramInfo.Type && varInfo.Type != unknown && paramInfo.Type != unknown:
-				// Both types are known but don't match -- type error!
-				panic(ast.PosErrorf(varExpr.Pos, "can't pass %s %q as %s param",
-					varInfo.Type, varExpr.Name, paramInfo.Type))
 			default:
-				// Ensure variable references are recorded, even if the type
-				// is not yet known.
-				v.r.recordVar(v.curFunc, varExpr.Name, unknown, varExpr.Pos)
+				ast.WalkExprList(v, n.Args)
+			}
+		} else {
+			// Handle user-defined (or native Go) function calls
+			_, _, varFunc, exists := v.r.lookupVar(v.curFunc, n.Name)
+			if varFunc != "" && exists {
+				panic(ast.PosErrorf(n.Pos, "can't call local variable %q as function", n.Name))
+			}
+
+			funcInfo, exists := v.r.funcInfo[n.Name]
+			if !exists {
+				panic(ast.PosErrorf(n.Pos, "undefined function %q", n.Name))
+			}
+
+			numParams := len(funcInfo.Params)
+			if funcInfo.Native {
+				typ := reflect.TypeOf(v.nativeFuncs[n.Name])
+				numParams = typ.NumIn()
+				if typ.IsVariadic() {
+					numParams = 1000000000 // bigger than any reasonable len(n.Args) value!
+				}
+			}
+			if len(n.Args) > numParams {
+				panic(ast.PosErrorf(n.Pos, "%q called with more arguments than declared", n.Name))
+			}
+
+			for i, arg := range n.Args {
+				varExpr, ok := arg.(*ast.VarExpr)
+				if !ok {
+					// Argument is not a variable, process normally.
+					if !funcInfo.Native {
+						paramInfo := v.r.varInfo[n.Name][funcInfo.Params[i]] // type info of corresponding parameter
+						if paramInfo.Type == Array {
+							panic(ast.PosErrorf(n.Pos, "can't pass scalar %s as array param", arg))
+						}
+					}
+					ast.Walk(v, arg)
+					continue
+				}
+
+				if funcInfo.Native {
+					// Arguments to native function can only be scalar.
+					v.r.recordVar(v.curFunc, varExpr.Name, Scalar, varExpr.Pos)
+					continue
+				}
+
+				// Variable passed to AWK-defined function may be scalar or array,
+				// determine from how it was used elsewhere.
+				paramName := funcInfo.Params[i]             // name of corresponding parameter
+				paramInfo := v.r.varInfo[n.Name][paramName] // type info of parameter
+				_, varInfo, _, _ := v.r.lookupVar(v.curFunc, varExpr.Name)
+				switch {
+				case varInfo.Type == unknown && paramInfo.Type != unknown:
+					// Variable's type is not known but param type is, set variable type.
+					v.r.recordVar(v.curFunc, varExpr.Name, paramInfo.Type, varExpr.Pos)
+				case varInfo.Type != unknown && paramInfo.Type == unknown:
+					// Variable's type is known but param type is not, set param type.
+					funcPos := v.r.funcs[n.Name].Pos // best position we have at this point
+					v.r.recordVar(n.Name, paramName, varInfo.Type, funcPos)
+				case varInfo.Type != paramInfo.Type && varInfo.Type != unknown && paramInfo.Type != unknown:
+					// Both types are known but don't match -- type error!
+					panic(ast.PosErrorf(varExpr.Pos, "can't pass %s %q as %s param",
+						varInfo.Type, varExpr.Name, paramInfo.Type))
+				default:
+					// Ensure variable references are recorded, even if the type
+					// is not yet known.
+					v.r.recordVar(v.curFunc, varExpr.Name, unknown, varExpr.Pos)
+				}
 			}
 		}
 

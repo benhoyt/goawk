@@ -1,1 +1,1 @@
-parse error at 11:10: expected name instead of split
+parse error at 11:15: can't use builtin function name "split" as user-defined function name

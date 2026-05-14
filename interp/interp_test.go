@@ -1486,7 +1486,7 @@ BEGIN {
 			map[string]any{
 				"f": func(n int) {},
 			}},
-		{`BEGIN { print split("x y", a) }`, "", "", `can't use keyword "split" as native function name`,
+		{`BEGIN { print split("x y", a) }`, "", "", `can't use builtin function name "split" as native function name`,
 			map[string]any{
 				"split": func() {},
 			}},

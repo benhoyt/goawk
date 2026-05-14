@@ -26,7 +26,7 @@ func TestLexer(t *testing.T) {
 		{"x", `1:1 name "x"`},
 		{"x y0", `1:1 name "x", 1:3 name "y0"`},
 		{"x 0y", `1:1 name "x", 1:3 number "0", 1:4 name "y"`},
-		{"sub SUB", `1:1 sub "", 1:5 name "SUB"`},
+		{"sub SUB", `1:1 name "sub", 1:5 name "SUB"`},
 
 		// String tokens
 		{`"foo"`, `1:1 string "foo"`},
@@ -210,7 +210,7 @@ func TestKeywordToken(t *testing.T) {
 		tok  lexer.Token
 	}{
 		{"print", lexer.PRINT},
-		{"split", lexer.F_SPLIT},
+		{"split", lexer.ILLEGAL},
 		{"BEGIN", lexer.BEGIN},
 		{"foo", lexer.ILLEGAL},
 		{"GoAWK", lexer.ILLEGAL},
@@ -254,8 +254,8 @@ func TestAllTokens(t *testing.T) {
 		"<= ~ % %= * *= !~ ! != | || ^ ^= ^ ^= ? } ] ) ; - -= " +
 		"BEGIN break continue delete do else END exit " +
 		"for function getline if in next nextfile print printf return while " +
-		"atan2 close cos exp fflush gsub index int length log match rand " +
-		"sin split sprintf sqrt srand sub substr system tolower toupper " +
+		"name name name name name name name name name name name name " +
+		"name name name name name name name name name name " +
 		"name string number <newline> " +
 		"<illegal> <illegal> EOF"
 	if output != expected {

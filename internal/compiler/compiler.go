@@ -794,128 +794,155 @@ func (c *compiler) expr(expr ast.Expr) {
 		c.indexExpr(e)
 
 	case *ast.CallExpr:
-		// split and sub/gsub require special cases as they have lvalue arguments
-		switch e.Func {
-		case lexer.F_SPLIT:
-			c.expr(e.Args[0])
-			varExpr := e.Args[1].(*ast.VarExpr) // split()'s 2nd arg is always an array
-			scope, index := c.arrayInfo(varExpr.Name)
-			if len(e.Args) > 2 {
-				c.expr(e.Args[2])
-				strExpr, isStr := e.Args[2].(*ast.StrExpr)
-				sepIsRegex := 0
-				if isStr && strExpr.Regex {
-					sepIsRegex = 1
+		if e.Builtin == ast.BuiltinNone {
+			// User-defined or native function call
+			funcInfo, _ := c.resolved.LookupFunc(e.Name)
+			if funcInfo.Native {
+				for _, arg := range e.Args {
+					c.expr(arg)
 				}
-				c.add(CallSplitSep, Opcode(scope), opcodeInt(index), Opcode(sepIsRegex))
+				c.add(CallNative, opcodeInt(funcInfo.Index), opcodeInt(len(e.Args)))
 			} else {
-				c.add(CallSplit, Opcode(scope), opcodeInt(index))
-			}
-			return
-		case lexer.F_SUB, lexer.F_GSUB:
-			op := BuiltinSub
-			if e.Func == lexer.F_GSUB {
-				op = BuiltinGsub
-			}
-			var target ast.Expr = &ast.FieldExpr{Index: &ast.NumExpr{}} // default value and target is $0
-			if len(e.Args) == 3 {
-				target = e.Args[2]
-			}
-			switch target.(type) {
-			case *ast.FieldExpr, *ast.IndexExpr:
-				c.dupeIndexLValue(target)
-				c.expr(e.Args[0])
-				c.expr(e.Args[1])
-				c.add(Rote)
-				c.add(CallBuiltin, Opcode(op))
-				c.add(Rote)
-				if index, ok := target.(*ast.IndexExpr); ok {
-					c.assignIndexExpr(index)
-				} else {
-					// Avoid rebuilding $0 when no substitutions were made
-					c.add(AssignFieldSub)
-				}
-			case *ast.VarExpr:
-				c.expr(e.Args[0])
-				c.expr(e.Args[1])
-				c.expr(target)
-				c.add(CallBuiltin, Opcode(op))
-				c.assign(target)
-			}
-			return
-
-		case lexer.F_LENGTH:
-			if len(e.Args) > 0 {
-				// Determine if the call is length(arrayVar) or length(stringExpr).
-				if varExpr, ok := e.Args[0].(*ast.VarExpr); ok {
-					scope, info, _ := c.resolved.LookupVar(c.funcName, varExpr.Name)
-					if info.Type == resolver.Array {
-						c.add(CallLengthArray, Opcode(scope), opcodeInt(info.Index))
-						return
+				f := c.program.Functions[funcInfo.Index]
+				var arrayOpcodes []Opcode
+				numScalarArgs := 0
+				for i, arg := range e.Args {
+					if f.Arrays[i] {
+						a := arg.(*ast.VarExpr)
+						scope, index := c.arrayInfo(a.Name)
+						arrayOpcodes = append(arrayOpcodes, Opcode(scope), opcodeInt(index))
+					} else {
+						c.expr(arg)
+						numScalarArgs++
 					}
 				}
+				if numScalarArgs < f.NumScalars {
+					c.add(Nulls, opcodeInt(f.NumScalars-numScalarArgs))
+				}
+				c.add(CallUser, opcodeInt(funcInfo.Index), opcodeInt(len(arrayOpcodes)/2))
+				c.add(arrayOpcodes...)
+			}
+		} else {
+			// Built-in function call
+			// split and sub/gsub require special cases as they have lvalue arguments
+			switch e.Builtin {
+			case ast.BuiltinSplit:
 				c.expr(e.Args[0])
-				c.add(CallBuiltin, Opcode(BuiltinLengthArg))
-			} else {
-				c.add(CallBuiltin, Opcode(BuiltinLength))
+				varExpr := e.Args[1].(*ast.VarExpr) // split()'s 2nd arg is always an array
+				scope, index := c.arrayInfo(varExpr.Name)
+				if len(e.Args) > 2 {
+					c.expr(e.Args[2])
+					strExpr, isStr := e.Args[2].(*ast.StrExpr)
+					sepIsRegex := 0
+					if isStr && strExpr.Regex {
+						sepIsRegex = 1
+					}
+					c.add(CallSplitSep, Opcode(scope), opcodeInt(index), Opcode(sepIsRegex))
+				} else {
+					c.add(CallSplit, Opcode(scope), opcodeInt(index))
+				}
+			case ast.BuiltinSub, ast.BuiltinGsub:
+				op := BuiltinSub
+				if e.Builtin == ast.BuiltinGsub {
+					op = BuiltinGsub
+				}
+				var target ast.Expr = &ast.FieldExpr{Index: &ast.NumExpr{}} // default value and target is $0
+				if len(e.Args) == 3 {
+					target = e.Args[2]
+				}
+				switch target.(type) {
+				case *ast.FieldExpr, *ast.IndexExpr:
+					c.dupeIndexLValue(target)
+					c.expr(e.Args[0])
+					c.expr(e.Args[1])
+					c.add(Rote)
+					c.add(CallBuiltin, Opcode(op))
+					c.add(Rote)
+					if index, ok := target.(*ast.IndexExpr); ok {
+						c.assignIndexExpr(index)
+					} else {
+						// Avoid rebuilding $0 when no substitutions were made
+						c.add(AssignFieldSub)
+					}
+				case *ast.VarExpr:
+					c.expr(e.Args[0])
+					c.expr(e.Args[1])
+					c.expr(target)
+					c.add(CallBuiltin, Opcode(op))
+					c.assign(target)
+				}
+			case ast.BuiltinLength:
+				if len(e.Args) > 0 {
+					// Determine if the call is length(arrayVar) or length(stringExpr).
+					if varExpr, ok := e.Args[0].(*ast.VarExpr); ok {
+						scope, info, _ := c.resolved.LookupVar(c.funcName, varExpr.Name)
+						if info.Type == resolver.Array {
+							c.add(CallLengthArray, Opcode(scope), opcodeInt(info.Index))
+							return
+						}
+					}
+					c.expr(e.Args[0])
+					c.add(CallBuiltin, Opcode(BuiltinLengthArg))
+				} else {
+					c.add(CallBuiltin, Opcode(BuiltinLength))
+				}
+			default:
+				for _, arg := range e.Args {
+					c.expr(arg)
+				}
+				switch e.Builtin {
+				case ast.BuiltinAtan2:
+					c.add(CallBuiltin, Opcode(BuiltinAtan2))
+				case ast.BuiltinClose:
+					c.add(CallBuiltin, Opcode(BuiltinClose))
+				case ast.BuiltinCos:
+					c.add(CallBuiltin, Opcode(BuiltinCos))
+				case ast.BuiltinExp:
+					c.add(CallBuiltin, Opcode(BuiltinExp))
+				case ast.BuiltinFflush:
+					if len(e.Args) > 0 {
+						c.add(CallBuiltin, Opcode(BuiltinFflush))
+					} else {
+						c.add(CallBuiltin, Opcode(BuiltinFflushAll))
+					}
+				case ast.BuiltinIndex:
+					c.add(CallBuiltin, Opcode(BuiltinIndex))
+				case ast.BuiltinInt:
+					c.add(CallBuiltin, Opcode(BuiltinInt))
+				case ast.BuiltinLog:
+					c.add(CallBuiltin, Opcode(BuiltinLog))
+				case ast.BuiltinMatch:
+					c.add(CallBuiltin, Opcode(BuiltinMatch))
+				case ast.BuiltinRand:
+					c.add(CallBuiltin, Opcode(BuiltinRand))
+				case ast.BuiltinSin:
+					c.add(CallBuiltin, Opcode(BuiltinSin))
+				case ast.BuiltinSprintf:
+					c.add(CallSprintf, opcodeInt(len(e.Args)))
+				case ast.BuiltinSqrt:
+					c.add(CallBuiltin, Opcode(BuiltinSqrt))
+				case ast.BuiltinSrand:
+					if len(e.Args) > 0 {
+						c.add(CallBuiltin, Opcode(BuiltinSrandSeed))
+					} else {
+						c.add(CallBuiltin, Opcode(BuiltinSrand))
+					}
+				case ast.BuiltinSubstr:
+					if len(e.Args) > 2 {
+						c.add(CallBuiltin, Opcode(BuiltinSubstrLength))
+					} else {
+						c.add(CallBuiltin, Opcode(BuiltinSubstr))
+					}
+				case ast.BuiltinSystem:
+					c.add(CallBuiltin, Opcode(BuiltinSystem))
+				case ast.BuiltinTolower:
+					c.add(CallBuiltin, Opcode(BuiltinTolower))
+				case ast.BuiltinToupper:
+					c.add(CallBuiltin, Opcode(BuiltinToupper))
+				default:
+					panic(fmt.Sprintf("unexpected built-in function: %s", e.Builtin))
+				}
 			}
-			return
-		}
-
-		for _, arg := range e.Args {
-			c.expr(arg)
-		}
-		switch e.Func {
-		case lexer.F_ATAN2:
-			c.add(CallBuiltin, Opcode(BuiltinAtan2))
-		case lexer.F_CLOSE:
-			c.add(CallBuiltin, Opcode(BuiltinClose))
-		case lexer.F_COS:
-			c.add(CallBuiltin, Opcode(BuiltinCos))
-		case lexer.F_EXP:
-			c.add(CallBuiltin, Opcode(BuiltinExp))
-		case lexer.F_FFLUSH:
-			if len(e.Args) > 0 {
-				c.add(CallBuiltin, Opcode(BuiltinFflush))
-			} else {
-				c.add(CallBuiltin, Opcode(BuiltinFflushAll))
-			}
-		case lexer.F_INDEX:
-			c.add(CallBuiltin, Opcode(BuiltinIndex))
-		case lexer.F_INT:
-			c.add(CallBuiltin, Opcode(BuiltinInt))
-		case lexer.F_LOG:
-			c.add(CallBuiltin, Opcode(BuiltinLog))
-		case lexer.F_MATCH:
-			c.add(CallBuiltin, Opcode(BuiltinMatch))
-		case lexer.F_RAND:
-			c.add(CallBuiltin, Opcode(BuiltinRand))
-		case lexer.F_SIN:
-			c.add(CallBuiltin, Opcode(BuiltinSin))
-		case lexer.F_SPRINTF:
-			c.add(CallSprintf, opcodeInt(len(e.Args)))
-		case lexer.F_SQRT:
-			c.add(CallBuiltin, Opcode(BuiltinSqrt))
-		case lexer.F_SRAND:
-			if len(e.Args) > 0 {
-				c.add(CallBuiltin, Opcode(BuiltinSrandSeed))
-			} else {
-				c.add(CallBuiltin, Opcode(BuiltinSrand))
-			}
-		case lexer.F_SUBSTR:
-			if len(e.Args) > 2 {
-				c.add(CallBuiltin, Opcode(BuiltinSubstrLength))
-			} else {
-				c.add(CallBuiltin, Opcode(BuiltinSubstr))
-			}
-		case lexer.F_SYSTEM:
-			c.add(CallBuiltin, Opcode(BuiltinSystem))
-		case lexer.F_TOLOWER:
-			c.add(CallBuiltin, Opcode(BuiltinTolower))
-		case lexer.F_TOUPPER:
-			c.add(CallBuiltin, Opcode(BuiltinToupper))
-		default:
-			panic(fmt.Sprintf("unexpected function: %s", e.Func))
 		}
 
 	case *ast.UnaryExpr:
@@ -937,34 +964,6 @@ func (c *compiler) expr(expr ast.Expr) {
 			c.add(InGlobal, opcodeInt(index))
 		default: // ScopeLocal
 			c.add(InLocal, opcodeInt(index))
-		}
-
-	case *ast.UserCallExpr:
-		funcInfo, _ := c.resolved.LookupFunc(e.Name)
-		if funcInfo.Native {
-			for _, arg := range e.Args {
-				c.expr(arg)
-			}
-			c.add(CallNative, opcodeInt(funcInfo.Index), opcodeInt(len(e.Args)))
-		} else {
-			f := c.program.Functions[funcInfo.Index]
-			var arrayOpcodes []Opcode
-			numScalarArgs := 0
-			for i, arg := range e.Args {
-				if f.Arrays[i] {
-					a := arg.(*ast.VarExpr)
-					scope, index := c.arrayInfo(a.Name)
-					arrayOpcodes = append(arrayOpcodes, Opcode(scope), opcodeInt(index))
-				} else {
-					c.expr(arg)
-					numScalarArgs++
-				}
-			}
-			if numScalarArgs < f.NumScalars {
-				c.add(Nulls, opcodeInt(f.NumScalars-numScalarArgs))
-			}
-			c.add(CallUser, opcodeInt(funcInfo.Index), opcodeInt(len(arrayOpcodes)/2))
-			c.add(arrayOpcodes...)
 		}
 
 	case *ast.GetlineExpr:

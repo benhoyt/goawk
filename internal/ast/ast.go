@@ -98,7 +98,6 @@ func (e *AssignExpr) node()     {}
 func (e *AugAssignExpr) node()  {}
 func (e *IncrExpr) node()       {}
 func (e *CallExpr) node()       {}
-func (e *UserCallExpr) node()   {}
 func (e *MultiExpr) node()      {}
 func (e *GetlineExpr) node()    {}
 func (e *GroupingExpr) node()   {}
@@ -161,7 +160,6 @@ func (e *IndexExpr) precedence() int      { return precPrimary }
 func (e *AssignExpr) precedence() int     { return precAssign }
 func (e *AugAssignExpr) precedence() int  { return precAssign }
 func (e *CallExpr) precedence() int       { return precPrimary }
-func (e *UserCallExpr) precedence() int   { return precPrimary }
 func (e *MultiExpr) precedence() int      { return precPrimary }
 func (e *GetlineExpr) precedence() int    { return precPrimary }
 func (e *GroupingExpr) precedence() int   { return precGrouping }
@@ -376,29 +374,17 @@ func (e *IncrExpr) String() string {
 	}
 }
 
-// CallExpr is a builtin function call like length($1).
+// CallExpr is a function call expression. For built-in functions,
+// Builtin is set to the appropriate BuiltinFunc value (e.g., BuiltinLength).
+// For user-defined or native Go functions, Builtin is BuiltinNone.
 type CallExpr struct {
-	Func lexer.Token
-	Args []Expr
+	Builtin BuiltinFunc
+	Name    string
+	Args    []Expr
+	Pos     lexer.Position
 }
 
 func (e *CallExpr) String() string {
-	args := make([]string, len(e.Args))
-	for i, a := range e.Args {
-		args[i] = a.String()
-	}
-	return e.Func.String() + "(" + strings.Join(args, ", ") + ")"
-}
-
-// UserCallExpr is a user-defined function call like my_func(1, 2, 3),
-// where my_func is either AWK-defined or a native Go function.
-type UserCallExpr struct {
-	Name string
-	Args []Expr
-	Pos  lexer.Position
-}
-
-func (e *UserCallExpr) String() string {
 	args := make([]string, len(e.Args))
 	for i, a := range e.Args {
 		args[i] = a.String()

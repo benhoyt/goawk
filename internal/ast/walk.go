@@ -84,9 +84,6 @@ func Walk(v Visitor, node Node) {
 	case *CallExpr:
 		WalkExprList(v, n.Args)
 
-	case *UserCallExpr:
-		WalkExprList(v, n.Args)
-
 	case *MultiExpr:
 		WalkExprList(v, n.Exprs)
 
