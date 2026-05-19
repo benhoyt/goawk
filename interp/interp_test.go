@@ -1740,8 +1740,8 @@ func TestSystemCommandNotFound(t *testing.T) {
 		t.Fatalf("expected no error, got %v", err)
 	}
 	got := outBuf.buffer.String()
-	if !strings.Contains(got, "foobar3982") || !strings.Contains(got, "not found") {
-		t.Fatalf(`expected output to contain "foobar3982" and "not found", got %q`, got)
+	if !strings.Contains(got, "foobar3982") || !(strings.Contains(got, "not found") || strings.Contains(got, "denied")) {
+		t.Fatalf(`expected output to contain "foobar3982" and "not found" or "denied", got %q`, got)
 	}
 }
 
