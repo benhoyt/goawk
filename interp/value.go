@@ -113,10 +113,10 @@ func parseFloat(s string) (float64, error) {
 			// ParseFloat doesn't handle "nan" with sign prefix, so handle it here.
 			return math.NaN(), nil
 		}
-		if len(s) > 3 && hasHexPrefix(s[1:]) && strings.IndexByte(s, 'p') < 0 {
+		if len(s) > 3 && hasHexPrefix(s[1:]) && strings.IndexByte(s, 'p') < 0 && strings.IndexByte(s, 'P') < 0 {
 			s += "p0"
 		}
-	} else if len(s) > 2 && hasHexPrefix(s) && strings.IndexByte(s, 'p') < 0 {
+	} else if len(s) > 2 && hasHexPrefix(s) && strings.IndexByte(s, 'p') < 0 && strings.IndexByte(s, 'P') < 0 {
 		s += "p0"
 	}
 	n, err := strconv.ParseFloat(s, 64)
