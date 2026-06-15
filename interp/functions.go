@@ -4,7 +4,6 @@ package interp
 
 import (
 	"bufio"
-	"bytes"
 	"errors"
 	"fmt"
 	"reflect"
@@ -350,7 +349,7 @@ func (p *interp) parseFmtTypes(s string) (format string, types []byte, err error
 			if s[i] == '%' {
 				continue
 			}
-			for i < len(s) && bytes.IndexByte([]byte(" .-+*#0123456789"), s[i]) >= 0 {
+			for i < len(s) && strings.IndexByte(" .-+*#0123456789", s[i]) >= 0 {
 				if s[i] == '*' {
 					types = append(types, 'd')
 				}
