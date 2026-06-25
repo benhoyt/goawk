@@ -87,6 +87,7 @@ type interp struct {
 	csvOutput     *bufio.Writer
 	noArgVars     bool
 	splitBuffer   []byte
+	openFileFunc  func(name string, flag int, perm os.FileMode) (*os.File, error)
 
 	// Scalars, arrays, and function state
 	globals       []value
@@ -321,6 +322,10 @@ type Config struct {
 	// output. The default is "smart", meaning no translation on Linux/Unix
 	// and CRLF translation on Windows.
 	NewlineOutput NewlineMode
+
+	// OpenFileFunc specifies a function used to open files instead of the default
+	// [os.OpenFile].
+	OpenFileFunc func(name string, flag int, perm os.FileMode) (*os.File, error)
 }
 
 // IOMode specifies the input parsing or print output mode.
@@ -563,6 +568,12 @@ func (p *interp) setExecuteConfig(config *Config) error {
 		p.newlineOutputCRLF = true
 	default:
 		return fmt.Errorf("invalid newline output mode %d", config.NewlineOutput)
+	}
+
+	if config.OpenFileFunc == nil {
+		p.openFileFunc = os.OpenFile
+	} else {
+		p.openFileFunc = config.OpenFileFunc
 	}
 
 	return nil

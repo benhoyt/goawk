@@ -355,6 +355,7 @@ argsLoop:
 			"INPUTMODE", inputMode,
 			"OUTPUTMODE", outputMode,
 		},
+		OpenFileFunc: os.OpenFile,
 	}
 	for _, v := range vars {
 		name, value, ok := strings.Cut(v, "=")
