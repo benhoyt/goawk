@@ -48,9 +48,10 @@ func TestStreamDoubleClose(t *testing.T) {
 	})
 }
 
-func execDefaultShell(scriptlet string) *exec.Cmd {
+func execDefaultShell(scriptlet string) Cmd {
 	cmdline := append(defaultShellCommand, scriptlet)
-	return exec.Command(cmdline[0], cmdline[1:]...)
+	cmd := exec.Command(cmdline[0], cmdline[1:]...)
+	return execCmd{cmd: cmd}
 }
 
 type streamCloser interface {

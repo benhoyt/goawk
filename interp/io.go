@@ -5,15 +5,14 @@ package interp
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/csv"
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 	"unicode/utf8"
 
 	"github.com/benhoyt/goawk/internal/resolver"
@@ -149,8 +148,8 @@ func (p *interp) getOutputStream(redirect lexer.Token, destValue value) (io.Writ
 			return nil, newError("can't write to pipe due to NoExec")
 		}
 		cmd := p.execShell(name)
-		cmd.Stdout = p.output
-		cmd.Stderr = p.errorOutput
+		cmd.SetStdout(p.output)
+		cmd.SetStderr(p.errorOutput)
 		p.flushOutputAndError() // ensure synchronization
 		out, err := newOutCmdStream(cmd)
 		if err != nil {
@@ -167,19 +166,17 @@ func (p *interp) getOutputStream(redirect lexer.Token, destValue value) (io.Writ
 }
 
 // Executes code using configured system shell
-func (p *interp) execShell(code string) *exec.Cmd {
+func (p *interp) execShell(code string) Cmd {
 	executable := p.shellCommand[0]
 	args := p.shellCommand[1:]
 	args = append(args, code)
 
-	var cmd *exec.Cmd
+	var cmd Cmd
 	if p.checkCtx {
-		cmd = exec.CommandContext(p.ctx, executable, args...)
+		cmd = p.command(p.ctx, executable, args...)
 	} else {
-		cmd = exec.Command(executable, args...)
+		cmd = p.command(context.Background(), executable, args...)
 	}
-	// Ensure stdout/stderr pipes being held open don't keep process running.
-	cmd.WaitDelay = 250 * time.Millisecond
 	return cmd
 }
 
@@ -226,8 +223,8 @@ func (p *interp) getInputScannerPipe(name string) (*bufio.Scanner, error) {
 		return nil, newError("can't read from pipe due to NoExec")
 	}
 	cmd := p.execShell(name)
-	cmd.Stdin = p.stdin
-	cmd.Stderr = p.errorOutput
+	cmd.SetStdin(p.stdin)
+	cmd.SetStderr(p.errorOutput)
 	p.flushOutputAndError() // ensure synchronization
 	in, err := newInCmdStream(cmd)
 	if err != nil {

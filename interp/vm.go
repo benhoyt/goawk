@@ -1127,9 +1127,9 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 		}
 		cmdline := p.toString(p.peekTop())
 		cmd := p.execShell(cmdline)
-		cmd.Stdin = p.stdin
-		cmd.Stdout = p.output
-		cmd.Stderr = p.errorOutput
+		cmd.SetStdin(p.stdin)
+		cmd.SetStdout(p.output)
+		cmd.SetStderr(p.errorOutput)
 		_ = p.flushAll() // ensure synchronization
 		err := cmd.Start()
 		if err != nil {
@@ -1138,7 +1138,7 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 			p.replaceTop(num(-1.0))
 			return nil
 		}
-		exitCode, err := waitExitCode(cmd)
+		exitCode, err := cmd.WaitExitCode()
 		if err != nil {
 			if p.checkCtx && p.ctx.Err() != nil {
 				return p.ctx.Err()
