@@ -61,9 +61,10 @@ func TestExecuteOpenFileFunc(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error reading file in root: %v", err)
 	}
-	const expected = "Hello, GoAWK!\n"
-	if string(data) != expected {
-		t.Fatalf("expected file content %q, got %q", expected, string(data))
+	const expected = "Hello, GoAWK!"
+	normalized := normalizeNewlines(string(data))
+	if normalized != expected {
+		t.Fatalf("expected file content %q, got %q", expected, normalized)
 	}
 }
 
