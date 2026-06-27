@@ -205,7 +205,7 @@ func (p *interp) getInputScannerFile(name string) (*bufio.Scanner, error) {
 	}
 	f, err := p.openFileFunc(name, os.O_RDONLY, 0)
 	if err != nil {
-		return nil, err // *os.PathError is handled by caller (getline returns -1)
+		return nil, err // fs.ErrNotExist is handled by caller (getline returns -1)
 	}
 	in := newInFileStream(f)
 	scanner := p.newScanner(in, make([]byte, inputBufSize))
