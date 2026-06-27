@@ -6,7 +6,10 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"math"
+	"os"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -198,4 +201,106 @@ func newInterp(t *testing.T, src string) *interp.Interpreter {
 		t.Fatalf("interp.New error: %v", err)
 	}
 	return interpreter
+}
+
+func TestOpenFileCustom(t *testing.T) {
+	openFile := func(name string, flags int, mode os.FileMode) (*os.File, error) {
+		accMode := flags & (os.O_RDONLY | os.O_WRONLY | os.O_RDWR)
+		if accMode == os.O_WRONLY || accMode == os.O_RDWR {
+			return nil, fmt.Errorf("can't open %s for writing: read only filesystem", name)
+		}
+		f, err := os.OpenFile(name, flags, mode)
+		return f, err
+	}
+
+	t.Run("cannot write", func(t *testing.T) {
+		source := `BEGIN {
+		print "Hello, GoAWK!" > "output.txt"
+		close("output.txt")
+		}`
+		interpreter := newInterp(t, source)
+
+		var output bytes.Buffer
+		status, err := interpreter.Execute(&interp.Config{
+			Stdin:    strings.NewReader(""),
+			Output:   &output,
+			OpenFile: openFile,
+		})
+
+		const expectedErr = `output redirection error: can't open output.txt for writing: read only filesystem`
+		if err == nil {
+			t.Fatalf("expected error contains %q, got <nil>", expectedErr)
+		} else if !strings.Contains(err.Error(), expectedErr) {
+			t.Fatalf("expected error contains %q, got %q", expectedErr, err.Error())
+		}
+		if status != 0 {
+			t.Fatalf("expected status 0, got %d", status)
+		}
+		if output.Len() != 0 {
+			t.Fatalf("expected empty stdout, got %q", output.String())
+		}
+	})
+
+	t.Run("can read", func(t *testing.T) {
+		source := `BEGIN {
+		n = 0
+		while ((getline < "newexecute_test.go") > 0) n++
+		close("newexecute_test.go")
+		print n
+		}`
+		interpreter := newInterp(t, source)
+
+		var output bytes.Buffer
+		status, err := interpreter.Execute(&interp.Config{
+			Stdin:    strings.NewReader(""),
+			Output:   &output,
+			OpenFile: openFile,
+		})
+		if err != nil {
+			t.Fatalf("error executing: %v", err)
+		}
+		if status != 0 {
+			t.Fatalf("expected status 0, got %d", status)
+		}
+
+		const pattern = `^[0-9]+\n`
+		normalized := normalizeNewlines(output.String())
+		matched, err := regexp.MatchString(pattern, normalized)
+		if err != nil {
+			t.Fatalf("error with pattern: %v", err)
+		}
+
+		if !matched {
+			t.Fatalf("expected output matching %q: got %q", pattern, normalized)
+		}
+	})
+
+	t.Run("getline not not found", func(t *testing.T) {
+		source := `BEGIN {
+		n = 0
+		while ((getline < "does_not_exists.go") > 0) n++
+		close("does_not_exists.go")
+		print n
+		}`
+		interpreter := newInterp(t, source)
+
+		var output bytes.Buffer
+		status, err := interpreter.Execute(&interp.Config{
+			Stdin:    strings.NewReader(""),
+			Output:   &output,
+			OpenFile: openFile,
+		})
+
+		if err != nil {
+			t.Fatalf("error executing: %v", err)
+		}
+		if status != 0 {
+			t.Fatalf("expected status 0, got %d", status)
+		}
+		normalized := normalizeNewlines(output.String())
+		const expected = "0\n"
+		if normalized != expected {
+			t.Fatalf("expected stdout %q, got %q", expected, output.String())
+		}
+	})
 }

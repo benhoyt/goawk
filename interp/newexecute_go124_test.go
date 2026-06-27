@@ -4,7 +4,6 @@ package interp_test
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -33,7 +32,7 @@ func TestOpenFileRoot(t *testing.T) {
 	status, err := interpreter.Execute(&interp.Config{
 		Stdin:  strings.NewReader(""),
 		Output: &output,
-		OpenFileFunc: func(name string, flag int, perm os.FileMode) (*os.File, error) {
+		OpenFile: func(name string, flag int, perm os.FileMode) (*os.File, error) {
 			return root.OpenFile(name, flag, perm)
 		},
 	})
@@ -65,30 +64,5 @@ func TestOpenFileRoot(t *testing.T) {
 	normalized := normalizeNewlines(string(data))
 	if normalized != expected {
 		t.Fatalf("expected file content %q, got %q", expected, normalized)
-	}
-}
-
-func TestOpenFileCustom(t *testing.T) {
-	source := `BEGIN { print "Hello, GoAWK!" > "output.txt" }`
-	interpreter := newInterp(t, source)
-
-	var output bytes.Buffer
-	status, err := interpreter.Execute(&interp.Config{
-		Stdin:  strings.NewReader(""),
-		Output: &output,
-		OpenFileFunc: func(name string, _ int, _ os.FileMode) (*os.File, error) {
-			return nil, fmt.Errorf("can't open %s for writing: read only filesystem", name)
-		},
-	})
-
-	const expectedErr = `output redirection error: can't open output.txt for writing: read only filesystem`
-	if err == nil || err.Error() != expectedErr {
-		t.Fatalf("expected error %q, got %q", expectedErr, err.Error())
-	}
-	if status != 0 {
-		t.Fatalf("expected status 0, got %d", status)
-	}
-	if output.Len() != 0 {
-		t.Fatalf("expected empty stdout, got %q", output.String())
 	}
 }

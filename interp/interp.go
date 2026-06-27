@@ -87,7 +87,7 @@ type interp struct {
 	csvOutput     *bufio.Writer
 	noArgVars     bool
 	splitBuffer   []byte
-	openFileFunc  func(name string, flag int, perm os.FileMode) (*os.File, error)
+	openFile      OpenFileFunc
 
 	// Scalars, arrays, and function state
 	globals       []value
@@ -493,6 +493,11 @@ func (p *interp) setExecuteConfig(config *Config) error {
 			return newError("output mode configuration not valid in default output mode")
 		}
 	}
+	if config.OpenFile == nil {
+		p.openFile = os.OpenFile
+	} else {
+		p.openFile = config.OpenFile
+	}
 
 	// Set up ARGV and other variables from config
 	argvIndex := p.arrayIndexes["ARGV"]
@@ -578,12 +583,6 @@ func (p *interp) setExecuteConfig(config *Config) error {
 		p.newlineOutputCRLF = true
 	default:
 		return fmt.Errorf("invalid newline output mode %d", config.NewlineOutput)
-	}
-
-	if config.OpenFileFunc == nil {
-		p.openFileFunc = os.OpenFile
-	} else {
-		p.openFileFunc = config.OpenFileFunc
 	}
 
 	return nil
