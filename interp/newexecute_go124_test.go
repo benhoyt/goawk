@@ -13,7 +13,7 @@ import (
 	"github.com/benhoyt/goawk/interp"
 )
 
-func TestExecuteOpenFileFunc(t *testing.T) {
+func TestOpenFileRoot(t *testing.T) {
 	source := `BEGIN { print "Hello, GoAWK!" > "output.txt" }`
 	interpreter := newInterp(t, source)
 
