@@ -323,10 +323,20 @@ type Config struct {
 	// and CRLF translation on Windows.
 	NewlineOutput NewlineMode
 
-	// OpenFileFunc specifies a function used to open files instead of the default
-	// [os.OpenFile].
-	OpenFileFunc func(name string, flag int, perm os.FileMode) (*os.File, error)
+	// OpenFile specifies the function used to open and create files. Set this
+	// to an [os.Root.OpenFile] method to limit file access to within a root
+	// tree, or to a custom function (for example, to limit the interpreter to
+	// read-only file access). The default is [os.OpenFile].
+	//
+	// A custom OpenFile function must return an error that satisfies
+	// errors.Is(err, fs.ErrNotExist) for files that don't exist when flag is
+	// os.O_RDONLY.
+	OpenFile OpenFileFunc
 }
+
+// OpenFileFunc is the type used for setting [Config.OpenFile], and is the type
+// of [os.OpenFile].
+type OpenFileFunc func(name string, flag int, perm os.FileMode) (*os.File, error)
 
 // IOMode specifies the input parsing or print output mode.
 type IOMode int
