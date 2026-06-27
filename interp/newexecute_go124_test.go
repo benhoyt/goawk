@@ -68,7 +68,7 @@ func TestExecuteOpenFileFunc(t *testing.T) {
 	}
 }
 
-func TestExecuteOpenFileFunc_ReadOnly(t *testing.T) {
+func TestOpenFileCustom(t *testing.T) {
 	source := `BEGIN { print "Hello, GoAWK!" > "output.txt" }`
 	interpreter := newInterp(t, source)
 
