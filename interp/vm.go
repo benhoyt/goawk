@@ -3,9 +3,10 @@
 package interp
 
 import (
+	"errors"
 	"io"
+	"io/fs"
 	"math"
-	"os"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -1126,9 +1127,9 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 		}
 		cmdline := p.toString(p.peekTop())
 		cmd := p.execShell(cmdline)
-		cmd.Stdin = p.stdin
-		cmd.Stdout = p.output
-		cmd.Stderr = p.errorOutput
+		cmd.SetStdin(p.stdin)
+		cmd.SetStdout(p.output)
+		cmd.SetStderr(p.errorOutput)
 		_ = p.flushAll() // ensure synchronization
 		err := cmd.Start()
 		if err != nil {
@@ -1137,7 +1138,7 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 			p.replaceTop(num(-1.0))
 			return nil
 		}
-		exitCode, err := waitExitCode(cmd)
+		exitCode, err := cmd.WaitExitCode()
 		if err != nil {
 			if p.checkCtx && p.ctx.Err() != nil {
 				return p.ctx.Err()
@@ -1263,7 +1264,8 @@ func (p *interp) getline(redirect lexer.Token) (float64, string, error) {
 		name := p.toString(p.pop())
 		scanner, err := p.getInputScannerFile(name)
 		if err != nil {
-			if _, ok := err.(*os.PathError); ok {
+			var pathErr *fs.PathError
+			if errors.As(err, &pathErr) && errors.Is(err, fs.ErrNotExist) {
 				// File not found is not a hard error, getline just returns -1.
 				// See: https://github.com/benhoyt/goawk/issues/41
 				return -1, "", nil

@@ -87,6 +87,8 @@ type interp struct {
 	csvOutput     *bufio.Writer
 	noArgVars     bool
 	splitBuffer   []byte
+	openFile      OpenFileFunc
+	command       CommandFunc
 
 	// Scalars, arrays, and function state
 	globals       []value
@@ -321,7 +323,33 @@ type Config struct {
 	// output. The default is "smart", meaning no translation on Linux/Unix
 	// and CRLF translation on Windows.
 	NewlineOutput NewlineMode
+
+	// OpenFile specifies the function used to open and create files. Set this
+	// to an [os.Root.OpenFile] method to limit file access to within a root
+	// tree, or to a custom function (for example, to limit the interpreter to
+	// read-only file access). The default is [os.OpenFile].
+	//
+	// A custom OpenFile function must return an error that satisfies
+	// errors.Is(err, fs.ErrNotExist) for files that don't exist when flag is
+	// os.O_RDONLY.
+	OpenFile OpenFileFunc
+
+	// Command specifies a function used to execute a command instead
+	// of the default [exec.CommandContext]
+	Command CommandFunc
 }
+
+// OpenFileFunc is the type used for setting [Config.OpenFile], and is the type
+// of [os.OpenFile].
+type OpenFileFunc func(name string, flag int, perm os.FileMode) (*os.File, error)
+
+// CommandFunc creates a [Cmd] to run program name with args under ctx, mirroring
+// [exec.CommandContext] making it possible command execution to be replaced
+// (sandboxed, run in-process, mocked). name and args are assembled
+// from [Config.ShellCommand] and the awk command string, so a custom func may
+// receive — and should be able to interpret — a shell command. Set via
+// [Config.Command]; defaults to [exec.CommandContext].
+type CommandFunc func(ctx context.Context, name string, args ...string) Cmd
 
 // IOMode specifies the input parsing or print output mode.
 type IOMode int
@@ -478,6 +506,11 @@ func (p *interp) setExecuteConfig(config *Config) error {
 			return newError("output mode configuration not valid in default output mode")
 		}
 	}
+	if config.OpenFile == nil {
+		p.openFile = os.OpenFile
+	} else {
+		p.openFile = config.OpenFile
+	}
 
 	// Set up ARGV and other variables from config
 	argvIndex := p.arrayIndexes["ARGV"]
@@ -565,6 +598,11 @@ func (p *interp) setExecuteConfig(config *Config) error {
 		return fmt.Errorf("invalid newline output mode %d", config.NewlineOutput)
 	}
 
+	if config.Command == nil {
+		p.command = execCommand
+	} else {
+		p.command = config.Command
+	}
 	return nil
 }
 

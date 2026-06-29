@@ -28,8 +28,10 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -454,8 +456,8 @@ func showSourceLine(src []byte, pos lexer.Position) {
 }
 
 func errorExit(err error) {
-	pathErr, ok := err.(*os.PathError)
-	if ok && os.IsNotExist(err) {
+	var pathErr *fs.PathError
+	if errors.As(err, &pathErr) && errors.Is(err, fs.ErrNotExist) {
 		errorExitf("file %q not found", pathErr.Path)
 	}
 	errorExitf("%s", err)

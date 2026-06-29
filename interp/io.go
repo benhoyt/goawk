@@ -5,15 +5,14 @@ package interp
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/csv"
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 	"unicode/utf8"
 
 	"github.com/benhoyt/goawk/internal/resolver"
@@ -135,7 +134,7 @@ func (p *interp) getOutputStream(redirect lexer.Token, destValue value) (io.Writ
 		} else {
 			flags |= os.O_APPEND
 		}
-		f, err := os.OpenFile(name, flags, 0644)
+		f, err := p.openFile(name, flags, 0644)
 		if err != nil {
 			return nil, newError("output redirection error: %s", err)
 		}
@@ -149,8 +148,8 @@ func (p *interp) getOutputStream(redirect lexer.Token, destValue value) (io.Writ
 			return nil, newError("can't write to pipe due to NoExec")
 		}
 		cmd := p.execShell(name)
-		cmd.Stdout = p.output
-		cmd.Stderr = p.errorOutput
+		cmd.SetStdout(p.output)
+		cmd.SetStderr(p.errorOutput)
 		p.flushOutputAndError() // ensure synchronization
 		out, err := newOutCmdStream(cmd)
 		if err != nil {
@@ -167,19 +166,17 @@ func (p *interp) getOutputStream(redirect lexer.Token, destValue value) (io.Writ
 }
 
 // Executes code using configured system shell
-func (p *interp) execShell(code string) *exec.Cmd {
+func (p *interp) execShell(code string) Cmd {
 	executable := p.shellCommand[0]
 	args := p.shellCommand[1:]
 	args = append(args, code)
 
-	var cmd *exec.Cmd
+	var cmd Cmd
 	if p.checkCtx {
-		cmd = exec.CommandContext(p.ctx, executable, args...)
+		cmd = p.command(p.ctx, executable, args...)
 	} else {
-		cmd = exec.Command(executable, args...)
+		cmd = p.command(context.Background(), executable, args...)
 	}
-	// Ensure stdout/stderr pipes being held open don't keep process running.
-	cmd.WaitDelay = 250 * time.Millisecond
 	return cmd
 }
 
@@ -203,9 +200,9 @@ func (p *interp) getInputScannerFile(name string) (*bufio.Scanner, error) {
 	if p.noFileReads {
 		return nil, newError("can't read from file due to NoFileReads")
 	}
-	f, err := os.Open(name)
+	f, err := p.openFile(name, os.O_RDONLY, 0)
 	if err != nil {
-		return nil, err // *os.PathError is handled by caller (getline returns -1)
+		return nil, err // fs.ErrNotExist is handled by caller (getline returns -1)
 	}
 	in := newInFileStream(f)
 	scanner := p.newScanner(in, make([]byte, inputBufSize))
@@ -226,8 +223,8 @@ func (p *interp) getInputScannerPipe(name string) (*bufio.Scanner, error) {
 		return nil, newError("can't read from pipe due to NoExec")
 	}
 	cmd := p.execShell(name)
-	cmd.Stdin = p.stdin
-	cmd.Stderr = p.errorOutput
+	cmd.SetStdin(p.stdin)
+	cmd.SetStderr(p.errorOutput)
 	p.flushOutputAndError() // ensure synchronization
 	in, err := newInCmdStream(cmd)
 	if err != nil {
@@ -779,7 +776,7 @@ func (p *interp) nextLine() (string, error) {
 					if p.noFileReads {
 						return "", newError("can't read from file due to NoFileReads")
 					}
-					input, err := os.Open(filename)
+					input, err := p.openFile(filename, os.O_RDONLY, 0)
 					if err != nil {
 						return "", err
 					}
