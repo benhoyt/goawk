@@ -101,7 +101,7 @@ Things AWK has over GoAWK:
 
 ## Stability
 
-This project has a good suite of tests, which include my own intepreter tests, the original AWK test suite, and the relevant tests from the Gawk test suite. I've used it a bunch personally, and it's used in the [Benthos](https://github.com/benthosdev/benthos) stream processor as well as by the software team at the library of the University of Antwerp. However, to `err == human`, so please use GoAWK at your own risk. I intend not to change the Go API in a breaking way in any v1.x.y version.
+This project has a good suite of tests, which include my own intepreter tests, the original AWK test suite, and the relevant tests from the Gawk test suite. I've used it a bunch personally, and it's used in the [Redpanda Connect](https://github.com/redpanda-data/connect) (formerly "Benthos") stream processor as well as by the software team at the library of the University of Antwerp. However, to `err == human`, so please use GoAWK at your own risk. I intend not to change the Go API in a breaking way in any v1.x.y version.
 
 
 ## AWKGo
