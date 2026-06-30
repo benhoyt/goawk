@@ -135,7 +135,7 @@ func (p *interp) getOutputStream(redirect lexer.Token, destValue value) (io.Writ
 		} else {
 			flags |= os.O_APPEND
 		}
-		f, err := os.OpenFile(name, flags, 0644)
+		f, err := p.openFile(name, flags, 0644)
 		if err != nil {
 			return nil, newError("output redirection error: %s", err)
 		}
@@ -203,9 +203,9 @@ func (p *interp) getInputScannerFile(name string) (*bufio.Scanner, error) {
 	if p.noFileReads {
 		return nil, newError("can't read from file due to NoFileReads")
 	}
-	f, err := os.Open(name)
+	f, err := p.openFile(name, os.O_RDONLY, 0)
 	if err != nil {
-		return nil, err // *os.PathError is handled by caller (getline returns -1)
+		return nil, err // fs.ErrNotExist is handled by caller (getline returns -1)
 	}
 	in := newInFileStream(f)
 	scanner := p.newScanner(in, make([]byte, inputBufSize))
@@ -779,7 +779,7 @@ func (p *interp) nextLine() (string, error) {
 					if p.noFileReads {
 						return "", newError("can't read from file due to NoFileReads")
 					}
-					input, err := os.Open(filename)
+					input, err := p.openFile(filename, os.O_RDONLY, 0)
 					if err != nil {
 						return "", err
 					}
