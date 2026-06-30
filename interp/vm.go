@@ -1264,8 +1264,7 @@ func (p *interp) getline(redirect lexer.Token) (float64, string, error) {
 		name := p.toString(p.pop())
 		scanner, err := p.getInputScannerFile(name)
 		if err != nil {
-			var pathErr *fs.PathError
-			if errors.As(err, &pathErr) && errors.Is(err, fs.ErrNotExist) {
+			if errors.Is(err, fs.ErrNotExist) {
 				// File not found is not a hard error, getline just returns -1.
 				// See: https://github.com/benhoyt/goawk/issues/41
 				return -1, "", nil
