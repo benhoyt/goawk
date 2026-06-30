@@ -2221,6 +2221,71 @@ func TestCSVMultiRead(t *testing.T) {
 	}
 }
 
+func TestOpenFileCustom(t *testing.T) {
+	openFile := func(name string, flags int, mode os.FileMode) (*os.File, error) {
+		if flags&os.O_RDWR != 0 || flags&os.O_WRONLY != 0 {
+			return nil, fmt.Errorf("can't open %s for writing: read only filesystem", name)
+		}
+		return os.OpenFile(name, flags, mode)
+	}
+
+	runProgram := func(source string) (output *bytes.Buffer, err error) {
+		prog, err := parser.ParseProgram([]byte(source), nil)
+		if err != nil {
+			t.Fatalf("error parsing: %v", err)
+		}
+		output = new(bytes.Buffer)
+		config := interp.Config{
+			Stdin:    strings.NewReader(""),
+			Output:   output,
+			Error:    io.Discard,
+			OpenFile: openFile,
+		}
+		status, err := interp.ExecProgram(prog, &config)
+		if status != 0 {
+			t.Fatalf("expected status 0, got %d", status)
+		}
+		return output, err
+	}
+
+	t.Run("cannot write", func(t *testing.T) {
+		output, err := runProgram(`BEGIN { print "foo" > "output.txt" }`)
+		const expectedErr = `can't open output.txt for writing: read only filesystem`
+		if err == nil {
+			t.Fatalf("expected error contains %q, got <nil>", expectedErr)
+		} else if !strings.Contains(err.Error(), expectedErr) {
+			t.Fatalf("expected error contains %q, got %q", expectedErr, err.Error())
+		}
+		if output.Len() != 0 {
+			t.Fatalf("expected empty stdout, got %q", output.String())
+		}
+	})
+
+	t.Run("can read", func(t *testing.T) {
+		output, err := runProgram(`BEGIN { getline <"./testdata/openfile.txt"; print $0 }`)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+		const expected = "OpenFile read test\n"
+		normalized := normalizeNewlines(output.String())
+		if normalized != expected {
+			t.Fatalf("expected output %q, got %q", expected, normalized)
+		}
+	})
+
+	t.Run("file not found", func(t *testing.T) {
+		output, err := runProgram(`BEGIN { print(getline <"does_not_exist") }`)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+		const expected = "-1\n"
+		normalized := normalizeNewlines(output.String())
+		if normalized != expected {
+			t.Fatalf("expected output %q, got %q", expected, normalized)
+		}
+	})
+}
+
 type sliceReader struct {
 	reads []string
 }
