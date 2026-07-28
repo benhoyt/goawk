@@ -16,6 +16,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"testing/fstest"
 
 	"github.com/benhoyt/goawk/interp"
 	"github.com/benhoyt/goawk/parser"
@@ -2221,12 +2222,11 @@ func TestCSVMultiRead(t *testing.T) {
 	}
 }
 
-func TestOpenFileCustom(t *testing.T) {
-	openFile := func(name string, flags int, mode os.FileMode) (*os.File, error) {
-		if flags&os.O_RDWR != 0 || flags&os.O_WRONLY != 0 {
-			return nil, fmt.Errorf("can't open %s for writing: read only filesystem", name)
-		}
-		return os.OpenFile(name, flags, mode)
+func TestFileSystemReadOnly(t *testing.T) {
+	// A read-only fs.FS (no WriteFS capability): output redirection must fail,
+	// reads work, and missing files report fs.ErrNotExist (getline returns -1).
+	fsys := fstest.MapFS{
+		"openfile.txt": &fstest.MapFile{Data: []byte("OpenFile read test\n")},
 	}
 
 	runProgram := func(source string) (output *bytes.Buffer, err error) {
@@ -2236,10 +2236,10 @@ func TestOpenFileCustom(t *testing.T) {
 		}
 		output = new(bytes.Buffer)
 		config := interp.Config{
-			Stdin:    strings.NewReader(""),
-			Output:   output,
-			Error:    io.Discard,
-			OpenFile: openFile,
+			Stdin:      strings.NewReader(""),
+			Output:     output,
+			Error:      io.Discard,
+			FileSystem: fsys,
 		}
 		status, err := interp.ExecProgram(prog, &config)
 		if status != 0 {
@@ -2250,7 +2250,7 @@ func TestOpenFileCustom(t *testing.T) {
 
 	t.Run("cannot write", func(t *testing.T) {
 		output, err := runProgram(`BEGIN { print "foo" > "output.txt" }`)
-		const expectedErr = `can't open output.txt for writing: read only filesystem`
+		const expectedErr = `filesystem is read-only`
 		if err == nil {
 			t.Fatalf("expected error contains %q, got <nil>", expectedErr)
 		} else if !strings.Contains(err.Error(), expectedErr) {
@@ -2262,7 +2262,7 @@ func TestOpenFileCustom(t *testing.T) {
 	})
 
 	t.Run("can read", func(t *testing.T) {
-		output, err := runProgram(`BEGIN { getline <"./testdata/openfile.txt"; print $0 }`)
+		output, err := runProgram(`BEGIN { getline <"openfile.txt"; print $0 }`)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}

@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"math"
 	"math/rand"
 	"os"
@@ -87,7 +88,7 @@ type interp struct {
 	csvOutput     *bufio.Writer
 	noArgVars     bool
 	splitBuffer   []byte
-	openFile      OpenFileFunc
+	fs            fs.FS
 
 	// Scalars, arrays, and function state
 	globals       []value
@@ -323,20 +324,39 @@ type Config struct {
 	// and CRLF translation on Windows.
 	NewlineOutput NewlineMode
 
-	// OpenFile specifies the function used to open and create files. Set this
-	// to an [os.Root.OpenFile] method to limit file access to within a root
-	// tree, or to a custom function (for example, to limit the interpreter to
-	// read-only file access). The default is [os.OpenFile].
+	// FileSystem specifies the filesystem used for file-based I/O: files named
+	// on the command line or via ARGV, getline < "f" reads, and print > "f"
+	// / print >> "f" writes. It may be any [fs.FS] for read-only programs; to
+	// allow output redirection it must also implement [WriteFS]. The default
+	// (nil) uses the operating system's filesystem relative to the process
+	// working directory.
 	//
-	// A custom OpenFile function must return an error that satisfies
-	// errors.Is(err, fs.ErrNotExist) for files that don't exist when flag is
-	// os.O_RDONLY.
-	OpenFile OpenFileFunc
+	// A read filesystem must return an error wrapping [fs.ErrNotExist] for
+	// missing files; GoAWK treats that as getline returning -1 rather than a
+	// fatal error.
+	FileSystem fs.FS
 }
 
-// OpenFileFunc is the type used for setting [Config.OpenFile], and is the type
-// of [os.OpenFile].
-type OpenFileFunc func(name string, flag int, perm os.FileMode) (*os.File, error)
+// WriteFS is an optional capability of an [fs.FS] assigned to
+// [Config.FileSystem]. If the filesystem implements WriteFS, output
+// redirection (print > "f" and print >> "f") creates and appends files through
+// it; if it does not, output redirection fails with a "read-only filesystem"
+// error.
+//
+// Create is used for AWK's ">" redirection (create or truncate the file) and
+// Append is used for ">>" (create the file if needed and append to it).
+// Implementations should return errors wrapping [fs.ErrNotExist] for missing
+// files where appropriate, consistent with [fs.FS.Open].
+type WriteFS interface {
+	fs.FS
+
+	// Create creates or truncates the named file and returns it for writing.
+	Create(name string) (io.WriteCloser, error)
+
+	// Append opens the named file for appending, creating it if it doesn't
+	// exist. Subsequent writes go to the end of the file.
+	Append(name string) (io.WriteCloser, error)
+}
 
 // IOMode specifies the input parsing or print output mode.
 type IOMode int
@@ -493,10 +513,10 @@ func (p *interp) setExecuteConfig(config *Config) error {
 			return newError("output mode configuration not valid in default output mode")
 		}
 	}
-	if config.OpenFile == nil {
-		p.openFile = os.OpenFile
+	if config.FileSystem == nil {
+		p.fs = osFS{}
 	} else {
-		p.openFile = config.OpenFile
+		p.fs = config.FileSystem
 	}
 
 	// Set up ARGV and other variables from config

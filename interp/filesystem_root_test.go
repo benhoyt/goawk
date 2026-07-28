@@ -5,6 +5,7 @@ package interp_test
 import (
 	"bytes"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,7 +15,25 @@ import (
 	"github.com/benhoyt/goawk/parser"
 )
 
-func TestOpenFileRoot(t *testing.T) {
+// rootFS adapts an [*os.Root] into an [fs.FS] that also implements
+// [interp.WriteFS], confining all access to the root tree.
+type rootFS struct {
+	Root *os.Root
+}
+
+func (r rootFS) Open(name string) (fs.File, error) {
+	return r.Root.Open(name)
+}
+
+func (r rootFS) Create(name string) (io.WriteCloser, error) {
+	return r.Root.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+}
+
+func (r rootFS) Append(name string) (io.WriteCloser, error) {
+	return r.Root.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+}
+
+func TestFileSystemRoot(t *testing.T) {
 	dir := t.TempDir()
 	root, err := os.OpenRoot(dir)
 	if err != nil {
@@ -34,10 +53,10 @@ func TestOpenFileRoot(t *testing.T) {
 		}
 		output = new(bytes.Buffer)
 		config := interp.Config{
-			Stdin:    strings.NewReader(""),
-			Output:   output,
-			Error:    io.Discard,
-			OpenFile: root.OpenFile,
+			Stdin:      strings.NewReader(""),
+			Output:     output,
+			Error:      io.Discard,
+			FileSystem: rootFS{Root: root},
 		}
 		status, err := interp.ExecProgram(prog, &config)
 		if status != 0 {
