@@ -93,6 +93,10 @@ NR==3, NR==5 { print NR }
 	{`BEGIN { printf "%3d", 42 }`, "", " 42", "", ""},
 	{`BEGIN { printf "%3s", "x" }`, "", "  x", "", ""},
 	{`BEGIN { printf "%.1g", 42 }  # !windows-gawk`, "", "4e+01", "", ""}, // for some reason gawk gives "4e+001" on Windows
+	{`BEGIN { printf "%g", 12345.678 }`, "", "12345.7", "", ""},               // bare %g defaults to 6 significant digits (like C/awk)
+	{`BEGIN { printf "%G", 12345.678 }`, "", "12345.7", "", ""},
+	{`BEGIN { printf "%g", 0.666666666666 }`, "", "0.666667", "", ""},
+	{`BEGIN { printf "%g %g", 3.14159265358979, 100000 }`, "", "3.14159 100000", "", ""},
 	{`BEGIN { printf "%d", 12, 34 }`, "", "12", "", ""},
 	{`BEGIN { printf "%d" }`, "", "", "format error: got 0 args, expected 1", "not enough arg"},
 	// Our %c handling is mostly like awk's, except for multiples
