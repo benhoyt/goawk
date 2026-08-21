@@ -339,9 +339,7 @@ func (p *interp) parseFmtTypes(s string) (format string, types []byte, err error
 		return item.format, item.types, nil
 	}
 
-	// Build the output incrementally (rather than mutating a copy of s in place)
-	// so we can inject a default precision for bare %g/%G, which shifts indices.
-	out := make([]byte, 0, len(s)+2)
+	out := make([]byte, 0, len(s))
 	for i := 0; i < len(s); i++ {
 		if s[i] != '%' {
 			out = append(out, s[i])
@@ -384,12 +382,15 @@ func (p *interp) parseFmtTypes(s string) (format string, types []byte, err error
 		case 'i':
 			t = 'd'
 			out = append(out, 'd')
-		case 'f', 'e', 'E', 'g', 'G':
+		case 'f', 'e', 'E':
+			t = 'f'
+			out = append(out, s[i])
+		case 'g', 'G':
 			t = 'f'
 			// C's %g/%G default to 6 significant digits, but Go's fmt uses the
 			// shortest round-trippable representation when no precision is given.
 			// Inject the C default so a bare %g matches POSIX awk, gawk, etc.
-			if (s[i] == 'g' || s[i] == 'G') && !dotSeen {
+			if !dotSeen {
 				out = append(out, '.', '6')
 			}
 			out = append(out, s[i])
