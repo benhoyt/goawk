@@ -85,18 +85,22 @@ func TestFileSystemRoot(t *testing.T) {
 	})
 
 	t.Run("successful append", func(t *testing.T) {
-		output, err := runProgram(`BEGIN { print "Hello, GoAWK!" >>"output.txt" }`)
+		err := os.WriteFile(filepath.Join(dir, "append.txt"), []byte("existing line\n"), 0o644)
+		if err != nil {
+			t.Fatalf("error writing file in root: %v", err)
+		}
+		output, err := runProgram(`BEGIN { print "Hello, GoAWK!" >>"append.txt" }`)
 		if err != nil {
 			t.Fatalf("runProgram error: %v", err)
 		}
 		if output.Len() != 0 {
 			t.Fatalf("expected empty stdout, got %q", output.String())
 		}
-		data, err := os.ReadFile(filepath.Join(dir, "output.txt"))
+		data, err := os.ReadFile(filepath.Join(dir, "append.txt"))
 		if err != nil {
 			t.Fatalf("error reading file in root: %v", err)
 		}
-		const expected = "Hello, GoAWK!\nHello, GoAWK!\n"
+		const expected = "existing line\nHello, GoAWK!\n"
 		normalized := normalizeNewlines(string(data))
 		if normalized != expected {
 			t.Fatalf("expected file content %q, got %q", expected, normalized)
