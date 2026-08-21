@@ -419,6 +419,15 @@ func (p *interp) parseFmtTypes(s string) (format string, types []byte, err error
 	return format, types, nil
 }
 
+// Convert a CONVFMT or OFMT value to its equivalent Go format string.
+func (p *interp) goFloatFormat(format string) string {
+	goFormat, types, err := p.parseFmtTypes(format)
+	if err != nil || len(types) != 1 || types[0] != 'f' {
+		return format
+	}
+	return goFormat
+}
+
 // Guts of sprintf() function (also used by "printf" statement)
 func (p *interp) sprintf(format string, args []value) (string, error) {
 	format, types, err := p.parseFmtTypes(format)
