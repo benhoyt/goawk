@@ -370,9 +370,8 @@ BEGIN {
 	print OFMT, 1.234567
 	OFMT = "%G"
 	print OFMT, 0.666666666666
-	OFMT = "%e"
-	print OFMT, 12345.678
-}`, "", "%.6g 1.23457\n%.3g 1.23\n%G 0.666667\n%e 1.234568e+04\n", "", ""},
+}`, "", "%.6g 1.23457\n%.3g 1.23\n%G 0.666667\n", "", ""},
+	{`BEGIN { OFMT = "%e"; print OFMT, 12345.678 }  # !windows-gawk`, "", "%e 1.234568e+04\n", "", ""}, // Windows Gawk prints exponent as "+004"
 	// OFS and ORS are tested above
 	{`BEGIN { print RSTART, RLENGTH; RSTART=5; RLENGTH=42; print RSTART, RLENGTH; } `, "",
 		"0 0\n5 42\n", "", ""},
