@@ -78,7 +78,7 @@ func (cover *Cover) WriteProfile(path string, data map[string]any) (err error) {
 
 	var f *os.File
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		f, err = os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+		f, err = os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
 		if err != nil {
 			return err
 		}
@@ -89,7 +89,7 @@ func (cover *Cover) WriteProfile(path string, data map[string]any) (err error) {
 			isNewFile = false
 			fileOpt = os.O_APPEND
 		}
-		f, err = os.OpenFile(path, os.O_WRONLY|fileOpt, 0644)
+		f, err = os.OpenFile(path, os.O_WRONLY|fileOpt, 0o644)
 		if err != nil {
 			return err
 		}

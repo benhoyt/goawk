@@ -26,11 +26,11 @@ func (r rootFS) Open(name string) (fs.File, error) {
 }
 
 func (r rootFS) Create(name string) (io.WriteCloser, error) {
-	return r.Root.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	return r.Root.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
 }
 
 func (r rootFS) Append(name string) (io.WriteCloser, error) {
-	return r.Root.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	return r.Root.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
 }
 
 func TestFileSystemRoot(t *testing.T) {
@@ -83,7 +83,7 @@ func TestFileSystemRoot(t *testing.T) {
 
 	t.Run("path traversal", func(t *testing.T) {
 		output, err := runProgram(`BEGIN { print "Hello, GoAWK!" > "../../etc/passwd" }`)
-		const expectedErr = `path escapes from parent`
+		const expectedErr = "path escapes from parent"
 		if err == nil {
 			t.Fatalf("expected error contains %q, got <nil>", expectedErr)
 		} else if !strings.Contains(err.Error(), expectedErr) {

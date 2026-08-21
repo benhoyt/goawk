@@ -23,6 +23,9 @@ import (
 
 // osFS is the default filesystem, backed by the operating system's filesystem
 // relative to the process working directory. It implements WriteFS.
+//
+// This isn't a strictly valid fs.FS implementation, as it allows absolute paths
+// and paths with "." and ".." in them (these don't satisfy fs.ValidPath).
 type osFS struct{}
 
 func (osFS) Open(name string) (fs.File, error) {
@@ -30,11 +33,11 @@ func (osFS) Open(name string) (fs.File, error) {
 }
 
 func (osFS) Create(name string) (io.WriteCloser, error) {
-	return os.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	return os.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
 }
 
 func (osFS) Append(name string) (io.WriteCloser, error) {
-	return os.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	return os.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
 }
 
 // Print a line of output followed by a newline
@@ -146,7 +149,7 @@ func (p *interp) getOutputStream(redirect lexer.Token, destValue value) (io.Writ
 			return p.output, nil
 		}
 
-		wfs, ok := p.fs.(WriteFS)
+		wfs, ok := p.fileSystem.(WriteFS)
 		if !ok {
 			return nil, newError("can't write to file %q: filesystem is read-only", name)
 		}
@@ -224,7 +227,7 @@ func (p *interp) getInputScannerFile(name string) (*bufio.Scanner, error) {
 	if p.noFileReads {
 		return nil, newError("can't read from file due to NoFileReads")
 	}
-	f, err := p.fs.Open(name)
+	f, err := p.fileSystem.Open(name)
 	if err != nil {
 		return nil, err // fs.ErrNotExist is handled by caller (getline returns -1)
 	}
@@ -800,7 +803,7 @@ func (p *interp) nextLine() (string, error) {
 					if p.noFileReads {
 						return "", newError("can't read from file due to NoFileReads")
 					}
-					input, err := p.fs.Open(filename)
+					input, err := p.fileSystem.Open(filename)
 					if err != nil {
 						return "", err
 					}

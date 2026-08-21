@@ -88,7 +88,7 @@ type interp struct {
 	csvOutput     *bufio.Writer
 	noArgVars     bool
 	splitBuffer   []byte
-	fs            fs.FS
+	fileSystem    fs.FS
 
 	// Scalars, arrays, and function state
 	globals       []value
@@ -325,36 +325,30 @@ type Config struct {
 	NewlineOutput NewlineMode
 
 	// FileSystem specifies the filesystem used for file-based I/O: files named
-	// on the command line or via ARGV, getline < "f" reads, and print > "f"
-	// / print >> "f" writes. It may be any [fs.FS] for read-only programs; to
-	// allow output redirection it must also implement [WriteFS]. The default
-	// (nil) uses the operating system's filesystem relative to the process
-	// working directory.
+	// on the command line or via ARGV, getline <"f" reads, and print >"f"
+	// or print >>"f" writes. It may be any [fs.FS] for read-only access; to
+	// allow output redirection it must also implement [WriteFS].
 	//
-	// A read filesystem must return an error wrapping [fs.ErrNotExist] for
-	// missing files; GoAWK treats that as getline returning -1 rather than a
-	// fatal error.
+	// The default is to use the operating system's regular filesystem, relative
+	// to the working directory. Note that the default isn't strictly a valid
+	// fs.FS, as it allows absolute paths and paths with "." or ".." in them,
+	// unlike fs.ValidPath.
+	//
+	// A filesystem must return an error wrapping [fs.ErrNotExist] for missing
+	// files: GoAWK treats that as getline returning -1 rather than a fatal error.
 	FileSystem fs.FS
 }
 
-// WriteFS is an optional capability of an [fs.FS] assigned to
-// [Config.FileSystem]. If the filesystem implements WriteFS, output
-// redirection (print > "f" and print >> "f") creates and appends files through
-// it; if it does not, output redirection fails with a "read-only filesystem"
-// error.
-//
-// Create is used for AWK's ">" redirection (create or truncate the file) and
-// Append is used for ">>" (create the file if needed and append to it).
-// Implementations should return errors wrapping [fs.ErrNotExist] for missing
-// files where appropriate, consistent with [fs.FS.Open].
+// WriteFS is an interface extension for an [fs.FS] assigned to [Config.FileSystem].
+// If the filesystem implements WriteFS, output redirection is allowed: print >"f"
+// uses Create and print >>"f" uses Append.
 type WriteFS interface {
 	fs.FS
 
 	// Create creates or truncates the named file and returns it for writing.
 	Create(name string) (io.WriteCloser, error)
 
-	// Append opens the named file for appending, creating it if it doesn't
-	// exist. Subsequent writes go to the end of the file.
+	// Append opens the named file for appending, creating it if it doesn't exist.
 	Append(name string) (io.WriteCloser, error)
 }
 
@@ -514,9 +508,9 @@ func (p *interp) setExecuteConfig(config *Config) error {
 		}
 	}
 	if config.FileSystem == nil {
-		p.fs = osFS{}
+		p.fileSystem = osFS{}
 	} else {
-		p.fs = config.FileSystem
+		p.fileSystem = config.FileSystem
 	}
 
 	// Set up ARGV and other variables from config

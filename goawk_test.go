@@ -113,7 +113,7 @@ func TestAWK(t *testing.T) {
 				expected = sortedLines(expected)
 			}
 			if writeAWK {
-				err := os.WriteFile(outputPath, expected, 0644)
+				err := os.WriteFile(outputPath, expected, 0o644)
 				if err != nil {
 					t.Fatalf("error writing awk output: %v", err)
 				}
@@ -139,7 +139,7 @@ func TestAWK(t *testing.T) {
 				output = sortedLines(output)
 			}
 			if writeGoAWK {
-				err := os.WriteFile(outputPath, output, 0644)
+				err := os.WriteFile(outputPath, output, 0o644)
 				if err != nil {
 					t.Fatalf("error writing goawk output: %v", err)
 				}

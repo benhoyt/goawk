@@ -2223,10 +2223,8 @@ func TestCSVMultiRead(t *testing.T) {
 }
 
 func TestFileSystemReadOnly(t *testing.T) {
-	// A read-only fs.FS (no WriteFS capability): output redirection must fail,
-	// reads work, and missing files report fs.ErrNotExist (getline returns -1).
 	fsys := fstest.MapFS{
-		"openfile.txt": &fstest.MapFile{Data: []byte("OpenFile read test\n")},
+		"file.txt": &fstest.MapFile{Data: []byte("read test\n")},
 	}
 
 	runProgram := func(source string) (output *bytes.Buffer, err error) {
@@ -2249,8 +2247,8 @@ func TestFileSystemReadOnly(t *testing.T) {
 	}
 
 	t.Run("cannot write", func(t *testing.T) {
-		output, err := runProgram(`BEGIN { print "foo" > "output.txt" }`)
-		const expectedErr = `filesystem is read-only`
+		output, err := runProgram(`BEGIN { print "foo" >"output.txt" }`)
+		const expectedErr = "filesystem is read-only"
 		if err == nil {
 			t.Fatalf("expected error contains %q, got <nil>", expectedErr)
 		} else if !strings.Contains(err.Error(), expectedErr) {
@@ -2262,11 +2260,11 @@ func TestFileSystemReadOnly(t *testing.T) {
 	})
 
 	t.Run("can read", func(t *testing.T) {
-		output, err := runProgram(`BEGIN { getline <"openfile.txt"; print $0 }`)
+		output, err := runProgram(`BEGIN { getline <"file.txt"; print $0 }`)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
-		const expected = "OpenFile read test\n"
+		const expected = "read test\n"
 		normalized := normalizeNewlines(output.String())
 		if normalized != expected {
 			t.Fatalf("expected output %q, got %q", expected, normalized)
