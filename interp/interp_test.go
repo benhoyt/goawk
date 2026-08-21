@@ -95,6 +95,10 @@ NR==3, NR==5 { print NR }
 	{`BEGIN { printf "%3d", 42 }`, "", " 42", "", ""},
 	{`BEGIN { printf "%3s", "x" }`, "", "  x", "", ""},
 	{`BEGIN { printf "%.1g", 42 }  # !windows-gawk`, "", "4e+01", "", ""}, // for some reason gawk gives "4e+001" on Windows
+	{`BEGIN { printf "%g", 12345.678 }`, "", "12345.7", "", ""},           // bare %g defaults to 6 significant digits (like C/awk)
+	{`BEGIN { printf "%G", 12345.678 }`, "", "12345.7", "", ""},
+	{`BEGIN { printf "%g", 0.666666666666 }`, "", "0.666667", "", ""},
+	{`BEGIN { printf "%g %g", 3.14159265358979, 100000 }`, "", "3.14159 100000", "", ""},
 	{`BEGIN { printf "%d", 12, 34 }`, "", "12", "", ""},
 	{`BEGIN { printf "%d" }`, "", "", "format error: got 0 args, expected 1", "not enough arg"},
 	// Our %c handling is mostly like awk's, except for multiples
@@ -335,7 +339,9 @@ BEGIN {
 	print CONVFMT, 1.2345678 ""
 	CONVFMT = "%.3g"
 	print CONVFMT, 1.234567 ""
-}`, "", "%.6g 1.23457\n%.3g 1.23\n", "", ""},
+	CONVFMT = "%g"
+	print CONVFMT, 12345.678 ""
+}`, "", "%.6g 1.23457\n%.3g 1.23\n%g 12345.7\n", "", ""},
 	{`BEGIN { FILENAME = "foo"; print FILENAME }`, "", "foo\n", "", ""},
 	{`BEGIN { FILENAME = "123.0"; print (FILENAME==123) }`, "", "0\n", "", ""},
 	// Other FILENAME behaviour is tested in goawk_test.go
@@ -364,7 +370,10 @@ BEGIN {
 	print OFMT, 1.2345678
 	OFMT = "%.3g"
 	print OFMT, 1.234567
-}`, "", "%.6g 1.23457\n%.3g 1.23\n", "", ""},
+	OFMT = "%G"
+	print OFMT, 0.666666666666
+}`, "", "%.6g 1.23457\n%.3g 1.23\n%G 0.666667\n", "", ""},
+	{`BEGIN { OFMT = "%e"; print OFMT, 12345.678 }  # !windows-gawk`, "", "%e 1.234568e+04\n", "", ""}, // Windows Gawk prints exponent as "+004"
 	// OFS and ORS are tested above
 	{`BEGIN { print RSTART, RLENGTH; RSTART=5; RLENGTH=42; print RSTART, RLENGTH; } `, "",
 		"0 0\n5 42\n", "", ""},

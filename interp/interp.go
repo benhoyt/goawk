@@ -119,7 +119,9 @@ type interp struct {
 	// Built-in variables
 	argc             value
 	convertFormat    string
+	convertFormatGo  string // Go fmt.Sprintf equivalent of convertFormat
 	outputFormat     string
+	outputFormatGo   string // Go fmt.Sprintf equivalent of outputFormat
 	fieldSep         string
 	fieldSepRegex    *regexp.Regexp
 	recordSep        string
@@ -443,7 +445,9 @@ func newInterp(program *parser.Program) *interp {
 	seed := math.Float64bits(p.randSeed)
 	p.random = rand.New(rand.NewSource(int64(seed)))
 	p.convertFormat = "%.6g"
+	p.convertFormatGo = "%.6g"
 	p.outputFormat = "%.6g"
+	p.outputFormatGo = "%.6g"
 	p.fieldSep = " "
 	p.savedFieldSep = " "
 	p.recordSep = "\n"
@@ -869,6 +873,7 @@ func (p *interp) setSpecial(index int, v value) error {
 		p.argc = v
 	case ast.V_CONVFMT:
 		p.convertFormat = p.toString(v)
+		p.convertFormatGo = p.goFloatFormat(p.convertFormat)
 	case ast.V_FILENAME:
 		p.filename = v
 	case ast.V_FS:
@@ -883,6 +888,7 @@ func (p *interp) setSpecial(index int, v value) error {
 		}
 	case ast.V_OFMT:
 		p.outputFormat = p.toString(v)
+		p.outputFormatGo = p.goFloatFormat(p.outputFormat)
 	case ast.V_OFS:
 		p.outputFieldSep = p.toString(v)
 	case ast.V_ORS:
@@ -1055,7 +1061,7 @@ func (p *interp) joinFields(fields []string) string {
 
 // Convert value to string using current CONVFMT
 func (p *interp) toString(v value) string {
-	return v.str(p.convertFormat)
+	return v.str(p.convertFormatGo)
 }
 
 // Compile regex string (or fetch from regex cache)
