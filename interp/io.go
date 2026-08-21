@@ -35,7 +35,7 @@ func (p *interp) printArgs(writer io.Writer, args []value) error {
 	case CSVMode, TSVMode:
 		fields := make([]string, 0, 7) // up to 7 args won't require a heap allocation
 		for _, arg := range args {
-			fields = append(fields, arg.str(p.outputFormat))
+			fields = append(fields, arg.str(p.outputFormatGo))
 		}
 		err := p.writeCSV(writer, fields)
 		if err != nil {
@@ -50,7 +50,7 @@ func (p *interp) printArgs(writer io.Writer, args []value) error {
 					return err
 				}
 			}
-			err := writeOutput(writer, arg.str(p.outputFormat), p.newlineOutputCRLF)
+			err := writeOutput(writer, arg.str(p.outputFormatGo), p.newlineOutputCRLF)
 			if err != nil {
 				return err
 			}
