@@ -2259,6 +2259,19 @@ func TestFileSystemReadOnly(t *testing.T) {
 		}
 	})
 
+	t.Run("cannot append", func(t *testing.T) {
+		output, err := runProgram(`BEGIN { print "foo" >>"output.txt" }`)
+		const expectedErr = "filesystem is read-only"
+		if err == nil {
+			t.Fatalf("expected error contains %q, got <nil>", expectedErr)
+		} else if !strings.Contains(err.Error(), expectedErr) {
+			t.Fatalf("expected error contains %q, got %q", expectedErr, err.Error())
+		}
+		if output.Len() != 0 {
+			t.Fatalf("expected empty stdout, got %q", output.String())
+		}
+	})
+
 	t.Run("can read", func(t *testing.T) {
 		output, err := runProgram(`BEGIN { getline <"file.txt"; print $0 }`)
 		if err != nil {

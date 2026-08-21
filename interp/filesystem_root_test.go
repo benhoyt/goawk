@@ -65,8 +65,11 @@ func TestFileSystemRoot(t *testing.T) {
 		return output, err
 	}
 
-	t.Run("success", func(t *testing.T) {
-		output, err := runProgram(`BEGIN { print "Hello, GoAWK!" > "output.txt" }`)
+	t.Run("successful write", func(t *testing.T) {
+		output, err := runProgram(`BEGIN { print "Hello, GoAWK!" >"output.txt" }`)
+		if err != nil {
+			t.Fatalf("runProgram error: %v", err)
+		}
 		if output.Len() != 0 {
 			t.Fatalf("expected empty stdout, got %q", output.String())
 		}
@@ -81,8 +84,27 @@ func TestFileSystemRoot(t *testing.T) {
 		}
 	})
 
+	t.Run("successful append", func(t *testing.T) {
+		output, err := runProgram(`BEGIN { print "Hello, GoAWK!" >>"output.txt" }`)
+		if err != nil {
+			t.Fatalf("runProgram error: %v", err)
+		}
+		if output.Len() != 0 {
+			t.Fatalf("expected empty stdout, got %q", output.String())
+		}
+		data, err := os.ReadFile(filepath.Join(dir, "output.txt"))
+		if err != nil {
+			t.Fatalf("error reading file in root: %v", err)
+		}
+		const expected = "Hello, GoAWK!\nHello, GoAWK!\n"
+		normalized := normalizeNewlines(string(data))
+		if normalized != expected {
+			t.Fatalf("expected file content %q, got %q", expected, normalized)
+		}
+	})
+
 	t.Run("path traversal", func(t *testing.T) {
-		output, err := runProgram(`BEGIN { print "Hello, GoAWK!" > "../../etc/passwd" }`)
+		output, err := runProgram(`BEGIN { print "Hello, GoAWK!" >"../../etc/passwd" }`)
 		const expectedErr = "path escapes from parent"
 		if err == nil {
 			t.Fatalf("expected error contains %q, got <nil>", expectedErr)

@@ -332,7 +332,8 @@ type Config struct {
 	// The default is to use the operating system's regular filesystem, relative
 	// to the working directory. Note that the default isn't strictly a valid
 	// fs.FS, as it allows absolute paths and paths with "." or ".." in them,
-	// unlike fs.ValidPath.
+	// unlike fs.ValidPath. The filenames passed to the FileSystem methods come
+	// directly from the user without validation.
 	//
 	// A filesystem must return an error wrapping [fs.ErrNotExist] for missing
 	// files: GoAWK treats that as getline returning -1 rather than a fatal error.
