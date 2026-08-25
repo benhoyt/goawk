@@ -342,6 +342,32 @@ BEGIN {
 	CONVFMT = "%g"
 	print CONVFMT, 12345.678 ""
 }`, "", "%.6g 1.23457\n%.3g 1.23\n%g 12345.7\n", "", ""},
+	// A CONVFMT that isn't a plain float conversion still converts like other AWKs
+	{`BEGIN { CONVFMT = "%d"; print 1234.5678 "" }`, "", "1234\n", "", ""},
+	{`BEGIN { CONVFMT = "%i"; print 1234.5678 "" }`, "", "1234\n", "", ""},
+	{`BEGIN { CONVFMT = "%u"; print 1234.5678 "" }`, "", "1234\n", "", ""},
+	{`BEGIN { CONVFMT = "%x"; print 1234.5678 "" }`, "", "4d2\n", "", ""},
+	{`BEGIN { CONVFMT = "%o"; print 1234.5678 "" }`, "", "2322\n", "", ""},
+	{`BEGIN { CONVFMT = "%e"; print 1234.5678 "" }  # !windows-gawk`, "", "1.234568e+03\n", "", ""},
+	{`BEGIN { CONVFMT = "x%dy"; print 1234.5678 "" }`, "", "x1234y\n", "", ""},
+	{`BEGIN { CONVFMT = "abc"; print 1234.5678 "" }`, "", "abc\n", "", ""},
+	{`BEGIN { CONVFMT = ""; print "[" 1234.5678 "" "]" }`, "", "[]\n", "", ""},
+	{`BEGIN { CONVFMT = "%%"; print 1234.5678 "" }`, "", "%\n", "", ""},
+	// As with printf, our %c is byte-based unless -chars is given (like mawk, unlike Gawk)
+	{`BEGIN { CONVFMT = "%c"; print 1234.5678 "" }  # !gawk`, "", "\xd2\n", "", ""},
+	// An invalid conversion is used as a literal string, like Gawk (--posix Gawk is a fatal error)
+	{`BEGIN { CONVFMT = "%z"; print 1234.5678 "" }  # !posix`, "", "%z\n", "", ""},
+	// So is a format needing more than one argument (here Gawk is a fatal error either way)
+	{`BEGIN { CONVFMT = "%d %d"; print 1234.5678 "" }  # !awk !gawk`, "", "%d %d\n", "", ""},
+	// A CONVFMT with an %s conversion would recurse, as %s converts using CONVFMT.
+	// We produce an empty string; Gawk and mawk print nothing at all here.
+	{`BEGIN { CONVFMT = "%s"; print "[" 1234.5678 "" "]" }  # !awk !gawk`, "", "[]\n", "", ""},
+	{`BEGIN { CONVFMT = "x%sy"; print "[" 1234.5678 "" "]" }  # !awk !gawk`, "", "[]\n", "", ""},
+	// Integers and inf/nan never use CONVFMT
+	{`BEGIN { CONVFMT = "%c"; print 65 "" }`, "", "65\n", "", ""},
+	{`BEGIN { CONVFMT = "%d"; print log(0) "" }  # !awk !gawk`, "", "-inf\n", "", ""},
+	// CONVFMT is used for array subscripts too
+	{`BEGIN { CONVFMT = "%d"; a[1.5] = 1; for (k in a) print k }`, "", "1\n", "", ""},
 	{`BEGIN { FILENAME = "foo"; print FILENAME }`, "", "foo\n", "", ""},
 	{`BEGIN { FILENAME = "123.0"; print (FILENAME==123) }`, "", "0\n", "", ""},
 	// Other FILENAME behaviour is tested in goawk_test.go
@@ -374,6 +400,14 @@ BEGIN {
 	print OFMT, 0.666666666666
 }`, "", "%.6g 1.23457\n%.3g 1.23\n%G 0.666667\n", "", ""},
 	{`BEGIN { OFMT = "%e"; print OFMT, 12345.678 }  # !windows-gawk`, "", "%e 1.234568e+04\n", "", ""}, // Windows Gawk prints exponent as "+004"
+	// An OFMT that isn't a plain float conversion, as with CONVFMT above
+	{`BEGIN { OFMT = "%d"; print 1234.5678 }`, "", "1234\n", "", ""},
+	{`BEGIN { OFMT = "%x"; print 1234.5678 }`, "", "4d2\n", "", ""},
+	{`BEGIN { OFMT = "abc"; print 1234.5678 }`, "", "abc\n", "", ""},
+	{`BEGIN { OFMT = "%c"; print 65 }`, "", "65\n", "", ""}, // integers don't use OFMT
+	// Unlike CONVFMT, an %s conversion in OFMT is fine: it converts using CONVFMT
+	{`BEGIN { OFMT = "%s"; print 1234.5678 }`, "", "1234.57\n", "", ""},
+	{`BEGIN { OFMT = "%s"; CONVFMT = "%d"; print 1234.5678 }`, "", "1234\n", "", ""},
 	// OFS and ORS are tested above
 	{`BEGIN { print RSTART, RLENGTH; RSTART=5; RLENGTH=42; print RSTART, RLENGTH; } `, "",
 		"0 0\n5 42\n", "", ""},

@@ -118,10 +118,8 @@ type interp struct {
 
 	// Built-in variables
 	argc             value
-	convertFormat    string
-	convertFormatGo  string // Go fmt.Sprintf equivalent of convertFormat
-	outputFormat     string
-	outputFormatGo   string // Go fmt.Sprintf equivalent of outputFormat
+	convertFormat    numFormat
+	outputFormat     numFormat
 	fieldSep         string
 	fieldSepRegex    *regexp.Regexp
 	recordSep        string
@@ -444,10 +442,8 @@ func newInterp(program *parser.Program) *interp {
 	p.randSeed = 1.0
 	seed := math.Float64bits(p.randSeed)
 	p.random = rand.New(rand.NewSource(int64(seed)))
-	p.convertFormat = "%.6g"
-	p.convertFormatGo = "%.6g"
-	p.outputFormat = "%.6g"
-	p.outputFormatGo = "%.6g"
+	p.convertFormat = defaultNumFormat
+	p.outputFormat = defaultNumFormat
 	p.fieldSep = " "
 	p.savedFieldSep = " "
 	p.recordSep = "\n"
@@ -793,13 +789,13 @@ func (p *interp) getSpecial(index int) value {
 	case ast.V_ARGC:
 		return p.argc
 	case ast.V_CONVFMT:
-		return str(p.convertFormat)
+		return str(p.convertFormat.format)
 	case ast.V_FILENAME:
 		return p.filename
 	case ast.V_FS:
 		return str(p.fieldSep)
 	case ast.V_OFMT:
-		return str(p.outputFormat)
+		return str(p.outputFormat.format)
 	case ast.V_OFS:
 		return str(p.outputFieldSep)
 	case ast.V_ORS:
@@ -872,8 +868,7 @@ func (p *interp) setSpecial(index int, v value) error {
 		}
 		p.argc = v
 	case ast.V_CONVFMT:
-		p.convertFormat = p.toString(v)
-		p.convertFormatGo = p.goFloatFormat(p.convertFormat)
+		p.convertFormat = p.parseNumFormat(p.toString(v))
 	case ast.V_FILENAME:
 		p.filename = v
 	case ast.V_FS:
@@ -887,8 +882,10 @@ func (p *interp) setSpecial(index int, v value) error {
 			p.fieldSepRegex = re
 		}
 	case ast.V_OFMT:
-		p.outputFormat = p.toString(v)
-		p.outputFormatGo = p.goFloatFormat(p.outputFormat)
+		p.outputFormat = p.parseNumFormat(p.toString(v))
+		// An %s conversion is fine in OFMT (it converts the number using
+		// CONVFMT); hasStr only guards CONVFMT referring back to itself.
+		p.outputFormat.hasStr = false
 	case ast.V_OFS:
 		p.outputFieldSep = p.toString(v)
 	case ast.V_ORS:
@@ -1061,7 +1058,36 @@ func (p *interp) joinFields(fields []string) string {
 
 // Convert value to string using current CONVFMT
 func (p *interp) toString(v value) string {
-	return v.str(p.convertFormatGo)
+	if v.typ != typeNum {
+		// For typeStr and typeNumStr we already have the string, for
+		// typeNull v.s == "".
+		return v.s
+	}
+	return p.numToString(v.n, p.convertFormat)
+}
+
+// Convert value to string using current OFMT (used by "print")
+func (p *interp) toOutputString(v value) string {
+	if v.typ != typeNum {
+		return v.s
+	}
+	return p.numToString(v.n, p.outputFormat)
+}
+
+// Convert a number to a string using the given CONVFMT or OFMT value.
+func (p *interp) numToString(n float64, f numFormat) string {
+	if !f.isFloat && needsNumFormat(n) {
+		if f.hasStr {
+			// Converting a number with a CONVFMT that has an %s conversion
+			// would recurse forever, as %s converts using CONVFMT. Gawk and
+			// mawk produce an empty string here, so do the same.
+			return ""
+		}
+		// A format such as "%d" or "%c" that needs the number converted to
+		// something other than a float: hand it to sprintf.
+		return p.formatNum(f, num(n))
+	}
+	return numToStr(n, f.goFormat)
 }
 
 // Compile regex string (or fetch from regex cache)
