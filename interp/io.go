@@ -8,6 +8,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"regexp"
@@ -19,6 +20,25 @@ import (
 	"github.com/benhoyt/goawk/internal/resolver"
 	"github.com/benhoyt/goawk/lexer"
 )
+
+// osFS is the default filesystem, backed by the operating system's filesystem
+// relative to the process working directory. It implements WriteFS.
+//
+// This isn't a strictly valid fs.FS implementation, as it allows absolute paths
+// and paths with "." and ".." in them (these don't satisfy fs.ValidPath).
+type osFS struct{}
+
+func (osFS) Open(name string) (fs.File, error) {
+	return os.Open(name)
+}
+
+func (osFS) Create(name string) (io.WriteCloser, error) {
+	return os.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
+}
+
+func (osFS) Append(name string) (io.WriteCloser, error) {
+	return os.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
+}
 
 // Print a line of output followed by a newline
 func (p *interp) printLine(writer io.Writer, line string) error {
@@ -129,13 +149,17 @@ func (p *interp) getOutputStream(redirect lexer.Token, destValue value) (io.Writ
 			return p.output, nil
 		}
 
-		flags := os.O_CREATE | os.O_WRONLY
-		if redirect == lexer.GREATER {
-			flags |= os.O_TRUNC
-		} else {
-			flags |= os.O_APPEND
+		wfs, ok := p.fileSystem.(WriteFS)
+		if !ok {
+			return nil, newError("can't write to file %q: filesystem is read-only", name)
 		}
-		f, err := p.openFile(name, flags, 0644)
+		var f io.WriteCloser
+		var err error
+		if redirect == lexer.GREATER {
+			f, err = wfs.Create(name)
+		} else {
+			f, err = wfs.Append(name)
+		}
 		if err != nil {
 			return nil, newError("output redirection error: %s", err)
 		}
@@ -203,7 +227,7 @@ func (p *interp) getInputScannerFile(name string) (*bufio.Scanner, error) {
 	if p.noFileReads {
 		return nil, newError("can't read from file due to NoFileReads")
 	}
-	f, err := p.openFile(name, os.O_RDONLY, 0)
+	f, err := p.fileSystem.Open(name)
 	if err != nil {
 		return nil, err // fs.ErrNotExist is handled by caller (getline returns -1)
 	}
@@ -779,7 +803,7 @@ func (p *interp) nextLine() (string, error) {
 					if p.noFileReads {
 						return "", newError("can't read from file due to NoFileReads")
 					}
-					input, err := p.openFile(filename, os.O_RDONLY, 0)
+					input, err := p.fileSystem.Open(filename)
 					if err != nil {
 						return "", err
 					}

@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"reflect"
@@ -16,6 +17,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"testing/fstest"
 
 	"github.com/benhoyt/goawk/interp"
 	"github.com/benhoyt/goawk/parser"
@@ -2230,12 +2232,9 @@ func TestCSVMultiRead(t *testing.T) {
 	}
 }
 
-func TestOpenFileCustom(t *testing.T) {
-	openFile := func(name string, flags int, mode os.FileMode) (*os.File, error) {
-		if flags&os.O_RDWR != 0 || flags&os.O_WRONLY != 0 {
-			return nil, fmt.Errorf("can't open %s for writing: read only filesystem", name)
-		}
-		return os.OpenFile(name, flags, mode)
+func TestFileSystemReadOnly(t *testing.T) {
+	fsys := fstest.MapFS{
+		"file.txt": &fstest.MapFile{Data: []byte("read test\n")},
 	}
 
 	runProgram := func(source string) (output *bytes.Buffer, err error) {
@@ -2245,10 +2244,10 @@ func TestOpenFileCustom(t *testing.T) {
 		}
 		output = new(bytes.Buffer)
 		config := interp.Config{
-			Stdin:    strings.NewReader(""),
-			Output:   output,
-			Error:    io.Discard,
-			OpenFile: openFile,
+			Stdin:      strings.NewReader(""),
+			Output:     output,
+			Error:      io.Discard,
+			FileSystem: fsys,
 		}
 		status, err := interp.ExecProgram(prog, &config)
 		if status != 0 {
@@ -2258,8 +2257,21 @@ func TestOpenFileCustom(t *testing.T) {
 	}
 
 	t.Run("cannot write", func(t *testing.T) {
-		output, err := runProgram(`BEGIN { print "foo" > "output.txt" }`)
-		const expectedErr = `can't open output.txt for writing: read only filesystem`
+		output, err := runProgram(`BEGIN { print "foo" >"output.txt" }`)
+		const expectedErr = "filesystem is read-only"
+		if err == nil {
+			t.Fatalf("expected error contains %q, got <nil>", expectedErr)
+		} else if !strings.Contains(err.Error(), expectedErr) {
+			t.Fatalf("expected error contains %q, got %q", expectedErr, err.Error())
+		}
+		if output.Len() != 0 {
+			t.Fatalf("expected empty stdout, got %q", output.String())
+		}
+	})
+
+	t.Run("cannot append", func(t *testing.T) {
+		output, err := runProgram(`BEGIN { print "foo" >>"output.txt" }`)
+		const expectedErr = "filesystem is read-only"
 		if err == nil {
 			t.Fatalf("expected error contains %q, got <nil>", expectedErr)
 		} else if !strings.Contains(err.Error(), expectedErr) {
@@ -2271,11 +2283,11 @@ func TestOpenFileCustom(t *testing.T) {
 	})
 
 	t.Run("can read", func(t *testing.T) {
-		output, err := runProgram(`BEGIN { getline <"./testdata/openfile.txt"; print $0 }`)
+		output, err := runProgram(`BEGIN { getline <"file.txt"; print $0 }`)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
-		const expected = "OpenFile read test\n"
+		const expected = "read test\n"
 		normalized := normalizeNewlines(output.String())
 		if normalized != expected {
 			t.Fatalf("expected output %q, got %q", expected, normalized)
@@ -2293,6 +2305,118 @@ func TestOpenFileCustom(t *testing.T) {
 			t.Fatalf("expected output %q, got %q", expected, normalized)
 		}
 	})
+}
+
+// memFS is a simple in-memory filesystem that implements [interp.WriteFS].
+type memFS struct {
+	fstest.MapFS
+}
+
+func (m memFS) Create(name string) (io.WriteCloser, error) {
+	file := &fstest.MapFile{}
+	m.MapFS[name] = file
+	return memFile{file}, nil
+}
+
+func (m memFS) Append(name string) (io.WriteCloser, error) {
+	file, ok := m.MapFS[name]
+	if !ok {
+		file = &fstest.MapFile{}
+		m.MapFS[name] = file
+	}
+	return memFile{file}, nil
+}
+
+type memFile struct {
+	file *fstest.MapFile
+}
+
+func (f memFile) Write(buf []byte) (int, error) {
+	f.file.Data = append(f.file.Data, buf...)
+	return len(buf), nil
+}
+
+func (f memFile) Close() error {
+	return nil
+}
+
+func TestFileSystemWrite(t *testing.T) {
+	fsys := memFS{fstest.MapFS{}}
+	source := `BEGIN {
+		print "one" >"out.txt"     # Create makes a new file
+		close("out.txt")
+		print "two" >>"out.txt"    # Append adds to the existing file
+		close("out.txt")
+		print "x" >"trunc.txt"
+		close("trunc.txt")
+		print "y" >"trunc.txt"     # Create truncates the existing file
+	}`
+	prog, err := parser.ParseProgram([]byte(source), nil)
+	if err != nil {
+		t.Fatalf("error parsing: %v", err)
+	}
+	config := interp.Config{
+		Stdin:      strings.NewReader(""),
+		Output:     io.Discard,
+		Error:      io.Discard,
+		FileSystem: fsys,
+	}
+	status, err := interp.ExecProgram(prog, &config)
+	if err != nil {
+		t.Fatalf("error executing: %v", err)
+	}
+	if status != 0 {
+		t.Fatalf("expected status 0, got %d", status)
+	}
+
+	tests := []struct {
+		name     string
+		expected string
+	}{
+		{"out.txt", "one\ntwo\n"},
+		{"trunc.txt", "y\n"},
+	}
+	for _, test := range tests {
+		data, err := fs.ReadFile(fsys, test.name)
+		if err != nil {
+			t.Fatalf("error reading %s: %v", test.name, err)
+		}
+		normalized := normalizeNewlines(string(data))
+		if normalized != test.expected {
+			t.Fatalf("expected %s content %q, got %q", test.name, test.expected, normalized)
+		}
+	}
+}
+
+func TestFileSystemArgs(t *testing.T) {
+	fsys := fstest.MapFS{
+		"one.txt": &fstest.MapFile{Data: []byte("first\nsecond\n")},
+		"two.txt": &fstest.MapFile{Data: []byte("third\n")},
+	}
+	prog, err := parser.ParseProgram([]byte(`{ print FILENAME, FNR, $0 }`), nil)
+	if err != nil {
+		t.Fatalf("error parsing: %v", err)
+	}
+	output := new(bytes.Buffer)
+	config := interp.Config{
+		Stdin:      strings.NewReader(""),
+		Output:     output,
+		Error:      io.Discard,
+		Args:       []string{"one.txt", "two.txt"},
+		FileSystem: fsys,
+	}
+	status, err := interp.ExecProgram(prog, &config)
+	if err != nil {
+		t.Fatalf("error executing: %v", err)
+	}
+	if status != 0 {
+		t.Fatalf("expected status 0, got %d", status)
+	}
+	expected := "one.txt 1 first\none.txt 2 second\ntwo.txt 1 third\n"
+	normalized := normalizeNewlines(output.String())
+	if normalized != expected {
+		t.Fatalf("expected output %q, got %q", expected, normalized)
+	}
 }
 
 type sliceReader struct {
