@@ -305,10 +305,16 @@ BEGIN {
 	{`BEGIN { RS="x" } /^a.*c$/`, "a\nb\nc", "a\nb\nc\n", "", ""},
 	{`BEGIN { print "-12"+0, "+12"+0, " \t\r\n7foo"+0, ".5"+0, "5."+0, "+."+0 }`, "", "-12 12 7 0.5 5 0\n", "", ""},
 	{`BEGIN { print "1e3"+0, "1.2e-1"+0, "1e+1"+0, "1e"+0, "1e+"+0 }`, "", "1000 0.12 10 1 1\n", "", ""},
-	{`BEGIN { print -(11102200000000000000000000000000000000 1040000) }  # !gawk - gawk supports big numbers`,
-		"", "-inf\n", "", ""},
+	{`BEGIN { print -(11102200000000000000000000000000000000 1040000) }`,
+		"", "-111022000000000018811401316772863449057198080\n", "", ""},
 	{`BEGIN { print atan2(0, 8020020000000e20G-0)}`, "", "0\n", "", ""},
 	{`BEGIN { print 1e1000, -1e1000 }  # !gawk`, "", "inf -inf\n", "", ""},
+	// Integral values are printed in full (not via OFMT/%g) even when they
+	// don't fit in an int64, matching gawk and the one true awk.
+	{`BEGIN { print 1e18, 1e19, 1e20, 1.5e19 }`, "", "1000000000000000000 10000000000000000000 100000000000000000000 15000000000000000000\n", "", ""},
+	{`BEGIN { print 2^63, 2^64, -1e20 }`, "", "9223372036854775808 18446744073709551616 -100000000000000000000\n", "", ""},
+	{`BEGIN { OFMT="%.2f"; print 1e19 }`, "", "10000000000000000000\n", "", ""},
+	{`BEGIN { CONVFMT="%.2e"; x=1e19 ""; print x }`, "", "10000000000000000000\n", "", ""},
 	{`BEGIN { printf "\x0.\x00.\x0A\x10\xff\xFF\x41" }  # !awk !posix`, "", "\x00.\x00.\n\x10\xff\xffA", "", ""},
 	{`BEGIN { printf "\x1.\x01.\x0A\x10\xff\xFF\x41" }  # !posix`, "", "\x01.\x01.\n\x10\xff\xffA", "", ""},
 	{`BEGIN { printf "\0\78\7\77\777\0 \141 " }  # !awk`, "", "\x00\a8\a?\xff\x00 a ", "", ""},
