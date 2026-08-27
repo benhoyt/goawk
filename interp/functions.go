@@ -420,13 +420,51 @@ func (p *interp) parseFmtTypes(s string) (format string, types []byte, err error
 	return format, types, nil
 }
 
-// Convert a CONVFMT or OFMT value to its equivalent Go format string.
-func (p *interp) goFloatFormat(format string) string {
+// numFormat is a parsed CONVFMT or OFMT value. Parsing it when the special
+// variable is set (rather than on every conversion) keeps number-to-string
+// conversion fast in the usual case.
+type numFormat struct {
+	format   string // format as set by the AWK program (what getSpecial returns)
+	goFormat string // equivalent Go format string (only used if isFloat)
+	isFloat  bool   // format is a single float conversion, so value.str can do it
+	hasStr   bool   // format includes an %s conversion (see interp.numToString)
+}
+
+// The default CONVFMT and OFMT, also used as the fallback for a format that
+// value.str can't apply directly.
+var defaultNumFormat = numFormat{format: "%.6g", goFormat: "%.6g", isFloat: true}
+
+// Parse a CONVFMT or OFMT value for later use by interp.formatNum.
+func (p *interp) parseNumFormat(format string) numFormat {
 	goFormat, types, err := p.parseFmtTypes(format)
-	if err != nil || len(types) != 1 || types[0] != 'f' {
-		return format
+	if err == nil && len(types) == 1 && types[0] == 'f' {
+		// A single floating-point conversion: the normal case, which
+		// value.str can format directly.
+		return numFormat{format: format, goFormat: goFormat, isFloat: true}
 	}
-	return goFormat
+	// Anything else (no conversions at all, or one that needs the number
+	// converted to an integer or character, such as %d or %c) goes via sprintf.
+	f := numFormat{format: format, goFormat: defaultNumFormat.goFormat}
+	for _, t := range types {
+		if t == 's' {
+			f.hasStr = true
+		}
+	}
+	return f
+}
+
+// Format a number using a CONVFMT or OFMT value that value.str can't apply
+// directly, such as "%d" or "%c". Only called for values that actually need
+// formatting (see needsNumFormat).
+func (p *interp) formatNum(f numFormat, v value) string {
+	s, err := p.sprintf(f.format, []value{v})
+	if err != nil {
+		// Format is invalid or needs more than one argument. Other AWKs
+		// raise an error here; we use the format as a literal string, which
+		// is what Gawk does for an invalid conversion.
+		return f.format
+	}
+	return s
 }
 
 // Guts of sprintf() function (also used by "printf" statement)

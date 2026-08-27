@@ -132,10 +132,8 @@ func (p *interp) resetVars() {
 	}
 
 	// Reset special variables
-	p.convertFormat = "%.6g"
-	p.convertFormatGo = "%.6g"
-	p.outputFormat = "%.6g"
-	p.outputFormatGo = "%.6g"
+	p.convertFormat = defaultNumFormat
+	p.outputFormat = defaultNumFormat
 	p.fieldSep = " "
 	p.fieldSepRegex = nil
 	p.savedFieldSep = " "

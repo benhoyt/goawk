@@ -300,7 +300,7 @@ BEGIN {
 	{`BEGIN { print "The \u201cQUICK\u201d brown fox \u1F602" }  # !gawk`, "", "The “QUICK” brown fox 😂\n", "", ""},
 	{`{ print /foo/ }`, "food\nfoo\nxfooz\nbar\n", "1\n1\n1\n0\n", "", ""},
 	{`/[a-/`, "foo", "", "parse error at 1:1: error parsing regexp: invalid character class range: `a-)`", "terminated"},
-	{`/\Q/  # !gawk`, "", "", "parse error at 1:1: error parsing regexp: missing closing ): `(?s:\\Q)`", ""}, // Gawk produces a warning (not an error), so skip
+	{`/\Q/`, "", "", "parse error at 1:1: error parsing regexp: missing closing ): `(?s:\\Q)`", ""},
 	{`/=foo/`, "=foo", "=foo\n", "", ""},
 	{`BEGIN { RS="x" } /^a.*c$/`, "a\nb\nc", "a\nb\nc\n", "", ""},
 	{`BEGIN { print "-12"+0, "+12"+0, " \t\r\n7foo"+0, ".5"+0, "5."+0, "+."+0 }`, "", "-12 12 7 0.5 5 0\n", "", ""},
@@ -342,6 +342,32 @@ BEGIN {
 	CONVFMT = "%g"
 	print CONVFMT, 12345.678 ""
 }`, "", "%.6g 1.23457\n%.3g 1.23\n%g 12345.7\n", "", ""},
+	// A CONVFMT that isn't a plain float conversion still converts like other AWKs
+	{`BEGIN { CONVFMT = "%d"; print 1234.5678 "" }`, "", "1234\n", "", ""},
+	{`BEGIN { CONVFMT = "%i"; print 1234.5678 "" }`, "", "1234\n", "", ""},
+	{`BEGIN { CONVFMT = "%u"; print 1234.5678 "" }`, "", "1234\n", "", ""},
+	{`BEGIN { CONVFMT = "%x"; print 1234.5678 "" }`, "", "4d2\n", "", ""},
+	{`BEGIN { CONVFMT = "%o"; print 1234.5678 "" }`, "", "2322\n", "", ""},
+	{`BEGIN { CONVFMT = "%e"; print 1234.5678 "" }  # !windows-gawk`, "", "1.234568e+03\n", "", ""},
+	{`BEGIN { CONVFMT = "x%dy"; print 1234.5678 "" }`, "", "x1234y\n", "", ""},
+	{`BEGIN { CONVFMT = "abc"; print 1234.5678 "" }`, "", "abc\n", "", ""},
+	{`BEGIN { CONVFMT = ""; print "[" 1234.5678 "" "]" }`, "", "[]\n", "", ""},
+	{`BEGIN { CONVFMT = "%%"; print 1234.5678 "" }`, "", "%\n", "", ""},
+	// As with printf, our %c is byte-based unless -chars is given (like mawk, unlike Gawk)
+	{`BEGIN { CONVFMT = "%c"; print 1234.5678 "" }  # !gawk`, "", "\xd2\n", "", ""},
+	// An invalid conversion is used as a literal string, like Gawk (--posix Gawk is a fatal error)
+	{`BEGIN { CONVFMT = "%z"; print 1234.5678 "" }  # !posix`, "", "%z\n", "", ""},
+	// So is a format needing more than one argument (here Gawk is a fatal error either way)
+	{`BEGIN { CONVFMT = "%d %d"; print 1234.5678 "" }  # !awk !gawk`, "", "%d %d\n", "", ""},
+	// A CONVFMT with an %s conversion would recurse, as %s converts using CONVFMT.
+	// We produce an empty string; Gawk and mawk print nothing at all here.
+	{`BEGIN { CONVFMT = "%s"; print "[" 1234.5678 "" "]" }  # !awk !gawk`, "", "[]\n", "", ""},
+	{`BEGIN { CONVFMT = "x%sy"; print "[" 1234.5678 "" "]" }  # !awk !gawk`, "", "[]\n", "", ""},
+	// Integers and inf/nan never use CONVFMT
+	{`BEGIN { CONVFMT = "%c"; print 65 "" }`, "", "65\n", "", ""},
+	{`BEGIN { CONVFMT = "%d"; print log(0) "" }  # !awk !gawk`, "", "-inf\n", "", ""},
+	// CONVFMT is used for array subscripts too
+	{`BEGIN { CONVFMT = "%d"; a[1.5] = 1; for (k in a) print k }`, "", "1\n", "", ""},
 	{`BEGIN { FILENAME = "foo"; print FILENAME }`, "", "foo\n", "", ""},
 	{`BEGIN { FILENAME = "123.0"; print (FILENAME==123) }`, "", "0\n", "", ""},
 	// Other FILENAME behaviour is tested in goawk_test.go
@@ -374,6 +400,14 @@ BEGIN {
 	print OFMT, 0.666666666666
 }`, "", "%.6g 1.23457\n%.3g 1.23\n%G 0.666667\n", "", ""},
 	{`BEGIN { OFMT = "%e"; print OFMT, 12345.678 }  # !windows-gawk`, "", "%e 1.234568e+04\n", "", ""}, // Windows Gawk prints exponent as "+004"
+	// An OFMT that isn't a plain float conversion, as with CONVFMT above
+	{`BEGIN { OFMT = "%d"; print 1234.5678 }`, "", "1234\n", "", ""},
+	{`BEGIN { OFMT = "%x"; print 1234.5678 }`, "", "4d2\n", "", ""},
+	{`BEGIN { OFMT = "abc"; print 1234.5678 }`, "", "abc\n", "", ""},
+	{`BEGIN { OFMT = "%c"; print 65 }`, "", "65\n", "", ""}, // integers don't use OFMT
+	// Unlike CONVFMT, an %s conversion in OFMT is fine: it converts using CONVFMT
+	{`BEGIN { OFMT = "%s"; print 1234.5678 }`, "", "1234.57\n", "", ""},
+	{`BEGIN { OFMT = "%s"; CONVFMT = "%d"; print 1234.5678 }`, "", "1234\n", "", ""},
 	// OFS and ORS are tested above
 	{`BEGIN { print RSTART, RLENGTH; RSTART=5; RLENGTH=42; print RSTART, RLENGTH; } `, "",
 		"0 0\n5 42\n", "", ""},
@@ -703,8 +737,6 @@ BEGIN {
 `, "", "1\n", "", ""},
 	{`BEGIN { print system("echo foo"); print system("echo bar") }  # !fuzz`,
 		"", "foo\n0\nbar\n0\n", "", ""},
-	{`BEGIN { print system(">&2 echo error") }  # !fuzz`,
-		"", "error\n0\n", "", ""},
 	{`BEGIN { print system("exit 42") }  # !fuzz !posix`, "", "42\n", "", ""},
 	{`BEGIN { system("cat") }`, "foo\nbar", "foo\nbar", "", ""},
 	{`BEGIN { print system("exec /bin/kill -9 $$") } # !awk !posix !windows`, "", "265\n", "", ""},
@@ -902,7 +934,6 @@ BEGIN { x[1]=3; f5(x); print x[1] }
 	{`BEGIN { "echo foo" | getline a[1]; print a[1] }`, "", "foo\n", "", ""},
 	{`BEGIN { "echo foo" | getline $1; print $1 }`, "", "foo\n", "", ""},
 	{`BEGIN { print "foo" |"sort"; print "bar" |"sort" }  # !fuzz`, "", "bar\nfoo\n", "", ""},
-	{`BEGIN { print "foo" |">&2 echo error" }  # !gawk !fuzz`, "", "error\n", "", ""},
 	{`BEGIN { "cat" | getline; print }  # !fuzz`, "bar", "bar\n", "", ""},
 	{`BEGIN { print getline x < "/no/such/file" }  # !fuzz`, "", "-1\n", "", ""},
 	{`BEGIN { print getline "z"; print $0 }`, "foo", "1z\nfoo\n", "", ""},
@@ -947,7 +978,6 @@ BEGIN { x[1]=3; f5(x); print x[1] }
 	print $0
 }`, "", "foo\nbar\n", "", ""},
 	{`BEGIN { print "x" | "cat"; close("cat"); print "y" }`, "", "x\ny\n", "", ""},
-	{`BEGIN { print 1 >"/dev/stderr"; print 2 }  # !windows-gawk`, "", "1\n2\n", "", ""},
 
 	// Ensure data returned by getline (in various forms) is treated as numeric string
 	{`BEGIN { getline; print($0==0) }`, "0.0", "1\n", "", ""},
@@ -1193,21 +1223,26 @@ func TestInterp(t *testing.T) {
 				if test.in != "" {
 					cmd.Stdin = strings.NewReader(test.in)
 				}
-				out, err := cmd.CombinedOutput()
+				// Only stdout is compared, so warnings on stderr (such as
+				// newer Gawk's "bad `CONVFMT' specification") don't matter.
+				var stdout, stderr bytes.Buffer
+				cmd.Stdout = &stdout
+				cmd.Stderr = &stderr
+				err := cmd.Run()
 				if err != nil {
 					if test.awkErr != "" {
-						if strings.Contains(string(out), test.awkErr) {
+						if strings.Contains(stderr.String(), test.awkErr) {
 							return
 						}
-						t.Fatalf("expected error %q, got:\n%s", test.awkErr, out)
+						t.Fatalf("expected error %q, got:\n%s", test.awkErr, stderr.String())
 					} else {
-						t.Fatalf("error running %s: %v:\n%s", awkExe, err, out)
+						t.Fatalf("error running %s: %v:\n%s", awkExe, err, stderr.String())
 					}
 				}
 				if test.awkErr != "" {
 					t.Fatalf(`expected error %q, got ""`, test.awkErr)
 				}
-				normalized := normalizeNewlines(string(out))
+				normalized := normalizeNewlines(stdout.String())
 				if normalized != test.out {
 					t.Fatalf("expected/got:\n%q\n%q", test.out, normalized)
 				}
@@ -1701,6 +1736,46 @@ func TestShellCommand(t *testing.T) {
 			func(config *interp.Config) {
 				config.ShellCommand = []string{"foobar3982"}
 			})
+	}
+}
+
+// TestStderrOutput tests programs that write to stderr as well as stdout
+// (interpTests compares stdout only, and testGoAWK merges the two streams).
+func TestStderrOutput(t *testing.T) {
+	tests := []struct {
+		name string
+		src  string
+		out  string
+		err  string
+	}{
+		{"system", `BEGIN { print system(">&2 echo error") }`, "0\n", "error\n"},
+		{"pipe", `BEGIN { print "foo" |">&2 echo error" }`, "", "error\n"},
+		{"redirect", `BEGIN { print 1 >"/dev/stderr"; print 2 }`, "2\n", "1\n"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if runtime.GOOS == "windows" {
+				t.Skip("skipping on Windows: these use Unix shell redirection")
+			}
+			prog, err := parser.ParseProgram([]byte(test.src), nil)
+			if err != nil {
+				t.Fatalf("error parsing: %v", err)
+			}
+			var outBuf, errBuf concurrentBuffer
+			_, err = interp.ExecProgram(prog, &interp.Config{
+				Output: &outBuf,
+				Error:  &errBuf,
+			})
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+			if got := normalizeNewlines(outBuf.String()); got != test.out {
+				t.Errorf("expected stdout %q, got %q", test.out, got)
+			}
+			if got := normalizeNewlines(errBuf.String()); got != test.err {
+				t.Errorf("expected stderr %q, got %q", test.err, got)
+			}
+		})
 	}
 }
 
