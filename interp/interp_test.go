@@ -300,7 +300,7 @@ BEGIN {
 	{`BEGIN { print "The \u201cQUICK\u201d brown fox \u1F602" }  # !gawk`, "", "The “QUICK” brown fox 😂\n", "", ""},
 	{`{ print /foo/ }`, "food\nfoo\nxfooz\nbar\n", "1\n1\n1\n0\n", "", ""},
 	{`/[a-/`, "foo", "", "parse error at 1:1: error parsing regexp: invalid character class range: `a-)`", "terminated"},
-	{`/\Q/  # !gawk`, "", "", "parse error at 1:1: error parsing regexp: missing closing ): `(?s:\\Q)`", ""}, // Gawk produces a warning (not an error), so skip
+	{`/\Q/`, "", "", "parse error at 1:1: error parsing regexp: missing closing ): `(?s:\\Q)`", ""},
 	{`/=foo/`, "=foo", "=foo\n", "", ""},
 	{`BEGIN { RS="x" } /^a.*c$/`, "a\nb\nc", "a\nb\nc\n", "", ""},
 	{`BEGIN { print "-12"+0, "+12"+0, " \t\r\n7foo"+0, ".5"+0, "5."+0, "+."+0 }`, "", "-12 12 7 0.5 5 0\n", "", ""},
@@ -737,8 +737,6 @@ BEGIN {
 `, "", "1\n", "", ""},
 	{`BEGIN { print system("echo foo"); print system("echo bar") }  # !fuzz`,
 		"", "foo\n0\nbar\n0\n", "", ""},
-	{`BEGIN { print system(">&2 echo error") }  # !fuzz`,
-		"", "error\n0\n", "", ""},
 	{`BEGIN { print system("exit 42") }  # !fuzz !posix`, "", "42\n", "", ""},
 	{`BEGIN { system("cat") }`, "foo\nbar", "foo\nbar", "", ""},
 	{`BEGIN { print system("exec /bin/kill -9 $$") } # !awk !posix !windows`, "", "265\n", "", ""},
@@ -936,7 +934,6 @@ BEGIN { x[1]=3; f5(x); print x[1] }
 	{`BEGIN { "echo foo" | getline a[1]; print a[1] }`, "", "foo\n", "", ""},
 	{`BEGIN { "echo foo" | getline $1; print $1 }`, "", "foo\n", "", ""},
 	{`BEGIN { print "foo" |"sort"; print "bar" |"sort" }  # !fuzz`, "", "bar\nfoo\n", "", ""},
-	{`BEGIN { print "foo" |">&2 echo error" }  # !gawk !fuzz`, "", "error\n", "", ""},
 	{`BEGIN { "cat" | getline; print }  # !fuzz`, "bar", "bar\n", "", ""},
 	{`BEGIN { print getline x < "/no/such/file" }  # !fuzz`, "", "-1\n", "", ""},
 	{`BEGIN { print getline "z"; print $0 }`, "foo", "1z\nfoo\n", "", ""},
@@ -981,7 +978,6 @@ BEGIN { x[1]=3; f5(x); print x[1] }
 	print $0
 }`, "", "foo\nbar\n", "", ""},
 	{`BEGIN { print "x" | "cat"; close("cat"); print "y" }`, "", "x\ny\n", "", ""},
-	{`BEGIN { print 1 >"/dev/stderr"; print 2 }  # !windows-gawk`, "", "1\n2\n", "", ""},
 
 	// Ensure data returned by getline (in various forms) is treated as numeric string
 	{`BEGIN { getline; print($0==0) }`, "0.0", "1\n", "", ""},
@@ -1227,21 +1223,26 @@ func TestInterp(t *testing.T) {
 				if test.in != "" {
 					cmd.Stdin = strings.NewReader(test.in)
 				}
-				out, err := cmd.CombinedOutput()
+				// Only stdout is compared, so warnings on stderr (such as
+				// newer Gawk's "bad `CONVFMT' specification") don't matter.
+				var stdout, stderr bytes.Buffer
+				cmd.Stdout = &stdout
+				cmd.Stderr = &stderr
+				err := cmd.Run()
 				if err != nil {
 					if test.awkErr != "" {
-						if strings.Contains(string(out), test.awkErr) {
+						if strings.Contains(stderr.String(), test.awkErr) {
 							return
 						}
-						t.Fatalf("expected error %q, got:\n%s", test.awkErr, out)
+						t.Fatalf("expected error %q, got:\n%s", test.awkErr, stderr.String())
 					} else {
-						t.Fatalf("error running %s: %v:\n%s", awkExe, err, out)
+						t.Fatalf("error running %s: %v:\n%s", awkExe, err, stderr.String())
 					}
 				}
 				if test.awkErr != "" {
 					t.Fatalf(`expected error %q, got ""`, test.awkErr)
 				}
-				normalized := normalizeNewlines(string(out))
+				normalized := normalizeNewlines(stdout.String())
 				if normalized != test.out {
 					t.Fatalf("expected/got:\n%q\n%q", test.out, normalized)
 				}
@@ -1735,6 +1736,46 @@ func TestShellCommand(t *testing.T) {
 			func(config *interp.Config) {
 				config.ShellCommand = []string{"foobar3982"}
 			})
+	}
+}
+
+// TestStderrOutput tests programs that write to stderr as well as stdout
+// (interpTests compares stdout only, and testGoAWK merges the two streams).
+func TestStderrOutput(t *testing.T) {
+	tests := []struct {
+		name string
+		src  string
+		out  string
+		err  string
+	}{
+		{"system", `BEGIN { print system(">&2 echo error") }`, "0\n", "error\n"},
+		{"pipe", `BEGIN { print "foo" |">&2 echo error" }`, "", "error\n"},
+		{"redirect", `BEGIN { print 1 >"/dev/stderr"; print 2 }`, "2\n", "1\n"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if runtime.GOOS == "windows" {
+				t.Skip("skipping on Windows: these use Unix shell redirection")
+			}
+			prog, err := parser.ParseProgram([]byte(test.src), nil)
+			if err != nil {
+				t.Fatalf("error parsing: %v", err)
+			}
+			var outBuf, errBuf concurrentBuffer
+			_, err = interp.ExecProgram(prog, &interp.Config{
+				Output: &outBuf,
+				Error:  &errBuf,
+			})
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+			if got := normalizeNewlines(outBuf.String()); got != test.out {
+				t.Errorf("expected stdout %q, got %q", test.out, got)
+			}
+			if got := normalizeNewlines(errBuf.String()); got != test.err {
+				t.Errorf("expected stderr %q, got %q", test.err, got)
+			}
+		})
 	}
 }
 
