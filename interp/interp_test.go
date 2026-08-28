@@ -94,6 +94,11 @@ NR==3, NR==5 { print NR }
 	{`BEGIN { printf "%% %d %x %c %f %s", 42, 42, 42, 42, 42 }`, "", "% 42 2a * 42.000000 42", "", ""},
 	{`BEGIN { printf "%3d", 42 }`, "", " 42", "", ""},
 	{`BEGIN { printf "%3s", "x" }`, "", "  x", "", ""},
+	// Without -c, %s width and precision count bytes, not characters (gawk does the same under LC_ALL=C).
+	{`BEGIN { printf "%3s:%.1s", "╋", "╋" }  # !awk !gawk`, "", "╋:\xe2", "", ""},
+	{`BEGIN { printf "[%-4s]", "╋" }  # !awk !gawk`, "", "[╋ ]", "", ""},
+	{`BEGIN { printf "[%*.*s]", 4, 1, "╋" }  # !awk !gawk`, "", "[   \xe2]", "", ""}, // dynamic width and precision too
+	{`BEGIN { printf "[%06s][%-06s]", "╋", "╋" }  # !awk !gawk`, "", "[000╋][╋   ]", "", ""},
 	{`BEGIN { printf "%.1g", 42 }  # !windows-gawk`, "", "4e+01", "", ""}, // for some reason gawk gives "4e+001" on Windows
 	{`BEGIN { printf "%g", 12345.678 }`, "", "12345.7", "", ""},           // bare %g defaults to 6 significant digits (like C/awk)
 	{`BEGIN { printf "%G", 12345.678 }`, "", "12345.7", "", ""},
@@ -1667,6 +1672,9 @@ func TestCharsMode(t *testing.T) {
 		in  string
 		out string
 	}{
+		// printf %s
+		{`BEGIN { printf "%3s:%.1s", "╋", "╋" }`, "", "  ╋:╋"},
+
 		// printf %c
 		{`BEGIN { printf "%c", 128 }`, "", "\u0080"},
 		{`BEGIN { printf "%c", 255 }`, "", "ÿ"},
