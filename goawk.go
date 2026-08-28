@@ -59,7 +59,7 @@ const (
   -v var=value      variable assignment (multiple allowed)
 
 Additional GoAWK features:
-  -c                use Unicode chars for index, length, match, substr, and %c
+  -c                use Unicode chars for index, length, match, substr, %c, %s
   -E progfile       load program, treat as last option, disable var=value args
   -H                parse header row and enable @"field" in CSV input mode
   -h, --help        show this help message
