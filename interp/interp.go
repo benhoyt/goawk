@@ -327,18 +327,25 @@ type Config struct {
 	NewlineOutput NewlineMode
 
 	// FileSystem specifies the filesystem used for file-based I/O: files named
-	// on the command line or via ARGV, getline <"f" reads, and print >"f"
-	// or print >>"f" writes. It may be any [fs.FS] for read-only access; to
+	// on the command line or in ARGV, in getline <"f" reads, and in print >"f"
+	// or print >>"f" writes. For read-only access it may be any [fs.FS]; to
 	// allow output redirection it must also implement [WriteFS].
 	//
 	// The default is to use the operating system's regular filesystem, relative
 	// to the working directory. Note that the default isn't strictly a valid
 	// fs.FS, as it allows absolute paths and paths with "." or ".." in them,
-	// unlike fs.ValidPath. The filenames passed to the FileSystem methods come
-	// directly from the user without validation.
+	// unlike fs.ValidPath.
 	//
-	// A filesystem must return an error wrapping [fs.ErrNotExist] for missing
-	// files: GoAWK treats that as getline returning -1 rather than a fatal error.
+	// AWK filenames don't have to satisfy [fs.ValidPath], so before a filename
+	// is passed to the filesystem set here, GoAWK uses path.Clean to convert
+	// it to a valid fs.FS path, for example, "./data.txt" and "sub/../data.txt"
+	// both become "data.txt". Filenames with no valid equivalent, such as
+	// "/etc/passwd" and "../data.txt", are passed through unchanged and will
+	// be rejected by a strict filesystem like the ones returned by [os.DirFS].
+	//
+	// If the filesystem returns an error when opening a file for reading,
+	// "getline <file" returns -1 rather than it being a fatal error. Errors
+	// from Create and Append are fatal.
 	FileSystem fs.FS
 }
 
@@ -512,10 +519,13 @@ func (p *interp) setExecuteConfig(config *Config) error {
 			return newError("output mode configuration not valid in default output mode")
 		}
 	}
-	if config.FileSystem == nil {
+	switch fsys := config.FileSystem.(type) {
+	case nil:
 		p.fileSystem = osFS{}
-	} else {
-		p.fileSystem = config.FileSystem
+	case WriteFS:
+		p.fileSystem = awkWriteFS{wfs: fsys}
+	default:
+		p.fileSystem = awkFS{fsys: fsys}
 	}
 
 	// Set up ARGV and other variables from config

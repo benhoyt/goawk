@@ -11,6 +11,7 @@ import (
 	"io/fs"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -2413,6 +2414,130 @@ func TestFileSystemArgs(t *testing.T) {
 		t.Fatalf("expected status 0, got %d", status)
 	}
 	expected := "one.txt 1 first\none.txt 2 second\ntwo.txt 1 third\n"
+	normalized := normalizeNewlines(output.String())
+	if normalized != expected {
+		t.Fatalf("expected output %q, got %q", expected, normalized)
+	}
+}
+
+// Write a file for tests, failing the test if there's an error.
+func writeFile(t *testing.T, path, contents string) {
+	t.Helper()
+	err := os.WriteFile(path, []byte(contents), 0o644)
+	if err != nil {
+		t.Fatalf("error writing %s: %v", path, err)
+	}
+}
+
+// Test that os.DirFS, the most obvious fs.FS implementation, works with
+// ordinary AWK filenames: those are cleaned to valid fs.FS paths where
+// possible, and getline returns -1 (rather than being a fatal error) for the
+// ones that can't be opened.
+func TestFileSystemDirFS(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "data.txt"), "hello\n")
+	err := os.Mkdir(filepath.Join(dir, "sub"), 0o755)
+	if err != nil {
+		t.Fatalf("error creating sub directory: %v", err)
+	}
+
+	runProgram := func(t *testing.T, source string, args ...string) (string, error) {
+		prog, err := parser.ParseProgram([]byte(source), nil)
+		if err != nil {
+			t.Fatalf("error parsing: %v", err)
+		}
+		output := new(bytes.Buffer)
+		config := interp.Config{
+			Stdin:      strings.NewReader(""),
+			Output:     output,
+			Error:      io.Discard,
+			Args:       args,
+			FileSystem: os.DirFS(dir),
+		}
+		_, err = interp.ExecProgram(prog, &config)
+		return normalizeNewlines(output.String()), err
+	}
+
+	getlineTests := []struct {
+		name     string
+		expected string
+	}{
+		{"data.txt", "1 hello"},        // already a valid fs.FS path
+		{"./data.txt", "1 hello"},      // cleaned to "data.txt"
+		{"sub/../data.txt", "1 hello"}, // cleaned to "data.txt"
+		{"nonexistent.txt", "-1 "},     // valid path, but not there
+		{"../data.txt", "-1 "},         // outside the filesystem root
+		{"/data.txt", "-1 "},           // absolute paths aren't supported
+		{"", "-1 "},                    // cleaned to ".", which won't read as a file
+	}
+	for _, test := range getlineTests {
+		t.Run("getline "+test.name, func(t *testing.T) {
+			source := `BEGIN { print (getline line <FILE), line }`
+			output, err := runProgram(t, strings.Replace(source, "FILE", `"`+test.name+`"`, 1))
+			if err != nil {
+				t.Fatalf("error executing: %v", err)
+			}
+			expected := test.expected + "\n"
+			if output != expected {
+				t.Fatalf("expected output %q, got %q", expected, output)
+			}
+		})
+	}
+
+	t.Run("args", func(t *testing.T) {
+		output, err := runProgram(t, `{ print FILENAME, $0 }`, "./data.txt")
+		if err != nil {
+			t.Fatalf("error executing: %v", err)
+		}
+		expected := "./data.txt hello\n"
+		if output != expected {
+			t.Fatalf("expected output %q, got %q", expected, output)
+		}
+	})
+
+	t.Run("args error", func(t *testing.T) {
+		// Unlike getline, a file named in ARGV that can't be opened is fatal.
+		_, err := runProgram(t, `{ print }`, "../data.txt")
+		if err == nil {
+			t.Fatal("expected error, got <nil>")
+		}
+	})
+}
+
+// Test that getline returns -1 rather than being a fatal error when a file
+// exists but can't be opened, as other AWK implementations do.
+func TestGetlineUnopenableFile(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("file permissions work differently on Windows")
+	}
+	if os.Geteuid() == 0 {
+		t.Skip("running as root, which can read files with no permissions")
+	}
+	path := filepath.Join(t.TempDir(), "secret.txt")
+	writeFile(t, path, "secret\n")
+	err := os.Chmod(path, 0o000)
+	if err != nil {
+		t.Fatalf("error changing permissions: %v", err)
+	}
+
+	prog, err := parser.ParseProgram([]byte(`BEGIN { print (getline line <"`+path+`"), line }`), nil)
+	if err != nil {
+		t.Fatalf("error parsing: %v", err)
+	}
+	output := new(bytes.Buffer)
+	config := interp.Config{
+		Stdin:  strings.NewReader(""),
+		Output: output,
+		Error:  io.Discard,
+	}
+	status, err := interp.ExecProgram(prog, &config)
+	if err != nil {
+		t.Fatalf("error executing: %v", err)
+	}
+	if status != 0 {
+		t.Fatalf("expected status 0, got %d", status)
+	}
+	expected := "-1 \n"
 	normalized := normalizeNewlines(output.String())
 	if normalized != expected {
 		t.Fatalf("expected output %q, got %q", expected, normalized)

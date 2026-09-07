@@ -107,6 +107,36 @@ func TestFileSystemRoot(t *testing.T) {
 		}
 	})
 
+	t.Run("dot-slash prefix", func(t *testing.T) {
+		// Ordinary AWK filenames like "./file.txt" are converted to valid
+		// fs.FS paths before being passed to the filesystem.
+		err := os.WriteFile(filepath.Join(dir, "dot.txt"), []byte("dot line\n"), 0o644)
+		if err != nil {
+			t.Fatalf("error writing file in root: %v", err)
+		}
+		output, err := runProgram(`BEGIN {
+			print (getline line <"./dot.txt"), line
+			print "written" >"./dot-out.txt"
+		}`)
+		if err != nil {
+			t.Fatalf("runProgram error: %v", err)
+		}
+		const expectedOutput = "1 dot line\n"
+		normalized := normalizeNewlines(output.String())
+		if normalized != expectedOutput {
+			t.Fatalf("expected output %q, got %q", expectedOutput, normalized)
+		}
+		data, err := os.ReadFile(filepath.Join(dir, "dot-out.txt"))
+		if err != nil {
+			t.Fatalf("error reading file in root: %v", err)
+		}
+		const expectedFile = "written\n"
+		normalized = normalizeNewlines(string(data))
+		if normalized != expectedFile {
+			t.Fatalf("expected file content %q, got %q", expectedFile, normalized)
+		}
+	})
+
 	t.Run("path traversal", func(t *testing.T) {
 		output, err := runProgram(`BEGIN { print "Hello, GoAWK!" >"../../etc/passwd" }`)
 		const expectedErr = "path escapes from parent"

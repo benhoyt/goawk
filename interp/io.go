@@ -6,11 +6,13 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
 	"os"
 	"os/exec"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -39,6 +41,47 @@ func (osFS) Create(name string) (io.WriteCloser, error) {
 func (osFS) Append(name string) (io.WriteCloser, error) {
 	return os.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
 }
+
+// awkFS wraps the fs.FS given by Config.FileSystem, converting AWK filenames
+// to valid fs.FS paths where possible (see fsName). This means a strict
+// filesystem like the one returned by os.DirFS can be used directly.
+type awkFS struct {
+	fsys fs.FS
+}
+
+func (f awkFS) Open(name string) (fs.File, error) {
+	return f.fsys.Open(fsName(name))
+}
+
+// awkWriteFS is like awkFS, but for a filesystem that also implements WriteFS,
+// so that output redirection is allowed as well as reading.
+type awkWriteFS struct {
+	wfs WriteFS
+}
+
+func (f awkWriteFS) Open(name string) (fs.File, error) {
+	return f.wfs.Open(fsName(name))
+}
+
+func (f awkWriteFS) Create(name string) (io.WriteCloser, error) {
+	return f.wfs.Create(fsName(name))
+}
+
+func (f awkWriteFS) Append(name string) (io.WriteCloser, error) {
+	return f.wfs.Append(fsName(name))
+}
+
+// fsName converts an AWK filename to a valid fs.FS path if it can.
+func fsName(name string) string {
+	cleaned := path.Clean(name)
+	if !fs.ValidPath(cleaned) {
+		return name
+	}
+	return cleaned
+}
+
+// errCantOpen is returned by getInputScannerFile when the file can't be opened.
+var errCantOpen = errors.New("can't open file")
 
 // Print a line of output followed by a newline
 func (p *interp) printLine(writer io.Writer, line string) error {
@@ -229,7 +272,7 @@ func (p *interp) getInputScannerFile(name string) (*bufio.Scanner, error) {
 	}
 	f, err := p.fileSystem.Open(name)
 	if err != nil {
-		return nil, err // fs.ErrNotExist is handled by caller (getline returns -1)
+		return nil, fmt.Errorf("%w: %s", errCantOpen, err) // caller returns -1
 	}
 	in := newInFileStream(f)
 	scanner := p.newScanner(in, make([]byte, inputBufSize))
