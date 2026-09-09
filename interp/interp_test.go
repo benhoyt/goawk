@@ -656,6 +656,8 @@ function f() {
 		"", "nan\n", "", ""},
 	{`BEGIN { print sqrt(0), sqrt(2), sqrt(4) }`, "", "0 1.41421 2\n", "", ""},
 	{`BEGIN { print int(3.5), int("1.9"), int(4), int(-3.6), int("x"), int("") }`, "", "3 1 4 -3 0 0\n", "", ""},
+	{`BEGIN { print int(1e20), int(2^63), int(-1e20) }`, "", "100000000000000000000 9223372036854775808 -100000000000000000000\n", "", ""},
+	{`BEGIN { a[1e20]=1; for (i in a) print i }`, "", "100000000000000000000\n", "", ""},
 	{`BEGIN { print match("food", "foo"), RSTART, RLENGTH }`, "", "1 1 3\n", "", ""},
 	{`BEGIN { print match("x food y", "fo"), RSTART, RLENGTH }`, "", "3 3 2\n", "", ""},
 	{`BEGIN { print match("x food y", "fox"), RSTART, RLENGTH }`, "", "0 0 -1\n", "", ""},
