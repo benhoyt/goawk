@@ -110,10 +110,7 @@ func TestFileSystemRoot(t *testing.T) {
 	t.Run("dot-slash prefix", func(t *testing.T) {
 		// Ordinary AWK filenames like "./file.txt" are converted to valid
 		// fs.FS paths before being passed to the filesystem.
-		err := os.WriteFile(filepath.Join(dir, "dot.txt"), []byte("dot line\n"), 0o644)
-		if err != nil {
-			t.Fatalf("error writing file in root: %v", err)
-		}
+		writeFile(t, filepath.Join(dir, "dot.txt"), "dot line\n")
 		output, err := runProgram(`BEGIN {
 			print (getline line <"./dot.txt"), line
 			print "written" >"./dot-out.txt"
