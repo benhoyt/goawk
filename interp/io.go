@@ -272,7 +272,7 @@ func (p *interp) getInputScannerFile(name string) (*bufio.Scanner, error) {
 	}
 	f, err := p.fileSystem.Open(name)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", errCantOpen, err) // caller returns -1
+		return nil, fmt.Errorf("%w: %w", errCantOpen, err) // caller returns -1
 	}
 	in := newInFileStream(f)
 	scanner := p.newScanner(in, make([]byte, inputBufSize))
