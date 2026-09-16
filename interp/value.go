@@ -151,8 +151,16 @@ func numToStr(n float64, floatFormat string) string {
 		} else {
 			return "inf"
 		}
-	case n == float64(int64(n)):
-		return strconv.FormatInt(int64(n), 10)
+	case n == math.Trunc(n):
+		// Integral values are printed in full as integers (never via
+		// OFMT/CONVFMT), matching gawk and the one true awk.
+		if n >= math.MinInt64 && n < 9223372036854775808.0 {
+			// Fast path for the common int64 range.
+			return strconv.FormatInt(int64(n), 10)
+		}
+		// Integral values outside the int64 range are formatted without an
+		// exponent, so 1e20 prints as "100000000000000000000".
+		return strconv.FormatFloat(n, 'f', 0, 64)
 	case floatFormat == "%.6g": // speed up the default case
 		return strconv.FormatFloat(n, 'g', 6, 64)
 	default:
@@ -164,7 +172,7 @@ func numToStr(n float64, floatFormat string) string {
 // or OFMT: integers and nan/inf are converted without reference to the format
 // (as in other AWKs).
 func needsNumFormat(n float64) bool {
-	return !math.IsNaN(n) && !math.IsInf(n, 0) && n != float64(int64(n))
+	return !math.IsNaN(n) && !math.IsInf(n, 0) && n != math.Trunc(n)
 }
 
 // Return value's number value, converting from string if necessary
