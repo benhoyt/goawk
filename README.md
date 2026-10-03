@@ -98,6 +98,10 @@ Things AWK has over GoAWK:
 * Scripts that use regular expressions are slower than other implementations (unfortunately Go's `regexp` package is relatively slow).
 * AWK is written by Alfred Aho, Peter Weinberger, and Brian Kernighan.
 
+Other differences:
+
+* **Character and byte mode**: GoAWK defaults to byte mode for functions like `length()`, `substr()`, `index()`, `match()`, and `printf %c`. This matches traditional AWK implementations (like `mawk` and "the one true AWK") and avoids performance penalties. In contrast, GNU AWK (`gawk`) defaults to Unicode character mode, and POSIX specifies locale handling via environment variables (`LC_ALL`, `LC_CTYPE`). GoAWK intentionally does not alter character handling based on locale environment variables. To enable Unicode character mode, pass the `-c` flag. For compatibility with `gawk` command lines, `-b` and `--characters-as-bytes` are also accepted to explicitly select byte mode.
+
 
 ## Stability
 

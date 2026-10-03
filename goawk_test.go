@@ -630,6 +630,12 @@ func TestGoAWKSpecificOptions(t *testing.T) {
 		{[]string{`BEGIN { printf "%c", 4660 }`}, "", "4", ""},
 		{[]string{"-c", `{ print length }`}, "絵\n", "1\n", ""},
 		{[]string{`{ print length }`}, "絵\n", "3\n", ""},
+		{[]string{"-b", `{ print length }`}, "絵\n", "3\n", ""},
+		{[]string{"--characters-as-bytes", `{ print length }`}, "絵\n", "3\n", ""},
+		{[]string{"-c", "-b", `{ print length }`}, "絵\n", "3\n", ""},
+		{[]string{"-b", "-c", `{ print length }`}, "絵\n", "1\n", ""},
+		{[]string{"-b", `BEGIN { printf "%c", 4660 }`}, "", "4", ""},
+		{[]string{"--characters-as-bytes", `BEGIN { printf "%c", 4660 }`}, "", "4", ""},
 
 		// Debug options
 		{[]string{"-dt", `

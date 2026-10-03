@@ -59,6 +59,8 @@ const (
   -v var=value      variable assignment (multiple allowed)
 
 Additional GoAWK features:
+  -b, --characters-as-bytes
+                    treat characters as bytes (default; for gawk compatibility)
   -c                use Unicode chars for index, length, match, substr, and %c
   -E progfile       load program, treat as last option, disable var=value args
   -H                parse header row and enable @"field" in CSV input mode
@@ -167,6 +169,8 @@ argsLoop:
 			cpuProfile = os.Args[i]
 		case "-csv", "--csv":
 			inputMode = "csv"
+		case "-b", "--characters-as-bytes":
+			useChars = false
 		case "-c":
 			useChars = true
 		case "-d":
