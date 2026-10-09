@@ -498,17 +498,16 @@ type csvSplitter struct {
 // We don't support all encoding/csv features: FieldsPerRecord is not
 // supported, LazyQuotes is always on, and TrimLeadingSpace is always off.
 func (s *csvSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	origData := data
 	// Some CSV files are saved with a UTF-8 BOM at the start; skip it.
 	if !s.noBOMCheck && len(data) >= 3 && data[0] == 0xEF && data[1] == 0xBB && data[2] == 0xBF {
 		data = data[3:]
 		advance = 3
-		s.noBOMCheck = true
 	}
 
-	origData := data
 	if atEOF && len(data) == 0 {
 		// No more data, tell Scanner to stop.
-		return 0, nil, nil
+		return advance, nil, nil
 	}
 
 	readLine := func() []byte {
@@ -538,7 +537,7 @@ func (s *csvSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, 
 	}
 
 	// Read line (automatically skipping past empty lines and any comments).
-	skip := 0
+	skip := advance
 	var line []byte
 	for {
 		line = readLine()

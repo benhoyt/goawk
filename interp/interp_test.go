@@ -2180,6 +2180,15 @@ var csvTests = []csvTest{
 
 	// Ignores UTF-8 byte order mark (BOM) at start of CSV file
 	{`BEGIN { INPUTMODE="csv" } { print $1=="foo" }`, "\ufefffoo,bar\n\ufefffoo,bar", "1\n0\n", "", nil},
+	{`BEGIN { INPUTMODE="csv" } { print $0 }`, "\ufeffa,b\n", "a,b\n", "", nil},
+	{`BEGIN { INPUTMODE="csv" } { print $0 }`, "\ufeffa,b", "a,b\n", "", nil},
+	{`BEGIN { INPUTMODE="csv" } { print $0 }`, "\ufeffa,b\nc,d\n", "a,b\nc,d\n", "", nil},
+	{`BEGIN { INPUTMODE="csv" } { print $0 }`, "\ufeffa,b\r\nc,d\r\n", "a,b\nc,d\n", "", nil},
+	{`BEGIN { INPUTMODE="csv" } { print $0 }`, "\ufeff\"a\nb\",c\n", "\"a\nb\",c\n", "", nil},
+	{`BEGIN { INPUTMODE="csv comment=#" } { print $0 }`, "\ufeff# comment\n\na,b\n", "a,b\n", "", nil},
+	{`BEGIN { INPUTMODE="csv" } { print $0 }`, "\ufeffa,b\n\ufeffc,d\n", "a,b\n\ufeffc,d\n", "", nil},
+	{`BEGIN { INPUTMODE="tsv" } { print $0 }`, "\ufeffa\tb\nc\td\n", "a\tb\nc\td\n", "", nil},
+	{`BEGIN { INPUTMODE="csv" } END { print NR }`, "\ufeff", "0\n", "", nil},
 
 	// Two-argument split() parses in CSV mode if input mode is CSV
 	{`
@@ -2276,6 +2285,36 @@ func TestCSVMultiRead(t *testing.T) {
 		src:   `BEGIN { INPUTMODE="csv" } { printf "%s|%s|%s", $0, $1, $2 }`,
 		reads: []string{"\"Ji\r\n", "ll\",", "37"},
 		out:   "\"Ji\nll\",37|Ji\nll|37",
+	}, {
+		name:  "BOMSplitBytes",
+		src:   `BEGIN { INPUTMODE="csv"; OFS="|" } { print $0, $1, $2 }`,
+		reads: []string{"\xef", "\xbb", "\xbfBob", ",42\n", "Jill,37\n"},
+		out:   "Bob,42|Bob|42\nJill,37|Jill|37\n",
+	}, {
+		name:  "BOMBeforeRecord",
+		src:   `BEGIN { INPUTMODE="csv"; OFS="|" } { print $0, $1, $2 }`,
+		reads: []string{"\ufeff", "Bob", ",42\n", "Jill,37\n"},
+		out:   "Bob,42|Bob|42\nJill,37|Jill|37\n",
+	}, {
+		name:  "BOMQuotedRecord",
+		src:   `BEGIN { INPUTMODE="csv"; OFS="|" } { print $0, $1, $2 }`,
+		reads: []string{"\ufeff\"Bo", "b\"", ",42\n", "Jill,37\n"},
+		out:   "\"Bob\",42|Bob|42\nJill,37|Jill|37\n",
+	}, {
+		name:  "BOMHeader",
+		src:   `BEGIN { INPUTMODE="csv header"; OFS="|" } { print $0, @"name", @"age" }`,
+		reads: []string{"\ufeffname", ",age\n", "Bob,42\n"},
+		out:   "Bob,42|Bob|42\n",
+	}, {
+		name:  "BOMBeforeComment",
+		src:   `BEGIN { INPUTMODE="csv comment=#"; OFS="|" } { print $0, $1, $2 }`,
+		reads: []string{"\ufeff# com", "ment\n", "Bob,42\n"},
+		out:   "Bob,42|Bob|42\n",
+	}, {
+		name:  "BOMQuotedTSV",
+		src:   `BEGIN { INPUTMODE="tsv"; OFS="|" } { print $0, $1, $2 }`,
+		reads: []string{"\ufeff\"Bo", "b\"\t42", "\n"},
+		out:   "\"Bob\"\t42|Bob|42\n",
 	}}
 
 	for _, test := range tests {
