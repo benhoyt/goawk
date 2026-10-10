@@ -485,7 +485,7 @@ type csvSplitter struct {
 
 	recordBuffer []byte
 	fieldIndexes []int
-	noBOMCheck   bool
+	doneBOMCheck bool
 
 	fields        *[]string
 	setFieldNames func(names []string)
@@ -499,10 +499,14 @@ type csvSplitter struct {
 // supported, LazyQuotes is always on, and TrimLeadingSpace is always off.
 func (s *csvSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	// Some CSV files are saved with a UTF-8 BOM at the start; skip it.
-	if !s.noBOMCheck && len(data) >= 3 && data[0] == 0xEF && data[1] == 0xBB && data[2] == 0xBF {
-		data = data[3:]
-		advance = 3
-		s.noBOMCheck = true
+	if !s.doneBOMCheck {
+		if !atEOF && (len(data) == 1 && data[0] == 0xEF || len(data) == 2 && data[0] == 0xEF && data[1] == 0xBB) {
+			return 0, nil, nil // not enough bytes for BOM, request more data
+		}
+		s.doneBOMCheck = true
+		if len(data) >= 3 && data[0] == 0xEF && data[1] == 0xBB && data[2] == 0xBF {
+			return 3, nil, nil // skip BOM, Scanner will call us again
+		}
 	}
 
 	origData := data
@@ -649,8 +653,6 @@ parseField:
 		fields[i] = strBuf[preIdx:idx]
 		preIdx = idx
 	}
-
-	s.noBOMCheck = true
 
 	if s.rowNum == 0 && s.header {
 		// Set header field names and advance, but don't return a line (token).
