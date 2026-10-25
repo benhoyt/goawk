@@ -79,21 +79,11 @@ If you need to repeat execution of the same program on different inputs, you can
 
 Read the [Go package documentation](https://pkg.go.dev/github.com/benhoyt/goawk) for more details.
 
+Read GoAWK's documentation for more information about specific topics:
 
-## String units and Unicode
-
-By default, `length()` counts bytes, and `match()` reports byte positions and lengths through `RSTART` and `RLENGTH`. Pass `-c` to use UTF-8 code points for these operations. GoAWK selects these units using `-c`; `LC_ALL` and `LC_CTYPE` do not change that choice. Embedded users can set `interp.Config.Chars`.
-
-Regular expressions use Go's UTF-8-based regexp engine in both modes. A pattern such as `/^.$/` can therefore match a multibyte character even when `length()` reports more than one byte. In this example, the columns are string length, matched length, and whether the entire string matches `/^.$/`:
-
-```shell
-$ goawk 'BEGIN { s="╋"; match(s, /./); print length(s), RLENGTH, (s ~ /^.$/) }'
-3 3 1
-$ goawk -c 'BEGIN { s="╋"; match(s, /./); print length(s), RLENGTH, (s ~ /^.$/) }'
-1 1 1
-```
-
-Some byte/Unicode inconsistencies remain. In particular, `printf`'s `%s` width and precision currently count code points in both modes. [Issue #273](https://github.com/benhoyt/goawk/issues/273) tracks these differences.
+- [CSV and TSV features](https://github.com/benhoyt/goawk/blob/master/docs/csv.md)
+- [Unicode and bytes handling](https://github.com/benhoyt/goawk/blob/master/docs/unicode.md)
+- [Code coverage](https://github.com/benhoyt/goawk/blob/master/docs/cover.md)
 
 
 ## Differences from AWK
