@@ -79,6 +79,12 @@ If you need to repeat execution of the same program on different inputs, you can
 
 Read the [Go package documentation](https://pkg.go.dev/github.com/benhoyt/goawk) for more details.
 
+Read GoAWK's documentation for more information about specific topics:
+
+- [CSV and TSV features](https://github.com/benhoyt/goawk/blob/master/docs/csv.md)
+- [Unicode and bytes handling](https://github.com/benhoyt/goawk/blob/master/docs/unicode.md)
+- [Code coverage](https://github.com/benhoyt/goawk/blob/master/docs/cover.md)
+
 
 ## Differences from AWK
 
