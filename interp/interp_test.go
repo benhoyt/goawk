@@ -1147,6 +1147,7 @@ BEGIN { x[1]=3; f5(x); print x[1] }
 	{`{ print !$1 }  # +posix`, "0x0\n0x0.0p0\n0x1\n0x0.01\n", "1\n1\n0\n0\n", "", ""},
 	{`{ print 2 == $1 }  # +posix`, "0x1p1\n0x1P1\n", "1\n1\n", "", ""},
 	{`{ print $1<$2 }`, "1_0 2", "1\n", "", ""},
+	{`BEGIN { FS=","; RS=";" } { print ($1 == 1), $1+0 }`, " 1\t,;\n\v\f\r1,; \t,;\u00a01,;1\u00a0,;\u30001,", "1 1\n1 1\n0 0\n0 0\n0 1\n0 0\n", "", ""},
 }
 
 // Flags parses the "skip flags" in it.src's first comment and returns them as

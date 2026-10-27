@@ -107,7 +107,7 @@ func (v value) boolean() bool {
 // allow "+nan" and "-nan" (though they both return math.NaN()). Also disallow
 // underscore digit separators.
 func parseFloat(s string) (float64, error) {
-	s = strings.TrimSpace(s)
+	s = trimASCIISpace(s)
 	if len(s) > 1 && (s[0] == '+' || s[0] == '-') {
 		if len(s) == 4 && hasNaNPrefix(s[1:]) {
 			// ParseFloat doesn't handle "nan" with sign prefix, so handle it here.
@@ -125,6 +125,18 @@ func parseFloat(s string) (float64, error) {
 		return 0, strconv.ErrSyntax
 	}
 	return n, err
+}
+
+// Like strings.TrimSpace, but only trims ASCII whitespace (as parseFloatPrefix does).
+func trimASCIISpace(s string) string {
+	start, end := 0, len(s)
+	for start < end && asciiSpace[s[start]] != 0 {
+		start++
+	}
+	for end > start && asciiSpace[s[end-1]] != 0 {
+		end--
+	}
+	return s[start:end]
 }
 
 // Return value's string value, or convert to a string using given
