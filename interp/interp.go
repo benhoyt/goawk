@@ -316,7 +316,8 @@ type Config struct {
 	CSVOutput CSVOutputConfig
 
 	// Set to true to count using Unicode chars instead of bytes for
-	// index(), length(), match(), substr(), and printf %c.
+	// index(), length(), match(), substr(), printf %c, and the width and
+	// precision of printf %s.
 	Chars bool
 
 	// NewlineOutput specifies how newline characters are handled when writing

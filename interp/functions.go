@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"reflect"
 	"sort"
 	"strconv"
@@ -467,6 +468,48 @@ func (p *interp) formatNum(f numFormat, v value) string {
 	return s
 }
 
+func isASCII(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] >= utf8.RuneSelf {
+			return false
+		}
+	}
+	return true
+}
+
+// byteString formats itself like a plain string, except that %s width and
+// precision count bytes rather than Unicode characters (which is what Go's
+// fmt does). It's used for non-ASCII strings when not in chars mode, so that
+// "%.1s" truncates to the first byte, like awk in the C locale. (For ASCII
+// there's nothing to do: bytes and characters are the same thing.)
+type byteString string
+
+func (s byteString) Format(f fmt.State, verb rune) {
+	str := string(s)
+	if prec, ok := f.Precision(); ok && prec < len(str) {
+		str = str[:prec]
+	}
+	width, _ := f.Width() // zero if no width was given
+	if width <= len(str) {
+		io.WriteString(f, str)
+		return
+	}
+	// Note that fmt reports the '0' flag even when '-' is also present, but
+	// like Go's fmt (and C), zero padding only applies on the left.
+	pad := " "
+	if f.Flag('0') && !f.Flag('-') {
+		pad = "0"
+	}
+	padding := strings.Repeat(pad, width-len(str))
+	if f.Flag('-') {
+		io.WriteString(f, str)
+		io.WriteString(f, padding)
+	} else {
+		io.WriteString(f, padding)
+		io.WriteString(f, str)
+	}
+}
+
 // Guts of sprintf() function (also used by "printf" statement)
 func (p *interp) sprintf(format string, args []value) (string, error) {
 	format, types, err := p.parseFmtTypes(format)
@@ -482,7 +525,12 @@ func (p *interp) sprintf(format string, args []value) (string, error) {
 		var v any
 		switch t {
 		case 's':
-			v = p.toString(a)
+			str := p.toString(a)
+			if p.chars || isASCII(str) {
+				v = str
+			} else {
+				v = byteString(str)
+			}
 		case 'd':
 			v = int64(a.num())
 		case 'f':
