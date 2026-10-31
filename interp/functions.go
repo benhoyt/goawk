@@ -37,7 +37,11 @@ func (p *interp) callNative(index int, args []value) (value, error) {
 			// Final arg(s) when calling a variadic are all of this type
 			argType = variadicType
 		}
-		values = append(values, p.toNative(a, argType))
+		v := p.toNative(a, argType)
+		if v.Type() != argType {
+			v = v.Convert(argType)
+		}
+		values = append(values, v)
 	}
 	// Use zero value for any unspecified args
 	for i := len(args); i < minIn; i++ {
@@ -101,7 +105,9 @@ func (p *interp) toNative(v value, typ reflect.Type) reflect.Value {
 			// Shouldn't happen: prevented by checkNativeFunc
 			panic(fmt.Sprintf("unexpected argument slice: %s", typ.Elem().Kind()))
 		}
-		return reflect.ValueOf([]byte(p.toString(v)))
+		b := reflect.New(typ).Elem()
+		b.SetBytes([]byte(p.toString(v)))
+		return b
 	default:
 		// Shouldn't happen: prevented by checkNativeFunc
 		panic(fmt.Sprintf("unexpected argument type: %s", typ.Kind()))
@@ -122,8 +128,8 @@ func fromNative(v reflect.Value) value {
 	case reflect.String:
 		return str(v.String())
 	case reflect.Slice:
-		if b, ok := v.Interface().([]byte); ok {
-			return str(string(b))
+		if v.Type().Elem().Kind() == reflect.Uint8 {
+			return str(string(v.Bytes()))
 		}
 		// Shouldn't happen: prevented by checkNativeFunc
 		panic(fmt.Sprintf("unexpected return slice: %s", v.Type().Elem().Kind()))
