@@ -11,6 +11,7 @@ import (
 	"io/fs"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -1151,6 +1152,10 @@ BEGIN { x[1]=3; f5(x); print x[1] }
 	{`{ print !$1 }  # +posix`, "0x0\n0x0.0p0\n0x1\n0x0.01\n", "1\n1\n0\n0\n", "", ""},
 	{`{ print 2 == $1 }  # +posix`, "0x1p1\n0x1P1\n", "1\n1\n", "", ""},
 	{`{ print $1<$2 }`, "1_0 2", "1\n", "", ""},
+	// Only ASCII whitespace is allowed around numeric strings (RS=";" to allow \n)
+	{`BEGIN { RS=";" } { print ($0 == 1), $0+0 }`, " \t\n\v\f\r1 \t\n\v\f\r", "1 1\n", "", ""},
+	{`BEGIN { RS=";" } { print ($0 == 1), $0+0 }`, "\u00a01", "0 0\n", "", ""},
+	{`BEGIN { RS=";" } { print ($0 == 1), $0+0 }`, "1\u00a0", "0 1\n", "", ""},
 }
 
 // Flags parses the "skip flags" in it.src's first comment and returns them as
@@ -1611,6 +1616,44 @@ BEGIN { x=4; y=5; print foo(x), bar(y) }
 		}
 		t.Run(testName, func(t *testing.T) {
 			testGoAWK(t, test.src, test.in, test.out, test.err, test.funcs, nil)
+		})
+	}
+}
+
+func TestNativeNamedTypes(t *testing.T) {
+	type count int
+	type label string
+	type enabled bool
+	type ratio float64
+	type octet uint8
+	type data []byte
+
+	tests := []struct {
+		name string
+		src  string
+		out  string
+		fn   any
+	}{
+		{"integer", `BEGIN { print f(42) }`, "42\n", func(n count) count { return n }},
+		{"string", `BEGIN { print f("hello") }`, "hello\n", func(s label) label { return s }},
+		{"boolean", `BEGIN { print f(1) }`, "1\n", func(b enabled) enabled { return b }},
+		{"float", `BEGIN { print f(1.5) }`, "1.5\n", func(n ratio) ratio { return n }},
+		{"byte", `BEGIN { print f(255) }`, "255\n", func(n octet) octet { return n }},
+		{"byte slice", `BEGIN { print f("hello") }`, "hello\n", func(b data) data { return b }},
+		{"named byte elements", `BEGIN { print f("hello") }`, "hello\n", func(b []octet) []octet { return b }},
+		{"returned byte slice", `BEGIN { print f() }`, "hello\n", func() data { return data("hello") }},
+		{"default argument", `BEGIN { print f() }`, "0\n", func(n count) count { return n }},
+		{"variadic", `BEGIN { print f(1, 2, 3) }`, "6\n", func(ns ...count) count {
+			var total count
+			for _, n := range ns {
+				total += n
+			}
+			return total
+		}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			testGoAWK(t, test.src, "", test.out, "", map[string]any{"f": test.fn}, nil)
 		})
 	}
 }
@@ -2187,6 +2230,10 @@ var csvTests = []csvTest{
 
 	// Ignores UTF-8 byte order mark (BOM) at start of CSV file
 	{`BEGIN { INPUTMODE="csv" } { print $1=="foo" }`, "\ufefffoo,bar\n\ufefffoo,bar", "1\n0\n", "", nil},
+	{`BEGIN { INPUTMODE="csv" } { print $0 }`, "\ufeffa,b", "a,b\n", "", nil},
+	{`BEGIN { INPUTMODE="csv" } { print $0 }`, "\ufeffa,b\nc,d\n", "a,b\nc,d\n", "", nil},
+	{`BEGIN { INPUTMODE="csv" } { print $0 }`, "\ufeffa,b\n\ufeffc,d\n", "a,b\n\ufeffc,d\n", "", nil},
+	{`BEGIN { INPUTMODE="csv" } END { print NR }`, "\ufeff", "0\n", "", nil},
 
 	// Two-argument split() parses in CSV mode if input mode is CSV
 	{`
@@ -2283,6 +2330,11 @@ func TestCSVMultiRead(t *testing.T) {
 		src:   `BEGIN { INPUTMODE="csv" } { printf "%s|%s|%s", $0, $1, $2 }`,
 		reads: []string{"\"Ji\r\n", "ll\",", "37"},
 		out:   "\"Ji\nll\",37|Ji\nll|37",
+	}, {
+		name:  "BOMSplitBytes",
+		src:   `BEGIN { INPUTMODE="csv"; OFS="|" } { print $0, $1, $2 }`,
+		reads: []string{"\xef", "\xbb", "\xbfBob", ",42\n", "Jill,37\n"},
+		out:   "Bob,42|Bob|42\nJill,37|Jill|37\n",
 	}}
 
 	for _, test := range tests {
@@ -2496,6 +2548,130 @@ func TestFileSystemArgs(t *testing.T) {
 		t.Fatalf("expected status 0, got %d", status)
 	}
 	expected := "one.txt 1 first\none.txt 2 second\ntwo.txt 1 third\n"
+	normalized := normalizeNewlines(output.String())
+	if normalized != expected {
+		t.Fatalf("expected output %q, got %q", expected, normalized)
+	}
+}
+
+// Write a file for tests, failing the test if there's an error.
+func writeFile(t *testing.T, path, contents string) {
+	t.Helper()
+	err := os.WriteFile(path, []byte(contents), 0o644)
+	if err != nil {
+		t.Fatalf("error writing %s: %v", path, err)
+	}
+}
+
+// Test that os.DirFS, the most obvious fs.FS implementation, works with
+// ordinary AWK filenames: those are cleaned to valid fs.FS paths where
+// possible, and getline returns -1 (rather than being a fatal error) for the
+// ones that can't be opened.
+func TestFileSystemDirFS(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "data.txt"), "hello\n")
+	err := os.Mkdir(filepath.Join(dir, "sub"), 0o755)
+	if err != nil {
+		t.Fatalf("error creating sub directory: %v", err)
+	}
+
+	runProgram := func(t *testing.T, source string, args ...string) (string, error) {
+		prog, err := parser.ParseProgram([]byte(source), nil)
+		if err != nil {
+			t.Fatalf("error parsing: %v", err)
+		}
+		output := new(bytes.Buffer)
+		config := interp.Config{
+			Stdin:      strings.NewReader(""),
+			Output:     output,
+			Error:      io.Discard,
+			Args:       args,
+			FileSystem: os.DirFS(dir),
+		}
+		_, err = interp.ExecProgram(prog, &config)
+		return normalizeNewlines(output.String()), err
+	}
+
+	getlineTests := []struct {
+		name     string
+		expected string
+	}{
+		{"data.txt", "1 hello"},        // already a valid fs.FS path
+		{"./data.txt", "1 hello"},      // cleaned to "data.txt"
+		{"sub/../data.txt", "1 hello"}, // cleaned to "data.txt"
+		{"nonexistent.txt", "-1 "},     // valid path, but not there
+		{"../data.txt", "-1 "},         // outside the filesystem root
+		{"/data.txt", "-1 "},           // absolute paths aren't supported
+		{"", "-1 "},                    // cleaned to ".", which won't read as a file
+	}
+	for _, test := range getlineTests {
+		t.Run("getline "+test.name, func(t *testing.T) {
+			source := `BEGIN { print (getline line <FILE), line }`
+			output, err := runProgram(t, strings.Replace(source, "FILE", `"`+test.name+`"`, 1))
+			if err != nil {
+				t.Fatalf("error executing: %v", err)
+			}
+			expected := test.expected + "\n"
+			if output != expected {
+				t.Fatalf("expected output %q, got %q", expected, output)
+			}
+		})
+	}
+
+	t.Run("args", func(t *testing.T) {
+		output, err := runProgram(t, `{ print FILENAME, $0 }`, "./data.txt")
+		if err != nil {
+			t.Fatalf("error executing: %v", err)
+		}
+		expected := "./data.txt hello\n"
+		if output != expected {
+			t.Fatalf("expected output %q, got %q", expected, output)
+		}
+	})
+
+	t.Run("args error", func(t *testing.T) {
+		// Unlike getline, a file named in ARGV that can't be opened is fatal.
+		_, err := runProgram(t, `{ print }`, "../data.txt")
+		if err == nil {
+			t.Fatal("expected error, got <nil>")
+		}
+	})
+}
+
+// Test that getline returns -1 rather than being a fatal error when a file
+// exists but can't be opened, as other AWK implementations do.
+func TestGetlineUnopenableFile(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("file permissions work differently on Windows")
+	}
+	if os.Geteuid() == 0 {
+		t.Skip("running as root, which can read files with no permissions")
+	}
+	path := filepath.Join(t.TempDir(), "secret.txt")
+	writeFile(t, path, "secret\n")
+	err := os.Chmod(path, 0o000)
+	if err != nil {
+		t.Fatalf("error changing permissions: %v", err)
+	}
+
+	prog, err := parser.ParseProgram([]byte(`BEGIN { print (getline line <"`+path+`"), line }`), nil)
+	if err != nil {
+		t.Fatalf("error parsing: %v", err)
+	}
+	output := new(bytes.Buffer)
+	config := interp.Config{
+		Stdin:  strings.NewReader(""),
+		Output: output,
+		Error:  io.Discard,
+	}
+	status, err := interp.ExecProgram(prog, &config)
+	if err != nil {
+		t.Fatalf("error executing: %v", err)
+	}
+	if status != 0 {
+		t.Fatalf("expected status 0, got %d", status)
+	}
+	expected := "-1 \n"
 	normalized := normalizeNewlines(output.String())
 	if normalized != expected {
 		t.Fatalf("expected output %q, got %q", expected, normalized)
