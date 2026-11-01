@@ -37,11 +37,7 @@ func (p *interp) callNative(index int, args []value) (value, error) {
 			// Final arg(s) when calling a variadic are all of this type
 			argType = variadicType
 		}
-		v := p.toNative(a, argType)
-		if v.Type() != argType {
-			v = v.Convert(argType)
-		}
-		values = append(values, v)
+		values = append(values, p.toNative(a, argType))
 	}
 	// Use zero value for any unspecified args
 	for i := len(args); i < minIn; i++ {
@@ -71,47 +67,54 @@ func (p *interp) callNative(index int, args []value) (value, error) {
 
 // Convert from an AWK value to a native Go value
 func (p *interp) toNative(v value, typ reflect.Type) reflect.Value {
+	var native reflect.Value
+
 	switch typ.Kind() {
 	case reflect.Bool:
-		return reflect.ValueOf(v.boolean())
+		native = reflect.ValueOf(v.boolean())
 	case reflect.Int:
-		return reflect.ValueOf(int(v.num()))
+		native = reflect.ValueOf(int(v.num()))
 	case reflect.Int8:
-		return reflect.ValueOf(int8(v.num()))
+		native = reflect.ValueOf(int8(v.num()))
 	case reflect.Int16:
-		return reflect.ValueOf(int16(v.num()))
+		native = reflect.ValueOf(int16(v.num()))
 	case reflect.Int32:
-		return reflect.ValueOf(int32(v.num()))
+		native = reflect.ValueOf(int32(v.num()))
 	case reflect.Int64:
-		return reflect.ValueOf(int64(v.num()))
+		native = reflect.ValueOf(int64(v.num()))
 	case reflect.Uint:
-		return reflect.ValueOf(uint(int64(v.num())))
+		native = reflect.ValueOf(uint(int64(v.num())))
 	case reflect.Uint8:
-		return reflect.ValueOf(uint8(int64(v.num())))
+		native = reflect.ValueOf(uint8(int64(v.num())))
 	case reflect.Uint16:
-		return reflect.ValueOf(uint16(int64(v.num())))
+		native = reflect.ValueOf(uint16(int64(v.num())))
 	case reflect.Uint32:
-		return reflect.ValueOf(uint32(int64(v.num())))
+		native = reflect.ValueOf(uint32(int64(v.num())))
 	case reflect.Uint64:
-		return reflect.ValueOf(uint64(int64(v.num())))
+		native = reflect.ValueOf(uint64(int64(v.num())))
 	case reflect.Float32:
-		return reflect.ValueOf(float32(v.num()))
+		native = reflect.ValueOf(float32(v.num()))
 	case reflect.Float64:
-		return reflect.ValueOf(v.num())
+		native = reflect.ValueOf(v.num())
 	case reflect.String:
-		return reflect.ValueOf(p.toString(v))
+		native = reflect.ValueOf(p.toString(v))
 	case reflect.Slice:
 		if typ.Elem().Kind() != reflect.Uint8 {
 			// Shouldn't happen: prevented by checkNativeFunc
 			panic(fmt.Sprintf("unexpected argument slice: %s", typ.Elem().Kind()))
 		}
-		b := reflect.New(typ).Elem()
-		b.SetBytes([]byte(p.toString(v)))
-		return b
+		native = reflect.New(typ).Elem()
+		native.SetBytes([]byte(p.toString(v)))
 	default:
 		// Shouldn't happen: prevented by checkNativeFunc
 		panic(fmt.Sprintf("unexpected argument type: %s", typ.Kind()))
 	}
+
+	if native.Type() != typ {
+		// Convert concrete type to named Go type if needed
+		native = native.Convert(typ)
+	}
+	return native
 }
 
 // Convert from a native Go value to an AWK value
@@ -128,11 +131,11 @@ func fromNative(v reflect.Value) value {
 	case reflect.String:
 		return str(v.String())
 	case reflect.Slice:
-		if v.Type().Elem().Kind() == reflect.Uint8 {
-			return str(string(v.Bytes()))
+		if v.Type().Elem().Kind() != reflect.Uint8 {
+			// Shouldn't happen: prevented by checkNativeFunc
+			panic(fmt.Sprintf("unexpected return slice: %s", v.Type().Elem().Kind()))
 		}
-		// Shouldn't happen: prevented by checkNativeFunc
-		panic(fmt.Sprintf("unexpected return slice: %s", v.Type().Elem().Kind()))
+		return str(string(v.Bytes()))
 	default:
 		// Shouldn't happen: prevented by checkNativeFunc
 		panic(fmt.Sprintf("unexpected return type: %s", v.Kind()))
