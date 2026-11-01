@@ -1615,6 +1615,44 @@ BEGIN { x=4; y=5; print foo(x), bar(y) }
 	}
 }
 
+func TestNativeNamedTypes(t *testing.T) {
+	type count int
+	type label string
+	type enabled bool
+	type ratio float64
+	type octet uint8
+	type data []byte
+
+	tests := []struct {
+		name string
+		src  string
+		out  string
+		fn   any
+	}{
+		{"integer", `BEGIN { print f(42) }`, "42\n", func(n count) count { return n }},
+		{"string", `BEGIN { print f("hello") }`, "hello\n", func(s label) label { return s }},
+		{"boolean", `BEGIN { print f(1) }`, "1\n", func(b enabled) enabled { return b }},
+		{"float", `BEGIN { print f(1.5) }`, "1.5\n", func(n ratio) ratio { return n }},
+		{"byte", `BEGIN { print f(255) }`, "255\n", func(n octet) octet { return n }},
+		{"byte slice", `BEGIN { print f("hello") }`, "hello\n", func(b data) data { return b }},
+		{"named byte elements", `BEGIN { print f("hello") }`, "hello\n", func(b []octet) []octet { return b }},
+		{"returned byte slice", `BEGIN { print f() }`, "hello\n", func() data { return data("hello") }},
+		{"default argument", `BEGIN { print f() }`, "0\n", func(n count) count { return n }},
+		{"variadic", `BEGIN { print f(1, 2, 3) }`, "6\n", func(ns ...count) count {
+			var total count
+			for _, n := range ns {
+				total += n
+			}
+			return total
+		}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			testGoAWK(t, test.src, "", test.out, "", map[string]any{"f": test.fn}, nil)
+		})
+	}
+}
+
 func TestSafeMode(t *testing.T) {
 	tests := []struct {
 		src  string
