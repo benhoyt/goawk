@@ -8,11 +8,12 @@ By default, the string functions count bytes, though GoAWK handles UTF-8 encoded
 - `length()` returns the string length in bytes
 - `match()` sets `RSTART` and `RLENGTH` in bytes
 - `printf "%c"` outputs a single byte (the low 8 bits of a number or the first byte of a string)
+- `printf "%s"` width and precision count bytes, so precision may split a Unicode character
 - `substr()` takes the position and length in bytes, so it may split a Unicode character
 
 Normally this is not a problem, because you usually use the return value of `index` or `length` (and `RSTART` and `RLENGTH`) as the input to `substr`, so if both are in bytes, it works out.
 
-However, if you want to use Unicode characters instead, use `goawk -c` or set `interp.Config.Chars`. In that case, those functions take or return Unicode character positions, and `printf "%c"` operates on a Unicode codepoint.
+However, if you want to use Unicode characters instead, use `goawk -c` or set `interp.Config.Chars`. In that case, those functions take or return Unicode character positions, `printf "%c"` operates on a Unicode codepoint, and `printf "%s"` width and precision count Unicode codepoints.
 
 GoAWK ignores the `LC_*` environment variables such as `LC_ALL` and `LC_CTYPE`.
 
@@ -28,9 +29,3 @@ $ goawk 'BEGIN { s="╋"; match(s, /./); print length(s), RLENGTH, (s ~ /^.$/) }
 $ goawk -c 'BEGIN { s="╋"; match(s, /./); print length(s), RLENGTH, (s ~ /^.$/) }'
 1 1 1
 ```
-
-## Inconsistencies
-
-Some byte vs chars inconsistencies remain. In particular, `printf`'s `%s` width and precision currently count Unicode codepoints in both modes (because GoAWK uses Go's `fmt` fairly directly).
-
-These differences are tracked in [issue #273](https://github.com/benhoyt/goawk/issues/273).
