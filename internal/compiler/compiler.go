@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"regexp"
-	"strconv"
 
 	"github.com/benhoyt/goawk/internal/ast"
 	"github.com/benhoyt/goawk/internal/resolver"
@@ -1151,12 +1150,13 @@ func (c *compiler) binaryOp(op lexer.Token) {
 // Generate an array index, handling multi-indexes properly.
 func (c *compiler) index(index []ast.Expr) {
 	for _, expr := range index {
-		if e, ok := expr.(*ast.NumExpr); ok && e.Value == float64(int64(e.Value)) {
-			// If index expression is integer constant, optimize to string "n"
-			// to avoid toString() at runtime.
-			s := strconv.FormatInt(int64(e.Value), 10)
-			c.expr(&ast.StrExpr{Value: s})
-			continue
+		if e, ok := expr.(*ast.NumExpr); ok {
+			if s, ok := ast.FormatIntegral(e.Value); ok {
+				// If index expression is integer constant, optimize to string "n"
+				// to avoid toString() at runtime.
+				c.expr(&ast.StrExpr{Value: s})
+				continue
+			}
 		}
 		c.expr(expr)
 	}

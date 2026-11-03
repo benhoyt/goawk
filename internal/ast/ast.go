@@ -4,6 +4,7 @@ package ast
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
@@ -285,11 +286,22 @@ type NumExpr struct {
 }
 
 func (e *NumExpr) String() string {
-	if e.Value == float64(int64(e.Value)) {
-		return strconv.FormatInt(int64(e.Value), 10)
-	} else {
-		return fmt.Sprintf("%.6g", e.Value)
+	if s, ok := FormatIntegral(e.Value); ok {
+		return s
 	}
+	return fmt.Sprintf("%.6g", e.Value)
+}
+
+// FormatIntegral returns a decimal integer string if n is a finite integral
+// value, including values outside the int64 range (for example 1e20).
+func FormatIntegral(n float64) (string, bool) {
+	if math.IsNaN(n) || math.IsInf(n, 0) || n != math.Trunc(n) {
+		return "", false
+	}
+	if n >= math.MinInt64 && n < 9223372036854775808.0 {
+		return strconv.FormatInt(int64(n), 10), true
+	}
+	return strconv.FormatFloat(n, 'f', 0, 64), true
 }
 
 // StrExpr is a literal string like "foo" or a regex constant like /foo/.
