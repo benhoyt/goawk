@@ -505,7 +505,13 @@ func (s *csvSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, 
 		}
 		s.doneBOMCheck = true
 		if len(data) >= 3 && data[0] == 0xEF && data[1] == 0xBB && data[2] == 0xBF {
-			return 3, nil, nil // skip BOM, Scanner will call us again
+			// Skip BOM and scan the first record in the same call: an empty
+			// token at EOF would make Scanner stop and drop the rest.
+			advance, token, err = s.scan(data[3:], atEOF)
+			if advance == 0 && token == nil && err == nil {
+				return 3, nil, nil
+			}
+			return advance + 3, token, err
 		}
 	}
 
@@ -658,7 +664,12 @@ parseField:
 		// Set header field names and advance, but don't return a line (token).
 		s.rowNum++
 		s.setFieldNames(fields)
-		return advance, nil, nil
+		headerAdvance := advance
+		advance, token, err = s.scan(origData[headerAdvance:], atEOF)
+		if advance == 0 && token == nil && err == nil {
+			return headerAdvance, nil, nil
+		}
+		return headerAdvance + advance, token, err
 	}
 
 	// Normal row, set fields and return a line (token).
