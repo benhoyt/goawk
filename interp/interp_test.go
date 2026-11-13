@@ -2234,6 +2234,7 @@ var csvTests = []csvTest{
 	{`BEGIN { INPUTMODE="csv" } { print $0 }`, "\ufeffa,b\nc,d\n", "a,b\nc,d\n", "", nil},
 	{`BEGIN { INPUTMODE="csv" } { print $0 }`, "\ufeffa,b\n\ufeffc,d\n", "a,b\n\ufeffc,d\n", "", nil},
 	{`BEGIN { INPUTMODE="csv" } END { print NR }`, "\ufeff", "0\n", "", nil},
+	{`BEGIN { INPUTMODE="csv header" } { print @"b" }`, "\ufeffa,b\n1,2\n3,4\n", "2\n4\n", "", nil},
 
 	// Two-argument split() parses in CSV mode if input mode is CSV
 	{`
