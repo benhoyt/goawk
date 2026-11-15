@@ -14,3 +14,5 @@ scripts/csvbench/bin
 scripts/csvbench/count.csv
 /default.pgo
 /goawk-versions
+.workshop.lock
+.workshop/
