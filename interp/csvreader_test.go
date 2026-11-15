@@ -11,9 +11,11 @@ package interp
 import (
 	"bufio"
 	"encoding/csv"
+	"io"
 	"reflect"
 	"strings"
 	"testing"
+	"testing/iotest"
 	"unicode/utf8"
 )
 
@@ -388,5 +390,68 @@ func TestCSVReader(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// Test that the BOM and header row are skipped correctly however the reader
+// delivers its data, including when the final data arrives together with
+// io.EOF, and when each record is split across many reads.
+func TestCSVSplitterReaders(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  string
+		header bool
+		names  []string
+		output [][]string
+	}{
+		{"NoHeader", "a,b\nc,d\n", false, nil, [][]string{{"a", "b"}, {"c", "d"}}},
+		{"BOM", "\ufeffa,b\nc,d\n", false, nil, [][]string{{"a", "b"}, {"c", "d"}}},
+		{"BOMOnly", "\ufeff", false, nil, nil},
+		{"Header", "a,b\nc,d\ne,f\n", true, []string{"a", "b"}, [][]string{{"c", "d"}, {"e", "f"}}},
+		{"BOMHeader", "\ufeffa,b\nc,d\ne,f\n", true, []string{"a", "b"}, [][]string{{"c", "d"}, {"e", "f"}}},
+		{"BOMHeaderNoFinalNewline", "\ufeffa,b\nc,d", true, []string{"a", "b"}, [][]string{{"c", "d"}}},
+		{"BOMHeaderCRLF", "\ufeffa,b\r\nc,d\r\n", true, []string{"a", "b"}, [][]string{{"c", "d"}}},
+		{"BOMHeaderBlankLines", "\ufeff\n\na,b\n\n\nc,d\n", true, []string{"a", "b"}, [][]string{{"c", "d"}}},
+		{"BOMHeaderMultiLine", "\ufeff\"a\nx\",b\n1,\"2\n3\"\n", true, []string{"a\nx", "b"}, [][]string{{"1", "2\n3"}}},
+		{"BOMHeaderOnly", "\ufeffa,b\n", true, []string{"a", "b"}, nil},
+	}
+	readers := []struct {
+		name string
+		wrap func(r io.Reader) io.Reader
+	}{
+		{"Normal", func(r io.Reader) io.Reader { return r }},
+		{"DataErr", iotest.DataErrReader},
+		{"OneByte", iotest.OneByteReader},
+		{"OneByteDataErr", func(r io.Reader) io.Reader { return iotest.DataErrReader(iotest.OneByteReader(r)) }},
+	}
+	for _, test := range tests {
+		for _, reader := range readers {
+			t.Run(test.name+"/"+reader.name, func(t *testing.T) {
+				var fields []string
+				var names []string
+				splitter := csvSplitter{
+					separator:     ',',
+					sepLen:        1,
+					header:        test.header,
+					fields:        &fields,
+					setFieldNames: func(n []string) { names = n },
+				}
+				scanner := bufio.NewScanner(reader.wrap(strings.NewReader(test.input)))
+				scanner.Split(splitter.scan)
+				var output [][]string
+				for scanner.Scan() {
+					output = append(output, fields)
+				}
+				if err := scanner.Err(); err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+				if !reflect.DeepEqual(names, test.names) {
+					t.Errorf("field names mismatch:\ngot  %q\nwant %q", names, test.names)
+				}
+				if !reflect.DeepEqual(output, test.output) {
+					t.Errorf("output mismatch:\ngot  %q\nwant %q", output, test.output)
+				}
+			})
+		}
 	}
 }

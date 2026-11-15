@@ -498,6 +498,21 @@ type csvSplitter struct {
 // We don't support all encoding/csv features: FieldsPerRecord is not
 // supported, LazyQuotes is always on, and TrimLeadingSpace is always off.
 func (s *csvSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	// scanRecord can consume input without returning a token (the BOM or the
+	// header row). Keep scanning in the same call, because once the reader
+	// has hit EOF, bufio.Scanner stops after any call that returns no token.
+	for {
+		n, tok, err := s.scanRecord(data[advance:], atEOF)
+		advance += n
+		if n == 0 || tok != nil || err != nil {
+			return advance, tok, err
+		}
+	}
+}
+
+// scanRecord scans a single CSV record, or skips a leading BOM or the header
+// row (returning a nil token in that case).
+func (s *csvSplitter) scanRecord(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	// Some CSV files are saved with a UTF-8 BOM at the start; skip it.
 	if !s.doneBOMCheck {
 		if !atEOF && (len(data) == 1 && data[0] == 0xEF || len(data) == 2 && data[0] == 0xEF && data[1] == 0xBB) {
