@@ -498,6 +498,21 @@ type csvSplitter struct {
 // We don't support all encoding/csv features: FieldsPerRecord is not
 // supported, LazyQuotes is always on, and TrimLeadingSpace is always off.
 func (s *csvSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	// scanRecord can consume input without returning a token (the BOM or the
+	// header row). Keep scanning in the same call, because once the reader
+	// has hit EOF, bufio.Scanner stops after any call that returns no token.
+	for {
+		n, tok, err := s.scanRecord(data[advance:], atEOF)
+		advance += n
+		if n == 0 || tok != nil || err != nil {
+			return advance, tok, err
+		}
+	}
+}
+
+// scanRecord scans a single CSV record, or skips a leading BOM or the header
+// row (returning a nil token in that case).
+func (s *csvSplitter) scanRecord(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	// Some CSV files are saved with a UTF-8 BOM at the start; skip it.
 	if !s.doneBOMCheck {
 		if !atEOF && (len(data) == 1 && data[0] == 0xEF || len(data) == 2 && data[0] == 0xEF && data[1] == 0xBB) {
@@ -505,13 +520,7 @@ func (s *csvSplitter) scan(data []byte, atEOF bool) (advance int, token []byte, 
 		}
 		s.doneBOMCheck = true
 		if len(data) >= 3 && data[0] == 0xEF && data[1] == 0xBB && data[2] == 0xBF {
-			// Skip BOM and scan the first record in the same call: an empty
-			// token at EOF would make Scanner stop and drop the rest.
-			advance, token, err = s.scan(data[3:], atEOF)
-			if advance == 0 && token == nil && err == nil {
-				return 3, nil, nil
-			}
-			return advance + 3, token, err
+			return 3, nil, nil // skip BOM, Scanner will call us again
 		}
 	}
 
@@ -664,12 +673,7 @@ parseField:
 		// Set header field names and advance, but don't return a line (token).
 		s.rowNum++
 		s.setFieldNames(fields)
-		headerAdvance := advance
-		advance, token, err = s.scan(origData[headerAdvance:], atEOF)
-		if advance == 0 && token == nil && err == nil {
-			return headerAdvance, nil, nil
-		}
-		return headerAdvance + advance, token, err
+		return advance, nil, nil
 	}
 
 	// Normal row, set fields and return a line (token).
