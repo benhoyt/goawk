@@ -1002,7 +1002,13 @@ func (p *interp) callBuiltin(builtinOp compiler.BuiltinOp) error {
 		p.replaceTop(num(float64(awkIndex)))
 
 	case compiler.BuiltinInt:
-		p.replaceTop(num(float64(int64(p.peekTop().num()))))
+		n := p.peekTop().num()
+		if math.IsNaN(n) {
+			// Match previous int64(NaN) conversion, which yields 0.
+			p.replaceTop(num(0))
+		} else {
+			p.replaceTop(num(math.Trunc(n)))
+		}
 
 	case compiler.BuiltinLength:
 		var length int
