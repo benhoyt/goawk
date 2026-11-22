@@ -300,13 +300,14 @@ func (p *interp) sub(regex, repl, in string, global bool) (out string, num int, 
 	if err != nil {
 		return "", 0, err
 	}
+	// A replacement without & or \ is the same for every match.
+	literal := !strings.ContainsAny(repl, "&\\")
 	count := 0
-	out = re.ReplaceAllStringFunc(in, func(s string) string {
-		// Only do the first replacement for sub(), or all for gsub()
-		if !global && count > 0 {
-			return s
-		}
+	replace := func(s string) string {
 		count++
+		if literal {
+			return repl
+		}
 		// Handle & (ampersand) properly in replacement string
 		r := make([]byte, 0, 64) // Up to 64 byte replacement won't require heap allocation
 		for i := 0; i < len(repl); i++ {
@@ -332,7 +333,17 @@ func (p *interp) sub(regex, repl, in string, global bool) (out string, num int, 
 			}
 		}
 		return string(r)
-	})
+	}
+	if !global {
+		// sub() replaces only the first match, so do not find the others.
+		loc := re.FindStringIndex(in)
+		if loc == nil {
+			return in, 0, nil
+		}
+		out = in[:loc[0]] + replace(in[loc[0]:loc[1]]) + in[loc[1]:]
+		return out, count, nil
+	}
+	out = re.ReplaceAllStringFunc(in, replace)
 	return out, count, nil
 }
 
