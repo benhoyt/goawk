@@ -173,6 +173,10 @@ const (
 	initialStackSize = 100
 	outputBufSize    = 64 * 1024
 	inputBufSize     = 64 * 1024
+	// csvBufferSize is the size of the buffer csv.NewWriter uses, and so the
+	// minimum size of a caller-supplied *bufio.Writer that csv.NewWriter will
+	// write to directly rather than wrapping it in a buffer of its own.
+	csvBufferSize = 4096
 )
 
 // NewlineMode specifies how newline characters are handled when reading or

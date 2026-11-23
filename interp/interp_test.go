@@ -2,6 +2,7 @@
 package interp_test
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/csv"
 	"errors"
@@ -2287,6 +2288,41 @@ func TestCSV(t *testing.T) {
 		t.Run(testName, func(t *testing.T) {
 			testGoAWK(t, test.src, test.in, test.out, test.err, nil, test.configure)
 		})
+	}
+}
+
+func TestCSVOutputSmallBufferedWriter(t *testing.T) {
+	// CSV and TSV output must not be lost when the caller supplies their own
+	// *bufio.Writer with a buffer smaller than 4KB (issue #313).
+	prog, err := parser.ParseProgram([]byte(`BEGIN { print "name", "value"; print "hello", 42 }`), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		name   string
+		mode   interp.IOMode
+		output string
+	}{
+		{"CSV", interp.CSVMode, "name,value\nhello,42\n"},
+		{"TSV", interp.TSVMode, "name\tvalue\nhello\t42\n"},
+	}
+	for _, test := range tests {
+		for _, size := range []int{16, 256, 4095, 4096, 8192} {
+			var buf bytes.Buffer
+			output := bufio.NewWriterSize(&buf, size)
+			config := &interp.Config{Output: output, OutputMode: test.mode}
+			_, err := interp.ExecProgram(prog, config)
+			if err != nil {
+				t.Fatalf("%s size %d: unexpected error: %v", test.name, size, err)
+			}
+			err = output.Flush()
+			if err != nil {
+				t.Fatalf("%s size %d: flush error: %v", test.name, size, err)
+			}
+			if got := normalizeNewlines(buf.String()); got != test.output {
+				t.Fatalf("%s size %d: expected %q, got %q", test.name, size, test.output, got)
+			}
+		}
 	}
 }
 

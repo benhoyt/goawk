@@ -127,17 +127,20 @@ func (p *interp) printArgs(writer io.Writer, args []value) error {
 }
 
 func (p *interp) writeCSV(output io.Writer, fields []string) error {
-	// If output is already a *bufio.Writer (the common case), csv.NewWriter
-	// will use it directly. This is not explicitly documented, but
-	// csv.NewWriter calls bufio.NewWriter which calls bufio.NewWriterSize
-	// with a 4KB buffer, and bufio.NewWriterSize is documented as returning
-	// the underlying bufio.Writer if it's passed a large enough one.
+	// If output is already a *bufio.Writer with a buffer of at least
+	// csvBufferSize (the common case), csv.NewWriter will use it directly.
+	// This is not explicitly documented, but csv.NewWriter calls
+	// bufio.NewWriter which calls bufio.NewWriterSize with a 4KB buffer, and
+	// bufio.NewWriterSize is documented as returning the underlying
+	// bufio.Writer if it's passed a large enough one. With a smaller buffer
+	// csv.NewWriter would wrap output in a new 4KB buffer that would never be
+	// flushed, dropping the records, so treat that case as unbuffered.
 	var flush func() error
-	_, isBuffered := output.(*bufio.Writer)
-	if !isBuffered {
+	buffered, isBuffered := output.(*bufio.Writer)
+	if !isBuffered || buffered.Size() < csvBufferSize {
 		// Otherwise create a new buffered writer and flush after writing.
 		if p.csvOutput == nil {
-			p.csvOutput = bufio.NewWriterSize(output, 4096)
+			p.csvOutput = bufio.NewWriterSize(output, csvBufferSize)
 		} else {
 			p.csvOutput.Reset(output)
 		}
