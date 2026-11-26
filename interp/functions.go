@@ -301,8 +301,8 @@ func (p *interp) sub(regex, repl, in string, global bool) (out string, num int, 
 		return "", 0, err
 	}
 	// A replacement without & or \ is the same for every match.
-	literal := !strings.ContainsAny(repl, "&\\")
 	count := 0
+	literal := false
 	replace := func(s string) string {
 		count++
 		if literal {
@@ -340,9 +340,14 @@ func (p *interp) sub(regex, repl, in string, global bool) (out string, num int, 
 		if loc == nil {
 			return in, 0, nil
 		}
+		literal = !strings.ContainsAny(repl, "&\\")
 		out = in[:loc[0]] + replace(in[loc[0]:loc[1]]) + in[loc[1]:]
 		return out, count, nil
 	}
+	// Check only a replacement that fits in the 64-byte buffer below. A longer
+	// one takes the loop for each match, so a call with no match does not
+	// read it.
+	literal = len(repl) <= 64 && !strings.ContainsAny(repl, "&\\")
 	out = re.ReplaceAllStringFunc(in, replace)
 	return out, count, nil
 }
